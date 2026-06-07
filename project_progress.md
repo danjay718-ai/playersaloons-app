@@ -145,3 +145,10 @@ Team creation, management, invitations, captaincy transfers.
 - **Tests**:
   - Full suite of team feature tests passing at 100%.
 
+## ✅ Phase 11 — Scheduler Automation
+
+- **Jobs (`app/Modules/Tournament/Jobs/`)**:
+  - `CloseRegistrationJob`, `OpenCheckinJob`, `CloseCheckinJob`, `StartTournamentJob`, `AutoCancelTournamentJob`, `ExpireReservationsJob`.
+  - Configured as sweeping jobs running every minute via `routes/console.php` to perform lifecycle automation tasks.
+- **Jobs (`app/Modules/Team/Jobs/`)**:
+  - `ExpireTeamInvitationsJob` added to the scheduler to expire pending team invitations.
