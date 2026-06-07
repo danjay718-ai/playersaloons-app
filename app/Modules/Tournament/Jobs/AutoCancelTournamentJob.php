@@ -13,49 +13,41 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class AutoCancelTournamentJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct(public readonly int $tournamentId) {}
-
-    /**
-     * Execute the job.
-     */
     public function handle(CancelTournamentAction $cancelAction): void
     {
-        /** @var Tournament|null $tournament */
-        $tournament = Tournament::query()->find($this->tournamentId);
+        $tournaments = Tournament::query()->where('status', TournamentStatus::CHECKIN_CLOSED)->get();
 
-        if ($tournament === null) {
-            return;
-        }
+        /** @var Tournament $tournament */
 
-        // Only auto-cancel if it's still in CHECKIN_CLOSED (or similar pre-bracket state)
-        if ($tournament->status !== TournamentStatus::CHECKIN_CLOSED) {
-            return;
-        }
+        foreach ($tournaments as $tournament) {
+            $participantCount = $tournament->participants()->count();
+            $minRequired = $tournament->min_participants ?? 2;
 
-        $participantCount = $tournament->participants()->count();
-        $minRequired = $tournament->min_participants ?? 2;
+            if ($participantCount < $minRequired) {
+                /** @var User|null $systemUser */
+                $systemUser = User::query()->where('email', 'platform@playersaloons.com')->first();
 
-        if ($participantCount < $minRequired) {
-            /** @var User|null $systemUser */
-            $systemUser = User::query()->where('email', 'platform@playersaloons.com')->first();
+                if ($systemUser === null) {
+                    continue;
+                }
 
-            if ($systemUser === null) {
-                throw new \RuntimeException('Platform system user not found.');
+                try {
+                    $cancelAction->execute(
+                        $tournament,
+                        $systemUser,
+                        'Insufficient confirmed participants after check-in closed'
+                    );
+                    Log::info("Auto-cancelled tournament {$tournament->uuid} due to insufficient participants.");
+                } catch (\Throwable $e) {
+                    Log::error("Failed to auto-cancel tournament {$tournament->uuid}: {$e->getMessage()}");
+                }
             }
-
-            $cancelAction->execute(
-                $tournament,
-                $systemUser,
-                'Insufficient confirmed participants after check-in closed'
-            );
         }
     }
 }
