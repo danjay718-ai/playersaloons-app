@@ -133,6 +133,22 @@ Match execution, disputes flow, rematch logic, bracket advancement.
 - **Tests**: 
   - Full suite of match feature tests passing at 100%.
 
+--- 
+
+## ✅ Phase 10 — Community & Real-time 
+
+In-app notifications, user preferences, and real-time broadcasting via Reverb/WebSockets. 
+
+- **Actions & Services (`app/Modules/Community/`)**: 
+  - `NotificationService`: Handles preferences-aware multi-channel delivery (In-app, Real-time). 
+- **Broadcasting Events**: 
+  - `BroadcastNotification`, `BroadcastTournamentStarted`, `BroadcastBracketUpdate`, `BroadcastMatchCompleted`. 
+- **Listeners & Subscribers**: 
+  - `TournamentNotificationListener` (Subscriber): Handles all tournament-related user alerts. 
+  - `BroadcastTournamentLifecycleListener`: Manages public real-time bracket and status updates. 
+- **Tests**: 
+  - Community and notification feature tests passing at 100%.
+
 ## ✅ Phase 10 — Team Module
 
 Team creation, management, invitations, captaincy transfers.
@@ -152,3 +168,22 @@ Team creation, management, invitations, captaincy transfers.
   - Configured as sweeping jobs running every minute via `routes/console.php` to perform lifecycle automation tasks.
 - **Jobs (`app/Modules/Team/Jobs/`)**:
   - `ExpireTeamInvitationsJob` added to the scheduler to expire pending team invitations.
+
+---
+
+## ✅ Phase 12 — Notifications & Realtime
+
+- **Notification Service (`app/Modules/Community/Services/`)**:
+  - `NotificationService`: Manages user notification delivery (in-app DB records, realtime broadcasts, and email dispatch checks) and respects user preference configurations (`NotificationPreference` settings: `email_enabled`, `in_app_enabled`, `realtime_enabled`).
+- **Reverb Realtime Broadcast Events (`app/Modules/` and `app/Shared/`)**:
+  - `BroadcastNotification` (channel: `user.{uuid}`)
+  - `BroadcastTournamentStarted` (channel: `tournament.{uuid}`)
+  - `BroadcastTournamentCompleted` (channel: `tournament.{uuid}`)
+  - `BroadcastBracketUpdate` (channel: `tournament.{uuid}`)
+  - `BroadcastMatchCompleted` (channel: `match.{uuid}`)
+- **Key Notification Triggers & Listeners**:
+  - `TournamentNotificationListener`: Subscribes to `TournamentSeatReserved` (registration confirmed), `TournamentCheckinOpened` (check-in reminder), `TournamentStarted` (tournament started), and `PrizeAwarded` (prize awarded) events to trigger preference-respecting notifications.
+  - `NotifyParticipantsListener`: Updated to notify players on match status changes: match ready (`MatchCreated`), rematch scheduled (`MatchRematchCreated`), match started (`MatchStarted`), match result submitted (`MatchResultSubmitted`), match completed or dispute resolved (`MatchCompleted`), and opponent forfeits (`MatchForfeited`).
+  - Wallet: `SendDepositNotificationListener` and `SendNotificationListener` (withdrawal approved/rejected) updated to dispatch preference-aware notifications using the new service.
+- **Tests**:
+  - Comprehensive feature tests in `tests/Feature/Community/NotificationServiceTest.php` passing 100% (with zero errors across the entire suite of 124 tests).
