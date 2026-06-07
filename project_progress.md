@@ -230,4 +230,33 @@ Exposed `/api/v1` routes with Sanctum auth middleware. Created resources and API
   - Comprehensive feature tests implemented in `tests/Feature/Api/ApiEndpointsTest.php` verifying 401 unauthenticated, 403 unauthorized, paginated structures, status filters, and the custom referral URL requirement.
   - 100% passing tests across the entire application suite.
 
+---
+
+## ✅ Phase 15 — Livewire UI (Public)
+
+Designed and implemented premium dark neon frontend pages using Tailwind CSS and Livewire 3.
+
+- **Main Layout (`resources/views/components/layouts/app.blade.php`)**:
+  - Desktop-first layout with header navigation.
+  - Mobile bottom navigation bar optimized for touch targets.
+  - Custom branding using the uploaded webp logo (`/playersaloons_logo.webp`).
+- **Profile Dashboard (`app/Livewire/Profile/ProfileDashboard.php` & `resources/views/livewire/profile/profile-dashboard.blade.php`)**:
+  - Tabular settings for changing display name, bio, country, and timezone.
+  - Custom referral URL field displaying the raw database primary key integer ID (`?ref=123`).
+  - Document upload form supporting ID cards, passports, and driver's licenses with live KYC status badge.
+  - Direct DB update toggles for Email, In-App, and Real-Time notification preferences.
+- **Team Dashboard (`app/Livewire/Team/TeamDashboard.php` & `resources/views/livewire/team/team-dashboard.blade.php`)**:
+  - Handles incoming invites and team creation.
+  - Inside a team: Roster listing with captaincy badge.
+  - Captain actions: invite new players, revoke outbound invites, remove team members, transfer captaincy to another member, rename team, and disband the team.
+  - Member actions: leave the team.
+- **Mobile Responsiveness**:
+  - Tournament bracket list uses horizontal overflow with scroll snap (`snap-x flex-nowrap`) to ensure fluid scrolling on mobile devices.
+  - UI styled with clean spacing, readable typography (Inter and Orbitron), custom status badges, and Lucide icons.
+- **Routing (`routes/web.php`)**:
+  - Standardized web routing under `guest` and `auth` middleware groups.
+- **Tests**:
+  - Run and passed the entire test suite (139 tests, 100% passing).
+
+
 
