@@ -187,3 +187,23 @@ Team creation, management, invitations, captaincy transfers.
   - Wallet: `SendDepositNotificationListener` and `SendNotificationListener` (withdrawal approved/rejected) updated to dispatch preference-aware notifications using the new service.
 - **Tests**:
   - Comprehensive feature tests in `tests/Feature/Community/NotificationServiceTest.php` passing 100% (with zero errors across the entire suite of 124 tests).
+
+---
+
+## ✅ Phase 13 — Authorization (RBAC)
+
+- **Modular Policies (`app/Modules/`)**:
+  - `TournamentPolicy`: Governs tournament creation, publication, cancellation, and management. Restricts manage/cancel capabilities to the tournament creator for tournament organizers.
+  - `MatchPolicy`: Governs match starting, result submissions, and match disputes. Restricts submit and dispute actions to players involved in the match.
+  - `WalletPolicy`: Governs wallet viewing, withdrawal requests, and wallet freezing/unfreezing. Enforces that only `SUPER_ADMIN` can unfreeze frozen wallets.
+  - `WithdrawalPolicy`: Governs withdrawal review, approval, and rejection. Enforces **Four-Eyes check** (requester cannot self-approve or self-review/reject their own withdrawal request).
+  - `KycPolicy`: Governs viewing, reviewing, and approving/rejecting KYC submissions. Allows owner to view their own submission without requiring global view permissions.
+  - `TeamPolicy`: Governs team creation, captain management, member invitations, and roster removals. Restricts manage/invite/remove actions strictly to the team captain.
+  - `UserPolicy`: Governs user suspension, unsuspension, and role assignment/revocation.
+  - `DisputePolicy`: Governs viewing, opening, and resolving disputes. Restricts resolving to organizers/admin and viewing to involved match players.
+- **Explicit Registration**:
+  - Registered all 8 policies explicitly inside `AppServiceProvider::boot()` using `Gate::policy()` mappings.
+- **Tests**:
+  - Comprehensive unit and integration test coverage implemented in `tests/Feature/Authorization/PolicyTest.php`.
+  - All **132 tests in the project suite are passing successfully**.
+
