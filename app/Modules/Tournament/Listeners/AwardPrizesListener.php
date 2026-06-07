@@ -158,6 +158,14 @@ class AwardPrizesListener implements ShouldQueue
                     (string) $distribution->getKey(),
                     "Tournament prize for Rank {$rank} in '{$tournament->name}'"
                 );
+
+                \App\Modules\Wallet\Events\PrizeAwarded::dispatch(
+                    (int) $wallet->getKey(),
+                    (int) $tournament->getKey(),
+                    (int) $distribution->getKey(),
+                    (string) $amount,
+                    (int) $rank
+                );
             }
 
             // Credit platform wallet with rake and rounding remainder

@@ -21,6 +21,10 @@ class SendNotificationListener implements ShouldQueue
      */
     public string $queue = 'notifications';
 
+    public function __construct(
+        private readonly \App\Modules\Community\Services\NotificationService $notificationService
+    ) {}
+
     /**
      * Handle incoming domain events.
      */
@@ -36,28 +40,30 @@ class SendNotificationListener implements ShouldQueue
     private function handleWithdrawalApproved(WithdrawalApproved $event): void
     {
         $withdrawal = Withdrawal::query()->findOrFail($event->withdrawalId);
+        $user = $withdrawal->user;
 
-        Notification::query()->create([
-            'uuid' => Str::uuid()->toString(),
-            'user_id' => $withdrawal->getAttribute('user_id'),
-            'type' => 'withdrawal_approved',
-            'title' => 'Withdrawal Approved',
-            'message' => "Your withdrawal request of PHP {$withdrawal->amount} was approved.",
-            'read_at' => null,
-        ]);
+        if ($user !== null) {
+            $this->notificationService->send(
+                $user,
+                'withdrawal_approved',
+                'Withdrawal Approved',
+                "Your withdrawal request of PHP {$withdrawal->amount} was approved."
+            );
+        }
     }
 
     private function handleWithdrawalRejected(WithdrawalRejected $event): void
     {
         $withdrawal = Withdrawal::query()->findOrFail($event->withdrawalId);
+        $user = $withdrawal->user;
 
-        Notification::query()->create([
-            'uuid' => Str::uuid()->toString(),
-            'user_id' => $withdrawal->getAttribute('user_id'),
-            'type' => 'withdrawal_rejected',
-            'title' => 'Withdrawal Rejected',
-            'message' => "Your withdrawal request of PHP {$withdrawal->amount} was rejected. Reason: {$event->reason}",
-            'read_at' => null,
-        ]);
+        if ($user !== null) {
+            $this->notificationService->send(
+                $user,
+                'withdrawal_rejected',
+                'Withdrawal Rejected',
+                "Your withdrawal request of PHP {$withdrawal->amount} was rejected. Reason: {$event->reason}"
+            );
+        }
     }
 }

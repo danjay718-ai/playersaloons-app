@@ -27,7 +27,10 @@ class IssueRefundsListener implements ShouldQueue
      */
     public $queue = 'wallet';
 
-    public function __construct(private readonly WalletService $walletService) {}
+    public function __construct(
+        private readonly WalletService $walletService,
+        private readonly \App\Modules\Community\Services\NotificationService $notificationService
+    ) {}
 
     /**
      * Handle the event.
@@ -89,20 +92,19 @@ class IssueRefundsListener implements ShouldQueue
                 $registration->payment_status = PaymentStatus::REFUNDED;
                 $registration->save();
 
-                // Create notification
-                $notification = Notification::query()->create([
-                    'uuid' => Str::uuid()->toString(),
-                    'user_id' => $user->getKey(),
-                    'type' => 'refund',
-                    'title' => 'Tournament Refunded',
-                    'message' => "Your entry fee of {$entryFee} for tournament '{$tournament->name}' has been refunded because the tournament was cancelled.",
-                    'read_at' => null,
-                ]);
+                // Send notification using NotificationService (respects preferences and dispatches realtime)
+                $this->notificationService->send(
+                    $user,
+                    'refund',
+                    'Tournament Refunded',
+                    "Your entry fee of {$entryFee} for tournament '{$tournament->name}' has been refunded because the tournament was cancelled."
+                );
 
-                NotificationCreated::dispatch(
-                    (int) $notification->getKey(),
-                    (int) $user->getKey(),
-                    'refund'
+                \App\Modules\Wallet\Events\RefundIssued::dispatch(
+                    (int) $user->wallet->getKey(),
+                    (int) $refund->getKey(),
+                    (int) $tournament->getKey(),
+                    (string) $entryFee
                 );
             }
         });

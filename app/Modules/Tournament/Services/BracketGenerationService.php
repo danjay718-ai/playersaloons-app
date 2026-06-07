@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Services;
 
+use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Exceptions\InsufficientParticipantsException;
 use App\Modules\Tournament\Models\Bracket;
@@ -89,6 +90,8 @@ class BracketGenerationService
             $match->player_b_registration_id = $playerB->registration_id;
             $match->status = MatchStatus::READY;
             $match->save();
+
+            MatchCreated::dispatch((int) $match->getKey(), (int) $tournament->getKey(), (int) $match->round_id);
         }
 
         // Next, bye matches
@@ -130,6 +133,8 @@ class BracketGenerationService
                     if ($nextMatch->player_a_registration_id !== null && $nextMatch->player_b_registration_id !== null) {
                         $nextMatch->status = MatchStatus::READY;
                         $nextMatch->save();
+
+                        MatchCreated::dispatch((int) $nextMatch->getKey(), (int) $tournament->getKey(), (int) $nextMatch->round_id);
                     }
                 }
             }
