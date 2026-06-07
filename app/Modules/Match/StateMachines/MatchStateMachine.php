@@ -61,7 +61,7 @@ class MatchStateMachine extends AbstractStateMachine
     {
         $this->assertValidTransition($match->status, $to);
 
-        $now = now();
+        $now = \Illuminate\Support\Carbon::now();
 
         match ($to) {
             MatchStatus::IN_PROGRESS => $match->started_at = $now,

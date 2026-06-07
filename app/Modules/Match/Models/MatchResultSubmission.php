@@ -7,6 +7,17 @@ use App\Modules\Tournament\Models\TournamentRegistration;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $match_id
+ * @property int $submitted_by
+ * @property int $winner_registration_id
+ * @property string|null $notes
+ * @property \Illuminate\Support\Carbon|null $submitted_at
+ * @property-read \App\Modules\Match\Models\GameMatch $match
+ * @property-read \App\Modules\Identity\Models\User $submittedBy
+ * @property-read \App\Modules\Tournament\Models\TournamentRegistration $winnerRegistration
+ */
 class MatchResultSubmission extends Model
 {
     /**
@@ -58,7 +69,7 @@ class MatchResultSubmission extends Model
     /**
      * Get the match.
      *
-     * @return BelongsTo<GameMatch, MatchResultSubmission>
+     * @return BelongsTo<GameMatch, $this>
      */
     public function match(): BelongsTo
     {
@@ -68,7 +79,7 @@ class MatchResultSubmission extends Model
     /**
      * Get the user who submitted the result.
      *
-     * @return BelongsTo<User, MatchResultSubmission>
+     * @return BelongsTo<User, $this>
      */
     public function submittedBy(): BelongsTo
     {
@@ -78,7 +89,7 @@ class MatchResultSubmission extends Model
     /**
      * Get registration details for the winner selected in this submission.
      *
-     * @return BelongsTo<TournamentRegistration, MatchResultSubmission>
+     * @return BelongsTo<TournamentRegistration, $this>
      */
     public function winnerRegistration(): BelongsTo
     {

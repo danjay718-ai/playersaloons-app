@@ -6,6 +6,16 @@ use App\Modules\Identity\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $dispute_id
+ * @property int $uploaded_by
+ * @property string $file_path
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property-read \App\Modules\Match\Models\MatchDispute $dispute
+ * @property-read \App\Modules\Identity\Models\User $uploadedBy
+ */
 class MatchEvidence extends Model
 {
     /**
@@ -57,7 +67,7 @@ class MatchEvidence extends Model
     /**
      * Get the dispute.
      *
-     * @return BelongsTo<MatchDispute, MatchEvidence>
+     * @return BelongsTo<MatchDispute, $this>
      */
     public function dispute(): BelongsTo
     {
@@ -67,7 +77,7 @@ class MatchEvidence extends Model
     /**
      * Get the user who uploaded this evidence.
      *
-     * @return BelongsTo<User, MatchEvidence>
+     * @return BelongsTo<User, $this>
      */
     public function uploadedBy(): BelongsTo
     {

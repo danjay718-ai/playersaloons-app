@@ -11,6 +11,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $match_id
+ * @property int $opened_by
+ * @property DisputeStatus $status
+ * @property DisputeResolution|null $resolution
+ * @property int|null $resolved_by
+ * @property \Illuminate\Support\Carbon|null $resolved_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Modules\Match\Models\GameMatch $match
+ * @property-read \App\Modules\Identity\Models\User $openedBy
+ * @property-read \App\Modules\Identity\Models\User|null $resolvedBy
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Modules\Match\Models\MatchEvidence> $evidence
+ */
 class MatchDispute extends Model implements HasMedia
 {
     use InteractsWithMedia;
@@ -57,7 +73,7 @@ class MatchDispute extends Model implements HasMedia
     /**
      * Get the user who opened the dispute.
      *
-     * @return BelongsTo<User, MatchDispute>
+     * @return BelongsTo<User, $this>
      */
     public function openedBy(): BelongsTo
     {
@@ -67,7 +83,7 @@ class MatchDispute extends Model implements HasMedia
     /**
      * Get the user who resolved the dispute.
      *
-     * @return BelongsTo<User, MatchDispute>
+     * @return BelongsTo<User, $this>
      */
     public function resolvedBy(): BelongsTo
     {
@@ -77,7 +93,7 @@ class MatchDispute extends Model implements HasMedia
     /**
      * Get evidence uploads associated with this dispute.
      *
-     * @return HasMany<MatchEvidence, MatchDispute>
+     * @return HasMany<MatchEvidence, $this>
      */
     public function evidence(): HasMany
     {

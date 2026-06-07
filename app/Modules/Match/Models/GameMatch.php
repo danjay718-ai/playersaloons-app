@@ -10,6 +10,26 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $tournament_id
+ * @property int $round_id
+ * @property int|null $player_a_registration_id
+ * @property int|null $player_b_registration_id
+ * @property int|null $winner_registration_id
+ * @property MatchStatus $status
+ * @property \Illuminate\Support\Carbon|null $scheduled_at
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Modules\Tournament\Models\Tournament $tournament
+ * @property-read \App\Modules\Tournament\Models\Round $round
+ * @property-read \App\Modules\Tournament\Models\TournamentRegistration|null $playerARegistration
+ * @property-read \App\Modules\Tournament\Models\TournamentRegistration|null $playerBRegistration
+ * @property-read \App\Modules\Tournament\Models\TournamentRegistration|null $winnerRegistration
+ */
 class GameMatch extends Model
 {
     /**
@@ -55,7 +75,7 @@ class GameMatch extends Model
     /**
      * Get the tournament.
      *
-     * @return BelongsTo<Tournament, GameMatch>
+     * @return BelongsTo<Tournament, $this>
      */
     public function tournament(): BelongsTo
     {
@@ -65,7 +85,7 @@ class GameMatch extends Model
     /**
      * Get the round.
      *
-     * @return BelongsTo<Round, GameMatch>
+     * @return BelongsTo<Round, $this>
      */
     public function round(): BelongsTo
     {
@@ -75,7 +95,7 @@ class GameMatch extends Model
     /**
      * Get registration details for Player A.
      *
-     * @return BelongsTo<TournamentRegistration, GameMatch>
+     * @return BelongsTo<TournamentRegistration, $this>
      */
     public function playerARegistration(): BelongsTo
     {
@@ -85,7 +105,7 @@ class GameMatch extends Model
     /**
      * Get registration details for Player B.
      *
-     * @return BelongsTo<TournamentRegistration, GameMatch>
+     * @return BelongsTo<TournamentRegistration, $this>
      */
     public function playerBRegistration(): BelongsTo
     {
@@ -95,7 +115,7 @@ class GameMatch extends Model
     /**
      * Get registration details for the winner.
      *
-     * @return BelongsTo<TournamentRegistration, GameMatch>
+     * @return BelongsTo<TournamentRegistration, $this>
      */
     public function winnerRegistration(): BelongsTo
     {
@@ -105,7 +125,7 @@ class GameMatch extends Model
     /**
      * Get result submissions for the match.
      *
-     * @return HasMany<MatchResultSubmission, GameMatch>
+     * @return HasMany<MatchResultSubmission, $this>
      */
     public function resultSubmissions(): HasMany
     {
@@ -115,7 +135,7 @@ class GameMatch extends Model
     /**
      * Get disputes associated with the match.
      *
-     * @return HasMany<MatchDispute, GameMatch>
+     * @return HasMany<MatchDispute, $this>
      */
     public function disputes(): HasMany
     {
