@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Actions;
 
+use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Shared\Enums\MatchStatus;
-use App\Modules\Match\Events\MatchCompleted;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -26,7 +26,7 @@ class ConfirmMatchResultAction
             }
 
             $match->winner_registration_id = $winnerRegistrationId;
-            
+
             $this->stateMachine->transition($match, MatchStatus::COMPLETED);
 
             MatchCompleted::dispatch($match->id, $match->tournament_id, $winnerRegistrationId);

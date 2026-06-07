@@ -14,6 +14,7 @@ use App\Modules\Wallet\Services\WalletService;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\PaymentStatus;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -46,7 +47,7 @@ class IssueRefundsListener implements ShouldQueue
 
         DB::transaction(function () use ($tournament): void {
             // Find cancelled registrations that were paid
-            /** @var \Illuminate\Database\Eloquent\Collection<int, TournamentRegistration> $registrations */
+            /** @var Collection<int, TournamentRegistration> $registrations */
             $registrations = TournamentRegistration::query()
                 ->where('tournament_id', $tournament->getKey())
                 ->where('payment_status', PaymentStatus::PAID)
@@ -65,13 +66,13 @@ class IssueRefundsListener implements ShouldQueue
                 // Create Refund record
                 /** @var Refund $refund */
                 $refund = Refund::query()->create([
-                    'uuid'                  => Str::uuid()->toString(),
-                    'wallet_id'             => $user->wallet->getKey(),
-                    'tournament_id'         => $tournament->getKey(),
-                    'amount'                => $entryFee,
-                    'status'                => 'completed',
+                    'uuid' => Str::uuid()->toString(),
+                    'wallet_id' => $user->wallet->getKey(),
+                    'tournament_id' => $tournament->getKey(),
+                    'amount' => $entryFee,
+                    'status' => 'completed',
                     'refund_reference_uuid' => $refundRef,
-                    'created_at'            => now(),
+                    'created_at' => now(),
                 ]);
 
                 // Credit player's wallet
@@ -90,10 +91,10 @@ class IssueRefundsListener implements ShouldQueue
 
                 // Create notification
                 $notification = Notification::query()->create([
-                    'uuid'    => Str::uuid()->toString(),
+                    'uuid' => Str::uuid()->toString(),
                     'user_id' => $user->getKey(),
-                    'type'    => 'refund',
-                    'title'   => 'Tournament Refunded',
+                    'type' => 'refund',
+                    'title' => 'Tournament Refunded',
                     'message' => "Your entry fee of {$entryFee} for tournament '{$tournament->name}' has been refunded because the tournament was cancelled.",
                     'read_at' => null,
                 ]);

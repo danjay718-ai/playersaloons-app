@@ -54,6 +54,7 @@ class AdvanceWinnerListener implements ShouldQueue
             if ($nextRound === null) {
                 $tournament = $match->tournament;
                 $this->completeTournamentAction->execute($tournament);
+
                 return;
             }
 

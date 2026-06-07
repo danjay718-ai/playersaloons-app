@@ -20,10 +20,6 @@ class RejectWithdrawalAction
     /**
      * Reject a withdrawal request.
      *
-     * @param Withdrawal $withdrawal
-     * @param User $reviewer
-     * @param string $reason
-     * @return void
      * @throws AuthorizationException
      */
     public function execute(Withdrawal $withdrawal, User $reviewer, string $reason): void

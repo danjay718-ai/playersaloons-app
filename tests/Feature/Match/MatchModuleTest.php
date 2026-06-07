@@ -14,13 +14,9 @@ use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\StartMatchAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
-use App\Modules\Match\Events\MatchRematchCreated;
 use App\Modules\Match\Events\TournamentBracketUpdated;
 use App\Modules\Match\Jobs\RematchTimeoutJob;
 use App\Modules\Match\Models\GameMatch;
-use App\Modules\Match\Models\MatchDispute;
-use App\Modules\Match\Models\MatchEvidence;
-use App\Modules\Match\Models\MatchResultSubmission;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\CloseCheckinAction;
 use App\Modules\Tournament\Actions\CloseRegistrationAction;
@@ -34,9 +30,9 @@ use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Wallet\Models\Wallet;
-use App\Shared\Enums\MatchStatus;
-use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\DisputeResolution;
+use App\Shared\Enums\DisputeStatus;
+use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
 use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -47,7 +43,6 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use LogicException;
 use Tests\TestCase;
 
 class MatchModuleTest extends TestCase
@@ -55,11 +50,17 @@ class MatchModuleTest extends TestCase
     use RefreshDatabase;
 
     private User $adminUser;
+
     private Game $game;
+
     private User $playerA;
+
     private User $playerB;
+
     private TournamentRegistration $regA;
+
     private TournamentRegistration $regB;
+
     private Tournament $tournament;
 
     protected function setUp(): void
@@ -72,25 +73,25 @@ class MatchModuleTest extends TestCase
 
         // Create Admin
         $this->adminUser = User::query()->create([
-            'uuid'              => Str::uuid()->toString(),
-            'email'             => 'admin@example.com',
-            'username'          => 'admin',
-            'password'          => bcrypt('password'),
+            'uuid' => Str::uuid()->toString(),
+            'email' => 'admin@example.com',
+            'username' => 'admin',
+            'password' => bcrypt('password'),
             'email_verified_at' => now(),
-            'status'            => 'active',
+            'status' => 'active',
         ]);
         $this->adminUser->assignRole('SUPER_ADMIN');
 
         // Create Game
         $this->game = Game::query()->create([
-            'uuid'      => Str::uuid()->toString(),
-            'slug'      => 'csgo',
+            'uuid' => Str::uuid()->toString(),
+            'slug' => 'csgo',
             'is_active' => true,
         ]);
         GameTranslation::query()->create([
-            'game_id'     => $this->game->id,
-            'locale'      => 'en',
-            'name'        => 'CS:GO',
+            'game_id' => $this->game->id,
+            'locale' => 'en',
+            'name' => 'CS:GO',
             'description' => 'CS:GO FPS game',
         ]);
 
@@ -111,12 +112,12 @@ class MatchModuleTest extends TestCase
         $startTournamentAction = app(StartTournamentAction::class);
 
         $this->tournament = $createAction->execute([
-            'name'                  => 'Championship 2026',
-            'game_id'               => $this->game->id,
-            'max_participants'      => 2,
-            'min_participants'      => 2,
-            'entry_fee'             => 0.00,
-            'registration_open_at'  => now(),
+            'name' => 'Championship 2026',
+            'game_id' => $this->game->id,
+            'max_participants' => 2,
+            'min_participants' => 2,
+            'entry_fee' => 0.00,
+            'registration_open_at' => now(),
             'registration_close_at' => now()->addMinutes(30),
         ], $this->adminUser);
 
@@ -144,20 +145,20 @@ class MatchModuleTest extends TestCase
     private function createPlayer(string $email, string $username): User
     {
         $user = User::query()->create([
-            'uuid'              => Str::uuid()->toString(),
-            'email'             => $email,
-            'username'          => $username,
-            'password'          => bcrypt('password'),
+            'uuid' => Str::uuid()->toString(),
+            'email' => $email,
+            'username' => $username,
+            'password' => bcrypt('password'),
             'email_verified_at' => now(),
-            'status'            => 'active',
+            'status' => 'active',
         ]);
         $user->assignRole('PLAYER');
 
         Wallet::query()->create([
-            'uuid'           => Str::uuid()->toString(),
-            'user_id'        => $user->id,
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->id,
             'cached_balance' => 0.00,
-            'status'         => 'active',
+            'status' => 'active',
         ]);
 
         return $user;
@@ -184,11 +185,11 @@ class MatchModuleTest extends TestCase
         // Verify start notification was created
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerA->id,
-            'title'   => 'Match Started',
+            'title' => 'Match Started',
         ]);
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerB->id,
-            'title'   => 'Match Started',
+            'title' => 'Match Started',
         ]);
 
         // 2. Submit Result (Player A claims win)
@@ -203,17 +204,17 @@ class MatchModuleTest extends TestCase
 
         $this->assertEquals(MatchStatus::RESULT_SUBMITTED, $match->status);
         $this->assertDatabaseHas('match_result_submissions', [
-            'id'                     => $submission->id,
-            'match_id'               => $match->id,
-            'submitted_by'           => $this->playerA->id,
+            'id' => $submission->id,
+            'match_id' => $match->id,
+            'submitted_by' => $this->playerA->id,
             'winner_registration_id' => $this->regA->id,
-            'notes'                  => $notes,
+            'notes' => $notes,
         ]);
 
         // Verify submit result notification was sent to opponent B
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerB->id,
-            'title'   => 'Match Result Submitted',
+            'title' => 'Match Result Submitted',
         ]);
 
         // 3. Confirm Result
@@ -227,11 +228,11 @@ class MatchModuleTest extends TestCase
         // Verify match completed notifications sent to both
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerA->id,
-            'title'   => 'Match Completed',
+            'title' => 'Match Completed',
         ]);
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerB->id,
-            'title'   => 'Match Completed',
+            'title' => 'Match Completed',
         ]);
 
         // Bracket completed, so tournament should be completed
@@ -263,7 +264,7 @@ class MatchModuleTest extends TestCase
         // Verify forfeit notification sent to winner B
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerB->id,
-            'title'   => 'Opponent Forfeited',
+            'title' => 'Opponent Forfeited',
         ]);
 
         // Verify bracket update broadcasted and tournament completed
@@ -299,11 +300,11 @@ class MatchModuleTest extends TestCase
         // Verify dispute notification was created for both
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerA->id,
-            'title'   => 'Match Disputed',
+            'title' => 'Match Disputed',
         ]);
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerB->id,
-            'title'   => 'Match Disputed',
+            'title' => 'Match Disputed',
         ]);
 
         // Player B uploads evidence (create mock file without GD dependency)
@@ -331,7 +332,7 @@ class MatchModuleTest extends TestCase
         // Match completed notifications should be sent
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerA->id,
-            'title'   => 'Match Completed',
+            'title' => 'Match Completed',
         ]);
 
         Event::assertDispatched(TournamentBracketUpdated::class);

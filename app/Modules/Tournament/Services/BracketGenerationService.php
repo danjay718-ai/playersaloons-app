@@ -44,17 +44,17 @@ class BracketGenerationService
         // Create the Bracket
         $bracket = Bracket::query()->create([
             'tournament_id' => $tournament->getKey(),
-            'generated_at'  => now(),
-            'created_at'    => now(),
+            'generated_at' => now(),
+            'created_at' => now(),
         ]);
 
         // Create the Rounds
         $roundModels = [];
         for ($r = 1; $r <= $totalRounds; $r++) {
             $roundModels[$r] = Round::query()->create([
-                'bracket_id'   => $bracket->getKey(),
+                'bracket_id' => $bracket->getKey(),
                 'round_number' => $r,
-                'created_at'   => now(),
+                'created_at' => now(),
             ]);
         }
 
@@ -64,10 +64,10 @@ class BracketGenerationService
             $slotsInRound = $p / (2 ** $r);
             for ($j = 1; $j <= $slotsInRound; $j++) {
                 $match = GameMatch::query()->create([
-                    'uuid'          => Str::uuid()->toString(),
+                    'uuid' => Str::uuid()->toString(),
                     'tournament_id' => $tournament->getKey(),
-                    'round_id'      => $roundModels[$r]->getKey(),
-                    'status'        => MatchStatus::PENDING,
+                    'round_id' => $roundModels[$r]->getKey(),
+                    'status' => MatchStatus::PENDING,
                 ]);
                 $matchesByRound[$r][$j] = $match;
             }

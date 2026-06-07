@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace App\Modules\Tournament\Actions;
 
 use App\Modules\Identity\Models\User;
-use App\Modules\Tournament\Events\TournamentSeatReserved;
 use App\Modules\Tournament\Events\TournamentFilled;
+use App\Modules\Tournament\Events\TournamentSeatReserved;
 use App\Modules\Tournament\Exceptions\TournamentAlreadyRegisteredException;
 use App\Modules\Tournament\Exceptions\TournamentFullException;
 use App\Modules\Tournament\Exceptions\TournamentNotOpenForRegistrationException;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
+use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\WalletService;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\PaymentStatus;
@@ -77,7 +78,7 @@ class RegisterForTournamentAction
 
             // Collect entry fee via wallet if applicable
             if (! $isFree) {
-                /** @var \App\Modules\Wallet\Models\Wallet|null $wallet */
+                /** @var Wallet|null $wallet */
                 $wallet = $user->wallet;
                 if ($wallet === null) {
                     throw new \RuntimeException('User does not have a wallet.');
@@ -94,11 +95,11 @@ class RegisterForTournamentAction
             }
 
             $registration = TournamentRegistration::query()->create([
-                'uuid'          => Str::uuid()->toString(),
+                'uuid' => Str::uuid()->toString(),
                 'tournament_id' => $locked->getKey(),
-                'user_id'       => $user->getKey(),
-                'status'        => RegistrationStatus::CONFIRMED,
-                'payment_status'=> $paymentStatus,
+                'user_id' => $user->getKey(),
+                'status' => RegistrationStatus::CONFIRMED,
+                'payment_status' => $paymentStatus,
                 'registered_at' => now(),
             ]);
 

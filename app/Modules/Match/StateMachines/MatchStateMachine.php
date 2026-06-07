@@ -8,6 +8,7 @@ use App\Modules\Match\Models\GameMatch;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use App\Shared\StateMachines\AbstractStateMachine;
+use Illuminate\Support\Carbon;
 
 class MatchStateMachine extends AbstractStateMachine
 {
@@ -61,7 +62,7 @@ class MatchStateMachine extends AbstractStateMachine
     {
         $this->assertValidTransition($match->status, $to);
 
-        $now = \Illuminate\Support\Carbon::now();
+        $now = Carbon::now();
 
         match ($to) {
             MatchStatus::IN_PROGRESS => $match->started_at = $now,

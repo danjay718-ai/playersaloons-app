@@ -5,6 +5,7 @@ namespace App\Modules\Match\Models;
 use App\Modules\Identity\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -12,9 +13,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $dispute_id
  * @property int $uploaded_by
  * @property string $file_path
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property-read \App\Modules\Match\Models\MatchDispute $dispute
- * @property-read \App\Modules\Identity\Models\User $uploadedBy
+ * @property Carbon|null $created_at
+ * @property-read MatchDispute $dispute
+ * @property-read User $uploadedBy
  */
 class MatchEvidence extends Model
 {

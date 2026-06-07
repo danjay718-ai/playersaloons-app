@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Actions;
 
+use App\Modules\Match\Events\MatchDisputed;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\StateMachines\MatchStateMachine;
-use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\DisputeStatus;
-use App\Modules\Match\Events\MatchDisputed;
+use App\Shared\Enums\MatchStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;

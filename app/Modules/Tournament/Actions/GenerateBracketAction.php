@@ -9,15 +9,18 @@ use App\Modules\Tournament\Models\Bracket;
 use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentParticipant;
+use App\Modules\Tournament\Services\BracketGenerationService;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class GenerateBracketAction
 {
     public function __construct(
         private readonly TournamentStateMachine $stateMachine,
-        private readonly \App\Modules\Tournament\Services\BracketGenerationService $bracketGenerationService,
+        private readonly BracketGenerationService $bracketGenerationService,
     ) {}
 
     /**
@@ -26,7 +29,7 @@ class GenerateBracketAction
      * Shuffles participants, seeds them, and creates Round records.
      * Transitions tournament to BRACKET_GENERATED.
      *
-     * @throws \App\Shared\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      * @throws \LogicException
      */
     public function execute(Tournament $tournament): Bracket
@@ -35,7 +38,7 @@ class GenerateBracketAction
             // State machine validates min participants via guard
             $this->stateMachine->transition($tournament, TournamentStatus::BRACKET_GENERATED);
 
-            /** @var \Illuminate\Database\Eloquent\Collection<int, TournamentParticipant> $participants */
+            /** @var Collection<int, TournamentParticipant> $participants */
             $participants = TournamentParticipant::query()
                 ->where('tournament_id', $tournament->getKey())
                 ->inRandomOrder()

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Actions;
 
+use App\Modules\Match\Events\MatchStarted;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Shared\Enums\MatchStatus;
-use App\Modules\Match\Events\MatchStarted;
 use Illuminate\Support\Facades\DB;
 
 class StartMatchAction

@@ -8,6 +8,7 @@ use App\Modules\Tournament\Events\TournamentRegistrationOpened;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 class OpenRegistrationAction
 {
@@ -16,7 +17,7 @@ class OpenRegistrationAction
     /**
      * Open registration for a published tournament (PUBLISHED → REGISTRATION_OPEN).
      *
-     * @throws \App\Shared\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      */
     public function execute(Tournament $tournament): Tournament
     {

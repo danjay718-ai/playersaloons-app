@@ -22,10 +22,6 @@ class ApproveWithdrawalAction
     /**
      * Approve a withdrawal.
      *
-     * @param Withdrawal $withdrawal
-     * @param User $reviewer
-     * @param string|null $notes
-     * @return void
      * @throws AuthorizationException
      */
     public function execute(Withdrawal $withdrawal, User $reviewer, ?string $notes = null): void

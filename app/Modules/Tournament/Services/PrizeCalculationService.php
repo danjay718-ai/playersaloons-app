@@ -7,6 +7,8 @@ namespace App\Modules\Tournament\Services;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTemplatePrize;
+use App\Shared\Enums\PaymentStatus;
+use App\Shared\Enums\RegistrationStatus;
 
 class PrizeCalculationService
 {
@@ -24,8 +26,8 @@ class PrizeCalculationService
     public function calculate(Tournament $tournament): array
     {
         $paidCount = $tournament->registrations()
-            ->where('status', \App\Shared\Enums\RegistrationStatus::CONFIRMED)
-            ->where('payment_status', \App\Shared\Enums\PaymentStatus::PAID)
+            ->where('status', RegistrationStatus::CONFIRMED)
+            ->where('payment_status', PaymentStatus::PAID)
             ->count();
 
         $entryFee = (float) ($tournament->entry_fee ?? '0.00');
@@ -71,10 +73,10 @@ class PrizeCalculationService
         $remainder = round($prizePool - $totalAllocated, 2);
 
         return [
-            'total_entry_fees'   => $totalEntryFees,
-            'rake_amount'        => $rakeAmount,
-            'prize_pool'         => $prizePool,
-            'distributions'      => $distributions,
+            'total_entry_fees' => $totalEntryFees,
+            'rake_amount' => $rakeAmount,
+            'prize_pool' => $prizePool,
+            'distributions' => $distributions,
             'rounding_remainder' => $remainder,
         ];
     }

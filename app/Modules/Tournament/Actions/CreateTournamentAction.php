@@ -34,24 +34,24 @@ class CreateTournamentAction
     public function execute(array $data, User $creator): Tournament
     {
         return DB::transaction(function () use ($data, $creator): Tournament {
-            $tournament = new Tournament();
+            $tournament = new Tournament;
             $tournament->fill([
-                'uuid'                  => Str::uuid()->toString(),
-                'name'                  => $data['name'],
-                'slug'                  => Str::slug($data['name']) . '-' . Str::random(6),
-                'game_id'               => $data['game_id'],
-                'status'                => TournamentStatus::DRAFT,
-                'max_participants'      => $data['max_participants'],
-                'min_participants'      => $data['min_participants'],
-                'entry_fee'             => $data['entry_fee'] ?? '0.00',
-                'prize_pool'            => $data['prize_pool'] ?? '0.00',
-                'registration_open_at'  => $data['registration_open_at'] ?? null,
+                'uuid' => Str::uuid()->toString(),
+                'name' => $data['name'],
+                'slug' => Str::slug($data['name']).'-'.Str::random(6),
+                'game_id' => $data['game_id'],
+                'status' => TournamentStatus::DRAFT,
+                'max_participants' => $data['max_participants'],
+                'min_participants' => $data['min_participants'],
+                'entry_fee' => $data['entry_fee'] ?? '0.00',
+                'prize_pool' => $data['prize_pool'] ?? '0.00',
+                'registration_open_at' => $data['registration_open_at'] ?? null,
                 'registration_close_at' => $data['registration_close_at'] ?? null,
-                'checkin_open_at'       => $data['checkin_open_at'] ?? null,
-                'checkin_close_at'      => $data['checkin_close_at'] ?? null,
-                'start_at'              => $data['start_at'] ?? null,
-                'template_id'           => $data['template_id'] ?? null,
-                'created_by'            => $creator->getKey(),
+                'checkin_open_at' => $data['checkin_open_at'] ?? null,
+                'checkin_close_at' => $data['checkin_close_at'] ?? null,
+                'start_at' => $data['start_at'] ?? null,
+                'template_id' => $data['template_id'] ?? null,
+                'created_by' => $creator->getKey(),
             ]);
             $tournament->save();
 

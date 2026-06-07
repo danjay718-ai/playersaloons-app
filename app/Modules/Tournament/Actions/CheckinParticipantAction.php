@@ -57,20 +57,20 @@ class CheckinParticipantAction
 
             $checkin = TournamentCheckin::query()->create([
                 'registration_id' => $registration->getKey(),
-                'status'          => CheckinStatus::CHECKED_IN,
-                'checked_in_at'   => now(),
-                'created_at'      => now(),
+                'status' => CheckinStatus::CHECKED_IN,
+                'checked_in_at' => now(),
+                'created_at' => now(),
             ]);
 
             // Upsert participant record
             TournamentParticipant::query()->updateOrCreate(
                 [
-                    'tournament_id'   => $tournament->getKey(),
-                    'user_id'         => $user->getKey(),
+                    'tournament_id' => $tournament->getKey(),
+                    'user_id' => $user->getKey(),
                 ],
                 [
                     'registration_id' => $registration->getKey(),
-                    'status'          => 'active',
+                    'status' => 'active',
                 ]
             );
 

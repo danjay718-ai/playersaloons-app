@@ -6,6 +6,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,9 +17,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float|string $amount
  * @property string $distribution_reference_uuid
  * @property string $status
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property-read \App\Modules\Wallet\Models\Wallet $wallet
- * @property-read \App\Modules\Tournament\Models\Tournament $tournament
+ * @property Carbon|null $created_at
+ * @property-read Wallet $wallet
+ * @property-read Tournament $tournament
  */
 class PrizeDistribution extends Model
 {

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Actions;
 
+use App\Modules\Match\Events\MatchResultSubmitted;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchResultSubmission;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Shared\Enums\MatchStatus;
-use App\Modules\Match\Events\MatchResultSubmitted;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -38,7 +39,7 @@ class SubmitMatchResultAction
                 'submitted_by' => $submittedByUserId,
                 'winner_registration_id' => $winnerRegistrationId,
                 'notes' => $notes,
-                'submitted_at' => \Illuminate\Support\Carbon::now(),
+                'submitted_at' => Carbon::now(),
             ]);
 
             MatchResultSubmitted::dispatch(

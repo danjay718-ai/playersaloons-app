@@ -35,31 +35,31 @@ class CreateTournamentTemplateAction
     public function execute(array $data): TournamentTemplate
     {
         return DB::transaction(function () use ($data): TournamentTemplate {
-            $template = new TournamentTemplate();
+            $template = new TournamentTemplate;
             $template->fill([
-                'uuid'             => Str::uuid()->toString(),
-                'game_id'          => $data['game_id'],
-                'name'             => $data['name'],
-                'format'           => $data['format'] ?? 'single_elimination',
+                'uuid' => Str::uuid()->toString(),
+                'game_id' => $data['game_id'],
+                'name' => $data['name'],
+                'format' => $data['format'] ?? 'single_elimination',
                 'max_participants' => $data['max_participants'],
                 'min_participants' => $data['min_participants'],
-                'entry_fee'        => $data['entry_fee'] ?? '0.00',
-                'prize_model'      => $data['prize_model'] ?? 'proportional',
-                'checkin_minutes'  => $data['checkin_minutes'] ?? 15,
-                'is_recurring'     => $data['is_recurring'] ?? false,
-                'settings_json'    => $data['settings_json'] ?? null,
+                'entry_fee' => $data['entry_fee'] ?? '0.00',
+                'prize_model' => $data['prize_model'] ?? 'proportional',
+                'checkin_minutes' => $data['checkin_minutes'] ?? 15,
+                'is_recurring' => $data['is_recurring'] ?? false,
+                'settings_json' => $data['settings_json'] ?? null,
             ]);
             $template->save();
 
             if (isset($data['prizes'])) {
                 foreach ($data['prizes'] as $prizeData) {
-                    $prize = new TournamentTemplatePrize();
+                    $prize = new TournamentTemplatePrize;
                     $prize->fill([
                         'template_id' => $template->id,
-                        'position'    => $prizeData['position'],
-                        'amount'      => $prizeData['amount'] ?? null,
-                        'percentage'  => $prizeData['percentage'] ?? null,
-                        'created_at'  => now(),
+                        'position' => $prizeData['position'],
+                        'amount' => $prizeData['amount'] ?? null,
+                        'percentage' => $prizeData['percentage'] ?? null,
+                        'created_at' => now(),
                     ]);
                     $prize->save();
                 }

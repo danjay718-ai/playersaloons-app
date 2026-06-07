@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Events\TournamentSeatReleased;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
+use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\WalletService;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\PaymentStatus;
@@ -47,7 +48,7 @@ class CancelRegistrationAction
 
             // Refund entry fee if it was paid
             if ($registration->payment_status === PaymentStatus::PAID) {
-                /** @var \App\Modules\Wallet\Models\Wallet|null $wallet */
+                /** @var Wallet|null $wallet */
                 $wallet = $actor->wallet;
                 if ($wallet !== null) {
                     $registration->payment_status = PaymentStatus::REFUNDED;

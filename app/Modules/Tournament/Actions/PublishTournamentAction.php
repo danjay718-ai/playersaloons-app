@@ -8,6 +8,7 @@ use App\Modules\Tournament\Events\TournamentPublished;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 class PublishTournamentAction
 {
@@ -18,7 +19,7 @@ class PublishTournamentAction
      *
      * Validates that the tournament has all required config via the state machine guard.
      *
-     * @throws \App\Shared\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      * @throws \LogicException
      */
     public function execute(Tournament $tournament): Tournament

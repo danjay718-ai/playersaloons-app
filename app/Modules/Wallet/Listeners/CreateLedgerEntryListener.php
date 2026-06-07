@@ -56,7 +56,7 @@ class CreateLedgerEntryListener implements ShouldQueue
             LedgerType::WITHDRAWAL,
             Withdrawal::class,
             (string) $withdrawal->getKey(),
-            "Withdrawal payout approved"
+            'Withdrawal payout approved'
         );
 
         // We can optionally store the ledger entry relation or log it

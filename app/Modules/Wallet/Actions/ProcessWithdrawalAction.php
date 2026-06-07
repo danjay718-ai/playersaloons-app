@@ -15,9 +15,6 @@ class ProcessWithdrawalAction
 
     /**
      * Mark a withdrawal as processed.
-     *
-     * @param Withdrawal $withdrawal
-     * @return void
      */
     public function execute(Withdrawal $withdrawal): void
     {

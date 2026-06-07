@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Actions;
 
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Events\TournamentRegistrationClosed;
-use App\Modules\Tournament\Events\TournamentCheckinOpened;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
+use App\Shared\Enums\PaymentStatus;
+use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
+use Illuminate\Support\Facades\DB;
 
 class CloseRegistrationAction
 {
@@ -17,23 +21,23 @@ class CloseRegistrationAction
     /**
      * Close registration for a tournament (REGISTRATION_OPEN → REGISTRATION_CLOSED).
      *
-     * @throws \App\Shared\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      */
     public function execute(Tournament $tournament): Tournament
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($tournament): Tournament {
+        return DB::transaction(function () use ($tournament): Tournament {
             $this->stateMachine->transition($tournament, TournamentStatus::REGISTRATION_CLOSED);
 
             // Calculate final prize pool
             $paidCount = $tournament->registrations()
-                ->where('status', \App\Shared\Enums\RegistrationStatus::CONFIRMED)
-                ->where('payment_status', \App\Shared\Enums\PaymentStatus::PAID)
+                ->where('status', RegistrationStatus::CONFIRMED)
+                ->where('payment_status', PaymentStatus::PAID)
                 ->count();
 
             $entryFee = (float) ($tournament->entry_fee ?? '0.00');
             $totalFees = $paidCount * $entryFee;
 
-            $rakeSetting = \App\Modules\Operations\Models\SystemSetting::query()
+            $rakeSetting = SystemSetting::query()
                 ->where('key', 'platform.rake_percentage')
                 ->value('value');
 

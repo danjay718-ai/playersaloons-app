@@ -9,7 +9,6 @@ use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Actions\CancelRegistrationAction;
-use App\Modules\Tournament\Actions\CancelTournamentAction;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\CloseCheckinAction;
 use App\Modules\Tournament\Actions\CloseRegistrationAction;
@@ -25,19 +24,12 @@ use App\Modules\Tournament\Actions\PublishTournamentAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Actions\UpdateTournamentTemplateAction;
-use App\Modules\Tournament\Events\TournamentCancelled;
-use App\Modules\Tournament\Events\TournamentCompleted;
-use App\Modules\Tournament\Exceptions\InsufficientParticipantsException;
 use App\Modules\Tournament\Jobs\AutoCancelTournamentJob;
-use App\Modules\Tournament\Listeners\AwardPrizesListener;
-use App\Modules\Tournament\Listeners\IssueRefundsListener;
 use App\Modules\Tournament\Models\Bracket;
 use App\Modules\Tournament\Models\Tournament;
-use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
-use App\Shared\Enums\CheckinStatus;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\PaymentStatus;
@@ -48,7 +40,6 @@ use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -57,6 +48,7 @@ class TournamentModuleTest extends TestCase
     use RefreshDatabase;
 
     private User $adminUser;
+
     private Game $game;
 
     protected function setUp(): void
@@ -69,25 +61,25 @@ class TournamentModuleTest extends TestCase
 
         // Create an admin / tournament organizer
         $this->adminUser = User::query()->create([
-            'uuid'              => Str::uuid()->toString(),
-            'email'             => 'organizer@example.com',
-            'username'          => 'organizer',
-            'password'          => bcrypt('password'),
+            'uuid' => Str::uuid()->toString(),
+            'email' => 'organizer@example.com',
+            'username' => 'organizer',
+            'password' => bcrypt('password'),
             'email_verified_at' => now(),
-            'status'            => 'active',
+            'status' => 'active',
         ]);
         $this->adminUser->assignRole('SUPER_ADMIN');
 
         // Create a Game
         $this->game = Game::query()->create([
-            'uuid'      => Str::uuid()->toString(),
-            'slug'      => 'valorant',
+            'uuid' => Str::uuid()->toString(),
+            'slug' => 'valorant',
             'is_active' => true,
         ]);
         GameTranslation::query()->create([
-            'game_id'     => $this->game->id,
-            'locale'      => 'en',
-            'name'        => 'Valorant',
+            'game_id' => $this->game->id,
+            'locale' => 'en',
+            'name' => 'Valorant',
             'description' => '5v5 tactical shooter',
         ]);
     }
@@ -95,33 +87,33 @@ class TournamentModuleTest extends TestCase
     private function createPlayer(string $email, string $username, float $balance = 100.00): User
     {
         $user = User::query()->create([
-            'uuid'              => Str::uuid()->toString(),
-            'email'             => $email,
-            'username'          => $username,
-            'password'          => bcrypt('password'),
+            'uuid' => Str::uuid()->toString(),
+            'email' => $email,
+            'username' => $username,
+            'password' => bcrypt('password'),
             'email_verified_at' => now(),
-            'status'            => 'active',
+            'status' => 'active',
         ]);
         $user->assignRole('PLAYER');
 
         $wallet = Wallet::query()->create([
-            'uuid'           => Str::uuid()->toString(),
-            'user_id'        => $user->id,
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->id,
             'cached_balance' => $balance,
-            'status'         => 'active',
+            'status' => 'active',
         ]);
 
         if ($balance > 0) {
             LedgerEntry::query()->create([
-                'uuid'            => Str::uuid()->toString(),
-                'wallet_id'       => $wallet->id,
-                'reference_type'  => User::class,
-                'reference_id'    => (string) $user->id,
-                'type'            => LedgerType::DEPOSIT,
-                'amount'          => $balance,
+                'uuid' => Str::uuid()->toString(),
+                'wallet_id' => $wallet->id,
+                'reference_type' => User::class,
+                'reference_id' => (string) $user->id,
+                'type' => LedgerType::DEPOSIT,
+                'amount' => $balance,
                 'running_balance' => $balance,
-                'description'     => 'Initial Deposit',
-                'created_at'      => now(),
+                'description' => 'Initial Deposit',
+                'created_at' => now(),
             ]);
         }
 
@@ -136,13 +128,13 @@ class TournamentModuleTest extends TestCase
 
         // 1. Create
         $template = $createAction->execute([
-            'game_id'          => $this->game->id,
-            'name'             => 'Weekly Cup',
-            'format'           => 'single_elimination',
+            'game_id' => $this->game->id,
+            'name' => 'Weekly Cup',
+            'format' => 'single_elimination',
             'max_participants' => 8,
             'min_participants' => 4,
-            'entry_fee'        => 10.00,
-            'prizes'           => [
+            'entry_fee' => 10.00,
+            'prizes' => [
                 ['position' => 1, 'percentage' => 70.00],
                 ['position' => 2, 'percentage' => 30.00],
             ],
@@ -154,9 +146,9 @@ class TournamentModuleTest extends TestCase
 
         // 2. Update
         $template = $updateAction->execute($template, [
-            'name'      => 'Updated Weekly Cup',
+            'name' => 'Updated Weekly Cup',
             'entry_fee' => 15.00,
-            'prizes'    => [
+            'prizes' => [
                 ['position' => 1, 'percentage' => 100.00],
             ],
         ]);
@@ -186,16 +178,16 @@ class TournamentModuleTest extends TestCase
 
         // Create draft
         $tournament = $createAction->execute([
-            'name'                  => 'Summer Brawl',
-            'game_id'               => $this->game->id,
-            'max_participants'      => 4,
-            'min_participants'      => 2,
-            'entry_fee'             => 10.00,
-            'registration_open_at'  => now()->addMinutes(5),
+            'name' => 'Summer Brawl',
+            'game_id' => $this->game->id,
+            'max_participants' => 4,
+            'min_participants' => 2,
+            'entry_fee' => 10.00,
+            'registration_open_at' => now()->addMinutes(5),
             'registration_close_at' => now()->addMinutes(30),
-            'checkin_open_at'       => now()->addMinutes(35),
-            'checkin_close_at'      => now()->addMinutes(50),
-            'start_at'              => now()->addMinutes(60),
+            'checkin_open_at' => now()->addMinutes(35),
+            'checkin_close_at' => now()->addMinutes(50),
+            'start_at' => now()->addMinutes(60),
         ], $this->adminUser);
 
         $this->assertEquals(TournamentStatus::DRAFT, $tournament->status);
@@ -212,8 +204,8 @@ class TournamentModuleTest extends TestCase
 
         // Missing dates in creation
         $tournament = $createAction->execute([
-            'name'             => 'Incomplete Tournament',
-            'game_id'          => $this->game->id,
+            'name' => 'Incomplete Tournament',
+            'game_id' => $this->game->id,
             'max_participants' => 4,
             'min_participants' => 2,
         ], $this->adminUser);
@@ -231,12 +223,12 @@ class TournamentModuleTest extends TestCase
         $leaveAction = app(CancelRegistrationAction::class);
 
         $tournament = $createAction->execute([
-            'name'                  => 'Summer Brawl 2',
-            'game_id'               => $this->game->id,
-            'max_participants'      => 4,
-            'min_participants'      => 2,
-            'entry_fee'             => 10.00,
-            'registration_open_at'  => now(),
+            'name' => 'Summer Brawl 2',
+            'game_id' => $this->game->id,
+            'max_participants' => 4,
+            'min_participants' => 2,
+            'entry_fee' => 10.00,
+            'registration_open_at' => now(),
             'registration_close_at' => now()->addMinutes(30),
         ], $this->adminUser);
 
@@ -268,12 +260,12 @@ class TournamentModuleTest extends TestCase
         $registerAction = app(RegisterForTournamentAction::class);
 
         $tournament = $createAction->execute([
-            'name'                  => 'Free Tournament',
-            'game_id'               => $this->game->id,
-            'max_participants'      => 4,
-            'min_participants'      => 2,
-            'entry_fee'             => 0.00,
-            'registration_open_at'  => now(),
+            'name' => 'Free Tournament',
+            'game_id' => $this->game->id,
+            'max_participants' => 4,
+            'min_participants' => 2,
+            'entry_fee' => 0.00,
+            'registration_open_at' => now(),
             'registration_close_at' => now()->addMinutes(30),
         ], $this->adminUser);
 
@@ -303,12 +295,12 @@ class TournamentModuleTest extends TestCase
         $generateBracketAction = app(GenerateBracketAction::class);
 
         $tournament = $createAction->execute([
-            'name'                  => 'Bye Tournament',
-            'game_id'               => $this->game->id,
-            'max_participants'      => 8,
-            'min_participants'      => 4,
-            'entry_fee'             => 10.00,
-            'registration_open_at'  => now(),
+            'name' => 'Bye Tournament',
+            'game_id' => $this->game->id,
+            'max_participants' => 8,
+            'min_participants' => 4,
+            'entry_fee' => 10.00,
+            'registration_open_at' => now(),
             'registration_close_at' => now()->addMinutes(30),
         ], $this->adminUser);
 
@@ -375,12 +367,12 @@ class TournamentModuleTest extends TestCase
         $closeCheckinAction = app(CloseCheckinAction::class);
 
         $tournament = $createAction->execute([
-            'name'                  => 'Underpopulated Cup',
-            'game_id'               => $this->game->id,
-            'max_participants'      => 8,
-            'min_participants'      => 4,
-            'entry_fee'             => 10.00,
-            'registration_open_at'  => now(),
+            'name' => 'Underpopulated Cup',
+            'game_id' => $this->game->id,
+            'max_participants' => 8,
+            'min_participants' => 4,
+            'entry_fee' => 10.00,
+            'registration_open_at' => now(),
             'registration_close_at' => now()->addMinutes(30),
         ], $this->adminUser);
 
@@ -424,13 +416,13 @@ class TournamentModuleTest extends TestCase
 
         // Create template with prizes percentage
         $template = app(CreateTournamentTemplateAction::class)->execute([
-            'game_id'          => $this->game->id,
-            'name'             => 'Priced Template',
-            'format'           => 'single_elimination',
+            'game_id' => $this->game->id,
+            'name' => 'Priced Template',
+            'format' => 'single_elimination',
             'max_participants' => 4,
             'min_participants' => 2,
-            'entry_fee'        => 20.00,
-            'prizes'           => [
+            'entry_fee' => 20.00,
+            'prizes' => [
                 ['position' => 1, 'percentage' => 70.00],
                 ['position' => 2, 'percentage' => 30.00],
             ],
@@ -438,13 +430,13 @@ class TournamentModuleTest extends TestCase
 
         // Create tournament from template
         $tournament = $createAction->execute([
-            'name'                  => 'Priced Cup',
-            'game_id'               => $this->game->id,
-            'template_id'           => $template->id,
-            'max_participants'      => 4,
-            'min_participants'      => 2,
-            'entry_fee'             => 20.00,
-            'registration_open_at'  => now(),
+            'name' => 'Priced Cup',
+            'game_id' => $this->game->id,
+            'template_id' => $template->id,
+            'max_participants' => 4,
+            'min_participants' => 2,
+            'entry_fee' => 20.00,
+            'registration_open_at' => now(),
             'registration_close_at' => now()->addMinutes(30),
         ], $this->adminUser);
 

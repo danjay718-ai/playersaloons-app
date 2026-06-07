@@ -8,6 +8,7 @@ use App\Modules\Tournament\Events\TournamentStarted;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 class StartTournamentAction
 {
@@ -18,7 +19,7 @@ class StartTournamentAction
      *
      * Validates that a bracket exists via the state machine guard.
      *
-     * @throws \App\Shared\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      * @throws \LogicException
      */
     public function execute(Tournament $tournament): Tournament

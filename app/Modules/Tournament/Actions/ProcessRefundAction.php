@@ -8,6 +8,7 @@ use App\Modules\Tournament\Events\TournamentRefunded;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 class ProcessRefundAction
 {
@@ -16,7 +17,7 @@ class ProcessRefundAction
     /**
      * Mark the tournament as fully refunded (CANCELLED/COMPLETED → REFUNDED).
      *
-     * @throws \App\Shared\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      */
     public function execute(Tournament $tournament): Tournament
     {

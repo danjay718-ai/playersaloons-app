@@ -5,9 +5,11 @@ namespace App\Modules\Match\Models;
 use App\Modules\Identity\Models\User;
 use App\Shared\Enums\DisputeResolution;
 use App\Shared\Enums\DisputeStatus;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -19,13 +21,13 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property DisputeStatus $status
  * @property DisputeResolution|null $resolution
  * @property int|null $resolved_by
- * @property \Illuminate\Support\Carbon|null $resolved_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Modules\Match\Models\GameMatch $match
- * @property-read \App\Modules\Identity\Models\User $openedBy
- * @property-read \App\Modules\Identity\Models\User|null $resolvedBy
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Modules\Match\Models\MatchEvidence> $evidence
+ * @property Carbon|null $resolved_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read GameMatch $match
+ * @property-read User $openedBy
+ * @property-read User|null $resolvedBy
+ * @property-read Collection<int, MatchEvidence> $evidence
  */
 class MatchDispute extends Model implements HasMedia
 {

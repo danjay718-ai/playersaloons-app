@@ -16,9 +16,6 @@ class UnsuspendWalletAction
 
     /**
      * Unsuspend a wallet.
-     *
-     * @param Wallet $wallet
-     * @return void
      */
     public function execute(Wallet $wallet): void
     {

@@ -8,6 +8,7 @@ use App\Modules\Tournament\Events\TournamentCheckinOpened;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 class OpenCheckinAction
 {
@@ -16,7 +17,7 @@ class OpenCheckinAction
     /**
      * Open check-in for a tournament (REGISTRATION_CLOSED → CHECKIN_OPEN).
      *
-     * @throws \App\Shared\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      */
     public function execute(Tournament $tournament): Tournament
     {

@@ -11,10 +11,11 @@ use App\Modules\Tournament\Models\TournamentCancellation;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Modules\Wallet\Services\WalletService;
-use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\PaymentStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CancelTournamentAction
@@ -29,7 +30,7 @@ class CancelTournamentAction
      *
      * Cannot cancel ONGOING tournaments (per spec).
      *
-     * @throws \App\Shared\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      * @throws \LogicException
      */
     public function execute(Tournament $tournament, User $actor, string $reason, ?string $notes = null): Tournament
@@ -38,7 +39,7 @@ class CancelTournamentAction
             $this->stateMachine->transition($tournament, TournamentStatus::CANCELLED);
 
             // Collect confirmed registrations that paid
-            /** @var \Illuminate\Database\Eloquent\Collection<int, TournamentRegistration> $paid */
+            /** @var Collection<int, TournamentRegistration> $paid */
             $paid = TournamentRegistration::query()
                 ->where('tournament_id', $tournament->getKey())
                 ->where('status', RegistrationStatus::CONFIRMED)
@@ -53,13 +54,13 @@ class CancelTournamentAction
 
             // Create immutable cancellation record
             $cancellation = TournamentCancellation::query()->create([
-                'tournament_id'             => $tournament->getKey(),
-                'cancelled_by'              => $actor->getKey(),
-                'reason'                    => $reason,
-                'notes'                     => $notes,
+                'tournament_id' => $tournament->getKey(),
+                'cancelled_by' => $actor->getKey(),
+                'reason' => $reason,
+                'notes' => $notes,
                 'affected_participant_count' => $paid->count(),
-                'refund_required'           => $paid->count() > 0,
-                'created_at'               => now(),
+                'refund_required' => $paid->count() > 0,
+                'created_at' => now(),
             ]);
 
             TournamentCancelled::dispatch(

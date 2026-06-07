@@ -6,7 +6,25 @@ use App\Modules\Identity\Models\User;
 use App\Shared\Enums\TeamInvitationStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $team_id
+ * @property int $invited_user_id
+ * @property int $invited_by_user_id
+ * @property TeamInvitationStatus $status
+ * @property Carbon|null $expires_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Team $team
+ * @property-read User $invitee
+ * @property-read User $inviter
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where($column, $operator = null, $value = null, $boolean = 'and')
+ * @method static static create(array<string, mixed> $attributes = [])
+ */
 class TeamInvitation extends Model
 {
     /**
@@ -39,7 +57,7 @@ class TeamInvitation extends Model
     /**
      * Get the team.
      *
-     * @return BelongsTo<Team, TeamInvitation>
+     * @return BelongsTo<Team, $this>
      */
     public function team(): BelongsTo
     {
@@ -49,7 +67,7 @@ class TeamInvitation extends Model
     /**
      * Get the invited user.
      *
-     * @return BelongsTo<User, TeamInvitation>
+     * @return BelongsTo<User, $this>
      */
     public function invitee(): BelongsTo
     {
@@ -59,7 +77,7 @@ class TeamInvitation extends Model
     /**
      * Get the user who sent the invitation.
      *
-     * @return BelongsTo<User, TeamInvitation>
+     * @return BelongsTo<User, $this>
      */
     public function inviter(): BelongsTo
     {

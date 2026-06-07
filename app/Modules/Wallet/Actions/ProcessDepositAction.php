@@ -20,11 +20,7 @@ class ProcessDepositAction
     /**
      * Process a completed deposit.
      *
-     * @param Wallet $wallet
-     * @param string|float|double $amount
-     * @param string $provider
-     * @param string $providerReference
-     * @return Deposit
+     * @param  string|float|float  $amount
      */
     public function execute(Wallet $wallet, $amount, string $provider, string $providerReference): Deposit
     {

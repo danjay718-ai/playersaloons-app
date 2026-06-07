@@ -17,10 +17,6 @@ class UnfreezeWalletAction
 
     /**
      * Unfreeze a wallet.
-     *
-     * @param Wallet $wallet
-     * @param User $actor
-     * @return void
      */
     public function execute(Wallet $wallet, User $actor): void
     {

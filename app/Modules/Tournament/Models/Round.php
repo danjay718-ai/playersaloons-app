@@ -3,17 +3,19 @@
 namespace App\Modules\Tournament\Models;
 
 use App\Modules\Match\Models\GameMatch;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $bracket_id
  * @property int $round_number
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property-read \App\Modules\Tournament\Models\Bracket $bracket
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Modules\Match\Models\GameMatch> $matches
+ * @property Carbon|null $created_at
+ * @property-read Bracket $bracket
+ * @property-read Collection<int, GameMatch> $matches
  */
 class Round extends Model
 {

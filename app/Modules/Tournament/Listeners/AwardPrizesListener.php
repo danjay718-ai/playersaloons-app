@@ -7,13 +7,16 @@ namespace App\Modules\Tournament\Listeners;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Events\TournamentCompleted;
+use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Services\PrizeCalculationService;
 use App\Modules\Wallet\Models\PrizeDistribution;
+use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\WalletService;
 use App\Shared\Enums\LedgerType;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -52,7 +55,7 @@ class AwardPrizesListener implements ShouldQueue
             $bracket = $tournament->brackets()->first();
 
             if ($bracket !== null) {
-                /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Modules\Tournament\Models\Round> $rounds */
+                /** @var Collection<int, Round> $rounds */
                 $rounds = $bracket->rounds()->orderByDesc('round_number')->get();
                 if ($rounds->isNotEmpty()) {
                     $finalRound = $rounds->first();
@@ -126,7 +129,7 @@ class AwardPrizesListener implements ShouldQueue
                     continue;
                 }
 
-                /** @var \App\Modules\Wallet\Models\Wallet|null $wallet */
+                /** @var Wallet|null $wallet */
                 $wallet = $player->wallet;
                 if ($wallet === null) {
                     continue;
@@ -136,14 +139,14 @@ class AwardPrizesListener implements ShouldQueue
 
                 // Create PrizeDistribution record
                 $distribution = PrizeDistribution::query()->create([
-                    'uuid'                        => Str::uuid()->toString(),
-                    'wallet_id'                   => $wallet->getKey(),
-                    'tournament_id'               => $tournament->getKey(),
-                    'rank'                        => $rank,
-                    'amount'                      => $amount,
+                    'uuid' => Str::uuid()->toString(),
+                    'wallet_id' => $wallet->getKey(),
+                    'tournament_id' => $tournament->getKey(),
+                    'rank' => $rank,
+                    'amount' => $amount,
                     'distribution_reference_uuid' => $distributionRefUuid,
-                    'status'                      => 'completed',
-                    'created_at'                  => now(),
+                    'status' => 'completed',
+                    'created_at' => now(),
                 ]);
 
                 // Credit the player's wallet

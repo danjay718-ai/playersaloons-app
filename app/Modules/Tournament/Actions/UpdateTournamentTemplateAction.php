@@ -43,13 +43,13 @@ class UpdateTournamentTemplateAction
 
                 // Add new prizes
                 foreach ($data['prizes'] as $prizeData) {
-                    $prize = new TournamentTemplatePrize();
+                    $prize = new TournamentTemplatePrize;
                     $prize->fill([
                         'template_id' => $template->id,
-                        'position'    => $prizeData['position'],
-                        'amount'      => $prizeData['amount'] ?? null,
-                        'percentage'  => $prizeData['percentage'] ?? null,
-                        'created_at'  => now(),
+                        'position' => $prizeData['position'],
+                        'amount' => $prizeData['amount'] ?? null,
+                        'percentage' => $prizeData['percentage'] ?? null,
+                        'created_at' => now(),
                     ]);
                     $prize->save();
                 }

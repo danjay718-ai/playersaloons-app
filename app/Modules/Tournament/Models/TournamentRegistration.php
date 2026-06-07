@@ -8,6 +8,7 @@ use App\Shared\Enums\PaymentStatus;
 use App\Shared\Enums\RegistrationStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,12 +18,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $team_id
  * @property RegistrationStatus $status
  * @property PaymentStatus $payment_status
- * @property \Illuminate\Support\Carbon|null $registered_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Modules\Tournament\Models\Tournament $tournament
- * @property-read \App\Modules\Identity\Models\User|null $user
- * @property-read \App\Modules\Team\Models\Team|null $team
+ * @property Carbon|null $registered_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Tournament $tournament
+ * @property-read User|null $user
+ * @property-read Team|null $team
  */
 class TournamentRegistration extends Model
 {

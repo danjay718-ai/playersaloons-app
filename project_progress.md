@@ -133,4 +133,15 @@ Match execution, disputes flow, rematch logic, bracket advancement.
 - **Tests**: 
   - Full suite of match feature tests passing at 100%.
 
+## ✅ Phase 10 — Team Module
+
+Team creation, management, invitations, captaincy transfers.
+- **Actions & Services (`app/Modules/Team/`)**:
+  - `CreateTeamAction`, `UpdateTeamAction`, `DisbandTeamAction`.
+  - `InviteToTeamAction`, `AcceptTeamInvitationAction`, `DeclineTeamInvitationAction`, `RevokeTeamInvitationAction`.
+  - `RemoveTeamMemberAction`, `TransferTeamCaptainAction`.
+- **Jobs (`app/Modules/Team/`)**:
+  - `ExpireTeamInvitationsJob` (expires unaccepted invitations after `expires_at`).
+- **Tests**:
+  - Full suite of team feature tests passing at 100%.
 

@@ -5,12 +5,14 @@ namespace App\Modules\Identity\Models;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Permission\Traits\HasRoles;
@@ -21,11 +23,11 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $email
  * @property string $username
  * @property string $password
- * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property Carbon|null $email_verified_at
  * @property UserStatus $status
- * @property-read \App\Modules\Wallet\Models\Wallet|null $wallet
- * @property-read \App\Modules\Identity\Models\UserProfile|null $profile
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Modules\Identity\Models\KycSubmission[] $kycSubmissions
+ * @property-read Wallet|null $wallet
+ * @property-read UserProfile|null $profile
+ * @property-read Collection|KycSubmission[] $kycSubmissions
  */
 class User extends Authenticatable implements HasMedia
 {

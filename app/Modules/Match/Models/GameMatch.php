@@ -9,6 +9,7 @@ use App\Shared\Enums\MatchStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,16 +20,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $player_b_registration_id
  * @property int|null $winner_registration_id
  * @property MatchStatus $status
- * @property \Illuminate\Support\Carbon|null $scheduled_at
- * @property \Illuminate\Support\Carbon|null $started_at
- * @property \Illuminate\Support\Carbon|null $completed_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Modules\Tournament\Models\Tournament $tournament
- * @property-read \App\Modules\Tournament\Models\Round $round
- * @property-read \App\Modules\Tournament\Models\TournamentRegistration|null $playerARegistration
- * @property-read \App\Modules\Tournament\Models\TournamentRegistration|null $playerBRegistration
- * @property-read \App\Modules\Tournament\Models\TournamentRegistration|null $winnerRegistration
+ * @property Carbon|null $scheduled_at
+ * @property Carbon|null $started_at
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Tournament $tournament
+ * @property-read Round $round
+ * @property-read TournamentRegistration|null $playerARegistration
+ * @property-read TournamentRegistration|null $playerBRegistration
+ * @property-read TournamentRegistration|null $winnerRegistration
  */
 class GameMatch extends Model
 {

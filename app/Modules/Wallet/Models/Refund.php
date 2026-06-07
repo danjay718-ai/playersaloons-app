@@ -2,10 +2,9 @@
 
 namespace App\Modules\Wallet\Models;
 
-use App\Modules\Identity\Models\User;
-use App\Modules\Tournament\Models\TournamentRegistration;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -15,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float|string $amount
  * @property string $status
  * @property string $refund_reference_uuid
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property-read \App\Modules\Wallet\Models\Wallet $wallet
+ * @property Carbon|null $created_at
+ * @property-read Wallet $wallet
  * @property-read \App\Modules\Tournament\Models\Tournament $tournament
  */
 class Refund extends Model

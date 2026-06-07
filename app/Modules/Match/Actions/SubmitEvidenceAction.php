@@ -8,8 +8,8 @@ use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Models\MatchEvidence;
 use App\Shared\Enums\DisputeStatus;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use LogicException;
@@ -80,7 +80,7 @@ class SubmitEvidenceAction
                 'dispute_id' => $dispute->id,
                 'uploaded_by' => $uploadedByUserId,
                 'file_path' => $path,
-                'created_at' => \Illuminate\Support\Carbon::now(),
+                'created_at' => Carbon::now(),
             ]);
         });
     }

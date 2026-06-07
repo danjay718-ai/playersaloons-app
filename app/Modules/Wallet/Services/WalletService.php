@@ -11,6 +11,7 @@ use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\WalletStatus;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -19,13 +20,8 @@ class WalletService
     /**
      * Credit a wallet with an amount.
      *
-     * @param Wallet $wallet
-     * @param string|float|double $amount
-     * @param LedgerType $type
-     * @param string $referenceType
-     * @param string $referenceId
-     * @param string|null $description
-     * @return LedgerEntry
+     * @param  string|float|float  $amount
+     *
      * @throws WalletFrozenException
      */
     public function credit(
@@ -40,7 +36,7 @@ class WalletService
             /** @var Wallet|null $lockedWallet */
             $lockedWallet = Wallet::query()->where('id', $wallet->getKey())->lockForUpdate()->first();
             if ($lockedWallet === null) {
-                throw new \Illuminate\Database\Eloquent\ModelNotFoundException;
+                throw new ModelNotFoundException;
             }
             $wallet = $lockedWallet;
 
@@ -75,13 +71,8 @@ class WalletService
     /**
      * Debit a wallet with an amount.
      *
-     * @param Wallet $wallet
-     * @param string|float|double $amount
-     * @param LedgerType $type
-     * @param string $referenceType
-     * @param string $referenceId
-     * @param string|null $description
-     * @return LedgerEntry
+     * @param  string|float|float  $amount
+     *
      * @throws WalletFrozenException
      * @throws WalletSuspendedException
      * @throws InsufficientBalanceException
@@ -98,7 +89,7 @@ class WalletService
             /** @var Wallet|null $lockedWallet */
             $lockedWallet = Wallet::query()->where('id', $wallet->getKey())->lockForUpdate()->first();
             if ($lockedWallet === null) {
-                throw new \Illuminate\Database\Eloquent\ModelNotFoundException;
+                throw new ModelNotFoundException;
             }
             $wallet = $lockedWallet;
 
@@ -159,7 +150,7 @@ class WalletService
             /** @var Wallet|null $lockedWallet */
             $lockedWallet = Wallet::query()->where('id', $wallet->getKey())->lockForUpdate()->first();
             if ($lockedWallet === null) {
-                throw new \Illuminate\Database\Eloquent\ModelNotFoundException;
+                throw new ModelNotFoundException;
             }
             $wallet = $lockedWallet;
 

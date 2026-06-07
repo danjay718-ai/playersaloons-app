@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Actions;
 
+use App\Modules\Match\Events\MatchCompleted;
+use App\Modules\Match\Events\MatchRematchCreated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\StateMachines\MatchStateMachine;
-use App\Shared\Enums\MatchStatus;
-use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\DisputeResolution;
-use App\Modules\Match\Events\MatchCompleted;
-use App\Modules\Match\Events\MatchRematchCreated;
+use App\Shared\Enums\DisputeStatus;
+use App\Shared\Enums\MatchStatus;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use LogicException;
@@ -39,7 +40,7 @@ class ResolveDisputeAction
             $dispute->status = DisputeStatus::RESOLVED;
             $dispute->resolution = $resolution;
             $dispute->resolved_by = $resolvedByAdminUserId;
-            $dispute->resolved_at = \Illuminate\Support\Carbon::now();
+            $dispute->resolved_at = Carbon::now();
             $dispute->save();
 
             if ($resolution === DisputeResolution::PLAYER_A || $resolution === DisputeResolution::PLAYER_B) {
@@ -52,7 +53,7 @@ class ResolveDisputeAction
                 }
 
                 $match->winner_registration_id = $winnerRegistrationId;
-                
+
                 // Transition match to COMPLETED
                 $this->stateMachine->transition($match, MatchStatus::COMPLETED);
 
@@ -69,7 +70,7 @@ class ResolveDisputeAction
                     'player_a_registration_id' => $match->player_a_registration_id,
                     'player_b_registration_id' => $match->player_b_registration_id,
                     'status' => MatchStatus::READY,
-                    'scheduled_at' => \Illuminate\Support\Carbon::now(),
+                    'scheduled_at' => Carbon::now(),
                 ]);
 
                 MatchRematchCreated::dispatch($match->id, $rematch->id);

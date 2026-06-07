@@ -21,9 +21,7 @@ class RequestWithdrawalAction
     /**
      * Request a withdrawal for a user.
      *
-     * @param User $user
-     * @param string|float|double $amount
-     * @return Withdrawal
+     * @param  string|float|float  $amount
      */
     public function execute(User $user, $amount): Withdrawal
     {

@@ -19,9 +19,6 @@ class FreezeWalletAction
     /**
      * Freeze a wallet.
      *
-     * @param Wallet $wallet
-     * @param User $actor
-     * @return void
      * @throws AuthorizationException
      */
     public function execute(Wallet $wallet, User $actor): void

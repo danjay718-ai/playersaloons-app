@@ -19,9 +19,6 @@ class ReviewWithdrawalAction
     /**
      * Move a withdrawal to UNDER_REVIEW.
      *
-     * @param Withdrawal $withdrawal
-     * @param User $reviewer
-     * @return void
      * @throws AuthorizationException
      */
     public function execute(Withdrawal $withdrawal, User $reviewer): void
@@ -37,7 +34,7 @@ class ReviewWithdrawalAction
 
         DB::transaction(function () use ($withdrawal, $reviewer): void {
             $this->stateMachine->transition($withdrawal, WithdrawalStatus::UNDER_REVIEW);
-            
+
             $withdrawal->update([
                 'reviewed_by' => $reviewer->getKey(),
             ]);

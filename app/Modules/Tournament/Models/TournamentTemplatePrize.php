@@ -4,6 +4,7 @@ namespace App\Modules\Tournament\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -11,8 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $position
  * @property float|string|null $amount
  * @property float|string|null $percentage
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property-read \App\Modules\Tournament\Models\TournamentTemplate $template
+ * @property Carbon|null $created_at
+ * @property-read TournamentTemplate $template
  */
 class TournamentTemplatePrize extends Model
 {

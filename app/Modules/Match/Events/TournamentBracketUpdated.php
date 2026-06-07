@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Events;
 
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Broadcasting\Channel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class TournamentBracketUpdated implements ShouldBroadcast
 {
@@ -17,12 +17,12 @@ class TournamentBracketUpdated implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
+     * @return array<int, Channel>
      */
     public function broadcastOn(): array
     {
         return [
-            new Channel('tournaments.' . $this->tournamentId),
+            new Channel('tournaments.'.$this->tournamentId),
         ];
     }
 

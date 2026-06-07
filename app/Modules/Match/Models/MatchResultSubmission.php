@@ -6,6 +6,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,10 +14,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $submitted_by
  * @property int $winner_registration_id
  * @property string|null $notes
- * @property \Illuminate\Support\Carbon|null $submitted_at
- * @property-read \App\Modules\Match\Models\GameMatch $match
- * @property-read \App\Modules\Identity\Models\User $submittedBy
- * @property-read \App\Modules\Tournament\Models\TournamentRegistration $winnerRegistration
+ * @property Carbon|null $submitted_at
+ * @property-read GameMatch $match
+ * @property-read User $submittedBy
+ * @property-read TournamentRegistration $winnerRegistration
  */
 class MatchResultSubmission extends Model
 {

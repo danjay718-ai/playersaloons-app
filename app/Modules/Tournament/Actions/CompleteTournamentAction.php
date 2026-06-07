@@ -8,6 +8,7 @@ use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 
 class CompleteTournamentAction
 {
@@ -16,7 +17,7 @@ class CompleteTournamentAction
     /**
      * Mark a tournament as completed (ONGOING → COMPLETED).
      *
-     * @throws \App\Shared\Exceptions\InvalidStateTransitionException
+     * @throws InvalidStateTransitionException
      */
     public function execute(Tournament $tournament): Tournament
     {

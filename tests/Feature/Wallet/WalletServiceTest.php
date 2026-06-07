@@ -9,25 +9,23 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Actions\ApproveWithdrawalAction;
 use App\Modules\Wallet\Actions\FreezeWalletAction;
 use App\Modules\Wallet\Actions\ProcessDepositAction;
-use App\Modules\Wallet\Actions\RejectWithdrawalAction;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
 use App\Modules\Wallet\Actions\ReviewWithdrawalAction;
 use App\Modules\Wallet\Actions\SuspendWalletAction;
 use App\Modules\Wallet\Actions\UnfreezeWalletAction;
 use App\Modules\Wallet\Actions\UnsuspendWalletAction;
 use App\Modules\Wallet\Events\WalletCredited;
-use App\Modules\Wallet\Events\WalletDebited;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Exceptions\WalletFrozenException;
 use App\Modules\Wallet\Exceptions\WalletSuspendedException;
 use App\Modules\Wallet\Models\Deposit;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
-use App\Modules\Wallet\Models\WalletTransaction;
 use App\Modules\Wallet\Models\Withdrawal;
 use App\Modules\Wallet\Services\WalletService;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\LedgerType;
+use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
 use App\Shared\Enums\WithdrawalStatus;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -59,7 +57,7 @@ class WalletServiceTest extends TestCase
             'username' => $username,
             'email' => "{$username}@example.com",
             'password' => 'secret-pwd',
-            'status' => \App\Shared\Enums\UserStatus::ACTIVE,
+            'status' => UserStatus::ACTIVE,
         ]);
         $user->save();
 
