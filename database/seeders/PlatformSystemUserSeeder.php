@@ -50,7 +50,6 @@ class PlatformSystemUserSeeder extends Seeder
         $superAdminRole = DB::table('roles')->where('name', 'SUPER_ADMIN')->first();
 
         if ($superAdminRole) {
-            // Assign for App\Modules\Identity\Models\User
             DB::table('model_has_roles')->updateOrInsert(
                 [
                     'role_id' => $superAdminRole->id,
@@ -60,20 +59,6 @@ class PlatformSystemUserSeeder extends Seeder
                 [
                     'role_id' => $superAdminRole->id,
                     'model_type' => 'App\Modules\Identity\Models\User',
-                    'model_id' => $userId,
-                ]
-            );
-
-            // Also assign for App\Models\User just in case it's used before the namespace move
-            DB::table('model_has_roles')->updateOrInsert(
-                [
-                    'role_id' => $superAdminRole->id,
-                    'model_type' => 'App\Models\User',
-                    'model_id' => $userId,
-                ],
-                [
-                    'role_id' => $superAdminRole->id,
-                    'model_type' => 'App\Models\User',
                     'model_id' => $userId,
                 ]
             );

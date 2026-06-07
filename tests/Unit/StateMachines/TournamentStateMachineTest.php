@@ -8,6 +8,7 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 use Mockery;
 use Mockery\MockInterface;
@@ -34,8 +35,8 @@ class TournamentStateMachineTest extends TestCase
     {
         /** @var Tournament&MockInterface $t */
         $t = Mockery::mock(Tournament::class)->makePartial();
-        $t->status = $status;
-        $t->shouldReceive('save')->andReturn(true);
+        $t->setAttribute('status', $status);
+        $t->allows(['save' => true]);
 
         return $t;
     }
@@ -51,12 +52,12 @@ class TournamentStateMachineTest extends TestCase
         $t->name = 'Test Tournament';
         $t->max_participants = 8;
         $t->min_participants = 4;
-        $t->registration_open_at = now()->addDay();
-        $t->registration_close_at = now()->addDays(3);
+        $t->setAttribute('registration_open_at', now()->addDay());
+        $t->setAttribute('registration_close_at', now()->addDays(3));
 
         $this->machine->transition($t, TournamentStatus::PUBLISHED);
 
-        $this->assertEquals(TournamentStatus::PUBLISHED, $t->status);
+        $this->assertEquals(TournamentStatus::PUBLISHED, $t->getAttribute('status'));
     }
 
     #[Test]
@@ -66,7 +67,7 @@ class TournamentStateMachineTest extends TestCase
 
         $this->machine->transition($t, TournamentStatus::CANCELLED);
 
-        $this->assertEquals(TournamentStatus::CANCELLED, $t->status);
+        $this->assertEquals(TournamentStatus::CANCELLED, $t->getAttribute('status'));
     }
 
     #[Test]
@@ -76,7 +77,7 @@ class TournamentStateMachineTest extends TestCase
 
         $this->machine->transition($t, TournamentStatus::REGISTRATION_OPEN);
 
-        $this->assertEquals(TournamentStatus::REGISTRATION_OPEN, $t->status);
+        $this->assertEquals(TournamentStatus::REGISTRATION_OPEN, $t->getAttribute('status'));
     }
 
     #[Test]
@@ -86,7 +87,7 @@ class TournamentStateMachineTest extends TestCase
 
         $this->machine->transition($t, TournamentStatus::REGISTRATION_CLOSED);
 
-        $this->assertEquals(TournamentStatus::REGISTRATION_CLOSED, $t->status);
+        $this->assertEquals(TournamentStatus::REGISTRATION_CLOSED, $t->getAttribute('status'));
     }
 
     #[Test]
@@ -96,13 +97,13 @@ class TournamentStateMachineTest extends TestCase
         $t->min_participants = 2;
 
         // Mock participants relationship
-        $participantQuery = Mockery::mock(\Illuminate\Database\Eloquent\Relations\HasMany::class);
-        $participantQuery->shouldReceive('count')->andReturn(4);
-        $t->shouldReceive('participants')->andReturn($participantQuery);
+        $participantQuery = Mockery::mock(HasMany::class);
+        $participantQuery->allows(['count' => 4]);
+        $t->allows(['participants' => $participantQuery]);
 
         $this->machine->transition($t, TournamentStatus::BRACKET_GENERATED);
 
-        $this->assertEquals(TournamentStatus::BRACKET_GENERATED, $t->status);
+        $this->assertEquals(TournamentStatus::BRACKET_GENERATED, $t->getAttribute('status'));
     }
 
     #[Test]
@@ -111,13 +112,13 @@ class TournamentStateMachineTest extends TestCase
         $t = $this->mockTournament(TournamentStatus::BRACKET_GENERATED);
 
         // Mock brackets relationship
-        $bracketQuery = Mockery::mock(\Illuminate\Database\Eloquent\Relations\HasMany::class);
-        $bracketQuery->shouldReceive('exists')->andReturn(true);
-        $t->shouldReceive('brackets')->andReturn($bracketQuery);
+        $bracketQuery = Mockery::mock(HasMany::class);
+        $bracketQuery->allows(['exists' => true]);
+        $t->allows(['brackets' => $bracketQuery]);
 
         $this->machine->transition($t, TournamentStatus::ONGOING);
 
-        $this->assertEquals(TournamentStatus::ONGOING, $t->status);
+        $this->assertEquals(TournamentStatus::ONGOING, $t->getAttribute('status'));
     }
 
     #[Test]
@@ -127,7 +128,7 @@ class TournamentStateMachineTest extends TestCase
 
         $this->machine->transition($t, TournamentStatus::COMPLETED);
 
-        $this->assertEquals(TournamentStatus::COMPLETED, $t->status);
+        $this->assertEquals(TournamentStatus::COMPLETED, $t->getAttribute('status'));
     }
 
     #[Test]
@@ -137,7 +138,7 @@ class TournamentStateMachineTest extends TestCase
 
         $this->machine->transition($t, TournamentStatus::REFUNDED);
 
-        $this->assertEquals(TournamentStatus::REFUNDED, $t->status);
+        $this->assertEquals(TournamentStatus::REFUNDED, $t->getAttribute('status'));
     }
 
     #[Test]
@@ -147,7 +148,7 @@ class TournamentStateMachineTest extends TestCase
 
         $this->machine->transition($t, TournamentStatus::REFUNDED);
 
-        $this->assertEquals(TournamentStatus::REFUNDED, $t->status);
+        $this->assertEquals(TournamentStatus::REFUNDED, $t->getAttribute('status'));
     }
 
     // -------------------------------------------------------------------------
@@ -203,8 +204,8 @@ class TournamentStateMachineTest extends TestCase
         $t = $this->mockTournament(TournamentStatus::DRAFT);
         $t->name = 'Test';
         $t->max_participants = 1; // too low
-        $t->registration_open_at = now()->addDay();
-        $t->registration_close_at = now()->addDays(3);
+        $t->setAttribute('registration_open_at', now()->addDay());
+        $t->setAttribute('registration_close_at', now()->addDays(3));
 
         $this->machine->guardCanPublish($t);
     }
@@ -218,8 +219,8 @@ class TournamentStateMachineTest extends TestCase
         $t = $this->mockTournament(TournamentStatus::DRAFT);
         $t->name = 'Test';
         $t->max_participants = 8;
-        $t->registration_open_at = null;
-        $t->registration_close_at = null;
+        $t->setAttribute('registration_open_at', null);
+        $t->setAttribute('registration_close_at', null);
 
         $this->machine->guardCanPublish($t);
     }
@@ -232,9 +233,9 @@ class TournamentStateMachineTest extends TestCase
 
         $t = $this->mockTournament(TournamentStatus::BRACKET_GENERATED);
 
-        $bracketQuery = Mockery::mock(\Illuminate\Database\Eloquent\Relations\HasMany::class);
-        $bracketQuery->shouldReceive('exists')->andReturn(false);
-        $t->shouldReceive('brackets')->andReturn($bracketQuery);
+        $bracketQuery = Mockery::mock(HasMany::class);
+        $bracketQuery->allows(['exists' => false]);
+        $t->allows(['brackets' => $bracketQuery]);
 
         $this->machine->guardCanStart($t);
     }
@@ -248,9 +249,9 @@ class TournamentStateMachineTest extends TestCase
         $t = $this->mockTournament(TournamentStatus::CHECKIN_CLOSED);
         $t->min_participants = 8;
 
-        $participantQuery = Mockery::mock(\Illuminate\Database\Eloquent\Relations\HasMany::class);
-        $participantQuery->shouldReceive('count')->andReturn(2); // below minimum
-        $t->shouldReceive('participants')->andReturn($participantQuery);
+        $participantQuery = Mockery::mock(HasMany::class);
+        $participantQuery->allows(['count' => 2]); // below minimum
+        $t->allows(['participants' => $participantQuery]);
 
         $this->machine->guardCanGenerateBracket($t);
     }

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Str;
+use Laravel\Horizon\Http\Middleware\Authenticate;
 
 return [
 
@@ -83,7 +84,7 @@ return [
     |
     */
 
-    'middleware' => ['web'],
+    'middleware' => ['web', Authenticate::class],
 
     /*
     |--------------------------------------------------------------------------

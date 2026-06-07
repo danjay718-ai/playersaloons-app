@@ -21,6 +21,8 @@ class KycStateMachine extends AbstractStateMachine
      *   UNDER_REVIEW  => [APPROVED, REJECTED] (review decision)
      *   REJECTED      => [SUBMITTED]          (resubmit)
      *   APPROVED      => []                   (terminal)
+     *
+     * @return array<string, string[]>
      */
     protected function transitions(): array
     {
@@ -40,9 +42,15 @@ class KycStateMachine extends AbstractStateMachine
      */
     public function transition(KycSubmission $kyc, KycStatus $to): void
     {
-        $this->assertValidTransition($kyc->status, $to);
+        $from = $kyc->getAttribute('status');
 
-        $kyc->status = $to;
+        if (! $from instanceof KycStatus) {
+            $from = KycStatus::from((string) $from);
+        }
+
+        $this->assertValidTransition($from, $to);
+
+        $kyc->setAttribute('status', $to);
         $kyc->save();
     }
 }
