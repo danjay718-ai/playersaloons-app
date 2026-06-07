@@ -7,6 +7,19 @@ use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $wallet_id
+ * @property int $tournament_id
+ * @property int $rank
+ * @property float|string $amount
+ * @property string $distribution_reference_uuid
+ * @property string $status
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property-read \App\Modules\Wallet\Models\Wallet $wallet
+ * @property-read \App\Modules\Tournament\Models\Tournament $tournament
+ */
 class PrizeDistribution extends Model
 {
     /**
@@ -29,6 +42,7 @@ class PrizeDistribution extends Model
         'rank',
         'amount',
         'distribution_reference_uuid',
+        'status',
         'created_at',
     ];
 

@@ -77,6 +77,7 @@ class WalletStateMachineTest extends TestCase
         /** @var User&MockInterface $actor */
         $actor = Mockery::mock(User::class);
         $actor->shouldReceive('hasRole')->with('super_admin')->andReturn(true);
+        $actor->shouldReceive('hasRole')->with('SUPER_ADMIN')->andReturn(true);
 
         $this->machine->transition($wallet, WalletStatus::ACTIVE, $actor);
 
@@ -93,6 +94,7 @@ class WalletStateMachineTest extends TestCase
         /** @var User&MockInterface $actor */
         $actor = Mockery::mock(User::class);
         $actor->shouldReceive('hasRole')->with('super_admin')->andReturn(false);
+        $actor->shouldReceive('hasRole')->with('SUPER_ADMIN')->andReturn(false);
 
         $this->expectException(\LogicException::class);
 

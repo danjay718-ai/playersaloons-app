@@ -31,7 +31,7 @@ class WalletStateMachine extends AbstractStateMachine
      */
     public function guardCanUnfreeze(User $actor): void
     {
-        if (! $actor->hasRole('super_admin')) {
+        if (! $actor->hasRole('SUPER_ADMIN') && ! $actor->hasRole('super_admin')) {
             throw new \LogicException('Only a super_admin may unfreeze a wallet.');
         }
     }

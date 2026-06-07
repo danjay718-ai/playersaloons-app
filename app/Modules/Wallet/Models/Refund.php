@@ -7,6 +7,18 @@ use App\Modules\Tournament\Models\TournamentRegistration;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $wallet_id
+ * @property int $tournament_id
+ * @property float|string $amount
+ * @property string $status
+ * @property string $refund_reference_uuid
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property-read \App\Modules\Wallet\Models\Wallet $wallet
+ * @property-read \App\Modules\Tournament\Models\Tournament $tournament
+ */
 class Refund extends Model
 {
     /**
@@ -24,10 +36,9 @@ class Refund extends Model
     protected $fillable = [
         'uuid',
         'wallet_id',
-        'user_id',
-        'registration_id',
+        'tournament_id',
         'amount',
-        'refund_reason',
+        'status',
         'refund_reference_uuid',
         'created_at',
     ];
@@ -70,22 +81,12 @@ class Refund extends Model
     }
 
     /**
-     * Get the user who received the refund.
+     * Get the tournament.
      *
-     * @return BelongsTo<User, Refund>
+     * @return BelongsTo<Tournament, Refund>
      */
-    public function user(): BelongsTo
+    public function tournament(): BelongsTo
     {
-        return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Get the tournament registration details for this refund.
-     *
-     * @return BelongsTo<TournamentRegistration, Refund>
-     */
-    public function registration(): BelongsTo
-    {
-        return $this->belongsTo(TournamentRegistration::class, 'registration_id');
+        return $this->belongsTo(Tournament::class);
     }
 }
