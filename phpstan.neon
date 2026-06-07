@@ -1,0 +1,14 @@
+parameters:
+    paths:
+        - app/
+        - config/
+        - database/
+        - routes/
+        - tests/
+
+    # Level 8 is the highest level of strictness (except level 9 which is mostly for strict type checks)
+    level: 8
+
+    excludePaths:
+        - ./*/*.blade.php
+        - database/migrations/

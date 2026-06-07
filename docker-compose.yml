@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: playersaloons-app
+    container_name: playersaloons_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - playersaloons_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: playersaloons_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - playersaloons_network
+
+  mysql:
+    image: mysql:8.0
+    container_name: playersaloons_mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: playersaloons
+      MYSQL_USER: playersaloons
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - playersaloons_network
+
+  redis:
+    image: redis:alpine
+    container_name: playersaloons_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - playersaloons_network
+
+  worker:
+    image: playersaloons-app
+    container_name: playersaloons_worker
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    command: php artisan horizon
+    depends_on:
+      - app
+      - redis
+    networks:
+      - playersaloons_network
+
+  scheduler:
+    image: playersaloons-app
+    container_name: playersaloons_scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    command: sh -c "while [ true ]; do php artisan schedule:run --no-interaction & sleep 60; done"
+    depends_on:
+      - app
+      - redis
+    networks:
+      - playersaloons_network
+
+  reverb:
+    image: playersaloons-app
+    container_name: playersaloons_reverb
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    depends_on:
+      - app
+      - redis
+    networks:
+      - playersaloons_network
+
+  minio:
+    image: minio/minio
+    container_name: playersaloons_minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - playersaloons_network
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: playersaloons_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - playersaloons_network
+
+networks:
+  playersaloons_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+  minio_data:

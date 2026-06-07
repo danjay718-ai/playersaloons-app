@@ -60,6 +60,32 @@ return [
             'report' => false,
         ],
 
+        'minio' => [
+            'driver' => 's3',
+            'key' => env('MINIO_KEY', 'minioadmin'),
+            'secret' => env('MINIO_SECRET', 'minioadmin'),
+            'region' => env('MINIO_REGION', 'us-east-1'),
+            'bucket' => env('MINIO_BUCKET', 'playersaloons'),
+            'url' => env('MINIO_URL', 'http://localhost:9000'),
+            'endpoint' => env('MINIO_ENDPOINT', 'http://minio:9000'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+            'report' => false,
+        ],
+
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            'url' => env('R2_PUBLIC_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
     ],
 
     /*
