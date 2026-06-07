@@ -15,6 +15,18 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property string $email
+ * @property string $username
+ * @property string $password
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property UserStatus $status
+ * @property-read \App\Modules\Wallet\Models\Wallet|null $wallet
+ * @property-read \App\Modules\Identity\Models\UserProfile|null $profile
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Modules\Identity\Models\KycSubmission[] $kycSubmissions
+ */
 class User extends Authenticatable implements HasMedia
 {
     /** @use HasFactory<UserFactory> */
