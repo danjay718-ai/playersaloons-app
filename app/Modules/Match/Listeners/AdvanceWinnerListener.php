@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Listeners;
 
+use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Modules\Tournament\Actions\CompleteTournamentAction;
@@ -91,6 +92,7 @@ class AdvanceWinnerListener implements ShouldQueue
 
             if ($nextMatch->player_a_registration_id !== null && $nextMatch->player_b_registration_id !== null) {
                 $this->stateMachine->transition($nextMatch, MatchStatus::READY);
+                MatchCreated::dispatch((int) $nextMatch->getKey(), (int) $nextMatch->tournament_id, (int) $nextMatch->round_id);
             }
         });
     }

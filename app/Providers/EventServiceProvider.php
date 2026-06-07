@@ -8,6 +8,7 @@ use App\Modules\Identity\Events\UserRegistered;
 use App\Modules\Identity\Events\UserSuspended;
 use App\Modules\Identity\Events\UserUnsuspended;
 use App\Modules\Match\Events\MatchCompleted;
+use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Events\MatchDisputed;
 use App\Modules\Match\Events\MatchForfeited;
 use App\Modules\Match\Events\MatchRematchCreated;
@@ -18,8 +19,11 @@ use App\Modules\Match\Listeners\BroadcastBracketUpdateListener;
 use App\Modules\Match\Listeners\NotifyParticipantsListener;
 use App\Modules\Tournament\Events\TournamentCancelled;
 use App\Modules\Tournament\Events\TournamentCompleted;
+use App\Modules\Tournament\Events\TournamentStarted;
 use App\Modules\Tournament\Listeners\AwardPrizesListener;
+use App\Modules\Tournament\Listeners\BroadcastTournamentLifecycleListener;
 use App\Modules\Tournament\Listeners\IssueRefundsListener;
+use App\Modules\Tournament\Listeners\TournamentNotificationListener;
 use App\Modules\Wallet\Events\WalletCredited;
 use App\Modules\Wallet\Events\WalletDebited;
 use App\Modules\Wallet\Events\WithdrawalApproved;
@@ -81,14 +85,21 @@ class EventServiceProvider extends ServiceProvider
         ],
 
         // ── Tournament ──────────────────────────────────────────────────────
+        TournamentStarted::class => [
+            BroadcastTournamentLifecycleListener::class,
+        ],
         TournamentCompleted::class => [
             AwardPrizesListener::class,
+            BroadcastTournamentLifecycleListener::class,
         ],
         TournamentCancelled::class => [
             IssueRefundsListener::class,
         ],
 
         // ── Match ───────────────────────────────────────────────────────────
+        MatchCreated::class => [
+            NotifyParticipantsListener::class,
+        ],
         MatchStarted::class => [
             NotifyParticipantsListener::class,
         ],
@@ -110,7 +121,17 @@ class EventServiceProvider extends ServiceProvider
         ],
         MatchRematchCreated::class => [
             BroadcastBracketUpdateListener::class,
+            NotifyParticipantsListener::class,
         ],
+    ];
+
+    /**
+     * The subscriber classes to register.
+     *
+     * @var array<int, class-string>
+     */
+    protected array $subscribe = [
+        TournamentNotificationListener::class,
     ];
 
     /**
@@ -122,6 +143,10 @@ class EventServiceProvider extends ServiceProvider
             foreach ($listeners as $listener) {
                 Event::listen($event, $listener);
             }
+        }
+
+        foreach ($this->subscribe as $subscriber) {
+            Event::subscribe($subscriber);
         }
     }
 }
