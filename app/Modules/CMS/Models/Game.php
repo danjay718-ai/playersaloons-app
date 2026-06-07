@@ -5,6 +5,12 @@ namespace App\Modules\CMS\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property string $slug
+ * @property bool $is_active
+ */
 class Game extends Model
 {
     /**

@@ -205,5 +205,29 @@ Team creation, management, invitations, captaincy transfers.
   - Registered all 8 policies explicitly inside `AppServiceProvider::boot()` using `Gate::policy()` mappings.
 - **Tests**:
   - Comprehensive unit and integration test coverage implemented in `tests/Feature/Authorization/PolicyTest.php`.
-  - All **132 tests in the project suite are passing successfully**.
+  - All **139 tests in the project suite are passing successfully** (132 baseline + 7 new API endpoints test suites).
+
+---
+
+## ✅ Phase 14 — API Layer
+
+Exposed `/api/v1` routes with Sanctum auth middleware. Created resources and API controllers utilizing existing module Actions.
+
+- **Endpoints & Controllers (`app/Http/Controllers/Api/V1/`)**:
+  - `TournamentApiController`: Exposes public index (paginated, with filters) and show, plus authenticated register and check-in endpoints.
+  - `MatchApiController`: Exposes show, result submission (with involved participant checks), and dispute opening.
+  - `WalletApiController`: Exposes balance lookup, transaction ledger log listing (paginated), and withdrawal requests (requires KYC approval check).
+  - `ProfileApiController`: Exposes show and update profile details. Enforces secure model fields, while returning the referral URL using the plain primary key integer database ID (`?ref=123`) as requested.
+  - `TeamApiController`: Exposes team creation, detail retrieval, and inviting new members.
+  - `NotificationApiController`: Exposes notification list (paginated) and mark-as-read actions.
+- **API Resources (`app/Http/Resources/`)**:
+  - `TournamentResource` · `TournamentCollection` · `MatchResource` · `WalletResource` · `LedgerEntryResource` · `UserResource` · `UserProfileResource` · `TeamResource` · `NotificationResource` · `WithdrawalResource`.
+  - All resource serialization utilizes `uuid` and hides internal database `id` fields (except user referral URL using raw integer `id`).
+- **Authorization & Security**:
+  - Injected `Gate` policy checks (e.g. `submitResult`, `dispute`, `requestWithdrawal`, `invite`, `create`) across controllers, returning semantic 403 / 422 JSON error responses.
+  - Handled invalid state machine transitions (`InvalidStateTransitionException`) returning 422 errors instead of 500 crashes.
+- **Tests**:
+  - Comprehensive feature tests implemented in `tests/Feature/Api/ApiEndpointsTest.php` verifying 401 unauthenticated, 403 unauthorized, paginated structures, status filters, and the custom referral URL requirement.
+  - 100% passing tests across the entire application suite.
+
 

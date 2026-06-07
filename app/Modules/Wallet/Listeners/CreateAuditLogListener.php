@@ -82,8 +82,10 @@ class CreateAuditLogListener implements ShouldQueue
             return;
         }
 
+        $user = \App\Modules\Identity\Models\User::query()->find($event->userId);
+
         activity()
-            ->causedBy($event->userId)
+            ->causedBy($user)
             ->performedOn($withdrawal)
             ->withProperties([
                 'wallet_id' => $event->walletId,
@@ -99,8 +101,10 @@ class CreateAuditLogListener implements ShouldQueue
             return;
         }
 
+        $user = \App\Modules\Identity\Models\User::query()->find($event->approvedBy);
+
         activity()
-            ->causedBy($event->approvedBy)
+            ->causedBy($user)
             ->performedOn($withdrawal)
             ->log('withdrawal_approved');
     }
@@ -112,8 +116,10 @@ class CreateAuditLogListener implements ShouldQueue
             return;
         }
 
+        $user = \App\Modules\Identity\Models\User::query()->find($event->rejectedBy);
+
         activity()
-            ->causedBy($event->rejectedBy)
+            ->causedBy($user)
             ->performedOn($withdrawal)
             ->withProperties([
                 'reason' => $event->reason,

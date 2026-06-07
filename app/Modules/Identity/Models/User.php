@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Permission\Traits\HasRoles;
@@ -27,12 +28,13 @@ use Spatie\Permission\Traits\HasRoles;
  * @property UserStatus $status
  * @property-read Wallet|null $wallet
  * @property-read UserProfile|null $profile
- * @property-read Collection|KycSubmission[] $kycSubmissions
+ * @property-read Collection<int, KycSubmission> $kycSubmissions
+ * @property-read Collection<int, \App\Modules\Community\Models\Notification> $notifications
  */
 class User extends Authenticatable implements HasMedia
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, InteractsWithMedia, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, HasRoles, InteractsWithMedia, Notifiable, SoftDeletes;
 
     /**
      * Create a new factory instance for the model.
@@ -102,5 +104,15 @@ class User extends Authenticatable implements HasMedia
     public function kycSubmissions(): HasMany
     {
         return $this->hasMany(KycSubmission::class);
+    }
+
+    /**
+     * Get the user's notifications.
+     *
+     * @return HasMany<\App\Modules\Community\Models\Notification, $this>
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(\App\Modules\Community\Models\Notification::class);
     }
 }

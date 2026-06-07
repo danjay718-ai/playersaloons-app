@@ -5,6 +5,13 @@ namespace App\Modules\CMS\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $game_id
+ * @property string $locale
+ * @property string $name
+ * @property string $description
+ */
 class GameTranslation extends Model
 {
     /**
