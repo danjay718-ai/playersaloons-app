@@ -9,6 +9,21 @@ use App\Shared\Enums\RegistrationStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $tournament_id
+ * @property int $user_id
+ * @property int|null $team_id
+ * @property RegistrationStatus $status
+ * @property PaymentStatus $payment_status
+ * @property \Illuminate\Support\Carbon|null $registered_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Modules\Tournament\Models\Tournament $tournament
+ * @property-read \App\Modules\Identity\Models\User|null $user
+ * @property-read \App\Modules\Team\Models\Team|null $team
+ */
 class TournamentRegistration extends Model
 {
     /**

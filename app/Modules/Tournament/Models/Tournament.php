@@ -13,6 +13,39 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int|null $template_id
+ * @property int $game_id
+ * @property string $name
+ * @property string $slug
+ * @property TournamentStatus $status
+ * @property float|string $entry_fee
+ * @property float|string $prize_pool
+ * @property int $max_participants
+ * @property int $min_participants
+ * @property \Illuminate\Support\Carbon|null $registration_open_at
+ * @property \Illuminate\Support\Carbon|null $registration_close_at
+ * @property \Illuminate\Support\Carbon|null $checkin_open_at
+ * @property \Illuminate\Support\Carbon|null $checkin_close_at
+ * @property \Illuminate\Support\Carbon|null $start_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property \Illuminate\Support\Carbon|null $cancelled_at
+ * @property int $created_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \App\Modules\Tournament\Models\TournamentTemplate|null $template
+ * @property-read \App\Modules\CMS\Models\Game $game
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Modules\Tournament\Models\TournamentRegistration[] $registrations
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Modules\Tournament\Models\TournamentParticipant[] $participants
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Modules\Tournament\Models\Bracket[] $brackets
+ * @property-read \App\Modules\Tournament\Models\TournamentCancellation|null $cancellation
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Modules\Tournament\Models\TournamentRule[] $rules
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Modules\Tournament\Models\TournamentAnnouncement[] $announcements
+ * @property-read \App\Modules\Identity\Models\User $creator
+ */
 class Tournament extends Model implements HasMedia
 {
     use InteractsWithMedia, SoftDeletes;

@@ -8,6 +8,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property int $game_id
+ * @property string $name
+ * @property string $format
+ * @property int $max_participants
+ * @property int $min_participants
+ * @property float|string $entry_fee
+ * @property string $prize_model
+ * @property int $checkin_minutes
+ * @property bool $is_recurring
+ * @property array|null $settings_json
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Modules\Tournament\Models\TournamentTemplatePrize[] $prizes
+ */
 class TournamentTemplate extends Model
 {
     use SoftDeletes;
@@ -65,6 +83,6 @@ class TournamentTemplate extends Model
      */
     public function prizes(): HasMany
     {
-        return $this->hasMany(TournamentTemplatePrize, 'template_id');
+        return $this->hasMany(TournamentTemplatePrize::class, 'template_id');
     }
 }

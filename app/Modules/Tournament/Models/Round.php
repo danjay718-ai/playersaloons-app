@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $bracket_id
+ * @property int $round_number
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property-read \App\Modules\Tournament\Models\Bracket $bracket
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Modules\Match\Models\GameMatch> $matches
+ */
 class Round extends Model
 {
     /**
@@ -43,7 +51,7 @@ class Round extends Model
     /**
      * Get the bracket.
      *
-     * @return BelongsTo<Bracket, Round>
+     * @return BelongsTo<Bracket, $this>
      */
     public function bracket(): BelongsTo
     {
@@ -53,7 +61,7 @@ class Round extends Model
     /**
      * Get matches in the round.
      *
-     * @return HasMany<GameMatch, Round>
+     * @return HasMany<GameMatch, $this>
      */
     public function matches(): HasMany
     {

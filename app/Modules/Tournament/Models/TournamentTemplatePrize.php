@@ -5,6 +5,15 @@ namespace App\Modules\Tournament\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $template_id
+ * @property int $position
+ * @property float|string|null $amount
+ * @property float|string|null $percentage
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property-read \App\Modules\Tournament\Models\TournamentTemplate $template
+ */
 class TournamentTemplatePrize extends Model
 {
     /**
