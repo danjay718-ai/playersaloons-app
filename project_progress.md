@@ -232,14 +232,22 @@ Exposed `/api/v1` routes with Sanctum auth middleware. Created resources and API
 
 ---
 
-## ✅ Phase 15 — Livewire UI (Public)
+## ✅ Phase 15 — Livewire UI (Frontend & Dashboard)
 
 Designed and implemented premium dark neon frontend pages using Tailwind CSS and Livewire 3.
 
-- **Main Layout (`resources/views/components/layouts/app.blade.php`)**:
-  - Desktop-first layout with header navigation.
-  - Mobile bottom navigation bar optimized for touch targets.
-  - Custom branding using the uploaded webp logo (`/playersaloons_logo.webp`).
+- **Main Layouts (`resources/views/components/layouts/`)**:
+  - `app.blade.php`: Public layout with sleek navigation and Lucide icons.
+  - `dashboard.blade.php`: High-fidelity sidebar layout with real-time wallet balance display and user status.
+- **Public Landing Page (`resources/views/welcome.blade.php`)**:
+  - Ultra-modern "Hero" section with glassmorphism effects.
+  - Interactive call-to-action buttons for registration and tournament exploration.
+  - Marketing stats section showcasing platform reliability.
+- **Player Dashboard (`app/Livewire/Dashboard/PlayerDashboard.php` & `resources/views/livewire/dashboard/player-dashboard.blade.php`)**:
+  - **Overview**: Real-time view of active matches and registered tournaments.
+  - **Head-to-Head (H2H)**: Integrated matchmaking interface with stake selection and simulated opponent matching.
+  - **Global Chat**: Interactive mock chat system with auto-replies to simulate platform activity.
+  - **Tournaments**: Compact views for browsing and managing current registrations.
 - **Profile Dashboard (`app/Livewire/Profile/ProfileDashboard.php` & `resources/views/livewire/profile/profile-dashboard.blade.php`)**:
   - Tabular settings for changing display name, bio, country, and timezone.
   - Custom referral URL field displaying the raw database primary key integer ID (`?ref=123`).
