@@ -7,6 +7,8 @@ namespace App\Livewire\Dashboard;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
+use App\Shared\Enums\LedgerType;
+use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
@@ -63,7 +65,6 @@ class PlayerDashboard extends Component
 
         $user = Auth::user();
 
-        // Add user message
         $this->messages[] = [
             'username' => $user->username,
             'text' => $this->chatMessage,
@@ -71,14 +72,9 @@ class PlayerDashboard extends Component
             'avatar' => strtoupper(substr($user->username, 0, 2)),
         ];
 
-        $sentMessage = $this->chatMessage;
         $this->chatMessage = '';
-
-        // Dispatch browser event to scroll chat to bottom
         $this->dispatch('chat-updated');
 
-        // Trigger bot reply after 1.5 seconds delay (simulated)
-        // We do a mock reply in the component
         $botNames = ['NeonSpecter', 'ViperZero', 'GamerGod', 'HyperDrift', 'SaloonsBot'];
         $botAnswers = [
             'Nice shot! Anyone wants to play next?',
@@ -91,8 +87,6 @@ class PlayerDashboard extends Component
         $randomBot = $botNames[array_rand($botNames)];
         $randomReply = $botAnswers[array_rand($botAnswers)];
 
-        // Append bot message after rendering or in next tick
-        // (Just add it to simulate live activity)
         $this->messages[] = [
             'username' => $randomBot,
             'text' => $randomReply,
@@ -122,10 +116,6 @@ class PlayerDashboard extends Component
     {
         $this->isSearching = true;
         $this->matchedOpponent = null;
-
-        // Simulate matchmaking latency
-        // Livewire will trigger this, we can use a delay or simulate in JS.
-        // Let's do it in Livewire by updating the search state and running a simulated matched opponent.
     }
 
     public function cancelSearch(): void
@@ -154,24 +144,77 @@ class PlayerDashboard extends Component
             return redirect()->to('/login');
         }
 
-        // 1. Get user registration IDs
+        // ── 1. User registration IDs (non-cancelled/refunded) ──────────────────
         $userRegistrationIds = TournamentRegistration::query()
             ->where('user_id', $user->id)
             ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
             ->pluck('id');
 
-        // 2. Fetch matches (Ongoing/Ready/Submitted)
+        // ── 2. Compute real match stats from DB ────────────────────────────────
+        $allUserMatches = GameMatch::query()
+            ->where(function ($q) use ($userRegistrationIds) {
+                $q->whereIn('player_a_registration_id', $userRegistrationIds)
+                  ->orWhereIn('player_b_registration_id', $userRegistrationIds);
+            })
+            ->whereIn('status', [
+                MatchStatus::COMPLETED->value,
+                MatchStatus::FORFEITED->value,
+            ])
+            ->with(['winnerRegistration'])
+            ->get();
+
+        $totalMatches = $allUserMatches->count();
+
+        $wins = $allUserMatches->filter(function ($match) use ($userRegistrationIds) {
+            return $match->winnerRegistration !== null
+                && $userRegistrationIds->contains($match->winner_registration_id);
+        })->count();
+
+        $losses = $totalMatches - $wins;
+
+        $winRate = $totalMatches > 0
+            ? round(($wins / $totalMatches) * 100, 1)
+            : 0.0;
+
+        // ── 3. Real prize earnings from wallet ledger entries ──────────────────
+        $totalEarnings = 0.00;
+        try {
+            if ($user->wallet) {
+                $totalEarnings = (float) $user->wallet
+                    ->ledgerEntries()
+                    ->where('type', LedgerType::PRIZE->value)
+                    ->sum('amount');
+            }
+        } catch (\Throwable) {
+            $totalEarnings = 0.00;
+        }
+
+        // ── 4. Real player stats — no fabrication ─────────────────────────────
+        // Ranking/XP/Streak system not yet built — show 0 / N/A
+        $playerStats = [
+            'total_matches' => $totalMatches,
+            'wins'          => $wins,
+            'losses'        => $losses,
+            'win_rate'      => $winRate,
+            'earnings'      => $totalEarnings,
+            'ranking'       => 0,       // not yet implemented
+            'xp'            => 0,       // not yet implemented
+            'xp_next'       => 0,       // not yet implemented
+            'streak'        => 0,       // not yet implemented
+        ];
+
+        // ── 5. Recent matches (Battle Log — last 5, any status) ───────────────
         $activeMatches = GameMatch::query()
             ->where(function ($q) use ($userRegistrationIds) {
                 $q->whereIn('player_a_registration_id', $userRegistrationIds)
                   ->orWhereIn('player_b_registration_id', $userRegistrationIds);
             })
             ->with(['tournament', 'round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration.user'])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('updated_at', 'desc')
             ->take(5)
             ->get();
 
-        // 3. Fetch active tournaments
+        // ── 6. Active tournaments the user is registered in ───────────────────
         $activeTournaments = Tournament::query()
             ->whereHas('registrations', function ($q) use ($user) {
                 $q->where('user_id', $user->id)
@@ -181,7 +224,7 @@ class PlayerDashboard extends Component
             ->with('game.translations')
             ->get();
 
-        // 4. Fetch all public active tournaments for Browse list
+        // ── 7. Browse list — all public active tournaments ────────────────────
         $browseTournaments = Tournament::query()
             ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
             ->with('game.translations')
@@ -189,22 +232,23 @@ class PlayerDashboard extends Component
             ->get();
 
         $titles = [
-            'overview' => 'SYSTEM OVERVIEW',
-            'tournaments' => 'TOURNAMENTS HUB',
+            'overview'     => 'DASHBOARD',
+            'tournaments'  => 'TOURNAMENTS HUB',
             'head-to-head' => 'HEAD-TO-HEAD DUELS',
             'leaderboards' => 'GLOBAL LEADERBOARDS',
-            'streams' => 'LIVE BROADCASTS',
-            'chat' => 'GLOBAL COMMUNICATIONS',
+            'streams'      => 'LIVE BROADCASTS',
+            'chat'         => 'GLOBAL COMMUNICATIONS',
         ];
 
         return view('livewire.dashboard.player-dashboard', [
-            'user' => $user,
-            'activeMatches' => $activeMatches,
+            'user'              => $user,
+            'activeMatches'     => $activeMatches,
             'activeTournaments' => $activeTournaments,
             'browseTournaments' => $browseTournaments,
+            'playerStats'       => $playerStats,
         ])->layout('components.layouts.dashboard', [
-            'title' => 'Gamer Terminal | PlayerSaloons',
-            'dashboard_title' => $titles[$this->tab] ?? 'GAMER TERMINAL',
+            'title'           => 'Gamer Terminal | PlayerSaloons',
+            'dashboard_title' => $titles[$this->tab] ?? 'DASHBOARD',
         ]);
     }
 }
