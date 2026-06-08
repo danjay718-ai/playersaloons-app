@@ -9,70 +9,77 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-violet-600 selection:text-white antialiased">
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-white antialiased overflow-x-hidden">
 
-    <!-- Top Desktop Navbar -->
-    <header class="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/80 px-4 sm:px-6 lg:px-8 py-3 md:py-4">
+    <!-- Global Background FX -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/5 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-600/5 rounded-full blur-[120px]"></div>
+    </div>
+
+    <!-- Top Navigation (Glassmorphism) -->
+    <header class="sticky top-0 z-50 bg-zinc-950/60 backdrop-blur-xl border-b border-zinc-900/50 px-4 sm:px-6 lg:px-8 py-3 md:py-4">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <!-- Logo & Brand -->
             <a href="/" wire:navigate class="flex items-center space-x-3 group">
-                <img src="/playersaloons_logo.webp" alt="PlayerSaloons Logo" class="h-10 md:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105">
-                <span class="text-xl md:text-2xl font-black font-orbitron tracking-wider bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
+                <img src="/playersaloons_logo.webp" alt="PlayerSaloons Logo" class="h-10 md:h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-110">
+                <span class="text-xl md:text-2xl font-black font-orbitron tracking-tighter bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent filter drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]">
                     PLAYERSALOONS
                 </span>
             </a>
 
             <!-- Desktop Nav Links -->
-            <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold">
-                <a href="/tournaments" wire:navigate class="text-zinc-300 hover:text-white transition-colors duration-200 flex items-center space-x-2">
-                    <i data-lucide="trophy" class="w-4 h-4 text-violet-400"></i>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="/tournaments" wire:navigate class="text-[10px] font-black uppercase tracking-[0.2em] {{ request()->is('tournaments*') ? 'text-cyan-400' : 'text-zinc-500 hover:text-white' }} transition-colors duration-300 flex items-center space-x-2">
+                    <i data-lucide="trophy" class="w-4 h-4"></i>
                     <span>Tournaments</span>
                 </a>
-                <a href="/teams" wire:navigate class="text-zinc-300 hover:text-white transition-colors duration-200 flex items-center space-x-2">
-                    <i data-lucide="users" class="w-4 h-4 text-fuchsia-400"></i>
+                <a href="/teams" wire:navigate class="text-[10px] font-black uppercase tracking-[0.2em] {{ request()->is('teams*') ? 'text-fuchsia-400' : 'text-zinc-500 hover:text-white' }} transition-colors duration-300 flex items-center space-x-2">
+                    <i data-lucide="users" class="w-4 h-4"></i>
                     <span>Teams</span>
                 </a>
                 @auth
-                    <a href="/dashboard" wire:navigate class="text-zinc-300 hover:text-white transition-colors duration-200 flex items-center space-x-2">
-                        <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-400"></i>
+                    <a href="/dashboard" wire:navigate class="text-[10px] font-black uppercase tracking-[0.2em] {{ request()->is('dashboard*') ? 'text-indigo-400' : 'text-zinc-500 hover:text-white' }} transition-colors duration-300 flex items-center space-x-2">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                         <span>Dashboard</span>
                     </a>
                 @endauth
             </nav>
 
-            <!-- Right: Auth actions or Profile Info -->
+            <!-- Right: Auth actions -->
             <div class="flex items-center space-x-4">
                 @auth
                     <!-- Wallet quick info -->
-                    <a href="/wallet" wire:navigate class="hidden sm:flex items-center space-x-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-full px-4 py-1.5 transition-all duration-200">
+                    <a href="/wallet" wire:navigate class="hidden sm:flex items-center space-x-3 bg-zinc-900/50 border border-zinc-800 hover:border-emerald-500/50 rounded-full px-5 py-2 transition-all duration-300">
                         <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
-                        <span class="text-xs text-zinc-400 font-medium">Balance:</span>
-                        <span class="text-sm font-bold text-emerald-400 font-orbitron">
+                        <span class="text-[10px] font-black text-emerald-400 font-orbitron tracking-wider">
                             ${{ number_format((float)(auth()->user()->wallet?->cached_balance ?? 0.00), 2) }}
                         </span>
                     </a>
 
-                    <!-- User Actions / Profile Link -->
+                    <!-- User Actions -->
                     <div class="flex items-center space-x-3">
-                        <a href="/profile" wire:navigate class="flex items-center space-x-2 text-zinc-300 hover:text-white transition-colors duration-200 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800 rounded-full py-1.5 px-3">
-                            <i data-lucide="user" class="w-4 h-4 text-zinc-400"></i>
-                            <span class="text-xs md:text-sm font-medium hidden md:inline">
+                        <a href="/profile" wire:navigate class="flex items-center space-x-2 bg-zinc-900/50 hover:bg-zinc-800 border border-zinc-800 rounded-full py-1.5 px-1.5 pr-4 transition-all duration-300">
+                            <div class="w-7 h-7 bg-zinc-950 rounded-full flex items-center justify-center text-zinc-500">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                            </div>
+                            <span class="text-[10px] font-black uppercase tracking-widest text-zinc-300 hidden md:inline">
                                 {{ auth()->user()->profile?->display_name ?? auth()->user()->username }}
                             </span>
                         </a>
                         <form method="POST" action="{{ route('logout') }}" class="inline m-0">
                             @csrf
-                            <button type="submit" class="bg-zinc-900 hover:bg-red-950/40 border border-zinc-850 hover:border-red-900/60 text-zinc-400 hover:text-red-400 p-2 rounded-full transition-all duration-200" title="Logout">
+                            <button type="submit" class="bg-zinc-900/50 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/30 text-zinc-500 hover:text-red-400 p-2.5 rounded-full transition-all duration-300" title="Logout">
                                 <i data-lucide="log-out" class="w-4 h-4"></i>
                             </button>
                         </form>
                     </div>
                 @else
-                    <div class="flex items-center space-x-3 text-sm font-semibold">
-                        <a href="/login" wire:navigate class="text-zinc-400 hover:text-white px-3 py-2 transition-colors duration-200">
+                    <div class="flex items-center space-x-4">
+                        <a href="/login" wire:navigate class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-colors duration-300">
                             Sign In
                         </a>
-                        <a href="/register" wire:navigate class="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-4.5 py-2 rounded-full transition-all duration-200 shadow-md shadow-violet-900/20">
+                        <a href="/register" wire:navigate class="bg-white text-black px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-cyan-400 transition-all duration-300 shadow-lg shadow-white/5">
                             Register
                         </a>
                     </div>
@@ -82,60 +89,65 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 pb-24 md:pb-10">
+    <main class="relative z-10 flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 pb-28 md:pb-12">
         {{ $slot }}
     </main>
 
-    <!-- Footer (Desktop-only to avoid duplicate nav on mobile) -->
-    <footer class="hidden md:block bg-zinc-950 border-t border-zinc-900 py-8 px-4 text-center text-xs text-zinc-600">
+    <!-- Footer -->
+    <footer class="relative z-10 hidden md:block bg-zinc-950/80 border-t border-zinc-900/50 py-12 px-4 text-center">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
-            <p>&copy; {{ date('Year') ?? '2026' }} PlayerSaloons. All rights reserved.</p>
-            <div class="flex space-x-6 mt-4 md:mt-0">
-                <a href="#" class="hover:text-zinc-400 transition-colors">Terms of Service</a>
-                <a href="#" class="hover:text-zinc-400 transition-colors">Privacy Policy</a>
-                <a href="#" class="hover:text-zinc-400 transition-colors">Rules & Regulations</a>
+            <div class="flex items-center space-x-3 opacity-50">
+                <img src="/playersaloons_logo.webp" alt="Logo" class="h-6 w-auto grayscale">
+                <span class="text-xs font-black font-orbitron tracking-widest text-zinc-400 uppercase">PlayerSaloons</span>
+            </div>
+            <p class="text-[10px] font-bold text-zinc-700 uppercase tracking-widest mt-4 md:mt-0">
+                &copy; {{ date('Y') }} ALL RIGHTS RESERVED. OPERATED BY PLAYERSALOONS SYSTEMS.
+            </p>
+            <div class="flex space-x-8 mt-6 md:mt-0 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+                <a href="#" class="hover:text-cyan-400 transition-colors">Terms</a>
+                <a href="#" class="hover:text-cyan-400 transition-colors">Privacy</a>
+                <a href="#" class="hover:text-cyan-400 transition-colors">Support</a>
             </div>
         </div>
     </footer>
 
-    <!-- Bottom Mobile Navbar (sticky navigation at bottom for mobile layout) -->
-    <div class="fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/90 backdrop-blur-md border-t border-zinc-800 md:hidden flex justify-around items-center h-16 py-2 px-3 shadow-lg shadow-black/80">
-        <a href="/tournaments" wire:navigate class="flex flex-col items-center justify-center w-12 text-center {{ request()->is('tournaments*') ? 'text-violet-400' : 'text-zinc-500 hover:text-zinc-300' }}">
-            <i data-lucide="trophy" class="w-5 h-5"></i>
-            <span class="text-[10px] mt-1 font-medium">Tourneys</span>
+    <!-- Bottom Mobile Navbar (Ultra Neon) -->
+    <div class="fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-2xl border-t border-zinc-900/50 md:hidden flex justify-around items-center h-20 pb-4 pt-2 px-4">
+        <a href="/tournaments" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
+            <i data-lucide="trophy" class="w-5 h-5 transition-all duration-300 {{ request()->is('tournaments*') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
+            <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('tournaments*') ? 'text-cyan-400' : 'text-zinc-600' }}">Events</span>
         </a>
-        <a href="/teams" wire:navigate class="flex flex-col items-center justify-center w-12 text-center {{ request()->is('teams*') ? 'text-fuchsia-400' : 'text-zinc-500 hover:text-zinc-300' }}">
-            <i data-lucide="users" class="w-5 h-5"></i>
-            <span class="text-[10px] mt-1 font-medium">Teams</span>
+        <a href="/teams" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
+            <i data-lucide="users" class="w-5 h-5 transition-all duration-300 {{ request()->is('teams*') ? 'text-fuchsia-400 scale-110 drop-shadow-[0_0_8px_rgba(192,38,211,0.5)]' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
+            <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('teams*') ? 'text-fuchsia-400' : 'text-zinc-600' }}">Clans</span>
         </a>
         @auth
-            <a href="/dashboard" wire:navigate class="flex flex-col items-center justify-center w-12 text-center {{ request()->is('dashboard*') ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300' }}">
-                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                <span class="text-[10px] mt-1 font-medium">Dashboard</span>
+            <a href="/dashboard" wire:navigate class="flex flex-col items-center justify-center w-16 h-16 -mt-10 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-2xl shadow-[0_8px_20px_-5px_rgba(124,77,255,0.6)] border border-white/20">
+                <i data-lucide="layout-dashboard" class="w-6 h-6 text-white"></i>
             </a>
-            <a href="/wallet" wire:navigate class="flex flex-col items-center justify-center w-12 text-center {{ request()->is('wallet*') ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300' }}">
-                <i data-lucide="wallet" class="w-5 h-5"></i>
-                <span class="text-[10px] mt-1 font-medium">Wallet</span>
+            <a href="/wallet" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
+                <i data-lucide="wallet" class="w-5 h-5 transition-all duration-300 {{ request()->is('wallet*') ? 'text-emerald-400 scale-110 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
+                <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('wallet*') ? 'text-emerald-400' : 'text-zinc-600' }}">Bank</span>
             </a>
-            <a href="/profile" wire:navigate class="flex flex-col items-center justify-center w-12 text-center {{ request()->is('profile*') ? 'text-zinc-300' : 'text-zinc-500 hover:text-zinc-300' }}">
-                <i data-lucide="user" class="w-5 h-5"></i>
-                <span class="text-[10px] mt-1 font-medium">Profile</span>
+            <a href="/profile" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
+                <i data-lucide="user" class="w-5 h-5 transition-all duration-300 {{ request()->is('profile*') ? 'text-white scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
+                <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('profile*') ? 'text-white' : 'text-zinc-600' }}">Profile</span>
             </a>
         @else
-            <a href="/login" wire:navigate class="flex flex-col items-center justify-center w-12 text-center {{ request()->is('login*') ? 'text-violet-400' : 'text-zinc-500 hover:text-zinc-300' }}">
-                <i data-lucide="log-in" class="w-5 h-5"></i>
-                <span class="text-[10px] mt-1 font-medium">Sign In</span>
+            <a href="/login" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
+                <i data-lucide="log-in" class="w-5 h-5 transition-all duration-300 {{ request()->is('login*') ? 'text-white scale-110' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
+                <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('login*') ? 'text-white' : 'text-zinc-600' }}">Enter</span>
             </a>
-            <a href="/register" wire:navigate class="flex flex-col items-center justify-center w-12 text-center {{ request()->is('register*') ? 'text-violet-400' : 'text-zinc-500 hover:text-zinc-300' }}">
-                <i data-lucide="user-plus" class="w-5 h-5"></i>
-                <span class="text-[10px] mt-1 font-medium">Register</span>
+            <a href="/register" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
+                <i data-lucide="user-plus" class="w-5 h-5 transition-all duration-300 {{ request()->is('register*') ? 'text-white scale-110' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
+                <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('register*') ? 'text-white' : 'text-zinc-600' }}">Join</span>
             </a>
         @endauth
     </div>
 
     @livewireScripts
 
-    <!-- Lucide Icons Loading and Re-triggering on Navigation -->
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
