@@ -92,6 +92,9 @@ class WalletDashboard extends Component
         return view('livewire.wallet.wallet-dashboard', [
             'wallet' => $wallet,
             'ledgerEntries' => $ledgerEntries,
-        ])->layout('components.layouts.app', ['title' => 'My Wallet | PlayerSaloons']);
+        ])->layout('components.layouts.dashboard', [
+            'title' => 'Financial Terminal | PlayerSaloons',
+            'dashboard_title' => 'FINANCIAL TERMINAL',
+        ]);
     }
 }

@@ -177,6 +177,9 @@ class ProfileDashboard extends Component
             'latestKyc' => $latestKyc,
         ]);
 
-        return $this->resolveView($view)->layout('components.layouts.app', ['title' => 'My Profile | PlayerSaloons']);
+        return $this->resolveView($view)->layout('components.layouts.dashboard', [
+            'title' => 'My Profile | PlayerSaloons',
+            'dashboard_title' => 'USER PROFILE',
+        ]);
     }
 }
