@@ -43,10 +43,10 @@
                         title="Copy Link"
                     >
                         <i x-show="!copied" data-lucide="copy" class="w-4 h-4"></i>
-                        <i x-show="copied" data-lucide="check" class="w-4 h-4 text-emerald-300" style="display: none;"></i>
+                        <i x-show="copied" data-lucide="check" class="w-4 h-4 text-emerald-300" x-cloak></i>
                     </button>
                 </div>
-                <p x-show="copied" x-transition class="text-[9px] text-emerald-400 font-bold mt-1.5 uppercase font-orbitron tracking-wider" style="display: none;">
+                <p x-show="copied" x-transition class="text-[9px] text-emerald-400 font-bold mt-1.5 uppercase font-orbitron tracking-wider" x-cloak>
                     Link Copied to Clipboard!
                 </p>
             </div>

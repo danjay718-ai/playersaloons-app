@@ -273,7 +273,7 @@
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
                              class="absolute right-0 mt-3 w-80 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-2"
-                             style="display: none;">
+                             x-cloak>
                             <div class="px-4 py-2 border-b border-purple-500/10 flex justify-between items-center">
                                 <span class="font-orbitron font-bold text-xs text-zinc-300 uppercase tracking-wider">SYSTEM LOGS</span>
                                 <span class="text-[9px] bg-purple-950 text-purple-400 border border-purple-900 px-2 py-0.5 rounded-full font-bold">2 NEW</span>
@@ -330,7 +330,7 @@
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
                              class="absolute right-0 mt-3 w-48 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-1"
-                             style="display: none;">
+                             x-cloak>
                             <a href="/profile" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-zinc-350 hover:bg-purple-950/30 hover:text-white transition-colors">
                                 <i data-lucide="user" class="w-4 h-4 text-purple-400"></i>
                                 <span>My Profile</span>
@@ -365,7 +365,7 @@
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
                              class="absolute right-0 mt-3 w-28 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-1"
-                             style="display: none;">
+                             x-cloak>
                             <a href="#" class="block px-4 py-2 text-xs text-zinc-350 bg-purple-950/20 text-white font-bold">English</a>
                             <a href="#" class="block px-4 py-2 text-xs text-zinc-450 hover:bg-purple-950/30 hover:text-white transition-colors">Español</a>
                             <a href="#" class="block px-4 py-2 text-xs text-zinc-450 hover:bg-purple-950/30 hover:text-white transition-colors">Tagalog</a>
@@ -387,13 +387,5 @@
 
     <!-- Lucide Icons initialization -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
-        document.addEventListener('livewire:navigated', () => {
-            lucide.createIcons();
-        });
-    </script>
 </body>
 </html>

@@ -140,68 +140,73 @@
                 </div>
 
                 <!-- Right Side: Player Profile Stats -->
-                <div class="bg-[#0c081d] border border-purple-500/15 rounded-2xl p-5 shadow-xl flex flex-col justify-between relative overflow-hidden">
+                <div class="bg-[#0c081d] border border-purple-500/15 rounded-2xl p-5 shadow-xl flex flex-col gap-5 relative overflow-hidden">
                     <div class="absolute -top-20 -left-20 w-40 h-40 bg-fuchsia-600/5 rounded-full blur-2xl pointer-events-none"></div>
 
-                    <!-- Level Section -->
-                    <div class="space-y-4">
+                    <!-- Ranking Section — not yet implemented -->
+                    <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <span class="text-xs text-zinc-500 font-bold uppercase tracking-wider font-orbitron">PLAYER RANKING</span>
-                            <span class="text-xs text-purple-400 font-black font-orbitron">LEVEL 12</span>
+                            <span class="text-[9px] text-zinc-600 font-bold font-orbitron bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded-full">COMING SOON</span>
                         </div>
-                        
-                        <!-- Futuristic Level Bar -->
+                        <!-- Rank bar — greyed out, system not yet active -->
                         <div class="space-y-1">
-                            <div class="h-2 w-full bg-zinc-950 rounded-full border border-purple-500/10 overflow-hidden p-[1px]">
-                                <div class="h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-cyan-400 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.8)]" style="width: 72%;"></div>
+                            <div class="h-2 w-full bg-zinc-950 rounded-full border border-zinc-800 overflow-hidden p-[1px]">
+                                <div class="h-full bg-zinc-800 rounded-full" style="width: 0%;"></div>
                             </div>
-                            <div class="flex justify-between text-[8px] text-zinc-500 font-bold font-mono">
-                                <span>7,200 XP</span>
-                                <span>10,000 XP</span>
+                            <div class="flex justify-between text-[8px] text-zinc-600 font-bold font-mono">
+                                <span>0 XP</span>
+                                <span>Ranking system not yet active</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Stats Grid -->
-                    <div class="grid grid-cols-2 gap-4 my-6">
+                    <!-- Real Stats Grid -->
+                    <div class="grid grid-cols-2 gap-3">
                         <div class="bg-zinc-950/60 border border-purple-500/10 rounded-xl p-3 text-center">
                             <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider">WIN RATE</span>
-                            <span class="text-lg font-black text-cyan-400 font-orbitron block mt-1 filter drop-shadow-[0_0_5px_rgba(34,211,238,0.2)]">75.0%</span>
+                            @if($playerStats['total_matches'] > 0)
+                                <span class="text-lg font-black text-cyan-400 font-orbitron block mt-1 filter drop-shadow-[0_0_5px_rgba(34,211,238,0.2)]">{{ $playerStats['win_rate'] }}%</span>
+                            @else
+                                <span class="text-lg font-black text-zinc-600 font-orbitron block mt-1">—</span>
+                            @endif
                         </div>
                         <div class="bg-zinc-950/60 border border-purple-500/10 rounded-xl p-3 text-center">
                             <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider">STREAK</span>
-                            <span class="text-lg font-black text-fuchsia-400 font-orbitron block mt-1 filter drop-shadow-[0_0_5px_rgba(217,70,239,0.2)]">5 WINS</span>
+                            <span class="text-lg font-black text-zinc-600 font-orbitron block mt-1">—</span>
+                            <span class="text-[8px] text-zinc-700 font-mono">Coming soon</span>
                         </div>
                         <div class="bg-zinc-950/60 border border-purple-500/10 rounded-xl p-3 text-center">
-                            <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider">EARNINGS</span>
-                            <span class="text-lg font-black text-emerald-400 font-orbitron block mt-1 filter drop-shadow-[0_0_5px_rgba(16,185,129,0.2)]">$120.00</span>
+                            <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider">PRIZE WON</span>
+                            <span class="text-lg font-black text-emerald-400 font-orbitron block mt-1 filter drop-shadow-[0_0_5px_rgba(16,185,129,0.2)]">${{ number_format($playerStats['earnings'], 2) }}</span>
                         </div>
                         <div class="bg-zinc-950/60 border border-purple-500/10 rounded-xl p-3 text-center">
                             <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider">BATTLES</span>
-                            <span class="text-lg font-black text-purple-400 font-orbitron block mt-1">32 PLAYED</span>
+                            <span class="text-lg font-black text-purple-400 font-orbitron block mt-1">{{ $playerStats['total_matches'] }}</span>
                         </div>
                     </div>
 
-                    <!-- Daily Contracts / Goals -->
-                    <div class="bg-zinc-950/40 border border-purple-500/10 rounded-xl p-3.5 space-y-2">
-                        <div class="flex items-center space-x-1.5 text-purple-300">
-                            <i data-lucide="zap" class="w-3.5 h-3.5 text-fuchsia-400"></i>
-                            <span class="text-[9px] font-black uppercase tracking-wider font-orbitron">DAILY CONTRACTS</span>
+                    <!-- Win / Loss breakdown -->
+                    <div class="bg-zinc-950/40 border border-purple-500/10 rounded-xl p-3.5">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[9px] font-black uppercase tracking-wider font-orbitron text-zinc-400">MATCH RECORD</span>
                         </div>
-                        <ul class="space-y-1.5 text-[10px]">
-                            <li class="flex items-center justify-between text-zinc-400">
-                                <span>Win 2 Head-to-Head duels</span>
-                                <span class="font-bold text-fuchsia-400 font-mono">1 / 2</span>
-                            </li>
-                            <li class="flex items-center justify-between text-zinc-400">
-                                <span>Register in any Tournament</span>
-                                <span class="font-bold text-zinc-650 font-mono">0 / 1</span>
-                            </li>
-                            <li class="flex items-center justify-between text-emerald-400">
-                                <span class="line-through">Claim daily check-in rewards</span>
-                                <i data-lucide="check-circle" class="w-3 h-3 text-emerald-400"></i>
-                            </li>
-                        </ul>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 text-center">
+                                <span class="block text-xl font-black font-orbitron text-emerald-400">{{ $playerStats['wins'] }}</span>
+                                <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">WINS</span>
+                            </div>
+                            <div class="w-px h-10 bg-zinc-800"></div>
+                            <div class="flex-1 text-center">
+                                <span class="block text-xl font-black font-orbitron text-red-400">{{ $playerStats['losses'] }}</span>
+                                <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">LOSSES</span>
+                            </div>
+                            <div class="w-px h-10 bg-zinc-800"></div>
+                            <div class="flex-1 text-center">
+                                <span class="block text-xl font-black font-orbitron text-zinc-400">{{ $playerStats['total_matches'] }}</span>
+                                <span class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">TOTAL</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -223,18 +228,49 @@
                     @if($activeTournaments->count() > 0)
                         <div class="space-y-3">
                             @foreach($activeTournaments as $tournament)
+                                @php
+                                    $statusColors = [
+                                        'REGISTRATION_OPEN'   => 'text-emerald-400 bg-emerald-950/40 border-emerald-900/60',
+                                        'REGISTRATION_CLOSED' => 'text-yellow-400 bg-yellow-950/40 border-yellow-900/60',
+                                        'CHECKIN_OPEN'        => 'text-cyan-400 bg-cyan-950/40 border-cyan-900/60',
+                                        'CHECKIN_CLOSED'      => 'text-orange-400 bg-orange-950/40 border-orange-900/60',
+                                        'BRACKET_GENERATED'   => 'text-blue-400 bg-blue-950/40 border-blue-900/60',
+                                        'ONGOING'             => 'text-fuchsia-400 bg-fuchsia-950/40 border-fuchsia-900/60',
+                                        'PUBLISHED'           => 'text-violet-400 bg-violet-950/40 border-violet-900/60',
+                                    ];
+                                    $statusLabel = match($tournament->status->value) {
+                                        'REGISTRATION_OPEN'   => 'REG OPEN',
+                                        'REGISTRATION_CLOSED' => 'REG CLOSED',
+                                        'CHECKIN_OPEN'        => 'CHECK-IN',
+                                        'CHECKIN_CLOSED'      => 'CHECKIN CLOSED',
+                                        'BRACKET_GENERATED'   => 'BRACKET SET',
+                                        'ONGOING'             => 'LIVE',
+                                        'PUBLISHED'           => 'UPCOMING',
+                                        default               => $tournament->status->value,
+                                    };
+                                    $statusClass = $statusColors[$tournament->status->value] ?? 'text-zinc-400 bg-zinc-900/40 border-zinc-800';
+                                @endphp
                                 <div class="bg-zinc-950/60 border border-purple-500/10 hover:border-purple-500/25 rounded-xl p-4 flex items-center justify-between gap-4 transition-all duration-200 group/row">
-                                    <div>
-                                        <span class="text-[8px] font-bold text-fuchsia-400 uppercase tracking-widest bg-fuchsia-950/50 border border-fuchsia-900/60 rounded px-2 py-0.5 font-orbitron">
-                                            {{ $tournament->game->translations->where('locale', 'en')->first()?->name ?? $tournament->game->slug }}
-                                        </span>
-                                        <h4 class="text-xs font-bold text-zinc-200 mt-2 truncate w-56">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2 mb-1.5">
+                                            <span class="text-[8px] font-bold text-fuchsia-400 uppercase tracking-widest bg-fuchsia-950/50 border border-fuchsia-900/60 rounded px-2 py-0.5 font-orbitron flex-shrink-0">
+                                                {{ $tournament->game->translations->where('locale', 'en')->first()?->name ?? $tournament->game->slug }}
+                                            </span>
+                                            <span class="text-[8px] font-bold uppercase tracking-widest rounded px-2 py-0.5 font-orbitron border flex-shrink-0 {{ $statusClass }}">
+                                                {{ $statusLabel }}
+                                            </span>
+                                        </div>
+                                        <h4 class="text-xs font-bold text-zinc-200 truncate">
                                             {{ $tournament->name }}
                                         </h4>
+                                        @if($tournament->start_at)
+                                            <span class="text-[9px] text-zinc-500 font-mono mt-1 block">
+                                                Starts {{ $tournament->start_at->format('M d, H:i') }}
+                                            </span>
+                                        @endif
                                     </div>
-                                    
-                                    <a href="/tournaments/{{ $tournament->uuid }}" wire:navigate class="bg-gradient-to-r from-purple-900 to-fuchsia-950 hover:from-purple-800 hover:to-fuchsia-800 border border-purple-500/30 text-[9px] font-black font-orbitron uppercase tracking-widest text-purple-200 py-2 px-3 rounded-lg transition-all flex items-center space-x-1.5 shadow-[0_0_10px_rgba(168,85,247,0.1)] group-hover/row:shadow-[0_0_15px_rgba(168,85,247,0.3)]">
-                                        <span>ENTER HUB</span>
+                                    <a href="/tournaments/{{ $tournament->uuid }}" wire:navigate class="flex-shrink-0 bg-gradient-to-r from-purple-900 to-fuchsia-950 hover:from-purple-800 hover:to-fuchsia-800 border border-purple-500/30 text-[9px] font-black font-orbitron uppercase tracking-widest text-purple-200 py-2 px-3 rounded-lg transition-all flex items-center space-x-1.5 shadow-[0_0_10px_rgba(168,85,247,0.1)] group-hover/row:shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                                        <span>VIEW</span>
                                         <i data-lucide="arrow-right" class="w-3 h-3"></i>
                                     </a>
                                 </div>
@@ -268,20 +304,36 @@
                             @foreach($activeMatches as $match)
                                 @php
                                     $isPlayerA = auth()->id() === $match->playerARegistration?->user_id;
-                                    $opponent = $isPlayerA ? $match->playerBRegistration?->user : $match->playerARegistration?->user;
+                                    $opponent  = $isPlayerA ? $match->playerBRegistration?->user : $match->playerARegistration?->user;
+                                    $isWinner  = $match->winnerRegistration && auth()->id() === $match->winnerRegistration->user_id;
+                                    $isLoser   = $match->winnerRegistration && !$isWinner && in_array($match->status->value, ['completed', 'forfeited']);
+                                    $matchStatusMap = [
+                                        'pending'          => ['label' => 'PENDING',    'class' => 'text-zinc-400 bg-zinc-900/60 border-zinc-800'],
+                                        'ready'            => ['label' => 'READY',      'class' => 'text-cyan-400 bg-cyan-950/40 border-cyan-900/60'],
+                                        'in_progress'      => ['label' => 'LIVE',       'class' => 'text-fuchsia-400 bg-fuchsia-950/40 border-fuchsia-900/60'],
+                                        'result_submitted' => ['label' => 'SUBMITTED',  'class' => 'text-yellow-400 bg-yellow-950/40 border-yellow-900/60'],
+                                        'completed'        => $isWinner ? ['label' => 'WIN ✓', 'class' => 'text-emerald-400 bg-emerald-950/40 border-emerald-900/60'] : ['label' => 'LOSS', 'class' => 'text-red-400 bg-red-950/40 border-red-900/60'],
+                                        'disputed'         => ['label' => 'DISPUTED',   'class' => 'text-orange-400 bg-orange-950/40 border-orange-900/60'],
+                                        'forfeited'        => ['label' => 'FORFEIT',    'class' => 'text-red-400 bg-red-950/40 border-red-900/60'],
+                                    ];
+                                    $matchStatusInfo = $matchStatusMap[$match->status->value] ?? ['label' => strtoupper($match->status->value), 'class' => 'text-zinc-400 bg-zinc-900/60 border-zinc-800'];
                                 @endphp
                                 <div class="bg-zinc-950/60 border border-purple-500/10 hover:border-purple-500/25 rounded-xl p-4 flex items-center justify-between gap-4 transition-all duration-200 group/row">
-                                    <div class="truncate">
-                                        <span class="block text-[8px] text-zinc-500 font-bold uppercase tracking-wider font-orbitron">
-                                            {{ $match->tournament->name }} • ROUND {{ $match->round->round_number }}
-                                        </span>
-                                        <span class="block text-xs font-bold text-zinc-200 mt-1.5 truncate w-52 font-orbitron uppercase">
-                                            VS // {{ $opponent?->username ?? 'TBD' }}
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider font-orbitron truncate">
+                                                {{ $match->tournament->name }} · R{{ $match->round->round_number }}
+                                            </span>
+                                            <span class="flex-shrink-0 text-[8px] font-bold uppercase tracking-widest rounded px-2 py-0.5 font-orbitron border {{ $matchStatusInfo['class'] }}">
+                                                {{ $matchStatusInfo['label'] }}
+                                            </span>
+                                        </div>
+                                        <span class="block text-xs font-bold text-zinc-200 font-orbitron uppercase">
+                                            VS {{ $opponent?->username ?? 'TBD' }}
                                         </span>
                                     </div>
-
-                                    <a href="/matches/{{ $match->uuid }}" wire:navigate class="bg-gradient-to-r from-purple-900 to-fuchsia-950 hover:from-purple-800 hover:to-fuchsia-800 border border-purple-500/30 text-[9px] font-black font-orbitron uppercase tracking-widest text-purple-200 py-2 px-3 rounded-lg transition-all flex items-center space-x-1.5 shadow-[0_0_10px_rgba(168,85,247,0.1)] group-hover/row:shadow-[0_0_15px_rgba(168,85,247,0.3)]">
-                                        <span>MATCH LOBBY</span>
+                                    <a href="/matches/{{ $match->uuid }}" wire:navigate class="flex-shrink-0 bg-gradient-to-r from-purple-900 to-fuchsia-950 hover:from-purple-800 hover:to-fuchsia-800 border border-purple-500/30 text-[9px] font-black font-orbitron uppercase tracking-widest text-purple-200 py-2 px-3 rounded-lg transition-all flex items-center space-x-1.5 shadow-[0_0_10px_rgba(168,85,247,0.1)] group-hover/row:shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                                        <span>VIEW</span>
                                         <i data-lucide="arrow-right" class="w-3 h-3"></i>
                                     </a>
                                 </div>
@@ -498,7 +550,7 @@
                 </div>
 
                 <!-- State 1: Matching Radar Animation -->
-                <div x-show="step === 1" class="text-center p-6 space-y-6 relative z-10 flex flex-col items-center" style="display: none;">
+                <div x-show="step === 1" class="text-center p-6 space-y-6 relative z-10 flex flex-col items-center" x-cloak>
                     
                     <!-- Radar Circle -->
                     <div class="relative w-36 h-36 border border-purple-500/30 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.1)]">
@@ -526,7 +578,7 @@
                 </div>
 
                 <!-- State 2: Opponent Found Screen -->
-                <div x-show="step === 2" class="w-full p-6 space-y-6 relative z-10" style="display: none;">
+                <div x-show="step === 2" class="w-full p-6 space-y-6 relative z-10" x-cloak>
                     <template x-if="matchedUser">
                         <div class="space-y-6 text-center">
                             
@@ -548,7 +600,7 @@
                                         </div>
                                     </div>
                                     <span class="block text-xs font-bold font-orbitron text-zinc-300 mt-2 uppercase tracking-wide">{{ auth()->user()->username }}</span>
-                                    <span class="block text-[8px] font-mono text-zinc-500">LEVEL 12 // YOU</span>
+                                    <span class="block text-[8px] font-mono text-zinc-500">{{ strtoupper(auth()->user()->username) }} // YOU</span>
                                 </div>
 
                                 <!-- VS Shield -->
@@ -749,13 +801,13 @@
                             
                             <!-- Highlight Row: Current User Place -->
                             <tr class="bg-purple-950/20 border-t-2 border-b-2 border-purple-500/30">
-                                <td class="py-4 px-2 font-black font-orbitron text-purple-300 text-xs">#42</td>
+                                <td class="py-4 px-2 font-black font-orbitron text-purple-300 text-xs">—</td>
                                 <td class="py-4 px-2 font-bold font-orbitron text-white text-xs">{{ $user->username }} (YOU)</td>
-                                <td class="py-4 px-2 font-bold font-orbitron text-fuchsia-400/80">GOLD III</td>
-                                <td class="py-4 px-2 text-center font-mono text-zinc-300">12</td>
-                                <td class="py-4 px-2 text-center font-mono text-emerald-450 font-bold">24</td>
-                                <td class="py-4 px-2 text-center font-mono text-red-450">8</td>
-                                <td class="py-4 px-2 text-right font-black font-orbitron text-emerald-450">$120.00</td>
+                                <td class="py-4 px-2 font-bold font-orbitron text-zinc-500">—</td>
+                                <td class="py-4 px-2 text-center font-mono text-zinc-300">{{ $playerStats['total_matches'] }}</td>
+                                <td class="py-4 px-2 text-center font-mono text-emerald-450 font-bold">{{ $playerStats['wins'] }}</td>
+                                <td class="py-4 px-2 text-center font-mono text-red-450">{{ $playerStats['losses'] }}</td>
+                                <td class="py-4 px-2 text-right font-black font-orbitron text-emerald-450">${{ number_format($playerStats['earnings'], 2) }}</td>
                             </tr>
                         </tbody>
                     </table>
