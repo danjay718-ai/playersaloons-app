@@ -20,16 +20,16 @@
             <div class="space-y-4">
                 <!-- Login (Email or Username) -->
                 <div>
-                    <label for="login" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">Username or Email</label>
+                    <label for="identity" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">Username or Email</label>
                     <div class="mt-1.5 relative">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
                             <i data-lucide="user" class="w-4 h-4"></i>
                         </span>
-                        <input wire:model="login" id="login" name="login" type="text" required 
+                        <input wire:model="identity" id="identity" name="identity" type="text" required 
                             class="block w-full pl-9 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all duration-200"
                             placeholder="you@example.com or username">
                     </div>
-                    @error('login') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
+                    @error('identity') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <!-- Password -->

@@ -9,12 +9,12 @@ use Livewire\Component;
 
 class Login extends Component
 {
-    public string $login = '';
+    public string $identity = '';
     public string $password = '';
     public bool $remember = false;
 
     protected array $rules = [
-        'login' => ['required', 'string'],
+        'identity' => ['required', 'string'],
         'password' => ['required', 'string'],
     ];
 
@@ -22,10 +22,10 @@ class Login extends Component
     {
         $this->validate();
 
-        $field = filter_var($this->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $field = filter_var($this->identity, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
         $credentials = [
-            $field => $this->login,
+            $field => $this->identity,
             'password' => $this->password,
         ];
 
@@ -35,7 +35,7 @@ class Login extends Component
             return redirect()->intended('/dashboard');
         }
 
-        $this->addError('login', 'The provided credentials do not match our records.');
+        $this->addError('identity', 'The provided credentials do not match our records.');
     }
 
     public function render()
