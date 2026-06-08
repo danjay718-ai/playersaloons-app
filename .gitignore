@@ -25,6 +25,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+*:Zone.Identifier
 
 # PlayerSaloons baseline and checklist docs
 /PlayerSaloons_Architecture_Baseline_v1.md
