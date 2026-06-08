@@ -13,78 +13,8 @@
     <!-- Tailwind CSS & Fonts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-
-    <style>
-        /* Cyber scrollbar styles */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #080512;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(168, 85, 247, 0.3);
-            border-radius: 4px;
-            border: 1px solid rgba(217, 70, 239, 0.1);
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(217, 70, 239, 0.6);
-            box-shadow: 0 0 10px rgba(217, 70, 239, 0.5);
-        }
-
-        /* Scanline retro arcade overlay */
-        .scanlines {
-            background: linear-gradient(
-                rgba(18, 16, 26, 0) 50%, 
-                rgba(0, 0, 0, 0.25) 50%
-            ), linear-gradient(
-                90deg,
-                rgba(255, 0, 0, 0.03),
-                rgba(0, 255, 0, 0.01),
-                rgba(0, 0, 255, 0.03)
-            );
-            background-size: 100% 4px, 6px 100%;
-        }
-
-        /* Ambient neon animations */
-        @keyframes pulse-neon {
-            0%, 100% {
-                text-shadow: 0 0 4px rgba(168, 85, 247, 0.6), 0 0 12px rgba(168, 85, 247, 0.4);
-                opacity: 0.9;
-            }
-            50% {
-                text-shadow: 0 0 8px rgba(217, 70, 239, 0.9), 0 0 20px rgba(217, 70, 239, 0.6);
-                opacity: 1;
-            }
-        }
-        .neon-pulse-purple {
-            animation: pulse-neon 3s infinite;
-        }
-
-        @keyframes neon-border-pulse {
-            0%, 100% {
-                border-color: rgba(168, 85, 247, 0.2);
-                box-shadow: 0 0 8px rgba(168, 85, 247, 0.1);
-            }
-            50% {
-                border-color: rgba(217, 70, 239, 0.49);
-                box-shadow: 0 0 15px rgba(217, 70, 239, 0.25);
-            }
-        }
-        .neon-border-glow {
-            animation: neon-border-pulse 4s infinite ease-in-out;
-        }
-
-        .cyber-grid {
-            background-image: 
-                linear-gradient(to right, rgba(168, 85, 247, 0.03) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(168, 85, 247, 0.03) 1px, transparent 1px);
-            background-size: 30px 30px;
-        }
-    </style>
 </head>
-<body class="bg-[#07040f] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-purple-600 selection:text-white relative cyber-grid">
+<body class="bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-violet-600 selection:text-white relative cyber-grid">
 
     <!-- Global Background FX -->
     <div class="fixed inset-0 pointer-events-none z-0">
@@ -96,23 +26,67 @@
         <div class="absolute inset-0 scanlines opacity-[0.15] mix-blend-overlay"></div>
     </div>
 
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="mobile-backdrop"></div>
+
+    <!-- Mobile Sidebar Drawer (Visible only on mobile via trigger) -->
+    <div id="mobile-sidebar">
+        <div class="px-6 flex items-center space-x-4 mb-8">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                <div class="w-full h-full bg-[#0a0718] rounded-xl flex items-center justify-center">
+                    <img src="/playersaloons_logo.webp" alt="Logo" class="w-7 h-7 object-contain">
+                </div>
+            </div>
+            <span class="text-lg font-black font-orbitron tracking-widest bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent uppercase">SALOONS</span>
+        </div>
+
+        <nav class="px-4 space-y-2">
+            @php
+                $navItems = [
+                    ['label' => 'Overview', 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'active' => !request()->query('tab')],
+                    ['label' => 'Tournaments', 'icon' => 'trophy', 'url' => '/dashboard?tab=tournaments', 'active' => request()->query('tab') === 'tournaments'],
+                    ['label' => 'Head-to-Head', 'icon' => 'swords', 'url' => '/dashboard?tab=head-to-head', 'active' => request()->query('tab') === 'head-to-head'],
+                    ['label' => 'Leaderboards', 'icon' => 'award', 'url' => '/dashboard?tab=leaderboards', 'active' => request()->query('tab') === 'leaderboards'],
+                    ['label' => 'Streams', 'icon' => 'tv', 'url' => '/dashboard?tab=streams', 'active' => request()->query('tab') === 'streams'],
+                    ['label' => 'Global Chat', 'icon' => 'message-square', 'url' => '/dashboard?tab=chat', 'active' => request()->query('tab') === 'chat'],
+                ];
+            @endphp
+
+            @foreach($navItems as $item)
+                <a href="{{ $item['url'] }}" wire:navigate 
+                   class="nav-link {{ $item['active'] ? 'active' : '' }}">
+                    <i data-lucide="{{ $item['icon'] }}" class="w-5 h-5 mr-3"></i>
+                    <span class="font-orbitron text-xs font-bold uppercase tracking-widest">{{ $item['label'] }}</span>
+                </a>
+            @endforeach
+        </nav>
+
+        <div class="px-4 mt-auto">
+            <form method="POST" action="{{ route('logout') }}" class="m-0">
+                @csrf
+                <button type="submit" class="w-full flex items-center h-12 px-3 rounded-lg text-zinc-500 hover:text-red-400 transition-colors">
+                    <i data-lucide="log-out" class="w-5 h-5 mr-3"></i>
+                    <span class="font-orbitron text-xs font-bold uppercase tracking-widest">Disconnect</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Main Outer Container -->
     <div class="relative z-10 flex min-h-screen w-full">
 
-        <!-- Sidebar Panel (Collapsible to 20, expands to 64 on hover) -->
-        <aside class="group/sidebar fixed md:sticky top-0 left-0 h-screen w-20 hover:w-64 bg-[#0a0718]/90 border-r border-purple-500/15 backdrop-blur-2xl transition-all duration-300 ease-out z-50 flex flex-col justify-between py-5 overflow-hidden shadow-[5px_0_25px_rgba(0,0,0,0.6)]">
+        <!-- Desktop Sidebar Panel (Hidden on mobile, sticky on desktop) -->
+        <aside id="desktop-sidebar" class="group/sidebar hidden md:flex sticky top-0 left-0 h-screen bg-[#0a0718]/90 border-r border-purple-500/15 backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden shadow-[5px_0_25px_rgba(0,0,0,0.6)]">
             
             <!-- Sidebar Header / Logo -->
             <div class="px-4 flex items-center">
                 <a href="/dashboard" wire:navigate class="flex items-center space-x-4 w-full">
-                    <!-- Glowing Logo Orb -->
                     <div class="relative flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-transform duration-500 group-hover/sidebar:rotate-[360deg]">
                         <div class="w-full h-full bg-[#0a0718] rounded-xl flex items-center justify-center">
                             <img src="/playersaloons_logo.webp" alt="Logo" class="w-8 h-8 object-contain">
                         </div>
                     </div>
-                    <!-- Brand Title (hidden when collapsed, shown when hovered) -->
-                    <span class="text-lg font-black font-orbitron tracking-widest bg-gradient-to-r from-purple-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 whitespace-nowrap uppercase filter drop-shadow-[0_0_6px_rgba(168,85,247,0.3)]">
+                    <span class="sidebar-label text-lg font-black font-orbitron tracking-widest bg-gradient-to-r from-purple-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent uppercase filter drop-shadow-[0_0_6px_rgba(168,85,247,0.3)]">
                         SALOONS
                     </span>
                 </a>
@@ -120,89 +94,20 @@
 
             <!-- Navigation Links -->
             <nav class="flex-grow my-8 px-3 space-y-2.5">
-                <!-- Overview / Main Dashboard -->
-                <a href="/dashboard" wire:navigate 
-                   class="flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
-                   {{ (!request()->query('tab') && request()->is('dashboard')) 
-                      ? 'bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
-                      : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
-                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        <i data-lucide="layout-dashboard" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
-                    </div>
-                    <span class="ml-4 font-orbitron text-xs font-bold uppercase tracking-widest opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                        Overview
-                    </span>
-                </a>
-
-                <!-- Tournaments -->
-                <a href="/dashboard?tab=tournaments" wire:navigate 
-                   class="flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
-                   {{ (request()->query('tab') === 'tournaments') 
-                      ? 'bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
-                      : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
-                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        <i data-lucide="trophy" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
-                    </div>
-                    <span class="ml-4 font-orbitron text-xs font-bold uppercase tracking-widest opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                        Tournaments
-                    </span>
-                </a>
-
-                <!-- Head to Head -->
-                <a href="/dashboard?tab=head-to-head" wire:navigate 
-                   class="flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
-                   {{ (request()->query('tab') === 'head-to-head') 
-                      ? 'bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
-                      : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
-                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        <i data-lucide="swords" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
-                    </div>
-                    <span class="ml-4 font-orbitron text-xs font-bold uppercase tracking-widest opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                        Head-To-Head
-                    </span>
-                </a>
-
-                <!-- Leaderboards -->
-                <a href="/dashboard?tab=leaderboards" wire:navigate 
-                   class="flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
-                   {{ (request()->query('tab') === 'leaderboards') 
-                      ? 'bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
-                      : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
-                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        <i data-lucide="award" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
-                    </div>
-                    <span class="ml-4 font-orbitron text-xs font-bold uppercase tracking-widest opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                        Leaderboards
-                    </span>
-                </a>
-
-                <!-- Streams -->
-                <a href="/dashboard?tab=streams" wire:navigate 
-                   class="flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
-                   {{ (request()->query('tab') === 'streams') 
-                      ? 'bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
-                      : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
-                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        <i data-lucide="tv" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
-                    </div>
-                    <span class="ml-4 font-orbitron text-xs font-bold uppercase tracking-widest opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                        Streams
-                    </span>
-                </a>
-
-                <!-- Chat -->
-                <a href="/dashboard?tab=chat" wire:navigate 
-                   class="flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
-                   {{ (request()->query('tab') === 'chat') 
-                      ? 'bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
-                      : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
-                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        <i data-lucide="message-square" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
-                    </div>
-                    <span class="ml-4 font-orbitron text-xs font-bold uppercase tracking-widest opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-                        Chat
-                    </span>
-                </a>
+                @foreach($navItems as $item)
+                    <a href="{{ $item['url'] }}" wire:navigate 
+                       class="flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
+                       {{ $item['active'] 
+                          ? 'bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
+                          : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
+                        <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                            <i data-lucide="{{ $item['icon'] }}" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
+                        </div>
+                        <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-widest transition-opacity duration-200">
+                            {{ $item['label'] }}
+                        </span>
+                    </a>
+                @endforeach
             </nav>
 
             <!-- Sidebar Bottom Action -->
@@ -214,7 +119,7 @@
                         <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
                         </div>
-                        <span class="ml-4 font-orbitron text-xs font-bold uppercase tracking-widest opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                        <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-widest transition-opacity duration-200">
                             Exit Terminal
                         </span>
                     </button>
@@ -223,16 +128,25 @@
         </aside>
 
         <!-- Right Side: Header + Content Pane -->
-        <div class="flex-1 flex flex-col min-w-0 pl-20 md:pl-0 relative">
+        <div class="flex-1 flex flex-col min-w-0 relative">
             
             <!-- Topbar sticky header -->
             <header class="sticky top-0 z-40 h-20 border-b border-purple-500/15 bg-[#0a0718]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-                <!-- Left: Dashboard Section Title -->
-                <div class="flex items-center space-x-3">
-                    <span class="w-2 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)]"></span>
-                    <h1 class="text-sm sm:text-base font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple">
-                        @yield('dashboard_title', 'SYSTEM DASHBOARD')
-                    </h1>
+                <!-- Left: Burger Menu (Mobile Only) + Dashboard Section Title -->
+                <div class="flex items-center space-x-4">
+                    <!-- Burger Button -->
+                    <button id="mobile-menu-btn" class="md:hidden flex flex-col justify-center items-center w-10 h-10 bg-zinc-900/50 border border-zinc-800 rounded-lg hover:border-purple-500/40 transition-colors" aria-label="Open Menu">
+                        <span class="burger-line"></span>
+                        <span class="burger-line my-1"></span>
+                        <span class="burger-line"></span>
+                    </button>
+
+                    <div class="flex items-center space-x-3">
+                        <span class="hidden xs:block w-2 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)]"></span>
+                        <h1 class="text-xs sm:text-sm md:text-base font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple truncate max-w-[150px] sm:max-w-none">
+                            @yield('dashboard_title', 'SYSTEM DASHBOARD')
+                        </h1>
+                    </div>
                 </div>
 
                 <!-- Right: Stats & Controls -->
