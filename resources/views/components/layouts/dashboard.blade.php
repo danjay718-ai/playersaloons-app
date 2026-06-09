@@ -31,13 +31,12 @@
 
     <!-- Mobile Sidebar Drawer (Visible only on mobile via trigger) -->
     <div id="mobile-sidebar">
-        <div class="px-6 flex items-center space-x-4 mb-8">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+        <div class="px-6 flex items-center justify-center mb-8">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_15px_rgba(168,85,247,0.4)]">
                 <div class="w-full h-full bg-[#0a0718] rounded-xl flex items-center justify-center">
-                    <img src="/playersaloons_logo.webp" alt="Logo" class="w-7 h-7 object-contain">
+                    <img src="/playersaloons_logo.webp" alt="Logo" class="w-9 h-9 object-contain">
                 </div>
             </div>
-            <span class="text-lg font-black font-orbitron tracking-widest bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent uppercase">SALOONS</span>
         </div>
 
         <nav class="px-4 space-y-2">
@@ -79,16 +78,13 @@
         <aside id="desktop-sidebar" class="group/sidebar hidden md:flex sticky top-0 left-0 h-screen bg-[#0a0718]/90 border-r border-purple-500/15 backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden shadow-[5px_0_25px_rgba(0,0,0,0.6)]">
             
             <!-- Sidebar Header / Logo -->
-            <div class="px-4 flex items-center">
-                <a href="/dashboard" wire:navigate class="flex items-center space-x-4 w-full">
-                    <div class="relative flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-transform duration-500 group-hover/sidebar:rotate-[360deg]">
+            <div class="px-4 flex items-center justify-center">
+                <a href="/dashboard" wire:navigate class="flex items-center justify-center w-full">
+                    <div class="relative flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-transform duration-500 group-hover/sidebar:rotate-[360deg]">
                         <div class="w-full h-full bg-[#0a0718] rounded-xl flex items-center justify-center">
-                            <img src="/playersaloons_logo.webp" alt="Logo" class="w-8 h-8 object-contain">
+                            <img src="/playersaloons_logo.webp" alt="Logo" class="w-9 h-9 object-contain">
                         </div>
                     </div>
-                    <span class="sidebar-label text-lg font-black font-orbitron tracking-widest bg-gradient-to-r from-purple-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent uppercase filter drop-shadow-[0_0_6px_rgba(168,85,247,0.3)]">
-                        SALOONS
-                    </span>
                 </a>
             </div>
 
@@ -141,10 +137,10 @@
                         <span class="burger-line"></span>
                     </button>
 
-                    <div class="flex items-center space-x-3">
+                    <div class="hidden md:flex items-center space-x-3">
                         <span class="hidden xs:block w-2 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)]"></span>
                         <h1 class="text-xs sm:text-sm md:text-base font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple truncate max-w-[150px] sm:max-w-none">
-                            @yield('dashboard_title', 'SYSTEM DASHBOARD')
+                            @yield('dashboard_title', 'DASHBOARD')
                         </h1>
                     </div>
                 </div>
