@@ -266,6 +266,12 @@ Designed and implemented premium dark neon frontend pages using Tailwind CSS and
   - Updated the topbar title from **SYSTEM DASHBOARD** to **DASHBOARD**.
   - Optimized topbar for mobile by hiding the title while keeping essential action icons (Deposit, Notifications, Profile, and Language Switcher) visible.
   - Enlarged the platform logo in the sidebar for stronger brand presence and removed the **PLAYERSALOONS** text branding for a modern "icon-first" design.
+- **Tournament Discovery & Dashboard Enhancements (v1.2)**:
+  - Added `frequency` (Daily/Weekly/Monthly) and `banner_url` to tournaments for better visual presentation.
+  - Enhanced `TournamentList` with a frequency filter and rich card design featuring image banners.
+  - Refactored `PlayerDashboard` with a tabbed interface ("My Tournaments & Stats" vs "Browse & Register").
+  - Implemented real-time tournament filtering (Search, Game, Status, Frequency) directly within the player dashboard.
+  - Added past tournament history section and reusable `tournament-card-item` component for consistency.
 - **Routing (`routes/web.php`)**:
   - Standardized web routing under `guest` and `auth` middleware groups.
 - **Tests**:
