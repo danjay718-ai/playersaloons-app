@@ -76,6 +76,8 @@ class Tournament extends Model implements HasMedia
         'completed_at',
         'cancelled_at',
         'created_by',
+        'frequency',
+        'banner_url',
     ];
 
     /**
