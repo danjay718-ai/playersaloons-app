@@ -261,25 +261,12 @@ Designed and implemented premium dark neon frontend pages using Tailwind CSS and
 - **Mobile Responsiveness**:
   - Tournament bracket list uses horizontal overflow with scroll snap (`snap-x flex-nowrap`) to ensure fluid scrolling on mobile devices.
   - UI styled with clean spacing, readable typography (Inter and Orbitron), custom status badges, and Lucide icons.
+- **UI Polishing (v1.1)**:
+  - Refined the Player Dashboard interface for better aesthetics and mobile usability.
+  - Updated the topbar title from **SYSTEM DASHBOARD** to **DASHBOARD**.
+  - Optimized topbar for mobile by hiding the title while keeping essential action icons (Deposit, Notifications, Profile, and Language Switcher) visible.
+  - Enlarged the platform logo in the sidebar for stronger brand presence and removed the **PLAYERSALOONS** text branding for a modern "icon-first" design.
 - **Routing (`routes/web.php`)**:
   - Standardized web routing under `guest` and `auth` middleware groups.
 - **Tests**:
   - Run and passed the entire test suite (139 tests, 100% passing).
-
-
-
-
----
-
-## ✅ Phase 16 — UI Polishing & Mobile Optimization
-
-Refined the Player Dashboard interface for better aesthetics and mobile usability.
-
-- **Topbar Refinement**:
-  - Updated the section title from **SYSTEM DASHBOARD** to **DASHBOARD** for a cleaner look.
-  - Optimized the topbar for mobile by hiding the title while keeping essential action icons (Deposit, Notifications, Profile, and Language Switcher) visible and accessible.
-- **Sidebar Brand Update**:
-  - Enlarged the platform logo in the sidebar for stronger brand presence.
-  - Removed the **PLAYERSALOONS** text branding from the sidebar header to achieve a more modern, minimal, and "icon-first" design.
-- **Mobile Drawer**:
-  - Mirrored the enlarged logo and minimal design in the mobile sidebar drawer.
