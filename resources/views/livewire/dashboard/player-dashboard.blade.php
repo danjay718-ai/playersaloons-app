@@ -1,5 +1,6 @@
 <div class="space-y-8 min-w-0" x-data="{
     activeTab: @entangle('tab'),
+    tSubTab: @entangle('tSubTab'),
     adMuted: true,
     adPaused: false,
     adLoaded: false,
@@ -358,96 +359,151 @@
     <!-- TAB 2: TOURNAMENTS                                   -->
     <!-- ---------------------------------------------------- -->
     <template x-if="activeTab === 'tournaments'">
-        <div class="space-y-6" x-data="{ 
-            searchFilter: '', 
-            activeGame: 'all',
-            tournaments: [
-                { id: 1, name: 'Apex Legends: Void Run', game: 'Apex Legends', prize: '$1,500', players: '42/64', time: 'June 12, 18:00', fee: 'Free', status: 'OPEN' },
-                { id: 2, name: 'Viking Valorant Clash', game: 'Valorant', prize: '$3,000', players: '128/128', time: 'June 10, 19:30', fee: '$5.00', status: 'FULL' },
-                { id: 3, name: 'Dota 2 Saloon Championship', game: 'Dota 2', prize: '$5,000', players: '24/32 Teams', time: 'June 15, 15:00', fee: '$10.00', status: 'OPEN' },
-                { id: 4, name: 'CS2 Dust2 Duelists', game: 'CS2', prize: '$1,000', players: '16/32 Teams', time: 'June 18, 20:00', fee: '$2.00', status: 'OPEN' },
-                { id: 5, name: 'FIFA Arena Showdown', game: 'FIFA 24', prize: '$800', players: '60/64', time: 'June 11, 17:00', fee: 'Free', status: 'OPEN' },
-                { id: 6, name: 'Tekken 8 Iron Fist Lobby', game: 'Tekken 8', prize: '$500', players: '8/16', time: 'June 14, 21:00', fee: 'Free', status: 'OPEN' }
-            ]
-        }">
-            <!-- Filters & Search -->
-            <div class="bg-[#0c081d] border border-purple-500/15 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-                <!-- Game Tabs -->
-                <div class="flex flex-wrap items-center gap-2">
-                    <button @click="activeGame = 'all'" :class="activeGame === 'all' ? 'bg-purple-600 text-white' : 'bg-zinc-950 hover:bg-zinc-900 border border-purple-500/10 text-zinc-400'" class="px-3.5 py-1.5 rounded-lg text-xs font-bold font-orbitron uppercase tracking-widest transition-all">
-                        All Games
-                    </button>
-                    <button @click="activeGame = 'Valorant'" :class="activeGame === 'Valorant' ? 'bg-purple-600 text-white' : 'bg-zinc-950 hover:bg-zinc-900 border border-purple-500/10 text-zinc-400'" class="px-3.5 py-1.5 rounded-lg text-xs font-bold font-orbitron uppercase tracking-widest transition-all">
-                        Valorant
-                    </button>
-                    <button @click="activeGame = 'CS2'" :class="activeGame === 'CS2' ? 'bg-purple-600 text-white' : 'bg-zinc-950 hover:bg-zinc-900 border border-purple-500/10 text-zinc-400'" class="px-3.5 py-1.5 rounded-lg text-xs font-bold font-orbitron uppercase tracking-widest transition-all">
-                        CS2
-                    </button>
-                    <button @click="activeGame = 'FIFA 24'" :class="activeGame === 'FIFA 24' ? 'bg-purple-600 text-white' : 'bg-zinc-950 hover:bg-zinc-900 border border-purple-500/10 text-zinc-400'" class="px-3.5 py-1.5 rounded-lg text-xs font-bold font-orbitron uppercase tracking-widest transition-all">
-                        FIFA 24
-                    </button>
+        <div class="space-y-6">
+            <!-- Sub-tab switcher -->
+            <div class="flex items-center space-x-1 sm:space-x-4 border-b border-purple-500/15 pb-px">
+                <button @click="tSubTab = 'my_tournaments'"
+                        :class="tSubTab === 'my_tournaments' ? 'text-white border-b-2 border-fuchsia-500 bg-fuchsia-950/20' : 'text-zinc-400 hover:text-zinc-200'"
+                        class="px-5 py-3 text-xs font-black font-orbitron uppercase tracking-wider transition-all cursor-pointer">
+                    My Tournaments & Stats
+                </button>
+                <button @click="tSubTab = 'browse_tournaments'"
+                        :class="tSubTab === 'browse_tournaments' ? 'text-white border-b-2 border-fuchsia-500 bg-fuchsia-950/20' : 'text-zinc-400 hover:text-zinc-200'"
+                        class="px-5 py-3 text-xs font-black font-orbitron uppercase tracking-wider transition-all cursor-pointer">
+                    Browse & Register
+                </button>
+            </div>
+
+            <!-- SUB-TAB 1: MY TOURNAMENTS & STATS -->
+            <div x-show="tSubTab === 'my_tournaments'" class="space-y-8" x-transition>
+                <!-- Mini Stats Panel -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-[#0c081d]/50 border border-purple-500/15 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group">
+                        <div class="absolute -bottom-10 -right-10 w-20 h-20 bg-purple-500/5 rounded-full blur-xl transition-all duration-300"></div>
+                        <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Total Matches</span>
+                        <span class="text-2xl font-black text-white font-orbitron mt-2">{{ $playerStats['total_matches'] }}</span>
+                    </div>
+                    <div class="bg-[#0c081d]/50 border border-purple-500/15 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group">
+                        <div class="absolute -bottom-10 -right-10 w-20 h-20 bg-emerald-500/5 rounded-full blur-xl transition-all duration-300"></div>
+                        <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Wins</span>
+                        <span class="text-2xl font-black text-emerald-400 font-orbitron mt-2">{{ $playerStats['wins'] }}</span>
+                    </div>
+                    <div class="bg-[#0c081d]/50 border border-purple-500/15 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group">
+                        <div class="absolute -bottom-10 -right-10 w-20 h-20 bg-red-500/5 rounded-full blur-xl transition-all duration-300"></div>
+                        <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Losses</span>
+                        <span class="text-2xl font-black text-red-400 font-orbitron mt-2">{{ $playerStats['losses'] }}</span>
+                    </div>
+                    <div class="bg-[#0c081d]/50 border border-purple-500/15 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group">
+                        <div class="absolute -bottom-10 -right-10 w-20 h-20 bg-cyan-500/5 rounded-full blur-xl transition-all duration-300"></div>
+                        <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Win Rate / Earnings</span>
+                        <div class="flex items-baseline space-x-2 mt-2">
+                            <span class="text-2xl font-black text-cyan-400 font-orbitron">{{ $playerStats['win_rate'] }}%</span>
+                            <span class="text-xs text-emerald-400 font-bold font-orbitron">${{ number_format($playerStats['earnings'], 2) }}</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Search Input -->
-                <div class="relative w-full md:w-72">
-                    <input type="text" x-model="searchFilter" placeholder="SEARCH TOURNAMENTS..." class="w-full bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl py-2 px-4 text-xs font-bold font-orbitron uppercase tracking-widest text-purple-300 placeholder-zinc-600">
-                    <div class="absolute right-3 top-2.5 text-zinc-650">
-                        <i data-lucide="search" class="w-4 h-4"></i>
-                    </div>
+                <!-- Active registered tournaments -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-black font-orbitron tracking-wider text-zinc-150 uppercase flex items-center space-x-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+                        <span>My Active Tournaments</span>
+                    </h3>
+                    @if($activeTournaments->count() > 0)
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            @foreach($activeTournaments as $tournament)
+                                @include('livewire.dashboard.tournament-card-item', ['tournament' => $tournament])
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="bg-[#0c081d]/30 border border-purple-500/10 rounded-2xl p-8 text-center text-zinc-500 text-[10px] font-bold uppercase tracking-wider font-orbitron">
+                            No active tournaments registered. Head to the Browse tab to join one!
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Past / Closed tournaments -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-black font-orbitron tracking-wider text-zinc-150 uppercase flex items-center space-x-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+                        <span>Tournament History / Closed</span>
+                    </h3>
+                    @if($closedTournaments->count() > 0)
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            @foreach($closedTournaments as $tournament)
+                                @include('livewire.dashboard.tournament-card-item', ['tournament' => $tournament])
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="bg-[#0c081d]/30 border border-purple-500/10 rounded-2xl p-8 text-center text-zinc-500 text-[10px] font-bold uppercase tracking-wider font-orbitron">
+                            No past tournament history found.
+                        </div>
+                    @endif
                 </div>
             </div>
 
-            <!-- Tournaments List Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                
-                <template x-for="t in tournaments" :key="t.id">
-                    <div x-show="(activeGame === 'all' || t.game === activeGame) && (t.name.toLowerCase().includes(searchFilter.toLowerCase()))"
-                         class="bg-[#0c081d] border border-purple-500/15 hover:border-purple-500/35 rounded-2xl p-5 shadow-xl transition-all duration-300 relative group flex flex-col justify-between overflow-hidden">
-                        
-                        <!-- Glow effect -->
-                        <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-purple-500/5 group-hover:bg-purple-500/10 rounded-full blur-2xl transition-all duration-300"></div>
-
-                        <!-- Top Ribbon -->
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="text-[9px] font-bold text-fuchsia-400 bg-fuchsia-950/40 border border-fuchsia-900/60 px-2 py-0.5 rounded font-orbitron" x-text="t.game"></span>
-                            <span :class="t.status === 'OPEN' ? 'text-emerald-400 bg-emerald-950/40 border-emerald-900/60' : 'text-red-400 bg-red-950/40 border-red-900/60'" class="text-[9px] font-bold px-2 py-0.5 rounded font-orbitron border" x-text="t.status"></span>
+            <!-- SUB-TAB 2: BROWSE & REGISTER -->
+            <div x-show="tSubTab === 'browse_tournaments'" class="space-y-6" x-transition>
+                <!-- Filters & Search -->
+                <div class="bg-[#0c081d]/80 border border-purple-500/15 rounded-2xl p-4 flex flex-col xl:flex-row items-center justify-between gap-4">
+                    <!-- Filters Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full xl:w-auto flex-grow">
+                        <!-- Game Filter -->
+                        <div>
+                            <select wire:model.live="tGameId" class="w-full bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl py-2 px-3 text-xs font-bold font-orbitron uppercase tracking-widest text-purple-300">
+                                <option value="">All Games</option>
+                                @foreach($games as $game)
+                                    <option value="{{ $game->id }}">
+                                        {{ $game->translations->where('locale', 'en')->first()?->name ?? $game->slug }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
-
-                        <!-- Main Details -->
-                        <div class="space-y-2 mb-5">
-                            <h4 class="text-sm font-black font-orbitron tracking-wider text-white uppercase group-hover:text-purple-350 transition-colors" x-text="t.name"></h4>
-                            <div class="grid grid-cols-2 gap-2 text-[10px] text-zinc-400 pt-2 font-medium">
-                                <div class="flex items-center space-x-1.5">
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-purple-400"></i>
-                                    <span x-text="t.time"></span>
-                                </div>
-                                <div class="flex items-center space-x-1.5 justify-end">
-                                    <i data-lucide="users" class="w-3.5 h-3.5 text-purple-400"></i>
-                                    <span x-text="t.players"></span>
-                                </div>
-                            </div>
+                        <!-- Status Filter -->
+                        <div>
+                            <select wire:model.live="tStatus" class="w-full bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl py-2 px-3 text-xs font-bold font-orbitron uppercase tracking-widest text-purple-300">
+                                <option value="">All Statuses</option>
+                                <option value="REGISTRATION_OPEN">Registration Open</option>
+                                <option value="CHECKIN_OPEN">Check-in Open</option>
+                                <option value="REGISTRATION_CLOSED">Registration Closed</option>
+                                <option value="ONGOING">Ongoing</option>
+                            </select>
                         </div>
-
-                        <!-- Prize Pool and Action Row -->
-                        <div class="border-t border-purple-500/10 pt-4 flex items-center justify-between">
-                            <div>
-                                <span class="block text-[8px] text-zinc-500 font-bold uppercase tracking-wider">PRIZE POOL</span>
-                                <span class="text-base font-black text-emerald-400 font-orbitron tracking-wider" x-text="t.prize"></span>
-                            </div>
-                            <div>
-                                <span class="block text-[8px] text-zinc-500 font-bold uppercase tracking-wider text-right">ENTRY FEE</span>
-                                <span class="block text-xs font-bold text-zinc-200 font-orbitron tracking-wider text-right" x-text="t.fee"></span>
-                            </div>
+                        <!-- Frequency Filter -->
+                        <div>
+                            <select wire:model.live="tFrequency" class="w-full bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl py-2 px-3 text-xs font-bold font-orbitron uppercase tracking-widest text-purple-300">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
                         </div>
-
-                        <!-- Join Button -->
-                        <button :disabled="t.status === 'FULL'" 
-                                class="w-full mt-4 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-zinc-900 disabled:to-zinc-900 disabled:text-zinc-650 disabled:border-zinc-800 disabled:shadow-none border border-fuchsia-400/20 text-[10px] font-black font-orbitron uppercase tracking-widest text-white py-2.5 rounded-xl transition-all duration-300 shadow-[0_4px_15px_rgba(168,85,247,0.25)] hover:shadow-[0_4px_20px_rgba(217,70,239,0.5)] cursor-pointer">
-                            <span x-text="t.status === 'OPEN' ? 'REGISTER TOURNAMENT' : 'REGISTRATION CLOSED'"></span>
-                        </button>
                     </div>
-                </template>
 
+                    <!-- Search Input -->
+                    <div class="relative w-full xl:w-72">
+                        <input type="text" wire:model.live.debounce.350ms="tSearch" placeholder="SEARCH TOURNAMENTS..." class="w-full bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl py-2 pl-4 pr-10 text-xs font-bold font-orbitron uppercase tracking-widest text-purple-300 placeholder-zinc-650">
+                        <div class="absolute right-3 top-2.5 text-zinc-650">
+                            <i data-lucide="search" class="w-4 h-4 text-purple-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tournaments List Grid -->
+                @if($browseTournaments->count() > 0)
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        @foreach($browseTournaments as $tournament)
+                            @include('livewire.dashboard.tournament-card-item', ['tournament' => $tournament])
+                        @endforeach
+                    </div>
+                @else
+                    <div class="bg-[#0c081d]/50 border border-purple-500/10 rounded-2xl p-16 text-center shadow-xl">
+                        <i data-lucide="ghost" class="w-8 h-8 text-purple-400 mx-auto mb-3"></i>
+                        <h4 class="text-sm font-black font-orbitron tracking-wider text-white uppercase">No Tournaments Found</h4>
+                        <p class="text-[10px] text-zinc-550 mt-1 max-w-xs mx-auto">
+                            Try adjusting your filters or search keywords.
+                        </p>
+                    </div>
+                @endif
             </div>
         </div>
     </template>

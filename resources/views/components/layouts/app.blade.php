@@ -21,11 +21,8 @@
     <header class="sticky top-0 z-50 bg-zinc-950/60 backdrop-blur-xl border-b border-zinc-900/50 px-4 sm:px-6 lg:px-8 py-3 md:py-4">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <!-- Logo & Brand -->
-            <a href="/" wire:navigate class="flex items-center space-x-3 group">
+            <a href="/" wire:navigate class="flex items-center group">
                 <img src="/playersaloons_logo.webp" alt="PlayerSaloons Logo" class="h-10 md:h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-110">
-                <span class="text-xl md:text-2xl font-black font-orbitron tracking-tighter bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent filter drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]">
-                    PLAYERSALOONS
-                </span>
             </a>
 
             <!-- Desktop Nav Links -->

@@ -19,6 +19,13 @@ class PlayerDashboard extends Component
     // Bound to the 'tab' query parameter
     public string $tab = 'overview';
 
+    // Dashboard Tournament filters and sub-tabs
+    public string $tSearch = '';
+    public string $tGameId = '';
+    public string $tStatus = '';
+    public string $tFrequency = 'daily'; // Default is daily
+    public string $tSubTab = 'my_tournaments'; // Default is my_tournaments
+
     // Chat properties
     public string $chatMessage = '';
     public array $messages = [];
@@ -32,6 +39,7 @@ class PlayerDashboard extends Component
 
     protected $queryString = [
         'tab' => ['except' => 'overview'],
+        'tSubTab' => ['except' => 'my_tournaments'],
     ];
 
     public function mount()
@@ -39,6 +47,11 @@ class PlayerDashboard extends Component
         $tabQuery = request()->query('tab', 'overview');
         if (in_array($tabQuery, ['overview', 'tournaments', 'head-to-head', 'leaderboards', 'streams', 'chat'])) {
             $this->tab = $tabQuery;
+        }
+
+        $subTabQuery = request()->query('tSubTab', 'my_tournaments');
+        if (in_array($subTabQuery, ['my_tournaments', 'browse_tournaments'])) {
+            $this->tSubTab = $subTabQuery;
         }
 
         // Initialize mock chat messages
@@ -224,11 +237,39 @@ class PlayerDashboard extends Component
             ->with('game.translations')
             ->get();
 
-        // ── 7. Browse list — all public active tournaments ────────────────────
-        $browseTournaments = Tournament::query()
-            ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+        // ── 6.5 Closed tournaments the user is registered in ─────────────────
+        $closedTournaments = Tournament::query()
+            ->whereHas('registrations', function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
+            })
+            ->whereIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
             ->with('game.translations')
-            ->take(6)
+            ->get();
+
+        // ── 7. Browse list — filtered joinable tournaments ───────────────────
+        $browseQuery = Tournament::query()
+            ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+            ->with(['game.translations', 'registrations']);
+
+        if ($this->tSearch) {
+            $browseQuery->where('name', 'like', '%' . $this->tSearch . '%');
+        }
+        if ($this->tGameId) {
+            $browseQuery->where('game_id', $this->tGameId);
+        }
+        if ($this->tStatus) {
+            $browseQuery->where('status', $this->tStatus);
+        }
+        if ($this->tFrequency) {
+            $browseQuery->where('frequency', $this->tFrequency);
+        }
+
+        $browseTournaments = $browseQuery->orderBy('created_at', 'desc')->get();
+
+        $games = \App\Modules\CMS\Models\Game::query()
+            ->with('translations')
+            ->where('is_active', true)
             ->get();
 
         $titles = [
@@ -244,8 +285,10 @@ class PlayerDashboard extends Component
             'user'              => $user,
             'activeMatches'     => $activeMatches,
             'activeTournaments' => $activeTournaments,
+            'closedTournaments' => $closedTournaments,
             'browseTournaments' => $browseTournaments,
             'playerStats'       => $playerStats,
+            'games'             => $games,
         ])->layout('components.layouts.dashboard', [
             'title'           => 'Gamer Terminal | PlayerSaloons',
             'dashboard_title' => $titles[$this->tab] ?? 'DASHBOARD',
