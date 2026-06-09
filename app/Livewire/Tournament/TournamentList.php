@@ -16,11 +16,13 @@ class TournamentList extends Component
     public string $status = '';
     public string $gameId = '';
     public string $search = '';
+    public string $frequency = 'daily'; // Default is daily
 
     protected $queryString = [
         'status' => ['except' => ''],
         'gameId' => ['except' => ''],
         'search' => ['except' => ''],
+        'frequency' => ['except' => 'daily'],
     ];
 
     public function updatingStatus(): void
@@ -34,6 +36,11 @@ class TournamentList extends Component
     }
 
     public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFrequency(): void
     {
         $this->resetPage();
     }
@@ -52,6 +59,10 @@ class TournamentList extends Component
 
         if ($this->search) {
             $query->where('name', 'like', '%' . $this->search . '%');
+        }
+
+        if ($this->frequency) {
+            $query->where('frequency', $this->frequency);
         }
 
         $tournaments = $query->orderBy('created_at', 'desc')->paginate(9);
