@@ -26,11 +26,17 @@
             <span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
             <span class="font-bold text-sm tracking-wider uppercase text-slate-200">PS ADMIN</span>
         </div>
-        <button id="mobile-menu-toggle" class="p-2 text-slate-400 hover:text-white focus:outline-none">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-        </button>
+        <div class="flex items-center space-x-2">
+            @php $mobileRole = auth()->user()?->roles?->pluck('name')?->first() ?? 'Staff'; @endphp
+            <span class="text-[9px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-900/40 border border-indigo-700/30 rounded-full px-2 py-0.5">
+                {{ $mobileRole }}
+            </span>
+            <button id="mobile-menu-toggle" class="p-2 text-slate-400 hover:text-white focus:outline-none">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
     </header>
 
     <div class="flex flex-1 flex-col md:flex-row relative">
@@ -116,6 +122,38 @@
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span>API Node: Active</span>
                     </div>
+                    {{-- Logged-in user badge --}}
+                    @php
+                        $adminRole = auth()->user()?->roles?->pluck('name')?->first() ?? 'Staff';
+                        $roleColors = [
+                            'SUPER_ADMIN'         => 'bg-red-900/40 text-red-300 border-red-700/30',
+                            'ADMIN'               => 'bg-indigo-900/40 text-indigo-300 border-indigo-700/30',
+                            'MODERATOR'           => 'bg-purple-900/40 text-purple-300 border-purple-700/30',
+                            'FINANCE_OPERATOR'    => 'bg-emerald-900/40 text-emerald-300 border-emerald-700/30',
+                            'KYC_REVIEWER'        => 'bg-sky-900/40 text-sky-300 border-sky-700/30',
+                            'SUPPORT_AGENT'       => 'bg-amber-900/40 text-amber-300 border-amber-700/30',
+                            'TOURNAMENT_ORGANIZER'=> 'bg-orange-900/40 text-orange-300 border-orange-700/30',
+                        ];
+                        $roleClass = $roleColors[$adminRole] ?? 'bg-slate-800 text-slate-300 border-slate-700/30';
+                    @endphp
+                    <div class="flex items-center space-x-2 bg-slate-900/60 border border-slate-700/50 rounded-xl px-3 py-1.5">
+                        <div class="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-[10px] font-black">
+                            {{ strtoupper(substr(auth()->user()?->username ?? 'A', 0, 2)) }}
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[11px] font-bold text-slate-200 leading-none">{{ auth()->user()?->username }}</span>
+                            <span class="text-[8px] font-bold uppercase tracking-wider {{ $roleClass }} inline-flex items-center gap-0.5 border rounded-full px-1.5 py-0.5 mt-0.5">
+                                <i data-lucide="shield" class="w-2 h-2"></i>
+                                {{ $adminRole }}
+                            </span>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ route('logout') }}" class="m-0">
+                        @csrf
+                        <button type="submit" title="Sign out" class="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/20">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                        </button>
+                    </form>
                 </div>
             </header>
 

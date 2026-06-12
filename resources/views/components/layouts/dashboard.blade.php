@@ -60,7 +60,13 @@
             @endforeach
         </nav>
 
-        <div class="px-4 mt-auto">
+        <div class="px-4 mt-auto space-y-2">
+            @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
+            <a href="/admin" class="w-full flex items-center h-12 px-3 rounded-lg border border-amber-500/30 bg-amber-950/20 text-amber-400 hover:text-amber-300 transition-colors">
+                <i data-lucide="shield" class="w-5 h-5 mr-3"></i>
+                <span class="font-orbitron text-xs font-bold uppercase tracking-widest">Admin Panel</span>
+            </a>
+            @endif
             <form method="POST" action="{{ route('logout') }}" class="m-0">
                 @csrf
                 <button type="submit" class="w-full flex items-center h-12 px-3 rounded-lg text-zinc-500 hover:text-red-400 transition-colors">
@@ -108,6 +114,17 @@
 
             <!-- Sidebar Bottom Action -->
             <div class="px-3">
+                @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
+                <a href="/admin" wire:navigate
+                   class="w-full flex items-center h-12 px-3 mb-2 rounded-lg border border-amber-500/30 bg-amber-950/20 text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 hover:border-amber-400/50 transition-all duration-200">
+                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                        <i data-lucide="shield" class="w-5 h-5"></i>
+                    </div>
+                    <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-widest transition-opacity duration-200">
+                        Admin Panel
+                    </span>
+                </a>
+                @endif
                 <form method="POST" action="{{ route('logout') }}" class="m-0">
                     @csrf
                     <button type="submit" 
@@ -239,8 +256,18 @@
                              x-transition:leave="transition ease-in duration-75"
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-3 w-48 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-1"
+                             class="absolute right-0 mt-3 w-52 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-1"
                              x-cloak>
+                            {{-- Role badge --}}
+                            @php $role = auth()->user()?->roles?->pluck('name')?->first(); @endphp
+                            @if($role && $role !== 'PLAYER')
+                            <div class="px-4 py-2 border-b border-purple-500/10">
+                                <span class="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-amber-900/40 text-amber-300 border border-amber-700/30 rounded-full px-2 py-0.5">
+                                    <i data-lucide="shield" class="w-2.5 h-2.5"></i>
+                                    {{ $role }}
+                                </span>
+                            </div>
+                            @endif
                             <a href="/profile" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-zinc-350 hover:bg-purple-950/30 hover:text-white transition-colors">
                                 <i data-lucide="user" class="w-4 h-4 text-purple-400"></i>
                                 <span>My Profile</span>
@@ -249,6 +276,12 @@
                                 <i data-lucide="wallet" class="w-4 h-4 text-purple-400"></i>
                                 <span>My Wallet</span>
                             </a>
+                            @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
+                            <a href="/admin" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-amber-400 hover:bg-amber-950/30 hover:text-amber-300 transition-colors">
+                                <i data-lucide="shield" class="w-4 h-4"></i>
+                                <span>Admin Panel</span>
+                            </a>
+                            @endif
                             <hr class="border-purple-500/10 my-1">
                             <form method="POST" action="{{ route('logout') }}" class="m-0">
                                 @csrf

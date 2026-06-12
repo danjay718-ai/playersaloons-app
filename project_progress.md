@@ -335,6 +335,13 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - All admin routes mounted under `/admin` prefix inside the `auth` middleware group:
     - `/admin` · `/admin/tournaments` · `/admin/matches` · `/admin/kyc` · `/admin/withdrawals` · `/admin/users` · `/admin/audit-logs` · `/admin/cms`
 
+- **UI Polish & Role-Based UI Separation (v1.1)**:
+  - Implemented dynamic role-based login redirects: players redirect to `/dashboard`, staff/admin roles redirect to `/admin`.
+  - Added request-time checks in `PlayerDashboard::mount()` to auto-redirect staff users accessing `/dashboard` to `/admin`.
+  - Added "Admin Panel" sidebar and profile dropdown links to `/dashboard` for staff members to easily switch views.
+  - Enhanced the admin layout header (desktop & mobile) to show logged-in staff username, dynamic role labels, and dedicated color-coded shields (e.g. red for `SUPER_ADMIN`, indigo for `ADMIN`).
+  - Added a sign-out button directly inside the admin header.
+
 - **Bug Fixes**:
   - Renamed `TournamentAdmin::transition()` → `applyTransition()` to avoid conflict with Livewire's reserved `transition()` lifecycle method.
   - Fixed `WithdrawalAdmin::reject()` union type hint (removed erroneous `RejectKycAction` from union).
@@ -343,5 +350,7 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
 
 - **Tests**:
   - `tests/Feature/Admin/AdminPanelTest.php`: 12 feature tests covering route authorization, component rendering, tournament CRUD & lifecycle, match override, dispute resolution, KYC approve/reject, withdrawal approve/reject, user suspend/unsuspend, and audit log access.
-  - **All 147 tests pass at 100%.**
+  - `tests/Feature/Auth/LoginRedirectTest.php`: 7 feature tests validating role-based login redirects, dashboard auto-routing, and guest restrictions.
+  - **All 154 tests pass at 100%.**
+
 

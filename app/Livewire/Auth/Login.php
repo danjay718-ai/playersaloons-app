@@ -32,6 +32,13 @@ class Login extends Component
         if (Auth::attempt($credentials, $this->remember)) {
             session()->regenerate();
 
+            $user = Auth::user();
+            $adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER'];
+
+            if ($user && $user->hasAnyRole($adminRoles)) {
+                return redirect()->intended('/admin');
+            }
+
             return redirect()->intended('/dashboard');
         }
 

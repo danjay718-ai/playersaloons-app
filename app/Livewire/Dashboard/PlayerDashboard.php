@@ -44,6 +44,14 @@ class PlayerDashboard extends Component
 
     public function mount()
     {
+        $user = Auth::user();
+        if ($user) {
+            $adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER'];
+            if ($user->hasAnyRole($adminRoles)) {
+                return redirect()->to('/admin');
+            }
+        }
+
         $tabQuery = request()->query('tab', 'overview');
         if (in_array($tabQuery, ['overview', 'tournaments', 'head-to-head', 'leaderboards', 'streams', 'chat'])) {
             $this->tab = $tabQuery;
@@ -157,7 +165,6 @@ class PlayerDashboard extends Component
             return redirect()->to('/login');
         }
 
-        // ── 1. User registration IDs (non-cancelled/refunded) ──────────────────
         $userRegistrationIds = TournamentRegistration::query()
             ->where('user_id', $user->id)
             ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
