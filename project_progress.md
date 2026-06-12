@@ -1,6 +1,7 @@
 # PlayerSaloons — MVP Progress
 
 **Last Updated**: 2026-06-12 | **Branch**: `main`
+**New Admin Features & Compliance Plan**: [PlayerSaloons_New_Admin_Features_Implementation_Plan_v1.md]
 
 ---
 
@@ -42,8 +43,7 @@
 
 ## ✅ Phase 4 — State Machines
 
-**7 state machines** under `app/Modules/*/StateMachines/`, extending [`AbstractStateMachine`](file:///home/danjay/Projects/playersaloons-app/app/Shared/StateMachines/AbstractStateMachine.php):
-
+**7 state machines** under `app/Modules/*/StateMachines/`, extending [`AbstractStateMachine`]
 | Machine | Key Transitions | Guards |
 |---|---|---|
 | `TournamentStateMachine` | DRAFT→PUBLISHED→...→ONGOING→COMPLETED→REFUNDED | Publish config, bracket count, min participants |
