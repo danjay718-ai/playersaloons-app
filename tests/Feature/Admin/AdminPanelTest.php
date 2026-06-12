@@ -102,6 +102,52 @@ class AdminPanelTest extends TestCase
     {
         $response = $this->actingAs($this->player)->get('/admin');
         $response->assertStatus(403);
+        $response->assertSee('Security Protocol Restrict');
+    }
+
+    public function test_non_existent_route_shows_custom_404(): void
+    {
+        $response = $this->get('/non-existent-route-999');
+        $response->assertStatus(404);
+        $response->assertSee('Grid Signal Lost');
+    }
+
+    public function test_admin_visiting_player_profile_redirects_to_admin_profile(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/profile');
+        $response->assertRedirect('/admin/profile');
+    }
+
+    public function test_admin_visiting_player_dashboard_redirects_to_admin_dashboard(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/dashboard');
+        $response->assertRedirect('/admin');
+    }
+
+    public function test_admin_visiting_player_wallet_redirects_to_admin_dashboard(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/wallet');
+        $response->assertRedirect('/admin');
+    }
+
+    public function test_admin_visiting_player_teams_redirects_to_admin_dashboard(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/teams');
+        $response->assertRedirect('/admin');
+    }
+
+    public function test_player_cannot_access_admin_profile(): void
+    {
+        $response = $this->actingAs($this->player)->get('/admin/profile');
+        $response->assertStatus(403);
+        $response->assertSee('Security Protocol Restrict');
+    }
+
+    public function test_admin_can_access_admin_profile(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/admin/profile');
+        $response->assertStatus(200);
+        $response->assertSee('Staff Profile Settings');
     }
 
     public function test_admin_can_access_admin_dashboard(): void

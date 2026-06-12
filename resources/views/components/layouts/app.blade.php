@@ -31,10 +31,12 @@
                     <i data-lucide="trophy" class="w-4 h-4"></i>
                     <span>Tournaments</span>
                 </a>
+                @if(!auth()->check() || !auth()->user()->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
                 <a href="/teams" wire:navigate class="text-[10px] font-black uppercase tracking-[0.2em] {{ request()->is('teams*') ? 'text-fuchsia-400' : 'text-zinc-500 hover:text-white' }} transition-colors duration-300 flex items-center space-x-2">
                     <i data-lucide="users" class="w-4 h-4"></i>
                     <span>Teams</span>
                 </a>
+                @endif
                 @auth
                     <a href="/dashboard" wire:navigate class="text-[10px] font-black uppercase tracking-[0.2em] {{ request()->is('dashboard*') ? 'text-indigo-400' : 'text-zinc-500 hover:text-white' }} transition-colors duration-300 flex items-center space-x-2">
                         <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
@@ -46,6 +48,7 @@
             <!-- Right: Auth actions -->
             <div class="flex items-center space-x-4">
                 @auth
+                    @if(!auth()->user()->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
                     <!-- Wallet quick info -->
                     <a href="/wallet" wire:navigate class="hidden sm:flex items-center space-x-3 bg-zinc-900/50 border border-zinc-800 hover:border-emerald-500/50 rounded-full px-5 py-2 transition-all duration-300">
                         <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
@@ -53,10 +56,16 @@
                             ${{ number_format((float)(auth()->user()->wallet?->cached_balance ?? 0.00), 2) }}
                         </span>
                     </a>
+                    @endif
 
                     <!-- User Actions -->
                     <div class="flex items-center space-x-3">
-                        <a href="/profile" wire:navigate class="flex items-center space-x-2 bg-zinc-900/50 hover:bg-zinc-800 border border-zinc-800 rounded-full py-1.5 px-1.5 pr-4 transition-all duration-300">
+                        @php
+                            $profileUrl = auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']) 
+                                ? '/admin/profile' 
+                                : '/profile';
+                        @endphp
+                        <a href="{{ $profileUrl }}" wire:navigate class="flex items-center space-x-2 bg-zinc-900/50 hover:bg-zinc-800 border border-zinc-800 rounded-full py-1.5 px-1.5 pr-4 transition-all duration-300">
                             <div class="w-7 h-7 bg-zinc-950 rounded-full flex items-center justify-center text-zinc-500">
                                 <i data-lucide="user" class="w-4 h-4"></i>
                             </div>
@@ -114,21 +123,25 @@
             <i data-lucide="trophy" class="w-5 h-5 transition-all duration-300 {{ request()->is('tournaments*') ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
             <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('tournaments*') ? 'text-cyan-400' : 'text-zinc-600' }}">Events</span>
         </a>
+        @if(!auth()->check() || !auth()->user()->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
         <a href="/teams" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
             <i data-lucide="users" class="w-5 h-5 transition-all duration-300 {{ request()->is('teams*') ? 'text-fuchsia-400 scale-110 drop-shadow-[0_0_8px_rgba(192,38,211,0.5)]' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
             <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('teams*') ? 'text-fuchsia-400' : 'text-zinc-600' }}">Clans</span>
         </a>
+        @endif
         @auth
             <a href="/dashboard" wire:navigate class="flex flex-col items-center justify-center w-16 h-16 -mt-10 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-2xl shadow-[0_8px_20px_-5px_rgba(124,77,255,0.6)] border border-white/20">
                 <i data-lucide="layout-dashboard" class="w-6 h-6 text-white"></i>
             </a>
+            @if(!auth()->user()->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
             <a href="/wallet" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
                 <i data-lucide="wallet" class="w-5 h-5 transition-all duration-300 {{ request()->is('wallet*') ? 'text-emerald-400 scale-110 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
                 <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('wallet*') ? 'text-emerald-400' : 'text-zinc-600' }}">Bank</span>
             </a>
-            <a href="/profile" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
-                <i data-lucide="user" class="w-5 h-5 transition-all duration-300 {{ request()->is('profile*') ? 'text-white scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
-                <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('profile*') ? 'text-white' : 'text-zinc-600' }}">Profile</span>
+            @endif
+            <a href="{{ $profileUrl }}" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">
+                <i data-lucide="user" class="w-5 h-5 transition-all duration-300 {{ request()->is('profile*') || request()->is('admin/profile*') ? 'text-white scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'text-zinc-600 group-hover:text-zinc-400' }}"></i>
+                <span class="text-[8px] mt-1.5 font-black uppercase tracking-widest {{ request()->is('profile*') || request()->is('admin/profile*') ? 'text-white' : 'text-zinc-600' }}">Profile</span>
             </a>
         @else
             <a href="/login" wire:navigate class="flex flex-col items-center justify-center w-14 text-center group">

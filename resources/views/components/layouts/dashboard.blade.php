@@ -259,7 +259,12 @@
                              class="absolute right-0 mt-3 w-52 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-1"
                              x-cloak>
                             {{-- Role badge --}}
-                            @php $role = auth()->user()?->roles?->pluck('name')?->first(); @endphp
+                            @php 
+                                $role = auth()->user()?->roles?->pluck('name')?->first(); 
+                                $profileUrl = auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']) 
+                                    ? '/admin/profile' 
+                                    : '/profile';
+                            @endphp
                             @if($role && $role !== 'PLAYER')
                             <div class="px-4 py-2 border-b border-purple-500/10">
                                 <span class="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-amber-900/40 text-amber-300 border border-amber-700/30 rounded-full px-2 py-0.5">
@@ -268,14 +273,16 @@
                                 </span>
                             </div>
                             @endif
-                            <a href="/profile" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-zinc-350 hover:bg-purple-950/30 hover:text-white transition-colors">
+                            <a href="{{ $profileUrl }}" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-zinc-350 hover:bg-purple-950/30 hover:text-white transition-colors">
                                 <i data-lucide="user" class="w-4 h-4 text-purple-400"></i>
                                 <span>My Profile</span>
                             </a>
+                            @if(!auth()->user()->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
                             <a href="/wallet" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-zinc-350 hover:bg-purple-950/30 hover:text-white transition-colors">
                                 <i data-lucide="wallet" class="w-4 h-4 text-purple-400"></i>
                                 <span>My Wallet</span>
                             </a>
+                            @endif
                             @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
                             <a href="/admin" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-amber-400 hover:bg-amber-950/30 hover:text-amber-300 transition-colors">
                                 <i data-lucide="shield" class="w-4 h-4"></i>

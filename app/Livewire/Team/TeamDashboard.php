@@ -34,6 +34,17 @@ class TeamDashboard extends Component
     // Inviting Members
     public string $inviteUsername = '';
 
+    public function mount(): void
+    {
+        $user = Auth::user();
+        if ($user) {
+            $adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER'];
+            if ($user->hasAnyRole($adminRoles)) {
+                $this->redirect('/admin');
+            }
+        }
+    }
+
     public function createTeam(CreateTeamAction $action): void
     {
         /** @var User|null $user */

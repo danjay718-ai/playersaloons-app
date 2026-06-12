@@ -27,6 +27,15 @@ class MatchDetail extends Component
 
     public function mount(string $uuid): void
     {
+        $user = Auth::user();
+        if ($user) {
+            $adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER'];
+            if ($user->hasAnyRole($adminRoles)) {
+                $this->redirect('/admin');
+
+                return;
+            }
+        }
         $this->uuid = $uuid;
     }
 
