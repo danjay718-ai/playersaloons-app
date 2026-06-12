@@ -355,7 +355,7 @@ class NotificationServiceTest extends TestCase
             'uuid' => Str::uuid()->toString(),
             'wallet_id' => $wallet->id,
             'reference_type' => 'deposit',
-            'reference_id' => 'test-ref',
+            'reference_id' => 1,
             'type' => LedgerType::DEPOSIT,
             'amount' => '100.00',
             'running_balance' => '100.00',
