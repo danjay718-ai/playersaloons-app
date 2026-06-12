@@ -12,7 +12,6 @@ use App\Modules\Tournament\Events\TournamentStarted;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Events\PrizeAwarded;
 use App\Modules\Wallet\Models\Wallet;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Queue\InteractsWithQueue;
 

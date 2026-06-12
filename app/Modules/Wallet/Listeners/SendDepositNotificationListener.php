@@ -8,7 +8,6 @@ use App\Modules\Community\Models\Notification;
 use App\Modules\Community\Services\NotificationService;
 use App\Modules\Wallet\Events\WalletCredited;
 use App\Modules\Wallet\Models\Wallet;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
 class SendDepositNotificationListener

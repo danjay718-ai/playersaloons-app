@@ -10,7 +10,6 @@ use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Modules\Tournament\Actions\CompleteTournamentAction;
 use App\Modules\Tournament\Models\Round;
 use App\Shared\Enums\MatchStatus;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
 
 class AdvanceWinnerListener

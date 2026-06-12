@@ -9,7 +9,6 @@ use App\Modules\Tournament\Events\BroadcastTournamentStarted;
 use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Events\TournamentStarted;
 use App\Modules\Tournament\Models\Tournament;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class BroadcastTournamentLifecycleListener
 {

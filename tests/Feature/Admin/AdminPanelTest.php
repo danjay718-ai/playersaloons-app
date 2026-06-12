@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Admin;
 
-use App\Livewire\Admin\AdminDashboard;
 use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\KycAdmin;

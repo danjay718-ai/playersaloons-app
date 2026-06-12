@@ -8,7 +8,6 @@ use App\Modules\Community\Services\NotificationService;
 use App\Modules\Wallet\Events\WithdrawalApproved;
 use App\Modules\Wallet\Events\WithdrawalRejected;
 use App\Modules\Wallet\Models\Withdrawal;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
 class SendNotificationListener

@@ -9,7 +9,6 @@ use App\Modules\Match\Events\TournamentBracketUpdated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Events\BroadcastBracketUpdate;
 use App\Modules\Tournament\Models\Tournament;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class BroadcastBracketUpdateListener
 {
