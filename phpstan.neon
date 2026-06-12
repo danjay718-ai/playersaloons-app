@@ -51,5 +51,3 @@ parameters:
         - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$wallet#'
         - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$username#'
 
-    checkGenericClassInNonGenericObjectType: false
-    checkMissingIterableValueType: false
