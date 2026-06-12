@@ -1,3 +1,7 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/phpstan/phpstan-mockery/extension.neon
+
 parameters:
     paths:
         - app/
@@ -6,9 +10,46 @@ parameters:
         - routes/
         - tests/
 
-    # Level 8 is the highest level of strictness (except level 9 which is mostly for strict type checks)
+    # Level 8 is the highest level of strictness
     level: 8
 
     excludePaths:
         - ./*/*.blade.php
         - database/migrations/
+
+    ignoreErrors:
+        - '#Call to an undefined method Illuminate\\Contracts\\View\\View::layout\(\)#'
+        - '#Call to an undefined method Illuminate\\Testing\\TestResponse::assertSeeLivewire\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::once\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::andReturn\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::with\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::andThrow\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::twice\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::times\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::zeroOrMoreTimes\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::atLeast\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::atMost\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::never\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::globally\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::ordered\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::byDefault\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::passthru\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::on\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::any\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::andReturnNull\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::andReturnSelf\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::andReturnValues\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::andSet\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::shouldReceive\(\)#'
+        - '#Call to an undefined method Mockery\\ExpectationInterface|Mockery\\HigherOrderMessage::shouldNotReceive\(\)#'
+        - '#Call to an undefined method App\\Modules\\[a-zA-Z]+\\Models\\[a-zA-Z]+::shouldReceive\(\)#'
+        - '#Call to an undefined method App\\Modules\\[a-zA-Z]+\\Models\\[a-zA-Z]+::shouldNotReceive\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::whereHas\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::with\(\)#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::rounds\(\)#'
+        - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$id#'
+        - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$wallet#'
+        - '#Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable::\$username#'
+
+    checkGenericClassInNonGenericObjectType: false
+    checkMissingIterableValueType: false

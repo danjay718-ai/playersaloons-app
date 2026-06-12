@@ -13,7 +13,7 @@ use App\Shared\Enums\MatchStatus;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
 
-class AdvanceWinnerListener implements ShouldQueue
+class AdvanceWinnerListener
 {
     public function __construct(
         private readonly MatchStateMachine $stateMachine,

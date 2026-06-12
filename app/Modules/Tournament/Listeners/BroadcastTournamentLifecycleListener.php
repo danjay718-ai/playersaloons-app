@@ -11,7 +11,7 @@ use App\Modules\Tournament\Events\TournamentStarted;
 use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class BroadcastTournamentLifecycleListener implements ShouldQueue
+class BroadcastTournamentLifecycleListener
 {
     /**
      * Queue the listener on the 'tournament' queue.

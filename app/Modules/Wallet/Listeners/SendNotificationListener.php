@@ -11,7 +11,7 @@ use App\Modules\Wallet\Models\Withdrawal;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class SendNotificationListener implements ShouldQueue
+class SendNotificationListener
 {
     use InteractsWithQueue;
 

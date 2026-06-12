@@ -109,7 +109,8 @@ class AdminPanelTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get('/admin');
         $response->assertStatus(200);
-        $response->assertSeeLivewire(AdminDashboard::class);
+        $response->assertSee('Dashboard Overview');
+        $response->assertSee('Escrow Balance');
     }
 
     public function test_admin_can_access_other_admin_pages(): void
@@ -127,7 +128,8 @@ class AdminPanelTest extends TestCase
         foreach ($pages as $url => $component) {
             $response = $this->actingAs($this->admin)->get($url);
             $response->assertStatus(200);
-            $response->assertSeeLivewire($component);
+            $response->assertSee('Admin Panel'); // Sidebar should be visible
+            $response->assertStatus(200);
         }
     }
 

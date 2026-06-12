@@ -15,7 +15,7 @@ use App\Modules\Match\Events\MatchStarted;
 use App\Modules\Match\Models\GameMatch;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class NotifyParticipantsListener implements ShouldQueue
+class NotifyParticipantsListener
 {
     /**
      * Create a new listener instance.

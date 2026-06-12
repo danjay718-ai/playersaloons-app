@@ -11,7 +11,7 @@ use App\Modules\Tournament\Events\BroadcastBracketUpdate;
 use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class BroadcastBracketUpdateListener implements ShouldQueue
+class BroadcastBracketUpdateListener
 {
     /**
      * Handle the event.

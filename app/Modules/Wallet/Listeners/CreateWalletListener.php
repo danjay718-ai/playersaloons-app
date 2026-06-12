@@ -8,11 +8,11 @@ use App\Modules\Identity\Events\UserRegistered;
 use App\Modules\Wallet\Events\WalletCreated;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\WalletStatus;
-use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Str;
 
-class CreateWalletListener implements ShouldQueueAfterCommit
+class CreateWalletListener
 {
     use InteractsWithQueue;
 

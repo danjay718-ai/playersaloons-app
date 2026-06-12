@@ -111,7 +111,8 @@ class LoginRedirectTest extends TestCase
 
         $response = $this->actingAs($player)->get('/dashboard');
         $response->assertStatus(200);
-        $response->assertSeeLivewire(PlayerDashboard::class);
+        $response->assertSee('WELCOME BACK');
+        $response->assertSee($player->username);
     }
 
     public function test_invalid_credentials_show_error(): void

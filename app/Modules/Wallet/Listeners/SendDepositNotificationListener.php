@@ -11,7 +11,7 @@ use App\Modules\Wallet\Models\Wallet;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class SendDepositNotificationListener implements ShouldQueue
+class SendDepositNotificationListener
 {
     use InteractsWithQueue;
 

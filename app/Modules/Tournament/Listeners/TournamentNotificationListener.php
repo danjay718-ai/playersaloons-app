@@ -16,7 +16,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Queue\InteractsWithQueue;
 
-class TournamentNotificationListener implements ShouldQueue
+class TournamentNotificationListener
 {
     use InteractsWithQueue;
 
