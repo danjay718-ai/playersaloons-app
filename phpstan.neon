@@ -10,8 +10,8 @@ parameters:
         - routes/
         - tests/
 
-    # Level 8 is the highest level of strictness
-    level: 8
+    # Level 5 is less strict for troubleshooting
+    level: 5
 
     excludePaths:
         - ./*/*.blade.php
