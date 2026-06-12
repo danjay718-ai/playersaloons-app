@@ -112,6 +112,23 @@ class AdminPanelTest extends TestCase
         $response->assertSee('Escrow Balance');
     }
 
+    public function test_admin_dashboard_shows_correct_system_status(): void
+    {
+        // 1. By default, maintenance mode is false, so it should display "System: Online"
+        $response = $this->actingAs($this->admin)->get('/admin');
+        $response->assertStatus(200);
+        $response->assertSee('System: Online');
+        $response->assertDontSee('System: Maintenance');
+
+        // 2. Set maintenance mode to true and check
+        \App\Modules\Operations\Models\SystemSetting::where('key', 'system.maintenance_mode')->update(['value' => 'true']);
+
+        $response = $this->actingAs($this->admin)->get('/admin');
+        $response->assertStatus(200);
+        $response->assertSee('System: Maintenance');
+        $response->assertDontSee('System: Online');
+    }
+
     public function test_admin_can_access_other_admin_pages(): void
     {
         $pages = [
