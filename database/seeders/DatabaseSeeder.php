@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             PlatformSystemUserSeeder::class,
+            AdminUserSeeder::class,
             GamesTableSeeder::class,
             SystemSettingsSeeder::class,
             TournamentsTableSeeder::class,
