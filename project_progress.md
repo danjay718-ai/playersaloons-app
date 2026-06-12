@@ -348,6 +348,13 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - Fixed `TournamentAdmin` validation: replaced `max:max_participants` (invalid cross-field ref) with `lte:max_participants`.
   - Added `rounds()` `hasManyThrough` relationship to `Tournament` model (via `Bracket`).
 
+- **UI Refinements & Fixes (v1.3)**:
+  - **Compact Admin Profile Icon**: Refined the admin header layout, making the user display name and role badge more compact and adjusting margins to prevent overlapping.
+  - **Action Icons Fix (Global)**: Fixed the bug where clicking action buttons caused the icons (e.g. eye, edit, delete, cancel) to disappear and turn into empty circles. Implemented global Livewire `livewire:init` + `morph.updated` + `message.processed` hooks inside all layout files to auto-re-initialize Lucide icons upon any DOM morphing or request processing.
+  - **Livewire DOM Keying (`wire:key`)**: Added unique `wire:key` attributes to table rows (`<tr>`) inside all admin views (`tournament-admin`, `match-admin`, `audit-log-admin`, `cms-admin`, `kyc-admin`, `user-admin`, `withdrawal-admin`) to ensure proper Livewire DOM tracking.
+  - **Custom Dark-Neon Pagination**: Styled the default Laravel/Livewire pagination component in `app.css` using custom CSS overrides. The pagination now blends seamlessly with the dark-neon theme (deep slate background, indigo-to-violet gradient for active pages, subtle glow effects).
+  - **Tournament Pagination Spacing**: Wrapped the tournament admin pagination in an `mt-6` container for improved visual spacing.
+
 - **Tests**:
   - `tests/Feature/Admin/AdminPanelTest.php`: 12 feature tests covering route authorization, component rendering, tournament CRUD & lifecycle, match override, dispute resolution, KYC approve/reject, withdrawal approve/reject, user suspend/unsuspend, and audit log access.
   - `tests/Feature/Auth/LoginRedirectTest.php`: 7 feature tests validating role-based login redirects, dashboard auto-routing, and guest restrictions.

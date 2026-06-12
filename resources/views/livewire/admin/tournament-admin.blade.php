@@ -62,7 +62,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-800/50">
                     @forelse($tournaments as $tournament)
-                        <tr class="hover:bg-slate-900/40">
+                        <tr class="hover:bg-slate-900/40" wire:key="tournament-{{ $tournament->id }}">
                             <td class="p-4 font-semibold text-slate-200">
                                 <span class="block text-slate-200 hover:text-indigo-400 cursor-pointer" wire:click="selectTournament({{ $tournament->id }})">
                                     {{ $tournament->name }}
@@ -132,7 +132,7 @@
     </div>
 
     <!-- Pagination -->
-    <div>
+    <div class="mt-6">
         {{ $tournaments->links() }}
     </div>
 

@@ -176,3 +176,76 @@
     border-color: rgba(139, 92, 246, 0.6);
     color: #c4b5fd;
 }
+
+/* ───────────────────────────────────
+   CUSTOM PAGINATION OVERRIDES
+─────────────────────────────────── */
+nav[role="navigation"] {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 0;
+}
+
+@media (min-width: 640px) {
+    nav[role="navigation"] {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+nav[role="navigation"] p {
+    color: rgba(148, 163, 184, 0.7) !important; /* slate-400/70 */
+    font-size: 0.875rem;
+}
+
+nav[role="navigation"] span.relative.z-0.inline-flex {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid rgba(30, 41, 59, 0.5); /* slate-800/50 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+nav[role="navigation"] span.relative.z-0.inline-flex a,
+nav[role="navigation"] span.relative.z-0.inline-flex span {
+    background-color: #0b0f19 !important; /* dark slate */
+    border-color: rgba(30, 41, 59, 0.5) !important;
+    color: #94a3b8 !important; /* slate-400 */
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 0.875rem;
+    transition: all 150ms ease;
+}
+
+nav[role="navigation"] span.relative.z-0.inline-flex a:hover {
+    background-color: rgba(79, 70, 229, 0.15) !important; /* indigo-600/15 */
+    color: #a5b4fc !important; /* indigo-300 */
+    border-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+nav[role="navigation"] span.relative.z-0.inline-flex span[aria-current="page"] span {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important; /* indigo gradient */
+    color: #ffffff !important;
+    border-color: #4f46e5 !important;
+    box-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
+}
+
+/* Mobile pagination buttons style */
+nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a,
+nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden span {
+    background-color: #0b0f19 !important;
+    border-color: rgba(30, 41, 59, 0.5) !important;
+    color: #94a3b8 !important;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    transition: all 150ms ease;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
+    background-color: rgba(79, 70, 229, 0.15) !important;
+    color: #a5b4fc !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
+}

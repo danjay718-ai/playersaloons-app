@@ -52,7 +52,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-800/50">
                     @forelse($withdrawals as $withdrawal)
-                        <tr class="hover:bg-slate-900/40">
+                        <tr class="hover:bg-slate-900/40" wire:key="withdrawal-{{ $withdrawal->id }}">
                             <td class="p-4 font-semibold text-slate-200">
                                 <span>{{ $withdrawal->user->username }}</span>
                                 <span class="block text-[10px] text-slate-500 font-normal mt-0.5">{{ $withdrawal->user->email }}</span>

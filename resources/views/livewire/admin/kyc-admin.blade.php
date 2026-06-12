@@ -56,7 +56,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-800/50">
                             @forelse($submissions as $sub)
-                                <tr class="hover:bg-slate-900/40">
+                                <tr class="hover:bg-slate-900/40" wire:key="submission-{{ $sub->id }}">
                                     <td class="p-4">
                                         <span class="block font-semibold text-slate-250">{{ $sub->user->username }}</span>
                                         <span class="block text-[10px] text-slate-500">{{ $sub->user->email }}</span>

@@ -41,7 +41,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-800/50">
                         @forelse($games as $game)
-                            <tr class="hover:bg-slate-900/40">
+                            <tr class="hover:bg-slate-900/40" wire:key="game-{{ $game->id }}">
                                 <td class="p-4 font-semibold text-slate-200 font-mono">
                                     {{ $game->slug }}
                                     <span class="block text-[9px] text-slate-500 font-normal mt-0.5">{{ $game->uuid }}</span>
@@ -105,7 +105,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-800/50">
                         @forelse($pages as $page)
-                            <tr class="hover:bg-slate-900/40">
+                            <tr class="hover:bg-slate-900/40" wire:key="page-{{ $page->id }}">
                                 <td class="p-4 font-semibold text-slate-200">
                                     {{ $page->translations->where('locale', 'en')->first()?->title ?? 'Untitled Page' }}
                                     <span class="block text-[9px] text-slate-550 mt-0.5">UUID: {{ $page->uuid }}</span>

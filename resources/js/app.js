@@ -22,6 +22,14 @@ document.addEventListener('livewire:navigated', () => {
     initSidebar();
 });
 
+document.addEventListener('livewire:init', () => {
+    Livewire.hook('message.processed', (message, component) => {
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    });
+});
+
 /**
  * MOBILE SIDEBAR — open / close / swipe-to-close
  */

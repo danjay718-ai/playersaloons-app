@@ -52,7 +52,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-800/50">
                     @forelse($logs as $log)
-                        <tr class="hover:bg-slate-900/40">
+                        <tr class="hover:bg-slate-900/40" wire:key="log-{{ $log->id }}">
                             <td class="p-4 text-slate-450 font-mono">
                                 #{{ $log->id }}
                             </td>
