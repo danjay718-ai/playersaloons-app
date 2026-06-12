@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Livewire\Admin\AdminDashboard;
+use App\Livewire\Admin\AdminProfile;
 use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\KycAdmin;
@@ -59,6 +60,7 @@ Route::middleware('auth')->group(function () {
     // Admin Control Panel
     Route::prefix('admin')->group(function () {
         Route::get('/', AdminDashboard::class);
+        Route::get('/profile', AdminProfile::class);
         Route::get('/tournaments', TournamentAdmin::class);
         Route::get('/matches', MatchAdmin::class);
         Route::get('/kyc', KycAdmin::class);

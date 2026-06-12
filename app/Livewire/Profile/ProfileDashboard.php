@@ -51,6 +51,20 @@ class ProfileDashboard extends Component
             return;
         }
 
+        if ($user->hasAnyRole([
+            'SUPER_ADMIN',
+            'ADMIN',
+            'MODERATOR',
+            'TOURNAMENT_ORGANIZER',
+            'SUPPORT_AGENT',
+            'FINANCE_OPERATOR',
+            'KYC_REVIEWER',
+        ])) {
+            $this->redirect('/admin/profile');
+
+            return;
+        }
+
         $profile = $user->profile;
         if ($profile) {
             $this->displayName = $profile->display_name ?? '';
