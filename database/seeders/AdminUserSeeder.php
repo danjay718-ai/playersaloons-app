@@ -28,16 +28,16 @@ class AdminUserSeeder extends Seeder
      */
     private array $staffAccounts = [
         [
-            'email'    => 'admin@playersaloons.com',
+            'email' => 'admin@playersaloons.com',
             'username' => 'superadmin',
             'password' => 'Admin@1234!',
-            'role'     => 'SUPER_ADMIN',
+            'role' => 'SUPER_ADMIN',
         ],
         [
-            'email'    => 'staff@playersaloons.com',
+            'email' => 'staff@playersaloons.com',
             'username' => 'staffadmin',
             'password' => 'Staff@1234!',
-            'role'     => 'ADMIN',
+            'role' => 'ADMIN',
         ],
     ];
 
@@ -54,19 +54,19 @@ class AdminUserSeeder extends Seeder
                 $userId = $existing->id;
                 // Ensure password is up-to-date (re-hash in case it changed)
                 DB::table('users')->where('id', $userId)->update([
-                    'password'   => Hash::make($account['password']),
+                    'password' => Hash::make($account['password']),
                     'updated_at' => now(),
                 ]);
             } else {
                 $userId = DB::table('users')->insertGetId([
-                    'uuid'              => (string) Str::uuid(),
-                    'email'             => $account['email'],
-                    'username'          => $account['username'],
-                    'password'          => Hash::make($account['password']),
+                    'uuid' => (string) Str::uuid(),
+                    'email' => $account['email'],
+                    'username' => $account['username'],
+                    'password' => Hash::make($account['password']),
                     'email_verified_at' => now(),
-                    'status'            => 'active',
-                    'created_at'        => now(),
-                    'updated_at'        => now(),
+                    'status' => 'active',
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 
@@ -74,12 +74,12 @@ class AdminUserSeeder extends Seeder
             $walletExists = DB::table('wallets')->where('user_id', $userId)->exists();
             if (! $walletExists) {
                 DB::table('wallets')->insert([
-                    'uuid'           => (string) Str::uuid(),
-                    'user_id'        => $userId,
+                    'uuid' => (string) Str::uuid(),
+                    'user_id' => $userId,
                     'cached_balance' => 0.00,
-                    'status'         => 'active',
-                    'created_at'     => now(),
-                    'updated_at'     => now(),
+                    'status' => 'active',
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 
@@ -88,14 +88,14 @@ class AdminUserSeeder extends Seeder
             if ($role) {
                 DB::table('model_has_roles')->updateOrInsert(
                     [
-                        'role_id'    => $role->id,
+                        'role_id' => $role->id,
                         'model_type' => 'App\Modules\Identity\Models\User',
-                        'model_id'   => $userId,
+                        'model_id' => $userId,
                     ],
                     [
-                        'role_id'    => $role->id,
+                        'role_id' => $role->id,
                         'model_type' => 'App\Modules\Identity\Models\User',
-                        'model_id'   => $userId,
+                        'model_id' => $userId,
                     ]
                 );
             }

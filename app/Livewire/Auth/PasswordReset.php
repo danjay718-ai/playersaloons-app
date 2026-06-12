@@ -10,8 +10,11 @@ use Livewire\Component;
 class PasswordReset extends Component
 {
     public string $email = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
+
     public bool $isResetMode = false;
 
     protected array $rules = [

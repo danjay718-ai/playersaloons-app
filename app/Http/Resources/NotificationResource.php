@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Modules\Community\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
- * @mixin \App\Modules\Community\Models\Notification
+ * @mixin Notification
+ *
  * @property-read string $uuid
  * @property-read string $type
  * @property-read string $title
  * @property-read string $message
- * @property-read \Illuminate\Support\Carbon|null $read_at
- * @property-read \Illuminate\Support\Carbon $created_at
+ * @property-read Carbon|null $read_at
+ * @property-read Carbon $created_at
  */
 class NotificationResource extends JsonResource
 {

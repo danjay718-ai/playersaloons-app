@@ -14,11 +14,8 @@ use App\Modules\Team\Models\Team;
 use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Models\Wallet;
-use App\Shared\Enums\CheckinStatus;
-use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\MatchStatus;
-use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
@@ -35,7 +32,9 @@ class ApiEndpointsTest extends TestCase
     use RefreshDatabase;
 
     private User $player;
+
     private User $organizer;
+
     private Game $game;
 
     protected function setUp(): void
@@ -370,7 +369,7 @@ class ApiEndpointsTest extends TestCase
             ->assertJsonPath('data.username', 'playerone')
             ->assertJsonPath('data.profile.display_name', 'Player One')
             // Crucial security/requirement check: Referral URL displays database ID
-            ->assertJsonPath('data.referral_url', url('/register?ref=' . $this->player->id))
+            ->assertJsonPath('data.referral_url', url('/register?ref='.$this->player->id))
             ->assertJsonMissing(['id']);
 
         // 2. Update Profile

@@ -156,8 +156,6 @@ class Tournament extends Model implements HasMedia
 
     /**
      * Get rounds for the tournament (via brackets).
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
      */
     public function rounds(): HasManyThrough
     {

@@ -12,14 +12,14 @@ abstract class AdminComponent extends Component
     public function boot(): void
     {
         $user = Auth::user();
-        if (!$user || !$user->hasAnyRole([
+        if (! $user || ! $user->hasAnyRole([
             'SUPER_ADMIN',
             'ADMIN',
             'MODERATOR',
             'TOURNAMENT_ORGANIZER',
             'SUPPORT_AGENT',
             'FINANCE_OPERATOR',
-            'KYC_REVIEWER'
+            'KYC_REVIEWER',
         ])) {
             abort(403, 'Unauthorized access to the admin panel.');
         }

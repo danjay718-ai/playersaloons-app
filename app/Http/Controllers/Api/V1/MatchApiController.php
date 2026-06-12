@@ -10,6 +10,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Models\GameMatch;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -78,7 +79,7 @@ class MatchApiController extends Controller
                     'winner_user_uuid' => $winnerUserUuid,
                 ],
             ], 200);
-        } catch (InvalidArgumentException|\App\Shared\Exceptions\InvalidStateTransitionException|\LogicException $e) {
+        } catch (InvalidArgumentException|InvalidStateTransitionException|\LogicException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);
@@ -107,7 +108,7 @@ class MatchApiController extends Controller
                     'status' => $dispute->status->value ?? $dispute->status,
                 ],
             ], 201);
-        } catch (InvalidArgumentException|\App\Shared\Exceptions\InvalidStateTransitionException|\LogicException $e) {
+        } catch (InvalidArgumentException|InvalidStateTransitionException|\LogicException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);

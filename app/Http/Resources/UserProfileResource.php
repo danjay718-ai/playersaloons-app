@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Modules\Identity\Models\UserProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Modules\Identity\Models\UserProfile
+ * @mixin UserProfile
+ *
  * @property-read string|null $uuid
  * @property-read string|null $display_name
  * @property-read string|null $avatar_url

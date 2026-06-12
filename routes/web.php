@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Livewire\Admin\AdminDashboard;
+use App\Livewire\Admin\AuditLogAdmin;
+use App\Livewire\Admin\CmsAdmin;
+use App\Livewire\Admin\KycAdmin;
+use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Admin\TournamentAdmin;
+use App\Livewire\Admin\UserAdmin;
+use App\Livewire\Admin\WithdrawalAdmin;
 use App\Livewire\Auth\EmailVerification;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\PasswordReset;
@@ -50,14 +58,13 @@ Route::middleware('auth')->group(function () {
 
     // Admin Control Panel
     Route::prefix('admin')->group(function () {
-        Route::get('/', \App\Livewire\Admin\AdminDashboard::class);
-        Route::get('/tournaments', \App\Livewire\Admin\TournamentAdmin::class);
-        Route::get('/matches', \App\Livewire\Admin\MatchAdmin::class);
-        Route::get('/kyc', \App\Livewire\Admin\KycAdmin::class);
-        Route::get('/withdrawals', \App\Livewire\Admin\WithdrawalAdmin::class);
-        Route::get('/users', \App\Livewire\Admin\UserAdmin::class);
-        Route::get('/audit-logs', \App\Livewire\Admin\AuditLogAdmin::class);
-        Route::get('/cms', \App\Livewire\Admin\CmsAdmin::class);
+        Route::get('/', AdminDashboard::class);
+        Route::get('/tournaments', TournamentAdmin::class);
+        Route::get('/matches', MatchAdmin::class);
+        Route::get('/kyc', KycAdmin::class);
+        Route::get('/withdrawals', WithdrawalAdmin::class);
+        Route::get('/users', UserAdmin::class);
+        Route::get('/audit-logs', AuditLogAdmin::class);
+        Route::get('/cms', CmsAdmin::class);
     });
 });
-

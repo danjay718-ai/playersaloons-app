@@ -11,8 +11,10 @@ use App\Http\Resources\WithdrawalResource;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Models\Wallet;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
 use LogicException;
@@ -38,7 +40,7 @@ class WalletApiController extends Controller
     /**
      * Get the authenticated user's wallet transaction ledger entries.
      */
-    public function transactions(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+    public function transactions(Request $request): AnonymousResourceCollection
     {
         $wallet = $request->user()->wallet;
 
@@ -83,7 +85,7 @@ class WalletApiController extends Controller
                 ->additional(['message' => 'Withdrawal request submitted successfully.'])
                 ->response()
                 ->setStatusCode(201);
-        } catch (InvalidArgumentException|InsufficientBalanceException|\App\Shared\Exceptions\InvalidStateTransitionException|LogicException $e) {
+        } catch (InvalidArgumentException|InsufficientBalanceException|InvalidStateTransitionException|LogicException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);

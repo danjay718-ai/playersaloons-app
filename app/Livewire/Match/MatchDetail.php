@@ -8,8 +8,6 @@ use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Models\GameMatch;
-use App\Modules\Match\Models\MatchDispute;
-use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\DisputeStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -20,8 +18,11 @@ class MatchDetail extends Component
     use WithFileUploads;
 
     public string $uuid;
+
     public ?int $winnerRegistrationId = null;
+
     public string $notes = '';
+
     public $evidenceFile;
 
     public function mount(string $uuid): void
@@ -36,13 +37,14 @@ class MatchDetail extends Component
             ->with(['playerARegistration', 'playerBRegistration', 'tournament'])
             ->firstOrFail();
 
-        if (!Auth::check() || !Auth::user()->can('submitResult', $match)) {
+        if (! Auth::check() || ! Auth::user()->can('submitResult', $match)) {
             session()->flash('error', 'You are not authorized to submit results for this match.');
+
             return;
         }
 
         $this->validate([
-            'winnerRegistrationId' => ['required', 'integer', 'in:' . $match->player_a_registration_id . ',' . $match->player_b_registration_id],
+            'winnerRegistrationId' => ['required', 'integer', 'in:'.$match->player_a_registration_id.','.$match->player_b_registration_id],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -64,8 +66,9 @@ class MatchDetail extends Component
     {
         $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
 
-        if (!Auth::check() || !Auth::user()->can('dispute', $match)) {
+        if (! Auth::check() || ! Auth::user()->can('dispute', $match)) {
             session()->flash('error', 'You are not authorized to open a dispute for this match.');
+
             return;
         }
 
@@ -82,13 +85,15 @@ class MatchDetail extends Component
         $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
         $dispute = $match->disputes()->where('status', '!=', DisputeStatus::RESOLVED->value)->first();
 
-        if (!$dispute) {
+        if (! $dispute) {
             session()->flash('error', 'No active dispute found for this match.');
+
             return;
         }
 
-        if (!Auth::check() || (Auth::id() !== $match->playerARegistration?->user_id && Auth::id() !== $match->playerBRegistration?->user_id)) {
+        if (! Auth::check() || (Auth::id() !== $match->playerARegistration?->user_id && Auth::id() !== $match->playerBRegistration?->user_id)) {
             session()->flash('error', 'You are not authorized to submit evidence.');
+
             return;
         }
 
@@ -118,7 +123,7 @@ class MatchDetail extends Component
                 'resultSubmissions.user',
                 'disputes' => function ($q) {
                     $q->with('evidence');
-                }
+                },
             ])
             ->firstOrFail();
 

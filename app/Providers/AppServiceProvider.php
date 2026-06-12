@@ -2,6 +2,22 @@
 
 namespace App\Providers;
 
+use App\Modules\Identity\Models\KycSubmission;
+use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Policies\KycPolicy;
+use App\Modules\Identity\Policies\UserPolicy;
+use App\Modules\Match\Models\GameMatch;
+use App\Modules\Match\Models\MatchDispute;
+use App\Modules\Match\Policies\DisputePolicy;
+use App\Modules\Match\Policies\MatchPolicy;
+use App\Modules\Team\Models\Team;
+use App\Modules\Team\Policies\TeamPolicy;
+use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Policies\TournamentPolicy;
+use App\Modules\Wallet\Models\Wallet;
+use App\Modules\Wallet\Models\Withdrawal;
+use App\Modules\Wallet\Policies\WalletPolicy;
+use App\Modules\Wallet\Policies\WithdrawalPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -29,13 +45,13 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Register modular policies
-        Gate::policy(\App\Modules\Tournament\Models\Tournament::class, \App\Modules\Tournament\Policies\TournamentPolicy::class);
-        Gate::policy(\App\Modules\Match\Models\GameMatch::class, \App\Modules\Match\Policies\MatchPolicy::class);
-        Gate::policy(\App\Modules\Wallet\Models\Wallet::class, \App\Modules\Wallet\Policies\WalletPolicy::class);
-        Gate::policy(\App\Modules\Wallet\Models\Withdrawal::class, \App\Modules\Wallet\Policies\WithdrawalPolicy::class);
-        Gate::policy(\App\Modules\Identity\Models\KycSubmission::class, \App\Modules\Identity\Policies\KycPolicy::class);
-        Gate::policy(\App\Modules\Team\Models\Team::class, \App\Modules\Team\Policies\TeamPolicy::class);
-        Gate::policy(\App\Modules\Identity\Models\User::class, \App\Modules\Identity\Policies\UserPolicy::class);
-        Gate::policy(\App\Modules\Match\Models\MatchDispute::class, \App\Modules\Match\Policies\DisputePolicy::class);
+        Gate::policy(Tournament::class, TournamentPolicy::class);
+        Gate::policy(GameMatch::class, MatchPolicy::class);
+        Gate::policy(Wallet::class, WalletPolicy::class);
+        Gate::policy(Withdrawal::class, WithdrawalPolicy::class);
+        Gate::policy(KycSubmission::class, KycPolicy::class);
+        Gate::policy(Team::class, TeamPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(MatchDispute::class, DisputePolicy::class);
     }
 }

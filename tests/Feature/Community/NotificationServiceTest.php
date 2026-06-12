@@ -12,12 +12,14 @@ use App\Modules\Community\Models\NotificationPreference;
 use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Events\BroadcastMatchCompleted;
+use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Events\BroadcastBracketUpdate;
 use App\Modules\Tournament\Events\BroadcastTournamentCompleted;
 use App\Modules\Tournament\Events\BroadcastTournamentStarted;
 use App\Modules\Tournament\Events\TournamentCheckinOpened;
+use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Events\TournamentSeatReserved;
 use App\Modules\Tournament\Events\TournamentStarted;
 use App\Modules\Tournament\Models\Round;
@@ -172,7 +174,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant',
-            'is_active' => true
+            'is_active' => true,
         ]);
         GameTranslation::query()->create([
             'game_id' => $game->id,
@@ -213,7 +215,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-2',
-            'is_active' => true
+            'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
@@ -256,7 +258,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-3',
-            'is_active' => true
+            'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
@@ -303,7 +305,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-4',
-            'is_active' => true
+            'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
@@ -419,7 +421,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-5',
-            'is_active' => true
+            'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
@@ -502,7 +504,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-6',
-            'is_active' => true
+            'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
@@ -542,7 +544,7 @@ class NotificationServiceTest extends TestCase
             'winner_registration_id' => $registration->id,
         ]);
 
-        \App\Modules\Match\Events\MatchCompleted::dispatch($match->id, $tournament->id, $registration->id);
+        MatchCompleted::dispatch($match->id, $tournament->id, $registration->id);
 
         Event::assertDispatched(BroadcastMatchCompleted::class, function ($event) use ($match) {
             return $event->matchUuid === $match->uuid;
@@ -563,7 +565,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-7',
-            'is_active' => true
+            'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
@@ -578,7 +580,7 @@ class NotificationServiceTest extends TestCase
             'created_by' => $this->user->id,
         ]);
 
-        \App\Modules\Tournament\Events\TournamentCompleted::dispatch($tournament->id);
+        TournamentCompleted::dispatch($tournament->id);
 
         Event::assertDispatched(BroadcastTournamentCompleted::class, function ($event) use ($tournament) {
             return $event->tournamentUuid === $tournament->uuid;

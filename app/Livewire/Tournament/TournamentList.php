@@ -14,8 +14,11 @@ class TournamentList extends Component
     use WithPagination;
 
     public string $status = '';
+
     public string $gameId = '';
+
     public string $search = '';
+
     public string $frequency = 'daily'; // Default is daily
 
     protected $queryString = [
@@ -58,7 +61,7 @@ class TournamentList extends Component
         }
 
         if ($this->search) {
-            $query->where('name', 'like', '%' . $this->search . '%');
+            $query->where('name', 'like', '%'.$this->search.'%');
         }
 
         if ($this->frequency) {

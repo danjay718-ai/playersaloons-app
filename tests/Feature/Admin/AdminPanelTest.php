@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Admin;
 
+use App\Livewire\Admin\AdminDashboard;
+use App\Livewire\Admin\AuditLogAdmin;
+use App\Livewire\Admin\CmsAdmin;
+use App\Livewire\Admin\KycAdmin;
+use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Admin\TournamentAdmin;
+use App\Livewire\Admin\UserAdmin;
+use App\Livewire\Admin\WithdrawalAdmin;
 use App\Modules\CMS\Models\Game;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
-use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Models\Withdrawal;
-use App\Shared\Enums\DisputeResolution;
-use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
@@ -34,8 +39,11 @@ class AdminPanelTest extends TestCase
     use RefreshDatabase;
 
     private User $superAdmin;
+
     private User $admin;
+
     private User $player;
+
     private Game $game;
 
     protected function setUp(): void
@@ -55,7 +63,7 @@ class AdminPanelTest extends TestCase
             'slug' => 'test-game',
             'is_active' => true,
         ]);
-        
+
         $this->game->translations()->create([
             'locale' => 'en',
             'name' => 'Test Game',
@@ -101,19 +109,19 @@ class AdminPanelTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get('/admin');
         $response->assertStatus(200);
-        $response->assertSeeLivewire(\App\Livewire\Admin\AdminDashboard::class);
+        $response->assertSeeLivewire(AdminDashboard::class);
     }
 
     public function test_admin_can_access_other_admin_pages(): void
     {
         $pages = [
-            '/admin/tournaments' => \App\Livewire\Admin\TournamentAdmin::class,
-            '/admin/matches' => \App\Livewire\Admin\MatchAdmin::class,
-            '/admin/kyc' => \App\Livewire\Admin\KycAdmin::class,
-            '/admin/withdrawals' => \App\Livewire\Admin\WithdrawalAdmin::class,
-            '/admin/users' => \App\Livewire\Admin\UserAdmin::class,
-            '/admin/audit-logs' => \App\Livewire\Admin\AuditLogAdmin::class,
-            '/admin/cms' => \App\Livewire\Admin\CmsAdmin::class,
+            '/admin/tournaments' => TournamentAdmin::class,
+            '/admin/matches' => MatchAdmin::class,
+            '/admin/kyc' => KycAdmin::class,
+            '/admin/withdrawals' => WithdrawalAdmin::class,
+            '/admin/users' => UserAdmin::class,
+            '/admin/audit-logs' => AuditLogAdmin::class,
+            '/admin/cms' => CmsAdmin::class,
         ];
 
         foreach ($pages as $url => $component) {
@@ -129,7 +137,7 @@ class AdminPanelTest extends TestCase
     public function test_tournament_admin_can_create_tournament(): void
     {
         Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\Admin\TournamentAdmin::class)
+            ->test(TournamentAdmin::class)
             ->set('name', 'New Admin Cup')
             ->set('game_id', $this->game->id)
             ->set('entry_fee', '10.00')
@@ -172,7 +180,7 @@ class AdminPanelTest extends TestCase
 
         // Publish
         Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\Admin\TournamentAdmin::class)
+            ->test(TournamentAdmin::class)
             ->set('selectedTournamentId', $tournament->id)
             ->call('applyTransition', 'publish');
 
@@ -180,7 +188,7 @@ class AdminPanelTest extends TestCase
 
         // Cancel
         Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\Admin\TournamentAdmin::class)
+            ->test(TournamentAdmin::class)
             ->set('selectedTournamentId', $tournament->id)
             ->set('cancelReason', 'Insufficient players registered')
             ->call('cancelTournament');
@@ -239,7 +247,7 @@ class AdminPanelTest extends TestCase
         ]);
 
         Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\Admin\MatchAdmin::class)
+            ->test(MatchAdmin::class)
             ->set('selectedMatchId', $match->id)
             ->set('winnerRegistrationId', $regA->id)
             ->call('overrideResult');
@@ -263,7 +271,7 @@ class AdminPanelTest extends TestCase
         ]);
 
         Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\Admin\KycAdmin::class)
+            ->test(KycAdmin::class)
             ->call('selectSubmission', $kyc->id) // Transitions to UNDER_REVIEW
             ->call('approve');
 
@@ -277,7 +285,7 @@ class AdminPanelTest extends TestCase
     public function test_withdrawal_admin_can_approve_withdrawal(): void
     {
         $financeUser = $this->createUserWithRole('PLAYER', 'financeuser@example.com');
-        
+
         // Add approved KYC to satisfy the guard in ApproveWithdrawalAction
         KycSubmission::query()->create([
             'uuid' => Str::uuid()->toString(),
@@ -299,7 +307,7 @@ class AdminPanelTest extends TestCase
 
         // Review & Approve
         Livewire::actingAs($this->admin)
-            ->test(\App\Livewire\Admin\WithdrawalAdmin::class)
+            ->test(WithdrawalAdmin::class)
             ->call('selectWithdrawal', $withdrawal->id) // Select triggers review check
             ->set('selectedWithdrawalId', $withdrawal->id)
             ->call('approve');

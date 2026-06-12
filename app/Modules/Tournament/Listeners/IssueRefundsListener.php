@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Listeners;
 
-use App\Modules\Community\Events\NotificationCreated;
 use App\Modules\Community\Models\Notification;
+use App\Modules\Community\Services\NotificationService;
 use App\Modules\Tournament\Events\TournamentCancelled;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
+use App\Modules\Wallet\Events\RefundIssued;
 use App\Modules\Wallet\Models\Refund;
 use App\Modules\Wallet\Services\WalletService;
 use App\Shared\Enums\LedgerType;
@@ -29,7 +30,7 @@ class IssueRefundsListener implements ShouldQueue
 
     public function __construct(
         private readonly WalletService $walletService,
-        private readonly \App\Modules\Community\Services\NotificationService $notificationService
+        private readonly NotificationService $notificationService
     ) {}
 
     /**
@@ -100,7 +101,7 @@ class IssueRefundsListener implements ShouldQueue
                     "Your entry fee of {$entryFee} for tournament '{$tournament->name}' has been refunded because the tournament was cancelled."
                 );
 
-                \App\Modules\Wallet\Events\RefundIssued::dispatch(
+                RefundIssued::dispatch(
                     (int) $user->wallet->getKey(),
                     (int) $refund->getKey(),
                     (int) $tournament->getKey(),

@@ -5,14 +5,15 @@ namespace App\Modules\Tournament\Models;
 use App\Shared\Enums\CheckinStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $registration_id
- * @property \App\Shared\Enums\CheckinStatus $status
- * @property \Illuminate\Support\Carbon|null $checked_in_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property-read \App\Modules\Tournament\Models\TournamentRegistration $registration
+ * @property CheckinStatus $status
+ * @property Carbon|null $checked_in_at
+ * @property Carbon|null $created_at
+ * @property-read TournamentRegistration $registration
  */
 class TournamentCheckin extends Model
 {

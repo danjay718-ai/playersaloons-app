@@ -34,7 +34,7 @@ class TournamentPolicy
      */
     public function publish(User $user, Tournament $tournament): bool
     {
-        return $user->hasPermissionTo('tournaments.publish') 
+        return $user->hasPermissionTo('tournaments.publish')
             && $tournament->created_by === $user->id;
     }
 
@@ -43,7 +43,7 @@ class TournamentPolicy
      */
     public function manage(User $user, Tournament $tournament): bool
     {
-        return $user->hasPermissionTo('tournaments.manage') 
+        return $user->hasPermissionTo('tournaments.manage')
             && $tournament->created_by === $user->id;
     }
 
@@ -52,7 +52,7 @@ class TournamentPolicy
      */
     public function cancel(User $user, Tournament $tournament): bool
     {
-        return $user->hasPermissionTo('tournaments.cancel') 
+        return $user->hasPermissionTo('tournaments.cancel')
             && $tournament->created_by === $user->id;
     }
 }

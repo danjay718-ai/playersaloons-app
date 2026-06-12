@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Modules\Team\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Modules\Team\Models\Team
+ * @mixin Team
  */
 class TeamResource extends JsonResource
 {
@@ -29,7 +30,7 @@ class TeamResource extends JsonResource
                 'uuid' => $this->captain->uuid,
                 'username' => $this->captain->username,
             ] : null,
-            'members' => $this->members->map(fn($member) => [
+            'members' => $this->members->map(fn ($member) => [
                 'uuid' => $member->user->uuid,
                 'username' => $member->user->username,
                 'role' => $member->role,

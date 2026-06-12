@@ -10,7 +10,9 @@ use Livewire\Component;
 class Login extends Component
 {
     public string $identity = '';
+
     public string $password = '';
+
     public bool $remember = false;
 
     protected array $rules = [

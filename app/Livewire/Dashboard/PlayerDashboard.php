@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Dashboard;
 
+use App\Modules\CMS\Models\Game;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
@@ -21,20 +22,29 @@ class PlayerDashboard extends Component
 
     // Dashboard Tournament filters and sub-tabs
     public string $tSearch = '';
+
     public string $tGameId = '';
+
     public string $tStatus = '';
+
     public string $tFrequency = 'daily'; // Default is daily
+
     public string $tSubTab = 'my_tournaments'; // Default is my_tournaments
 
     // Chat properties
     public string $chatMessage = '';
+
     public array $messages = [];
 
     // Head-to-Head properties
     public float $stakeAmount = 10.00;
+
     public string $selectedGame = 'Valorant';
+
     public array $challenges = [];
+
     public bool $isSearching = false;
+
     public ?array $matchedOpponent = null;
 
     protected $queryString = [
@@ -161,7 +171,7 @@ class PlayerDashboard extends Component
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->to('/login');
         }
 
@@ -174,7 +184,7 @@ class PlayerDashboard extends Component
         $allUserMatches = GameMatch::query()
             ->where(function ($q) use ($userRegistrationIds) {
                 $q->whereIn('player_a_registration_id', $userRegistrationIds)
-                  ->orWhereIn('player_b_registration_id', $userRegistrationIds);
+                    ->orWhereIn('player_b_registration_id', $userRegistrationIds);
             })
             ->whereIn('status', [
                 MatchStatus::COMPLETED->value,
@@ -213,21 +223,21 @@ class PlayerDashboard extends Component
         // Ranking/XP/Streak system not yet built — show 0 / N/A
         $playerStats = [
             'total_matches' => $totalMatches,
-            'wins'          => $wins,
-            'losses'        => $losses,
-            'win_rate'      => $winRate,
-            'earnings'      => $totalEarnings,
-            'ranking'       => 0,       // not yet implemented
-            'xp'            => 0,       // not yet implemented
-            'xp_next'       => 0,       // not yet implemented
-            'streak'        => 0,       // not yet implemented
+            'wins' => $wins,
+            'losses' => $losses,
+            'win_rate' => $winRate,
+            'earnings' => $totalEarnings,
+            'ranking' => 0,       // not yet implemented
+            'xp' => 0,       // not yet implemented
+            'xp_next' => 0,       // not yet implemented
+            'streak' => 0,       // not yet implemented
         ];
 
         // ── 5. Recent matches (Battle Log — last 5, any status) ───────────────
         $activeMatches = GameMatch::query()
             ->where(function ($q) use ($userRegistrationIds) {
                 $q->whereIn('player_a_registration_id', $userRegistrationIds)
-                  ->orWhereIn('player_b_registration_id', $userRegistrationIds);
+                    ->orWhereIn('player_b_registration_id', $userRegistrationIds);
             })
             ->with(['tournament', 'round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration.user'])
             ->orderBy('updated_at', 'desc')
@@ -238,7 +248,7 @@ class PlayerDashboard extends Component
         $activeTournaments = Tournament::query()
             ->whereHas('registrations', function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                  ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
+                    ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
             })
             ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
             ->with('game.translations')
@@ -248,7 +258,7 @@ class PlayerDashboard extends Component
         $closedTournaments = Tournament::query()
             ->whereHas('registrations', function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                  ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
+                    ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
             })
             ->whereIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
             ->with('game.translations')
@@ -260,7 +270,7 @@ class PlayerDashboard extends Component
             ->with(['game.translations', 'registrations']);
 
         if ($this->tSearch) {
-            $browseQuery->where('name', 'like', '%' . $this->tSearch . '%');
+            $browseQuery->where('name', 'like', '%'.$this->tSearch.'%');
         }
         if ($this->tGameId) {
             $browseQuery->where('game_id', $this->tGameId);
@@ -274,30 +284,30 @@ class PlayerDashboard extends Component
 
         $browseTournaments = $browseQuery->orderBy('created_at', 'desc')->get();
 
-        $games = \App\Modules\CMS\Models\Game::query()
+        $games = Game::query()
             ->with('translations')
             ->where('is_active', true)
             ->get();
 
         $titles = [
-            'overview'     => 'DASHBOARD',
-            'tournaments'  => 'TOURNAMENTS HUB',
+            'overview' => 'DASHBOARD',
+            'tournaments' => 'TOURNAMENTS HUB',
             'head-to-head' => 'HEAD-TO-HEAD DUELS',
             'leaderboards' => 'GLOBAL LEADERBOARDS',
-            'streams'      => 'LIVE BROADCASTS',
-            'chat'         => 'GLOBAL COMMUNICATIONS',
+            'streams' => 'LIVE BROADCASTS',
+            'chat' => 'GLOBAL COMMUNICATIONS',
         ];
 
         return view('livewire.dashboard.player-dashboard', [
-            'user'              => $user,
-            'activeMatches'     => $activeMatches,
+            'user' => $user,
+            'activeMatches' => $activeMatches,
             'activeTournaments' => $activeTournaments,
             'closedTournaments' => $closedTournaments,
             'browseTournaments' => $browseTournaments,
-            'playerStats'       => $playerStats,
-            'games'             => $games,
+            'playerStats' => $playerStats,
+            'games' => $games,
         ])->layout('components.layouts.dashboard', [
-            'title'           => 'Gamer Terminal | PlayerSaloons',
+            'title' => 'Gamer Terminal | PlayerSaloons',
             'dashboard_title' => $titles[$this->tab] ?? 'DASHBOARD',
         ]);
     }

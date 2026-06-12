@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Wallet\Listeners;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Events\WalletCredited;
 use App\Modules\Wallet\Events\WalletDebited;
 use App\Modules\Wallet\Events\WithdrawalApproved;
@@ -82,7 +83,7 @@ class CreateAuditLogListener implements ShouldQueue
             return;
         }
 
-        $user = \App\Modules\Identity\Models\User::query()->find($event->userId);
+        $user = User::query()->find($event->userId);
 
         activity()
             ->causedBy($user)
@@ -101,7 +102,7 @@ class CreateAuditLogListener implements ShouldQueue
             return;
         }
 
-        $user = \App\Modules\Identity\Models\User::query()->find($event->approvedBy);
+        $user = User::query()->find($event->approvedBy);
 
         activity()
             ->causedBy($user)
@@ -116,7 +117,7 @@ class CreateAuditLogListener implements ShouldQueue
             return;
         }
 
-        $user = \App\Modules\Identity\Models\User::query()->find($event->rejectedBy);
+        $user = User::query()->find($event->rejectedBy);
 
         activity()
             ->causedBy($user)

@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Wallet\Listeners;
 
-use App\Modules\Community\Models\Notification;
+use App\Modules\Community\Services\NotificationService;
 use App\Modules\Wallet\Events\WithdrawalApproved;
 use App\Modules\Wallet\Events\WithdrawalRejected;
 use App\Modules\Wallet\Models\Withdrawal;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Str;
 
 class SendNotificationListener implements ShouldQueue
 {
@@ -22,7 +21,7 @@ class SendNotificationListener implements ShouldQueue
     public string $queue = 'notifications';
 
     public function __construct(
-        private readonly \App\Modules\Community\Services\NotificationService $notificationService
+        private readonly NotificationService $notificationService
     ) {}
 
     /**

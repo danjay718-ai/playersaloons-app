@@ -24,7 +24,6 @@ class AutoCancelTournamentJob implements ShouldQueue
         $tournaments = Tournament::query()->where('status', TournamentStatus::CHECKIN_CLOSED)->get();
 
         /** @var Tournament $tournament */
-
         foreach ($tournaments as $tournament) {
             $participantCount = $tournament->participants()->count();
             $minRequired = $tournament->min_participants ?? 2;

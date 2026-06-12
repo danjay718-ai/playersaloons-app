@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Wallet\Listeners;
 
 use App\Modules\Community\Models\Notification;
+use App\Modules\Community\Services\NotificationService;
 use App\Modules\Wallet\Events\WalletCredited;
 use App\Modules\Wallet\Models\Wallet;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Str;
 
 class SendDepositNotificationListener implements ShouldQueue
 {
@@ -21,7 +21,7 @@ class SendDepositNotificationListener implements ShouldQueue
     public string $queue = 'notifications';
 
     public function __construct(
-        private readonly \App\Modules\Community\Services\NotificationService $notificationService
+        private readonly NotificationService $notificationService
     ) {}
 
     /**

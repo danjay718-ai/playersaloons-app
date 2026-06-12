@@ -17,4 +17,3 @@ Broadcast::channel('tournament.{uuid}', function ($user, string $uuid) {
 Broadcast::channel('match.{uuid}', function ($user, string $uuid) {
     return true; // Anyone authenticated can listen to match updates
 });
-

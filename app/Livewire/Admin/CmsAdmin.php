@@ -21,18 +21,28 @@ class CmsAdmin extends AdminComponent
 
     // Game modals / forms
     public bool $showGameModal = false;
+
     public ?int $selectedGameId = null;
+
     public string $gameName = '';
+
     public string $gameDescription = '';
+
     public string $gameLocale = 'en';
 
     // Page modals / forms
     public bool $showPageModal = false;
+
     public ?int $selectedPageId = null;
+
     public bool $isPageEdit = false;
+
     public string $pageSlug = '';
+
     public string $pageTitle = '';
+
     public string $pageContent = '';
+
     public string $pageLocale = 'en';
 
     protected $paginationTheme = 'tailwind';
@@ -47,7 +57,7 @@ class CmsAdmin extends AdminComponent
     public function toggleGameActive(int $gameId): void
     {
         $game = Game::findOrFail($gameId);
-        $game->is_active = !$game->is_active;
+        $game->is_active = ! $game->is_active;
         $game->save();
 
         session()->flash('success', 'Game status updated successfully.');
@@ -71,7 +81,9 @@ class CmsAdmin extends AdminComponent
             'gameDescription' => 'nullable|string',
         ]);
 
-        if (!$this->selectedGameId) return;
+        if (! $this->selectedGameId) {
+            return;
+        }
 
         DB::transaction(function (): void {
             GameTranslation::updateOrCreate([
@@ -121,7 +133,9 @@ class CmsAdmin extends AdminComponent
         ]);
 
         $actor = Auth::user();
-        if (!$actor) return;
+        if (! $actor) {
+            return;
+        }
 
         DB::transaction(function () use ($actor): void {
             if ($this->isPageEdit && $this->selectedPageId) {

@@ -27,25 +27,25 @@ class AdminDashboard extends AdminComponent
             'pending_kyc' => KycSubmission::where('status', KycStatus::SUBMITTED->value)->count(),
             'pending_withdrawals' => Withdrawal::where('status', WithdrawalStatus::PENDING->value)->count(),
             'open_disputes' => MatchDispute::where('status', DisputeStatus::OPEN->value)->count(),
-            
+
             'active_tournaments' => Tournament::whereIn('status', [
                 TournamentStatus::PUBLISHED->value,
                 TournamentStatus::REGISTRATION_OPEN->value,
                 TournamentStatus::CHECKIN_OPEN->value,
-                TournamentStatus::ONGOING->value
+                TournamentStatus::ONGOING->value,
             ])->count(),
             'completed_tournaments' => Tournament::where('status', TournamentStatus::COMPLETED->value)->count(),
-            
+
             'active_matches' => GameMatch::whereIn('status', [
                 MatchStatus::READY->value,
                 MatchStatus::IN_PROGRESS->value,
-                MatchStatus::RESULT_SUBMITTED->value
+                MatchStatus::RESULT_SUBMITTED->value,
             ])->count(),
             'completed_matches' => GameMatch::whereIn('status', [
                 MatchStatus::COMPLETED->value,
-                MatchStatus::FORFEITED->value
+                MatchStatus::FORFEITED->value,
             ])->count(),
-            
+
             'total_escrow' => Wallet::sum('cached_balance'),
         ];
 

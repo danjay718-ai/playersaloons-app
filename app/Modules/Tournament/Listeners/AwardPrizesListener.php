@@ -11,6 +11,7 @@ use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Services\PrizeCalculationService;
+use App\Modules\Wallet\Events\PrizeAwarded;
 use App\Modules\Wallet\Models\PrizeDistribution;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\WalletService;
@@ -159,7 +160,7 @@ class AwardPrizesListener implements ShouldQueue
                     "Tournament prize for Rank {$rank} in '{$tournament->name}'"
                 );
 
-                \App\Modules\Wallet\Events\PrizeAwarded::dispatch(
+                PrizeAwarded::dispatch(
                     (int) $wallet->getKey(),
                     (int) $tournament->getKey(),
                     (int) $distribution->getKey(),

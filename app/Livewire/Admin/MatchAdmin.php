@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Match\Actions\ResolveDisputeAction;
+use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\StateMachines\MatchStateMachine;
@@ -20,20 +21,26 @@ class MatchAdmin extends AdminComponent
     use WithPagination;
 
     public string $search = '';
+
     public string $statusFilter = '';
+
     public bool $disputeFilter = false;
 
     // Modal state
     public bool $showDetailModal = false;
+
     public bool $showOverrideModal = false;
+
     public bool $showDisputeModal = false;
 
     // Selection
     public ?int $selectedMatchId = null;
+
     public ?int $selectedDisputeId = null;
 
     // Forms
     public ?int $winnerRegistrationId = null;
+
     public string $resolution = ''; // string mapped to DisputeResolution
 
     protected $paginationTheme = 'tailwind';
@@ -93,6 +100,7 @@ class MatchAdmin extends AdminComponent
 
         if ($this->winnerRegistrationId != $match->player_a_registration_id && $this->winnerRegistrationId != $match->player_b_registration_id) {
             session()->flash('error', 'Winner must be one of the match participants.');
+
             return;
         }
 
@@ -105,8 +113,8 @@ class MatchAdmin extends AdminComponent
                         ->first();
                     if ($dispute) {
                         $dispute->status = DisputeStatus::RESOLVED;
-                        $dispute->resolution = $this->winnerRegistrationId == $match->player_a_registration_id 
-                            ? DisputeResolution::PLAYER_A 
+                        $dispute->resolution = $this->winnerRegistrationId == $match->player_a_registration_id
+                            ? DisputeResolution::PLAYER_A
                             : DisputeResolution::PLAYER_B;
                         $dispute->resolved_by = Auth::id();
                         $dispute->resolved_at = now();
@@ -131,7 +139,7 @@ class MatchAdmin extends AdminComponent
                     $stateMachine->transition($match, MatchStatus::COMPLETED);
                 }
 
-                \App\Modules\Match\Events\MatchCompleted::dispatch(
+                MatchCompleted::dispatch(
                     $match->id,
                     $match->tournament_id,
                     $this->winnerRegistrationId
@@ -142,7 +150,7 @@ class MatchAdmin extends AdminComponent
             $this->showOverrideModal = false;
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Override failed: ' . $e->getMessage());
+            session()->flash('error', 'Override failed: '.$e->getMessage());
         }
     }
 
@@ -152,7 +160,9 @@ class MatchAdmin extends AdminComponent
             'resolution' => 'required|string|in:player_a,player_b,rematch',
         ]);
 
-        if (!$this->selectedDisputeId) return;
+        if (! $this->selectedDisputeId) {
+            return;
+        }
 
         $dispute = MatchDispute::findOrFail($this->selectedDisputeId);
         $resolutionEnum = DisputeResolution::from($this->resolution);
@@ -164,7 +174,7 @@ class MatchAdmin extends AdminComponent
             $this->showDisputeModal = false;
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to resolve dispute: ' . $e->getMessage());
+            session()->flash('error', 'Failed to resolve dispute: '.$e->getMessage());
         }
     }
 
@@ -176,11 +186,11 @@ class MatchAdmin extends AdminComponent
 
         if ($this->search) {
             $query->whereHas('tournament', function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%');
             })->orWhereHas('playerARegistration.user', function ($q) {
-                $q->where('username', 'like', '%' . $this->search . '%');
+                $q->where('username', 'like', '%'.$this->search.'%');
             })->orWhereHas('playerBRegistration.user', function ($q) {
-                $q->where('username', 'like', '%' . $this->search . '%');
+                $q->where('username', 'like', '%'.$this->search.'%');
             });
         }
 
@@ -201,7 +211,7 @@ class MatchAdmin extends AdminComponent
                 'playerBRegistration.user',
                 'winnerRegistration.user',
                 'disputes.openedBy',
-                'disputes.evidence.uploadedBy'
+                'disputes.evidence.uploadedBy',
             ])->find($this->selectedMatchId)
             : null;
 

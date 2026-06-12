@@ -13,6 +13,7 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Events\PrizeAwarded;
 use App\Modules\Wallet\Models\Wallet;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Events\Dispatcher;
 use Illuminate\Queue\InteractsWithQueue;
 
 class TournamentNotificationListener implements ShouldQueue
@@ -115,7 +116,7 @@ class TournamentNotificationListener implements ShouldQueue
     /**
      * Register listeners for subscriber.
      *
-     * @param \Illuminate\Events\Dispatcher $events
+     * @param  Dispatcher  $events
      */
     public function subscribe(object $events): void
     {

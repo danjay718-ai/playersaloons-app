@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Modules\Tournament\Models\Tournament
+ * @mixin Tournament
  */
 class TournamentResource extends JsonResource
 {

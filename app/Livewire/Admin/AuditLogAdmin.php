@@ -12,13 +12,18 @@ class AuditLogAdmin extends AdminComponent
     use WithPagination;
 
     public string $actorSearch = '';
+
     public string $actionFilter = '';
+
     public string $entityTypeFilter = '';
+
     public string $startDate = '';
+
     public string $endDate = '';
 
     // Modals
     public bool $showDetailModal = false;
+
     public ?int $selectedLogId = null;
 
     protected $paginationTheme = 'tailwind';
@@ -62,16 +67,16 @@ class AuditLogAdmin extends AdminComponent
 
         if ($this->actorSearch) {
             $query->whereHas('causer', function ($q) {
-                $q->where('username', 'like', '%' . $this->actorSearch . '%');
+                $q->where('username', 'like', '%'.$this->actorSearch.'%');
             });
         }
 
         if ($this->actionFilter) {
-            $query->where('description', 'like', '%' . $this->actionFilter . '%');
+            $query->where('description', 'like', '%'.$this->actionFilter.'%');
         }
 
         if ($this->entityTypeFilter) {
-            $query->where('subject_type', 'like', '%' . $this->entityTypeFilter . '%');
+            $query->where('subject_type', 'like', '%'.$this->entityTypeFilter.'%');
         }
 
         if ($this->startDate) {
@@ -90,7 +95,7 @@ class AuditLogAdmin extends AdminComponent
             ->whereNotNull('subject_type')
             ->distinct()
             ->pluck('subject_type')
-            ->map(fn($type) => basename($type))
+            ->map(fn ($type) => basename($type))
             ->unique();
 
         $selectedLog = $this->selectedLogId ? Activity::with(['causer', 'subject'])->find($this->selectedLogId) : null;

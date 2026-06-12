@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Modules\Wallet\Models\LedgerEntry;
+use App\Shared\Enums\LedgerType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
- * @mixin \App\Modules\Wallet\Models\LedgerEntry
+ * @mixin LedgerEntry
+ *
  * @property-read string $uuid
- * @property-read \App\Shared\Enums\LedgerType $type
+ * @property-read LedgerType $type
  * @property-read string $amount
  * @property-read string $running_balance
  * @property-read string $description
- * @property-read \Illuminate\Support\Carbon $created_at
+ * @property-read Carbon $created_at
  */
 class LedgerEntryResource extends JsonResource
 {

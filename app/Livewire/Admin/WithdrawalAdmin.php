@@ -19,11 +19,14 @@ class WithdrawalAdmin extends AdminComponent
     use WithPagination;
 
     public string $search = '';
+
     public string $statusFilter = 'pending'; // Default to pending reviews
 
     // Modals
     public bool $showDetailModal = false;
+
     public bool $showRejectModal = false;
+
     public bool $showApproveModal = false;
 
     // Selection
@@ -31,6 +34,7 @@ class WithdrawalAdmin extends AdminComponent
 
     // Forms
     public string $rejectReason = '';
+
     public string $approveNotes = '';
 
     protected $paginationTheme = 'tailwind';
@@ -58,7 +62,7 @@ class WithdrawalAdmin extends AdminComponent
                     app(ReviewWithdrawalAction::class)->execute($withdrawal, $reviewer);
                     session()->flash('info', 'Withdrawal request moved to UNDER REVIEW.');
                 } catch (\Exception $e) {
-                    session()->flash('error', 'Could not start review: ' . $e->getMessage());
+                    session()->flash('error', 'Could not start review: '.$e->getMessage());
                 }
             }
         }
@@ -74,12 +78,16 @@ class WithdrawalAdmin extends AdminComponent
 
     public function approve(ApproveWithdrawalAction $action): void
     {
-        if (!$this->selectedWithdrawalId) return;
+        if (! $this->selectedWithdrawalId) {
+            return;
+        }
 
         $withdrawal = Withdrawal::findOrFail($this->selectedWithdrawalId);
         $reviewer = Auth::user();
 
-        if (!$reviewer) return;
+        if (! $reviewer) {
+            return;
+        }
 
         try {
             $action->execute($withdrawal, $reviewer, $this->approveNotes);
@@ -87,7 +95,7 @@ class WithdrawalAdmin extends AdminComponent
             $this->showApproveModal = false;
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Approval failed: ' . $e->getMessage());
+            session()->flash('error', 'Approval failed: '.$e->getMessage());
         }
     }
 
@@ -103,12 +111,16 @@ class WithdrawalAdmin extends AdminComponent
             'rejectReason' => 'required|string|min:5|max:255',
         ]);
 
-        if (!$this->selectedWithdrawalId) return;
+        if (! $this->selectedWithdrawalId) {
+            return;
+        }
 
         $withdrawal = Withdrawal::findOrFail($this->selectedWithdrawalId);
         $reviewer = Auth::user();
 
-        if (!$reviewer) return;
+        if (! $reviewer) {
+            return;
+        }
 
         try {
             // Make sure we use the correct action inject
@@ -118,13 +130,15 @@ class WithdrawalAdmin extends AdminComponent
             $this->showRejectModal = false;
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Rejection failed: ' . $e->getMessage());
+            session()->flash('error', 'Rejection failed: '.$e->getMessage());
         }
     }
 
     public function processPayout(ProcessWithdrawalAction $action): void
     {
-        if (!$this->selectedWithdrawalId) return;
+        if (! $this->selectedWithdrawalId) {
+            return;
+        }
 
         $withdrawal = Withdrawal::findOrFail($this->selectedWithdrawalId);
 
@@ -133,7 +147,7 @@ class WithdrawalAdmin extends AdminComponent
             session()->flash('success', 'Withdrawal payout marked as PROCESSED.');
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Payout processing failed: ' . $e->getMessage());
+            session()->flash('error', 'Payout processing failed: '.$e->getMessage());
         }
     }
 
@@ -145,8 +159,8 @@ class WithdrawalAdmin extends AdminComponent
 
         if ($this->search) {
             $query->whereHas('user', function ($q) {
-                $q->where('username', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%');
+                $q->where('username', 'like', '%'.$this->search.'%')
+                    ->orWhere('email', 'like', '%'.$this->search.'%');
             });
         }
 

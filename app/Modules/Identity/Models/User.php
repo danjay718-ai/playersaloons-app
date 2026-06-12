@@ -2,6 +2,7 @@
 
 namespace App\Modules\Identity\Models;
 
+use App\Modules\Community\Models\Notification;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
 use Database\Factories\UserFactory;
@@ -29,7 +30,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Wallet|null $wallet
  * @property-read UserProfile|null $profile
  * @property-read Collection<int, KycSubmission> $kycSubmissions
- * @property-read Collection<int, \App\Modules\Community\Models\Notification> $notifications
+ * @property-read Collection<int, Notification> $notifications
  */
 class User extends Authenticatable implements HasMedia
 {
@@ -109,10 +110,10 @@ class User extends Authenticatable implements HasMedia
     /**
      * Get the user's notifications.
      *
-     * @return HasMany<\App\Modules\Community\Models\Notification, $this>
+     * @return HasMany<Notification, $this>
      */
     public function notifications(): HasMany
     {
-        return $this->hasMany(\App\Modules\Community\Models\Notification::class);
+        return $this->hasMany(Notification::class);
     }
 }

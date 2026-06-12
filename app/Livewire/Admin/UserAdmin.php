@@ -11,7 +11,6 @@ use App\Modules\Identity\Actions\UnsuspendUserAction;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\TournamentRegistration;
-use App\Shared\Enums\UserStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
@@ -21,12 +20,16 @@ class UserAdmin extends AdminComponent
     use WithPagination;
 
     public string $search = '';
+
     public string $statusFilter = '';
+
     public string $roleFilter = '';
 
     // Modals
     public bool $showDetailModal = false;
+
     public bool $showSuspendModal = false;
+
     public bool $showRoleModal = false;
 
     // Selection
@@ -34,7 +37,9 @@ class UserAdmin extends AdminComponent
 
     // Forms
     public string $suspendReason = '';
+
     public string $selectedRole = '';
+
     public string $roleAction = 'assign'; // assign | revoke
 
     protected $paginationTheme = 'tailwind';
@@ -72,12 +77,16 @@ class UserAdmin extends AdminComponent
             'suspendReason' => 'required|string|min:5|max:255',
         ]);
 
-        if (!$this->selectedUserId) return;
+        if (! $this->selectedUserId) {
+            return;
+        }
 
         $target = User::findOrFail($this->selectedUserId);
         $actor = Auth::user();
 
-        if (!$actor) return;
+        if (! $actor) {
+            return;
+        }
 
         try {
             $action->execute($target, $actor, $this->suspendReason);
@@ -85,25 +94,29 @@ class UserAdmin extends AdminComponent
             $this->showSuspendModal = false;
             // Refresh detail modal
         } catch (\Exception $e) {
-            session()->flash('error', 'Suspension failed: ' . $e->getMessage());
+            session()->flash('error', 'Suspension failed: '.$e->getMessage());
         }
     }
 
     public function unsuspend(UnsuspendUserAction $action): void
     {
-        if (!$this->selectedUserId) return;
+        if (! $this->selectedUserId) {
+            return;
+        }
 
         $target = User::findOrFail($this->selectedUserId);
         $actor = Auth::user();
 
-        if (!$actor) return;
+        if (! $actor) {
+            return;
+        }
 
         try {
             $action->execute($target, $actor);
             session()->flash('success', 'User account unsuspended.');
             // Refresh detail modal
         } catch (\Exception $e) {
-            session()->flash('error', 'Unsuspension failed: ' . $e->getMessage());
+            session()->flash('error', 'Unsuspension failed: '.$e->getMessage());
         }
     }
 
@@ -120,12 +133,16 @@ class UserAdmin extends AdminComponent
             'selectedRole' => 'required|string',
         ]);
 
-        if (!$this->selectedUserId) return;
+        if (! $this->selectedUserId) {
+            return;
+        }
 
         $target = User::findOrFail($this->selectedUserId);
         $actor = Auth::user();
 
-        if (!$actor) return;
+        if (! $actor) {
+            return;
+        }
 
         try {
             if ($this->roleAction === 'assign') {
@@ -137,7 +154,7 @@ class UserAdmin extends AdminComponent
             }
             $this->showRoleModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Role update failed: ' . $e->getMessage());
+            session()->flash('error', 'Role update failed: '.$e->getMessage());
         }
     }
 
@@ -149,8 +166,8 @@ class UserAdmin extends AdminComponent
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('username', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%');
+                $q->where('username', 'like', '%'.$this->search.'%')
+                    ->orWhere('email', 'like', '%'.$this->search.'%');
             });
         }
 

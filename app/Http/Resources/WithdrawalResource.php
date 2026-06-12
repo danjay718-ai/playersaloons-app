@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Modules\Wallet\Models\Withdrawal;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Modules\Wallet\Models\Withdrawal
+ * @mixin Withdrawal
  */
 class WithdrawalResource extends JsonResource
 {

@@ -9,12 +9,13 @@ use App\Http\Resources\TournamentCollection;
 use App\Http\Resources\TournamentResource;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
-use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Exceptions\CheckinNotOpenException;
 use App\Modules\Tournament\Exceptions\TournamentAlreadyRegisteredException;
 use App\Modules\Tournament\Exceptions\TournamentFullException;
 use App\Modules\Tournament\Exceptions\TournamentNotOpenForRegistrationException;
-use App\Modules\Tournament\Exceptions\CheckinNotOpenException;
+use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -78,7 +79,7 @@ class TournamentApiController extends Controller
                     'status' => $registration->status->value ?? $registration->status,
                 ],
             ], 201);
-        } catch (TournamentNotOpenForRegistrationException|TournamentAlreadyRegisteredException|TournamentFullException|InsufficientBalanceException|\App\Shared\Exceptions\InvalidStateTransitionException|\RuntimeException $e) {
+        } catch (TournamentNotOpenForRegistrationException|TournamentAlreadyRegisteredException|TournamentFullException|InsufficientBalanceException|InvalidStateTransitionException|\RuntimeException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);
@@ -110,7 +111,7 @@ class TournamentApiController extends Controller
                     'checked_in_at' => $checkin->checked_in_at?->toIso8601String(),
                 ],
             ], 200);
-        } catch (CheckinNotOpenException|\App\Shared\Exceptions\InvalidStateTransitionException|\LogicException $e) {
+        } catch (CheckinNotOpenException|InvalidStateTransitionException|\LogicException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);

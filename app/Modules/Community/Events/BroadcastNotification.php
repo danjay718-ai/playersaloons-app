@@ -12,7 +12,7 @@ class BroadcastNotification implements ShouldBroadcast
     /**
      * Create a new event instance.
      *
-     * @param array<string, mixed> $notificationData
+     * @param  array<string, mixed>  $notificationData
      */
     public function __construct(
         public readonly string $userUuid,

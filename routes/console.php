@@ -9,14 +9,14 @@ Artisan::command('inspire', function () {
     $output->writeln('<info>'.Inspiring::quote().'</info>');
 })->purpose('Display an inspiring quote');
 
-use Illuminate\Support\Facades\Schedule;
-use App\Modules\Tournament\Jobs\CloseRegistrationJob;
-use App\Modules\Tournament\Jobs\OpenCheckinJob;
-use App\Modules\Tournament\Jobs\CloseCheckinJob;
-use App\Modules\Tournament\Jobs\StartTournamentJob;
-use App\Modules\Tournament\Jobs\ExpireReservationsJob;
 use App\Modules\Team\Jobs\ExpireTeamInvitationsJob;
 use App\Modules\Tournament\Jobs\AutoCancelTournamentJob;
+use App\Modules\Tournament\Jobs\CloseCheckinJob;
+use App\Modules\Tournament\Jobs\CloseRegistrationJob;
+use App\Modules\Tournament\Jobs\ExpireReservationsJob;
+use App\Modules\Tournament\Jobs\OpenCheckinJob;
+use App\Modules\Tournament\Jobs\StartTournamentJob;
+use Illuminate\Support\Facades\Schedule;
 
 Schedule::job(new CloseRegistrationJob)->everyMinute();
 Schedule::job(new OpenCheckinJob)->everyMinute();

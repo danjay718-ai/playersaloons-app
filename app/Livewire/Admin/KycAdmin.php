@@ -18,10 +18,12 @@ class KycAdmin extends AdminComponent
     use WithPagination;
 
     public string $search = '';
+
     public string $statusFilter = 'submitted'; // Default to submitted (pending review)
 
     // Modals
     public bool $showDetailModal = false;
+
     public bool $showRejectModal = false;
 
     // Selection
@@ -46,14 +48,14 @@ class KycAdmin extends AdminComponent
     {
         $this->selectedSubmissionId = $id;
         $submission = KycSubmission::findOrFail($id);
-        
+
         // If it's in SUBMITTED state, automatically transition it to UNDER_REVIEW
         if ($submission->status === KycStatus::SUBMITTED) {
             try {
                 app(ReviewKycAction::class)->execute($submission);
                 session()->flash('info', 'Submission is now marked as UNDER REVIEW.');
             } catch (\Exception $e) {
-                session()->flash('error', 'Could not transition state: ' . $e->getMessage());
+                session()->flash('error', 'Could not transition state: '.$e->getMessage());
             }
         }
 
@@ -62,19 +64,23 @@ class KycAdmin extends AdminComponent
 
     public function approve(ApproveKycAction $action): void
     {
-        if (!$this->selectedSubmissionId) return;
+        if (! $this->selectedSubmissionId) {
+            return;
+        }
 
         $submission = KycSubmission::findOrFail($this->selectedSubmissionId);
         $reviewer = Auth::user();
 
-        if (!$reviewer) return;
+        if (! $reviewer) {
+            return;
+        }
 
         try {
             $action->execute($submission, $reviewer);
             session()->flash('success', 'KYC submission approved successfully.');
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Approval failed: ' . $e->getMessage());
+            session()->flash('error', 'Approval failed: '.$e->getMessage());
         }
     }
 
@@ -90,12 +96,16 @@ class KycAdmin extends AdminComponent
             'rejectReason' => 'required|string|min:5|max:255',
         ]);
 
-        if (!$this->selectedSubmissionId) return;
+        if (! $this->selectedSubmissionId) {
+            return;
+        }
 
         $submission = KycSubmission::findOrFail($this->selectedSubmissionId);
         $reviewer = Auth::user();
 
-        if (!$reviewer) return;
+        if (! $reviewer) {
+            return;
+        }
 
         try {
             $action->execute($submission, $reviewer, $this->rejectReason);
@@ -103,7 +113,7 @@ class KycAdmin extends AdminComponent
             $this->showRejectModal = false;
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Rejection failed: ' . $e->getMessage());
+            session()->flash('error', 'Rejection failed: '.$e->getMessage());
         }
     }
 
@@ -115,8 +125,8 @@ class KycAdmin extends AdminComponent
 
         if ($this->search) {
             $query->whereHas('user', function ($q) {
-                $q->where('username', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%');
+                $q->where('username', 'like', '%'.$this->search.'%')
+                    ->orWhere('email', 'like', '%'.$this->search.'%');
             });
         }
 

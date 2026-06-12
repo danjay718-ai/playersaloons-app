@@ -19,7 +19,6 @@ use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Livewire\WithPagination;
 
 class TournamentAdmin extends AdminComponent
@@ -27,13 +26,18 @@ class TournamentAdmin extends AdminComponent
     use WithPagination;
 
     public string $search = '';
+
     public string $statusFilter = '';
+
     public string $gameFilter = '';
 
     // Modal control
     public bool $showCreateModal = false;
+
     public bool $showDetailModal = false;
+
     public bool $showCancelModal = false;
+
     public bool $isEditMode = false;
 
     // Selected ID
@@ -41,19 +45,30 @@ class TournamentAdmin extends AdminComponent
 
     // Form fields
     public string $name = '';
+
     public int $game_id = 0;
+
     public int $max_participants = 16;
+
     public int $min_participants = 4;
+
     public string $entry_fee = '0.00';
+
     public string $prize_pool = '0.00';
+
     public string $registration_open_at = '';
+
     public string $registration_close_at = '';
+
     public string $checkin_open_at = '';
+
     public string $checkin_close_at = '';
+
     public string $start_at = '';
 
     // Cancel form
     public string $cancelReason = '';
+
     public string $cancelNotes = '';
 
     protected $paginationTheme = 'tailwind';
@@ -95,6 +110,7 @@ class TournamentAdmin extends AdminComponent
 
         if ($tournament->status !== TournamentStatus::DRAFT) {
             session()->flash('error', 'Only draft tournaments can be edited.');
+
             return;
         }
 
@@ -130,7 +146,7 @@ class TournamentAdmin extends AdminComponent
         ]);
 
         $creator = Auth::user();
-        if (!$creator) {
+        if (! $creator) {
             return;
         }
 
@@ -152,6 +168,7 @@ class TournamentAdmin extends AdminComponent
             $tournament = Tournament::findOrFail($this->selectedTournamentId);
             if ($tournament->status !== TournamentStatus::DRAFT) {
                 session()->flash('error', 'Only draft tournaments can be edited.');
+
                 return;
             }
             $tournament->update($data);
@@ -185,7 +202,9 @@ class TournamentAdmin extends AdminComponent
     // Lifecycle transitions
     public function applyTransition(string $transitionName): void
     {
-        if (!$this->selectedTournamentId) return;
+        if (! $this->selectedTournamentId) {
+            return;
+        }
 
         $tournament = Tournament::findOrFail($this->selectedTournamentId);
 
@@ -221,7 +240,7 @@ class TournamentAdmin extends AdminComponent
             }
             session()->flash('success', 'State transition executed successfully.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Transition failed: ' . $e->getMessage());
+            session()->flash('error', 'Transition failed: '.$e->getMessage());
         }
     }
 
@@ -240,12 +259,16 @@ class TournamentAdmin extends AdminComponent
             'cancelNotes' => 'nullable|string',
         ]);
 
-        if (!$this->selectedTournamentId) return;
+        if (! $this->selectedTournamentId) {
+            return;
+        }
 
         $tournament = Tournament::findOrFail($this->selectedTournamentId);
         $actor = Auth::user();
 
-        if (!$actor) return;
+        if (! $actor) {
+            return;
+        }
 
         try {
             $cancelAction->execute($tournament, $actor, $this->cancelReason, $this->cancelNotes);
@@ -253,7 +276,7 @@ class TournamentAdmin extends AdminComponent
             $this->showCancelModal = false;
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Cancellation failed: ' . $e->getMessage());
+            session()->flash('error', 'Cancellation failed: '.$e->getMessage());
         }
     }
 
@@ -264,7 +287,7 @@ class TournamentAdmin extends AdminComponent
             ->orderBy('created_at', 'desc');
 
         if ($this->search) {
-            $query->where('name', 'like', '%' . $this->search . '%');
+            $query->where('name', 'like', '%'.$this->search.'%');
         }
 
         if ($this->statusFilter) {
@@ -278,8 +301,8 @@ class TournamentAdmin extends AdminComponent
         $tournaments = $query->paginate(10);
         $games = Game::with('translations')->get();
 
-        $selectedTournament = $this->selectedTournamentId 
-            ? Tournament::with(['game.translations', 'registrations.user', 'cancellation.cancelledBy', 'rounds.matches'])->find($this->selectedTournamentId) 
+        $selectedTournament = $this->selectedTournamentId
+            ? Tournament::with(['game.translations', 'registrations.user', 'cancellation.cancelledBy', 'rounds.matches'])->find($this->selectedTournamentId)
             : null;
 
         return view('livewire.admin.tournament-admin', [

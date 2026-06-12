@@ -14,7 +14,6 @@ use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Models\Withdrawal;
-use App\Shared\Enums\DisputeResolution;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
@@ -24,7 +23,6 @@ use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -33,12 +31,19 @@ class PolicyTest extends TestCase
     use RefreshDatabase;
 
     private User $superAdmin;
+
     private User $admin;
+
     private User $organizer;
+
     private User $financeOperator;
+
     private User $kycReviewer;
+
     private User $playerA;
+
     private User $playerB;
+
     private User $playerC;
 
     protected function setUp(): void

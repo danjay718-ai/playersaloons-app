@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Auth;
 
+use App\Livewire\Auth\Login;
+use App\Livewire\Dashboard\PlayerDashboard;
 use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
@@ -32,20 +34,20 @@ class LoginRedirectTest extends TestCase
     {
         /** @var User $user */
         $user = User::query()->create([
-            'uuid'              => Str::uuid()->toString(),
-            'email'             => $email,
-            'username'          => explode('@', $email)[0],
-            'password'          => bcrypt('Password@1234!'),
+            'uuid' => Str::uuid()->toString(),
+            'email' => $email,
+            'username' => explode('@', $email)[0],
+            'password' => bcrypt('Password@1234!'),
             'email_verified_at' => now(),
-            'status'            => UserStatus::ACTIVE,
+            'status' => UserStatus::ACTIVE,
         ]);
         $user->assignRole($role);
 
         Wallet::query()->create([
-            'uuid'           => Str::uuid()->toString(),
-            'user_id'        => $user->id,
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->id,
             'cached_balance' => '0.00',
-            'status'         => WalletStatus::ACTIVE,
+            'status' => WalletStatus::ACTIVE,
         ]);
 
         return $user;
@@ -55,7 +57,7 @@ class LoginRedirectTest extends TestCase
     {
         $this->createUser('PLAYER', 'player@test.com');
 
-        Livewire::test(\App\Livewire\Auth\Login::class)
+        Livewire::test(Login::class)
             ->set('identity', 'player@test.com')
             ->set('password', 'Password@1234!')
             ->call('login')
@@ -66,7 +68,7 @@ class LoginRedirectTest extends TestCase
     {
         $this->createUser('SUPER_ADMIN', 'superadmin@test.com');
 
-        Livewire::test(\App\Livewire\Auth\Login::class)
+        Livewire::test(Login::class)
             ->set('identity', 'superadmin@test.com')
             ->set('password', 'Password@1234!')
             ->call('login')
@@ -77,7 +79,7 @@ class LoginRedirectTest extends TestCase
     {
         $this->createUser('ADMIN', 'admin@test.com');
 
-        Livewire::test(\App\Livewire\Auth\Login::class)
+        Livewire::test(Login::class)
             ->set('identity', 'admin@test.com')
             ->set('password', 'Password@1234!')
             ->call('login')
@@ -90,7 +92,7 @@ class LoginRedirectTest extends TestCase
 
         // PlayerDashboard::render() issues a redirect()->to('/admin') for staff roles
         Livewire::actingAs($admin)
-            ->test(\App\Livewire\Dashboard\PlayerDashboard::class)
+            ->test(PlayerDashboard::class)
             ->assertRedirect('/admin');
     }
 
@@ -99,7 +101,7 @@ class LoginRedirectTest extends TestCase
         $superAdmin = $this->createUser('SUPER_ADMIN', 'superadmin2@test.com');
 
         Livewire::actingAs($superAdmin)
-            ->test(\App\Livewire\Dashboard\PlayerDashboard::class)
+            ->test(PlayerDashboard::class)
             ->assertRedirect('/admin');
     }
 
@@ -109,12 +111,12 @@ class LoginRedirectTest extends TestCase
 
         $response = $this->actingAs($player)->get('/dashboard');
         $response->assertStatus(200);
-        $response->assertSeeLivewire(\App\Livewire\Dashboard\PlayerDashboard::class);
+        $response->assertSeeLivewire(PlayerDashboard::class);
     }
 
     public function test_invalid_credentials_show_error(): void
     {
-        Livewire::test(\App\Livewire\Auth\Login::class)
+        Livewire::test(Login::class)
             ->set('identity', 'nobody@test.com')
             ->set('password', 'wrongpassword')
             ->call('login')

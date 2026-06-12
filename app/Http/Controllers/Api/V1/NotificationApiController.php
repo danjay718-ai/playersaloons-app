@@ -8,13 +8,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\NotificationResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class NotificationApiController extends Controller
 {
     /**
      * Get the authenticated user's notifications.
      */
-    public function index(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
         $perPage = (int) $request->query('per_page', '15');
         $notifications = $request->user()->notifications()

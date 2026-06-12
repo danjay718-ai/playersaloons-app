@@ -28,7 +28,7 @@ class TournamentsTableSeeder extends Seeder
     {
         // 1. Create a default player user if not exists
         $playerUser = User::query()->where('email', 'player@playersaloons.com')->first();
-        if (!$playerUser) {
+        if (! $playerUser) {
             $playerUser = User::query()->create([
                 'uuid' => (string) Str::uuid(),
                 'email' => 'player@playersaloons.com',
@@ -44,7 +44,7 @@ class TournamentsTableSeeder extends Seeder
 
         // Ensure player user has a wallet
         $playerWallet = DB::table('wallets')->where('user_id', $playerUser->id)->first();
-        if (!$playerWallet) {
+        if (! $playerWallet) {
             $walletId = DB::table('wallets')->insertGetId([
                 'uuid' => (string) Str::uuid(),
                 'user_id' => $playerUser->id,
@@ -69,7 +69,7 @@ class TournamentsTableSeeder extends Seeder
 
         foreach ($opponentData as $data) {
             $opp = User::query()->where('email', $data['email'])->first();
-            if (!$opp) {
+            if (! $opp) {
                 $opp = User::query()->create([
                     'uuid' => (string) Str::uuid(),
                     'email' => $data['email'],
@@ -84,7 +84,7 @@ class TournamentsTableSeeder extends Seeder
             }
             // Ensure wallet
             $wallet = DB::table('wallets')->where('user_id', $opp->id)->first();
-            if (!$wallet) {
+            if (! $wallet) {
                 DB::table('wallets')->insert([
                     'uuid' => (string) Str::uuid(),
                     'user_id' => $opp->id,
@@ -201,7 +201,7 @@ class TournamentsTableSeeder extends Seeder
                 'max_participants' => 32,
                 'min_participants' => 8,
                 'banner_url' => 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=600&auto=format&fit=crop',
-            ]
+            ],
         ];
 
         foreach ($tournamentsData as $tData) {
@@ -235,7 +235,7 @@ class TournamentsTableSeeder extends Seeder
                     ->where('user_id', $playerUser->id)
                     ->first();
 
-                if (!$reg) {
+                if (! $reg) {
                     $reg = TournamentRegistration::query()->create([
                         'uuid' => (string) Str::uuid(),
                         'tournament_id' => $t->id,
@@ -253,7 +253,7 @@ class TournamentsTableSeeder extends Seeder
                         ->where('user_id', $opp->id)
                         ->first();
 
-                    if (!$oppReg) {
+                    if (! $oppReg) {
                         $oppReg = TournamentRegistration::query()->create([
                             'uuid' => (string) Str::uuid(),
                             'tournament_id' => $t->id,
@@ -268,7 +268,7 @@ class TournamentsTableSeeder extends Seeder
                     if (in_array($t->status, [TournamentStatus::COMPLETED, TournamentStatus::ONGOING])) {
                         // Ensure bracket exists
                         $bracket = Bracket::query()->where('tournament_id', $t->id)->first();
-                        if (!$bracket) {
+                        if (! $bracket) {
                             $bracket = Bracket::query()->create([
                                 'tournament_id' => $t->id,
                                 'generated_at' => now()->subDays(1),
@@ -278,7 +278,7 @@ class TournamentsTableSeeder extends Seeder
 
                         // Ensure round exists
                         $round = Round::query()->where('bracket_id', $bracket->id)->where('round_number', 1)->first();
-                        if (!$round) {
+                        if (! $round) {
                             $round = Round::query()->create([
                                 'bracket_id' => $bracket->id,
                                 'round_number' => 1,
@@ -291,13 +291,13 @@ class TournamentsTableSeeder extends Seeder
                         $match = GameMatch::query()
                             ->where('tournament_id', $t->id)
                             ->where('round_id', $round->id)
-                            ->where(function ($query) use ($reg, $oppReg) {
+                            ->where(function ($query) use ($reg) {
                                 $query->where('player_a_registration_id', $reg->id)
-                                      ->orWhere('player_b_registration_id', $reg->id);
+                                    ->orWhere('player_b_registration_id', $reg->id);
                             })
                             ->first();
 
-                        if (!$match) {
+                        if (! $match) {
                             // Seed result: User wins some and loses some
                             // COD: User wins
                             // MLBB: User loses
@@ -354,7 +354,7 @@ class TournamentsTableSeeder extends Seeder
                     'running_balance' => 400.00,
                     'description' => 'Stage 1 Win - PUBG Mobile Monthly Championship',
                     'created_at' => now()->subHours(2),
-                ]
+                ],
             ]);
         }
     }

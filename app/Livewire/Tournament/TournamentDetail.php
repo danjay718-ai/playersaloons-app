@@ -7,10 +7,10 @@ namespace App\Livewire\Tournament;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
-use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentCheckin;
-use App\Shared\Enums\RegistrationStatus;
+use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Shared\Enums\CheckinStatus;
+use App\Shared\Enums\RegistrationStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -25,7 +25,7 @@ class TournamentDetail extends Component
 
     public function register(RegisterForTournamentAction $action)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->to('/login');
         }
 
@@ -42,7 +42,7 @@ class TournamentDetail extends Component
 
     public function checkin(CheckinParticipantAction $action)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->to('/login');
         }
 
@@ -65,7 +65,7 @@ class TournamentDetail extends Component
                 'game.translations',
                 'registrations' => function ($q) {
                     $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
-                      ->with('user.profile');
+                        ->with('user.profile');
                 },
                 'brackets.rounds.matches.playerARegistration.user',
                 'brackets.rounds.matches.playerBRegistration.user',
@@ -107,6 +107,6 @@ class TournamentDetail extends Component
             'isCheckedIn' => $isCheckedIn,
             'userRegistration' => $userRegistration,
             'rounds' => $rounds,
-        ])->layout('components.layouts.app', ['title' => $tournament->name . ' | PlayerSaloons']);
+        ])->layout('components.layouts.app', ['title' => $tournament->name.' | PlayerSaloons']);
     }
 }

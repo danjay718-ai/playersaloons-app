@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Modules\Wallet\Models\Wallet;
+use App\Shared\Enums\WalletStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Modules\Wallet\Models\Wallet
+ * @mixin Wallet
+ *
  * @property-read string $uuid
  * @property-read string $cached_balance
- * @property-read \App\Shared\Enums\WalletStatus $status
+ * @property-read WalletStatus $status
  */
 class WalletResource extends JsonResource
 {
