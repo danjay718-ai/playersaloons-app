@@ -156,7 +156,7 @@
                         ];
                         $roleClass = $roleColors[$adminRole] ?? 'bg-slate-800 text-slate-300 border-slate-700/30';
                     @endphp
-                    <div class="flex items-center space-x-3 bg-slate-900/60 border border-slate-700/50 rounded-xl px-3.5 py-2">
+                    <a href="/admin/profile" wire:navigate class="flex items-center space-x-3 bg-slate-900/60 border border-slate-700/50 hover:border-slate-650/80 hover:bg-slate-800/40 rounded-xl px-3.5 py-2 transition-all duration-150">
                         <div class="w-9 h-9 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-xs font-bold shrink-0">
                             {{ strtoupper(substr(auth()->user()?->username ?? 'A', 0, 2)) }}
                         </div>
@@ -167,7 +167,7 @@
                                 {{ str_replace('_', ' ', $adminRole) }}
                             </span>
                         </div>
-                    </div>
+                    </a>
                     <form method="POST" action="{{ route('logout') }}" class="m-0">
                         @csrf
                         <button type="submit" title="Sign out" class="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/20">
