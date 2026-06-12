@@ -47,4 +47,17 @@ Route::middleware('auth')->group(function () {
 
         return redirect('/');
     })->name('logout');
+
+    // Admin Control Panel
+    Route::prefix('admin')->group(function () {
+        Route::get('/', \App\Livewire\Admin\AdminDashboard::class);
+        Route::get('/tournaments', \App\Livewire\Admin\TournamentAdmin::class);
+        Route::get('/matches', \App\Livewire\Admin\MatchAdmin::class);
+        Route::get('/kyc', \App\Livewire\Admin\KycAdmin::class);
+        Route::get('/withdrawals', \App\Livewire\Admin\WithdrawalAdmin::class);
+        Route::get('/users', \App\Livewire\Admin\UserAdmin::class);
+        Route::get('/audit-logs', \App\Livewire\Admin\AuditLogAdmin::class);
+        Route::get('/cms', \App\Livewire\Admin\CmsAdmin::class);
+    });
 });
+

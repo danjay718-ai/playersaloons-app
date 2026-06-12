@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -151,6 +152,16 @@ class Tournament extends Model implements HasMedia
     public function brackets(): HasMany
     {
         return $this->hasMany(Bracket::class);
+    }
+
+    /**
+     * Get rounds for the tournament (via brackets).
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
+     */
+    public function rounds(): HasManyThrough
+    {
+        return $this->hasManyThrough(Round::class, Bracket::class);
     }
 
     /**

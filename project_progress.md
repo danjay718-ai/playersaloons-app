@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-07 | **Branch**: `main`
+**Last Updated**: 2026-06-12 | **Branch**: `main`
 
 ---
 
@@ -276,3 +276,72 @@ Designed and implemented premium dark neon frontend pages using Tailwind CSS and
   - Standardized web routing under `guest` and `auth` middleware groups.
 - **Tests**:
   - Run and passed the entire test suite (139 tests, 100% passing).
+
+---
+
+## ✅ Phase 16 — Admin Panel (Livewire)
+
+Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles). Built on Livewire 3 with a dedicated admin layout at `resources/views/components/layouts/admin.blade.php`.
+
+- **Base Class (`app/Livewire/Admin/AdminComponent.php`)**:
+  - Abstract base enforcing staff-only access via `boot()` — redirects with 403 if the authenticated user lacks the `ADMIN` or `SUPER_ADMIN` role.
+
+- **Admin Layout (`resources/views/components/layouts/admin.blade.php`)**:
+  - Dark professional theme (Slate-950 / Slate-900 surfaces).
+  - Responsive sidebar with Lucide icons, mobile burger menu, and live user name/role display.
+  - Flash message toast system (success / error / info).
+
+- **Admin Dashboard (`AdminDashboard` → `/admin`)**:
+  - Live stats grid: total users, pending KYC, pending withdrawals, active tournaments, ongoing matches, open disputes, platform escrow balance.
+  - Recent activity feeds for KYC and withdrawals with quick status badges.
+
+- **Tournament Admin (`TournamentAdmin` → `/admin/tournaments`)**:
+  - Searchable, filterable paginated tournament list.
+  - Create/Edit modal for draft tournaments (full date/time fields, game selector, fee, participant limits).
+  - State-transition buttons (`applyTransition`) covering the full lifecycle: Publish → Open Registration → Close Registration → Open Check-in → Close Check-in → Generate Bracket → Start → Complete → Process Refund.
+  - Cancel modal with mandatory reason and audit note.
+
+- **Match Admin (`MatchAdmin` → `/admin/matches`)**:
+  - Searchable match list with dispute filter (active disputes highlighted).
+  - Result override panel: select winner, write override notes, trigger `MatchStateMachine` override.
+  - Dispute resolution panel: view evidence, choose resolution (`PLAYER_A_WINS`, `PLAYER_B_WINS`, `DRAW`, `REMATCH`), resolve via `ResolveDisputeAction`.
+
+- **KYC Admin (`KycAdmin` → `/admin/kyc`)**:
+  - Status-filtered KYC queue (SUBMITTED / UNDER_REVIEW / APPROVED / REJECTED).
+  - Side-panel detail view with document links, submitted data.
+  - One-click Approve or Reject (with mandatory rejection reason note).
+
+- **Withdrawal Admin (`WithdrawalAdmin` → `/admin/withdrawals`)**:
+  - Defaults to `PENDING` status filter with search by username / email.
+  - Selecting a withdrawal auto-moves it to `UNDER_REVIEW` (four-eyes guard: reviewer ≠ requester).
+  - Approve modal (with notes) and Reject modal (mandatory reason).
+  - Process Payout button for `APPROVED` withdrawals.
+  - Shows linked KYC status and last 10 wallet ledger entries inline.
+
+- **User Admin (`UserAdmin` → `/admin/users`)**:
+  - Paginated user list with status and role filters.
+  - Detail panel: suspend / unsuspend action with reason, role assignment / revocation (all non-SUPER_ADMIN roles), view wallet balance and KYC status.
+
+- **Audit Log Admin (`AuditLogAdmin` → `/admin/audit-logs`)**:
+  - Date-range, actor, action-type, and entity-type filters.
+  - Paginated log table showing actor, action, entity, and timestamp.
+
+- **CMS Admin (`CmsAdmin` → `/admin/cms`)**:
+  - Tabbed interface: **Games** tab and **Pages** tab.
+  - Games: toggle active/inactive, edit English translations (name / description).
+  - Pages: list all CMS pages with locale, status badge; publish action.
+
+- **Routing (`routes/web.php`)**:
+  - All admin routes mounted under `/admin` prefix inside the `auth` middleware group:
+    - `/admin` · `/admin/tournaments` · `/admin/matches` · `/admin/kyc` · `/admin/withdrawals` · `/admin/users` · `/admin/audit-logs` · `/admin/cms`
+
+- **Bug Fixes**:
+  - Renamed `TournamentAdmin::transition()` → `applyTransition()` to avoid conflict with Livewire's reserved `transition()` lifecycle method.
+  - Fixed `WithdrawalAdmin::reject()` union type hint (removed erroneous `RejectKycAction` from union).
+  - Fixed `TournamentAdmin` validation: replaced `max:max_participants` (invalid cross-field ref) with `lte:max_participants`.
+  - Added `rounds()` `hasManyThrough` relationship to `Tournament` model (via `Bracket`).
+
+- **Tests**:
+  - `tests/Feature/Admin/AdminPanelTest.php`: 12 feature tests covering route authorization, component rendering, tournament CRUD & lifecycle, match override, dispute resolution, KYC approve/reject, withdrawal approve/reject, user suspend/unsuspend, and audit log access.
+  - **All 147 tests pass at 100%.**
+
