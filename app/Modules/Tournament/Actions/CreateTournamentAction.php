@@ -51,6 +51,18 @@ class CreateTournamentAction
                 'checkin_close_at' => $data['checkin_close_at'] ?? null,
                 'start_at' => $data['start_at'] ?? null,
                 'template_id' => $data['template_id'] ?? null,
+                'description' => $data['description'] ?? null,
+                'rules' => $data['rules'] ?? null,
+                'platform_id' => $data['platform_id'] ?? null,
+                'frequency' => $data['frequency'] ?? 'daily',
+                'waiting_time' => $data['waiting_time'] ?? null,
+                'waiting_result_time' => $data['waiting_result_time'] ?? null,
+                'team_size' => $data['team_size'] ?? 1,
+                'prize_1st' => $data['prize_1st'] ?? null,
+                'prize_2nd' => $data['prize_2nd'] ?? null,
+                'prize_3rd' => $data['prize_3rd'] ?? null,
+                'winning_points' => $data['winning_points'] ?? null,
+                'banner_url' => $data['banner_url'] ?? null,
                 'created_by' => $creator->getKey(),
             ]);
             $tournament->save();

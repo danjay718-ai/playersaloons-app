@@ -3,6 +3,7 @@
 namespace App\Modules\Tournament\Models;
 
 use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Database\Eloquent\Collection;
@@ -79,6 +80,16 @@ class Tournament extends Model implements HasMedia
         'created_by',
         'frequency',
         'banner_url',
+        'description',
+        'rules',
+        'platform_id',
+        'waiting_time',
+        'waiting_result_time',
+        'team_size',
+        'prize_1st',
+        'prize_2nd',
+        'prize_3rd',
+        'winning_points',
     ];
 
     /**
@@ -101,6 +112,13 @@ class Tournament extends Model implements HasMedia
             'start_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'prize_1st' => 'decimal:2',
+            'prize_2nd' => 'decimal:2',
+            'prize_3rd' => 'decimal:2',
+            'waiting_time' => 'integer',
+            'waiting_result_time' => 'integer',
+            'team_size' => 'integer',
+            'winning_points' => 'integer',
         ];
     }
 
@@ -122,6 +140,16 @@ class Tournament extends Model implements HasMedia
     public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class);
+    }
+
+    /**
+     * Get the platform for the tournament.
+     *
+     * @return BelongsTo<Platform, Tournament>
+     */
+    public function platform(): BelongsTo
+    {
+        return $this->belongsTo(Platform::class);
     }
 
     /**

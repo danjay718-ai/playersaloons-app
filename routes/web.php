@@ -9,6 +9,7 @@ use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\TournamentAdmin;
+use App\Livewire\Admin\TournamentForm;
 use App\Livewire\Admin\UserAdmin;
 use App\Livewire\Admin\WithdrawalAdmin;
 use App\Livewire\Auth\EmailVerification;
@@ -61,7 +62,9 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/', AdminDashboard::class);
         Route::get('/profile', AdminProfile::class);
-        Route::get('/tournaments', TournamentAdmin::class);
+        Route::get('/tournaments', TournamentAdmin::class)->name('admin.tournaments');
+        Route::get('/tournaments/create', TournamentForm::class)->name('admin.tournaments.create');
+        Route::get('/tournaments/{id}/edit', TournamentForm::class)->name('admin.tournaments.edit');
         Route::get('/matches', MatchAdmin::class);
         Route::get('/kyc', KycAdmin::class);
         Route::get('/withdrawals', WithdrawalAdmin::class);

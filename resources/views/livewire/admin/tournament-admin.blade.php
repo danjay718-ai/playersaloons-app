@@ -23,11 +23,11 @@
             </select>
         </div>
 
-        <button wire:click="openCreateModal" 
+        <a href="{{ route('admin.tournaments.create') }}" wire:navigate
                 class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 py-2.5 rounded-lg flex items-center shadow-[0_4px_12px_rgba(79,70,229,0.2)] transition-colors w-full sm:w-auto justify-center">
             <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
             <span>Create Tournament</span>
-        </button>
+        </a>
     </div>
 
     <!-- Feedback Alerts -->
@@ -110,13 +110,18 @@
                                     <i data-lucide="eye" class="w-4 h-4"></i>
                                 </button>
                                 @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT)
-                                    <button wire:click="openEditModal({{ $tournament->id }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit">
+                                    <a href="{{ route('admin.tournaments.edit', $tournament->id) }}" wire:navigate class="p-1.5 inline-block text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit">
                                         <i data-lucide="edit" class="w-4 h-4"></i>
-                                    </button>
+                                    </a>
                                 @endif
                                 @if($tournament->status != \App\Shared\Enums\TournamentStatus::CANCELLED && $tournament->status != \App\Shared\Enums\TournamentStatus::REFUNDED && $tournament->status != \App\Shared\Enums\TournamentStatus::COMPLETED)
-                                    <button wire:click="openCancelModal({{ $tournament->id }})" class="p-1.5 text-red-400 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Cancel">
+                                    <button wire:click="openCancelModal({{ $tournament->id }})" class="p-1.5 text-orange-400 hover:text-white bg-orange-950/40 border border-orange-900/50 rounded-lg" title="Cancel">
                                         <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                @endif
+                                @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT && $tournament->registrations->count() == 0)
+                                    <button wire:click="deleteTournament({{ $tournament->id }})" wire:confirm="Are you sure you want to delete this tournament?" class="p-1.5 text-red-500 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 @endif
                             </td>
@@ -135,115 +140,6 @@
     <div class="mt-6">
         {{ $tournaments->links() }}
     </div>
-
-    <!-- Create/Edit Modal -->
-    @if($showCreateModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showCreateModal', false)"></div>
-            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-lg w-full overflow-hidden shadow-2xl relative z-10">
-                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">
-                        {{ $isEditMode ? 'Edit Tournament' : 'Create New Tournament' }}
-                    </h3>
-                    <button wire:click="$set('showCreateModal', false)" class="text-slate-400 hover:text-white">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-
-                <form wire:submit.prevent="saveTournament" class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Tournament Name</label>
-                        <input type="text" wire:model="name" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        @error('name') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Game</label>
-                            <select wire:model="game_id" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
-                                <option value="">Select Game</option>
-                                @foreach($games as $game)
-                                    <option value="{{ $game->id }}">{{ $game->translations->first()?->name ?? $game->slug }}</option>
-                                @endforeach
-                            </select>
-                            @error('game_id') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Entry Fee ($)</label>
-                            <input type="text" wire:model="entry_fee" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            @error('entry_fee') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Min Players</label>
-                            <input type="number" wire:model="min_participants" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            @error('min_participants') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Max Players</label>
-                            <input type="number" wire:model="max_participants" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            @error('max_participants') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Prize Pool ($)</label>
-                            <input type="text" wire:model="prize_pool" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            @error('prize_pool') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <hr class="border-slate-800 my-4">
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Registration Opens</label>
-                            <input type="datetime-local" wire:model="registration_open_at" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            @error('registration_open_at') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Registration Closes</label>
-                            <input type="datetime-local" wire:model="registration_close_at" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            @error('registration_close_at') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Check-in Opens</label>
-                            <input type="datetime-local" wire:model="checkin_open_at" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            @error('checkin_open_at') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Check-in Closes</label>
-                            <input type="datetime-local" wire:model="checkin_close_at" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            @error('checkin_close_at') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Start Time</label>
-                        <input type="datetime-local" wire:model="start_at" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        @error('start_at') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                        <button type="button" wire:click="$set('showCreateModal', false)" 
-                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
-                            Cancel
-                        </button>
-                        <button type="submit" 
-                                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
-                            {{ $isEditMode ? 'Update' : 'Create' }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
 
     <!-- Detail Modal -->
     @if($showDetailModal && $selectedTournament)
@@ -343,6 +239,12 @@
                         </div>
                     @endif
 
+                    @if($selectedTournament->banner_url)
+                        <div class="rounded-lg overflow-hidden border border-slate-800">
+                            <img src="{{ $selectedTournament->banner_url }}" alt="Banner" class="w-full h-48 object-cover">
+                        </div>
+                    @endif
+
                     <!-- Details Grid -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                         <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
@@ -361,7 +263,49 @@
                             <span class="text-slate-500 font-medium block">Player Cap</span>
                             <span class="text-slate-200 font-semibold mt-1 block">{{ $selectedTournament->registrations->count() }} / {{ $selectedTournament->max_participants }}</span>
                         </div>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
+                            <span class="text-slate-500 font-medium block">Platform</span>
+                            <span class="text-slate-200 font-semibold mt-1 block uppercase">{{ $selectedTournament->platform ? $selectedTournament->platform->name : 'N/A' }}</span>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
+                            <span class="text-slate-500 font-medium block">Frequency</span>
+                            <span class="text-slate-200 font-semibold mt-1 block uppercase">{{ $selectedTournament->frequency ?? 'N/A' }}</span>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
+                            <span class="text-slate-500 font-medium block">Team Size</span>
+                            <span class="text-slate-200 font-semibold mt-1 block">{{ $selectedTournament->team_size ?? 1 }}</span>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
+                            <span class="text-slate-500 font-medium block">Winning Points</span>
+                            <span class="text-slate-200 font-semibold mt-1 block">{{ $selectedTournament->winning_points ?? 'N/A' }}</span>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
+                            <span class="text-slate-500 font-medium block">1st Prize</span>
+                            <span class="text-slate-200 font-semibold mt-1 block">{{ $selectedTournament->prize_1st ? '$'.number_format((float)$selectedTournament->prize_1st, 2) : 'N/A' }}</span>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
+                            <span class="text-slate-500 font-medium block">Wait Time</span>
+                            <span class="text-slate-200 font-semibold mt-1 block">{{ $selectedTournament->waiting_time ? $selectedTournament->waiting_time . 'm' : 'N/A' }}</span>
+                        </div>
                     </div>
+                    
+                    @if($selectedTournament->description)
+                    <div class="text-xs">
+                        <span class="text-slate-500 font-medium block mb-1">Description</span>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg text-slate-300">
+                            {{ $selectedTournament->description }}
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($selectedTournament->rules)
+                    <div class="text-xs">
+                        <span class="text-slate-500 font-medium block mb-1">Rules</span>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg text-slate-300">
+                            {{ $selectedTournament->rules }}
+                        </div>
+                    </div>
+                    @endif
 
                     <!-- Lifecycle Milestones -->
                     <div>
