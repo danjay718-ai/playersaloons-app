@@ -64,6 +64,12 @@ class TournamentAdmin extends AdminComponent
     }
 
     // Lifecycle transitions
+    public function applyTransitionById(int $tournamentId, string $transitionName): void
+    {
+        $this->selectedTournamentId = $tournamentId;
+        $this->applyTransition($transitionName);
+    }
+
     public function applyTransition(string $transitionName): void
     {
         if (! $this->selectedTournamentId) {

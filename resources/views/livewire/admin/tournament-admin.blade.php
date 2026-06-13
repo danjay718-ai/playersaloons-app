@@ -45,8 +45,8 @@
     @endif
 
     <!-- Tournaments Table -->
-    <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6">
-        <div class="overflow-x-auto">
+    <div class="bg-[#0f172a] border border-slate-800 rounded-xl shadow-sm mb-6">
+        <div class="overflow-x-auto min-h-[350px]">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
                     <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
@@ -105,25 +105,101 @@
                             <td class="p-4 text-slate-400">
                                 {{ $tournament->start_at ? $tournament->start_at->format('M d, H:i') : 'N/A' }}
                             </td>
-                            <td class="p-4 text-right space-x-2">
-                                <button wire:click="selectTournament({{ $tournament->id }})" class="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg" title="Details">
-                                    <i data-lucide="eye" class="w-4 h-4"></i>
-                                </button>
-                                @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT)
-                                    <a href="{{ route('admin.tournaments.edit', $tournament->id) }}" wire:navigate class="p-1.5 inline-block text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit">
-                                        <i data-lucide="edit" class="w-4 h-4"></i>
-                                    </a>
-                                @endif
-                                @if($tournament->status != \App\Shared\Enums\TournamentStatus::CANCELLED && $tournament->status != \App\Shared\Enums\TournamentStatus::REFUNDED && $tournament->status != \App\Shared\Enums\TournamentStatus::COMPLETED)
-                                    <button wire:click="openCancelModal({{ $tournament->id }})" class="p-1.5 text-orange-400 hover:text-white bg-orange-950/40 border border-orange-900/50 rounded-lg" title="Cancel">
-                                        <i data-lucide="x" class="w-4 h-4"></i>
+                            <td class="p-4 text-right">
+                                <div x-data="{ open: false }" class="relative inline-block text-left">
+                                    <button @click="open = !open" @click.away="open = false" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
+                                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
                                     </button>
-                                @endif
-                                @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT && $tournament->registrations->count() == 0)
-                                    <button wire:click="deleteTournament({{ $tournament->id }})" wire:confirm="Are you sure you want to delete this tournament?" class="p-1.5 text-red-500 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                    </button>
-                                @endif
+                                    
+                                    <div x-show="open" x-transition.opacity style="display: none;" class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-[#0f172a] ring-1 ring-slate-800 z-50 overflow-hidden divide-y divide-slate-800">
+                                        <div class="py-1" role="menu">
+                                            <!-- Player View -->
+                                            <a href="/tournaments/{{ $tournament->uuid }}" wire:navigate class="flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group">
+                                                <i data-lucide="external-link" class="w-3.5 h-3.5 mr-2 text-slate-500 group-hover:text-indigo-400"></i>
+                                                View Player Page
+                                            </a>
+                                            <!-- Admin View -->
+                                            <button @click="open = false" wire:click="selectTournament({{ $tournament->id }})" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                <i data-lucide="eye" class="w-3.5 h-3.5 mr-2 text-slate-500 group-hover:text-indigo-400"></i>
+                                                Admin Details
+                                            </button>
+                                            
+                                            <!-- State Transition Quick Actions -->
+                                            @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT)
+                                                <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'publish')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                    <i data-lucide="send" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
+                                                    Publish Config
+                                                </button>
+                                            @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::PUBLISHED)
+                                                <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'open_registration')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                    <i data-lucide="door-open" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
+                                                    Open Registration
+                                                </button>
+                                            @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::REGISTRATION_OPEN)
+                                                <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'close_registration')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                    <i data-lucide="door-closed" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
+                                                    Close Registration
+                                                </button>
+                                            @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::REGISTRATION_CLOSED)
+                                                <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'open_checkin')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                    <i data-lucide="user-check" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
+                                                    Open Check-in
+                                                </button>
+                                            @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::CHECKIN_OPEN)
+                                                <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'close_checkin')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                    <i data-lucide="user-minus" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
+                                                    Close Check-in
+                                                </button>
+                                            @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::CHECKIN_CLOSED)
+                                                <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'generate_bracket')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                    <i data-lucide="git-merge" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
+                                                    Generate Bracket
+                                                </button>
+                                            @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::BRACKET_GENERATED)
+                                                <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'start')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                    <i data-lucide="play" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
+                                                    Start Matches
+                                                </button>
+                                            @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::ONGOING)
+                                                <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'complete')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                    <i data-lucide="check-square" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
+                                                    Complete Tournament
+                                                </button>
+                                            @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::CANCELLED && $tournament->cancellation?->refund_required)
+                                                <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'process_refund')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-2 text-emerald-500"></i>
+                                                    Process Refunds
+                                                </button>
+                                            @endif
+                                        </div>
+                                        
+                                        <div class="py-1">
+                                            <!-- Edit -->
+                                            @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT)
+                                                <a href="{{ route('admin.tournaments.edit', $tournament->id) }}" wire:navigate class="flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group">
+                                                    <i data-lucide="edit" class="w-3.5 h-3.5 mr-2 text-slate-500 group-hover:text-indigo-400"></i>
+                                                    Edit Configuration
+                                                </a>
+                                            @endif
+                                            
+                                            <!-- Cancel -->
+                                            @if($tournament->status != \App\Shared\Enums\TournamentStatus::CANCELLED && $tournament->status != \App\Shared\Enums\TournamentStatus::REFUNDED && $tournament->status != \App\Shared\Enums\TournamentStatus::COMPLETED)
+                                                <button @click="open = false" wire:click="openCancelModal({{ $tournament->id }})" class="w-full flex items-center px-4 py-2 text-xs text-orange-400 hover:bg-slate-800 hover:text-orange-300 text-left">
+                                                    <i data-lucide="x-circle" class="w-3.5 h-3.5 mr-2"></i>
+                                                    Cancel Tournament
+                                                </button>
+                                            @endif
+                                            
+                                            <!-- Delete -->
+                                            @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT && $tournament->registrations->count() == 0)
+                                                <button @click="open = false" wire:click="deleteTournament({{ $tournament->id }})" wire:confirm="Are you sure you want to delete this tournament?" class="w-full flex items-center px-4 py-2 text-xs text-red-400 hover:bg-slate-800 hover:text-red-300 text-left">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-2"></i>
+                                                    Delete Permanently
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     @empty
