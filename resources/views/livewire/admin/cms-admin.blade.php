@@ -15,6 +15,13 @@
                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-800' }}">
             CMS Pages
         </button>
+        <button wire:click="setTab('platforms')" 
+                class="px-5 py-3 border-b-2 text-sm font-semibold tracking-wider uppercase transition-colors
+                {{ $tab === 'platforms' 
+                   ? 'border-indigo-500 text-indigo-400 font-bold' 
+                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-800' }}">
+            Platforms
+        </button>
     </div>
 
     <!-- Feedback Alerts -->
@@ -137,8 +144,8 @@
                                     <button wire:click="openEditPageModal({{ $page->id }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit Page">
                                         <i data-lucide="edit" class="w-4 h-4"></i>
                                     </button>
-                                    <button onclick="confirm('Are you sure you want to delete this page?') || event.stopImmediatePropagation()" wire:click="deletePage({{ $page->id }})" class="p-1.5 text-red-400 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete">
-                                        <i data-lucide="trash" class="w-4 h-4"></i>
+                                    <button wire:click="confirmDelete('page', {{ $page->id }})" class="p-1.5 text-red-400 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -153,6 +160,68 @@
         </div>
         <div>
             {{ $pages->links() }}
+        </div>
+    @endif
+
+    <!-- Platforms Tab Content -->
+    @if($tab === 'platforms')
+        <div class="flex justify-end mb-4">
+            <button wire:click="openPlatformCreateModal" 
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs uppercase tracking-wider px-3.5 py-2.5 rounded-lg flex items-center shadow-md transition-colors">
+                <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i>
+                <span>Add Platform</span>
+            </button>
+        </div>
+
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
+                            <th class="p-4">Platform Name</th>
+                            <th class="p-4">Slug</th>
+                            <th class="p-4">Status</th>
+                            <th class="p-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        @forelse($platforms as $platform)
+                            <tr class="hover:bg-slate-900/40" wire:key="platform-{{ $platform->id }}">
+                                <td class="p-4 font-semibold text-slate-200">
+                                    {{ $platform->name }}
+                                </td>
+                                <td class="p-4 text-slate-350 font-mono">
+                                    {{ $platform->slug }}
+                                </td>
+                                <td class="p-4">
+                                    <button wire:click="togglePlatformActive({{ $platform->id }})" 
+                                            class="inline-flex items-center px-2 py-0.5 rounded border text-[9px] font-bold uppercase transition-colors
+                                            {{ $platform->is_active 
+                                               ? 'bg-emerald-500/10 text-emerald-450 border-emerald-500/20 hover:bg-emerald-500/20' 
+                                               : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' }}">
+                                        {{ $platform->is_active ? 'Active' : 'Disabled' }}
+                                    </button>
+                                </td>
+                                <td class="p-4 text-right space-x-2">
+                                    <button wire:click="openPlatformEditModal({{ $platform->id }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit Platform">
+                                        <i data-lucide="edit" class="w-4 h-4"></i>
+                                    </button>
+                                    <button wire:click="confirmDelete('platform', {{ $platform->id }})" class="p-1.5 text-red-400 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete Platform">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="p-8 text-center text-slate-500 italic">No platforms created yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div>
+            {{ $platforms->links() }}
         </div>
     @endif
 
@@ -261,6 +330,77 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- Create/Edit Platform Modal -->
+    @if($showPlatformModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showPlatformModal', false)"></div>
+            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">
+                        {{ $selectedPlatformId ? 'Edit Platform' : 'Create Platform' }}
+                    </h3>
+                    <button wire:click="$set('showPlatformModal', false)" class="text-slate-400 hover:text-white">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="savePlatform" class="p-6 space-y-4 text-xs">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Platform Name</label>
+                        <input type="text" wire:model="platformName" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        @error('platformName') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">URL Slug</label>
+                        <input type="text" wire:model="platformSlug" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        @error('platformSlug') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                        <button type="button" wire:click="$set('showPlatformModal', false)" 
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                            Save Platform
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($showDeleteModal)
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showDeleteModal', false)"></div>
+            <div class="bg-[#0f172a] border border-red-900/50 rounded-xl max-w-sm w-full overflow-hidden shadow-2xl relative z-10 text-center">
+                <div class="p-6">
+                    <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                        <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-200 mb-2">Confirm Deletion</h3>
+                    <p class="text-sm text-slate-400 mb-6">
+                        Are you sure you want to delete this {{ $deleteTargetType }}? This action cannot be undone.
+                    </p>
+                    
+                    <div class="flex space-x-3 justify-center">
+                        <button type="button" wire:click="$set('showDeleteModal', false)" 
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm px-6 py-2.5 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                        <button type="button" wire:click="executeDelete"
+                                class="bg-red-600 hover:bg-red-500 text-white font-bold text-sm px-6 py-2.5 rounded-lg shadow-[0_4px_12px_rgba(220,38,38,0.2)] transition-colors">
+                            Yes, Delete
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     @endif

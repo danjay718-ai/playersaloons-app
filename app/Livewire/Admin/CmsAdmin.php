@@ -8,6 +8,7 @@ use App\Modules\CMS\Models\CmsPage;
 use App\Modules\CMS\Models\CmsPageTranslation;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
+use App\Modules\CMS\Models\Platform;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -30,6 +31,20 @@ class CmsAdmin extends AdminComponent
 
     public string $gameLocale = 'en';
 
+    // Platform modals / forms
+    public bool $showPlatformModal = false;
+
+    public ?int $selectedPlatformId = null;
+
+    public string $platformName = '';
+
+    public string $platformSlug = '';
+
+    // Delete confirmation modal
+    public bool $showDeleteModal = false;
+    public ?int $deleteTargetId = null;
+    public string $deleteTargetType = ''; // 'platform' or 'page'
+
     // Page modals / forms
     public bool $showPageModal = false;
 
@@ -51,6 +66,99 @@ class CmsAdmin extends AdminComponent
     {
         $this->tab = $tabName;
         $this->resetPage();
+    }
+
+    public function confirmDelete(string $type, int $id): void
+    {
+        $this->deleteTargetType = $type;
+        $this->deleteTargetId = $id;
+        $this->showDeleteModal = true;
+    }
+
+    public function executeDelete(): void
+    {
+        if (!$this->deleteTargetId) return;
+
+        if ($this->deleteTargetType === 'platform') {
+            $this->deletePlatform($this->deleteTargetId);
+        } elseif ($this->deleteTargetType === 'page') {
+            $this->deletePage($this->deleteTargetId);
+        }
+
+        $this->showDeleteModal = false;
+        $this->deleteTargetId = null;
+        $this->deleteTargetType = '';
+    }
+
+    // --- PLATFORM ACTIONS ---
+    public function togglePlatformActive(int $platformId): void
+    {
+        $platform = Platform::findOrFail($platformId);
+        $platform->is_active = ! $platform->is_active;
+        $platform->save();
+
+        session()->flash('success', 'Platform status updated successfully.');
+    }
+
+    public function openPlatformCreateModal(): void
+    {
+        $this->selectedPlatformId = null;
+        $this->platformName = '';
+        $this->platformSlug = '';
+        $this->showPlatformModal = true;
+    }
+
+    public function openPlatformEditModal(int $platformId): void
+    {
+        $this->selectedPlatformId = $platformId;
+        $platform = Platform::findOrFail($platformId);
+
+        $this->platformName = $platform->name;
+        $this->platformSlug = $platform->slug;
+
+        $this->showPlatformModal = true;
+    }
+
+    public function savePlatform(): void
+    {
+        $this->validate([
+            'platformName' => 'required|string|max:255',
+            'platformSlug' => 'required|string|max:255|unique:platforms,slug,'.$this->selectedPlatformId,
+        ]);
+
+        if ($this->selectedPlatformId) {
+            $platform = Platform::findOrFail($this->selectedPlatformId);
+            $platform->name = $this->platformName;
+            $platform->slug = Str::slug($this->platformSlug);
+            $platform->save();
+            session()->flash('success', 'Platform updated successfully.');
+        } else {
+            Platform::create([
+                'name' => $this->platformName,
+                'slug' => Str::slug($this->platformSlug),
+                'is_active' => true,
+            ]);
+            session()->flash('success', 'Platform created successfully.');
+        }
+
+        $this->showPlatformModal = false;
+        $this->resetPlatformForm();
+    }
+
+    public function resetPlatformForm(): void
+    {
+        $this->selectedPlatformId = null;
+        $this->platformName = '';
+        $this->platformSlug = '';
+    }
+
+    public function deletePlatform(int $platformId): void
+    {
+        $platform = Platform::findOrFail($platformId);
+        // You could add checks here to see if the platform is linked to existing tournaments before deleting
+        $platform->delete();
+
+        session()->flash('success', 'Platform deleted successfully.');
     }
 
     // --- GAME ACTIONS ---
@@ -184,12 +292,14 @@ class CmsAdmin extends AdminComponent
 
     public function render()
     {
-        $games = Game::with('translations')->paginate(15);
-        $pages = CmsPage::with(['translations', 'creator'])->paginate(15);
+        $games = Game::with('translations')->paginate(10, ['*'], 'games_page');
+        $pages = CmsPage::with('translations')->paginate(10, ['*'], 'pages_page');
+        $platforms = Platform::paginate(10, ['*'], 'platforms_page');
 
         return view('livewire.admin.cms-admin', [
             'games' => $games,
             'pages' => $pages,
+            'platforms' => $platforms,
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Games & Content Management System (CMS)',
         ]);
