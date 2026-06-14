@@ -422,6 +422,11 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **History List View**: Re-engineered the history tab as a detailed chronological list item view displaying game category, end date, and user match histories (including round number, opponent name, and custom outcome badges like "WON" or "LOST").
   - **Elimination Lifecycle Shift**: Tournaments where a player has lost are immediately moved from the "Active" tab to the "History" tab, and the stats banner counts reflect this database-driven status.
 
+- **Performance Optimizations (v1.20)**:
+  - **Eager Loading Counts**: Implemented `withCount` on active tournament registrations for both browse and player listings, replacing inline loop queries with optimized database subqueries (`registrations_count`).
+  - **Pre-fetched Matches**: Replaced loop-level N+1 query structures on `/my-tournaments` page by pre-fetching all player matches for paginated tournaments in a single DB query, reducing page load queries drastically.
+  - **Eager Activity Logs**: Swapped inline database loops for Spatie activity logs in `player-content.blade.php` with the pre-fetched `$activityLogs` collection passed from the component.
+
 - **Tournament Admin Features (v1.6-1.11)**:
   - Need to add feature tests for:
     - Admin Tournament Filter Persistence (`TournamentAdmin` component).
@@ -441,6 +446,7 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
       - Active tab matching Browse page cards.
       - History tab presenting lists of user match details (opponent, round, win/loss badge).
       - Player elimination shifting tournaments from the Active list to the History list.
+      - N+1 query check (ensuring matches and registration counts are retrieved in grouped queries rather than nested loops).
     - `PlayerTournamentList` (Browse Tournaments filtering).
     - `HeadToHeadList` (matchmaking simulation, challenge creation).
   - Need to add integration/E2E tests for:

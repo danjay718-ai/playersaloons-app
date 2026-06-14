@@ -120,9 +120,9 @@
                                 </div>
                             </div>
                             <div class="space-y-1 text-right">
-                                <span class="block text-[9px] font-bold text-zinc-650 uppercase tracking-[0.2em]">Slots Left</span>
+                                <span class="block text-[9px] font-bold text-zinc-655 uppercase tracking-[0.2em]">Slots Left</span>
                                 <div class="flex items-baseline justify-end space-x-1 font-mono">
-                                    <span class="text-sm font-bold text-zinc-200">{{ $tournament->registrations()->whereNotIn('status', ['cancelled', 'refunded'])->count() }}</span>
+                                    <span class="text-sm font-bold text-zinc-200">{{ $tournament->registrations_count }}</span>
                                     <span class="text-[10px] text-zinc-650">/</span>
                                     <span class="text-[10px] text-zinc-550">{{ $tournament->max_participants }}</span>
                                 </div>

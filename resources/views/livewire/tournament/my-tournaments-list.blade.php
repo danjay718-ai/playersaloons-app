@@ -135,7 +135,7 @@
                                 <div class="space-y-1 text-right">
                                     <span class="block text-[9px] font-bold text-zinc-650 uppercase tracking-[0.2em]">Slots Left</span>
                                     <div class="flex items-baseline justify-end space-x-1 font-mono">
-                                        <span class="text-sm font-bold text-zinc-200">{{ $tournament->registrations()->whereNotIn('status', ['cancelled', 'refunded'])->count() }}</span>
+                                        <span class="text-sm font-bold text-zinc-200">{{ $tournament->registrations_count }}</span>
                                         <span class="text-[10px] text-zinc-650">/</span>
                                         <span class="text-[10px] text-zinc-550">{{ $tournament->max_participants }}</span>
                                     </div>
@@ -177,17 +177,7 @@
                 @foreach($tournaments as $tournament)
                     @php
                         $userReg = $tournament->registrations->first();
-                        $userMatches = [];
-                        if ($userReg) {
-                            $userMatches = \App\Modules\Match\Models\GameMatch::where('tournament_id', $tournament->id)
-                                ->where(function($q) use ($userReg) {
-                                    $q->where('player_a_registration_id', $userReg->id)
-                                      ->orWhere('player_b_registration_id', $userReg->id);
-                                })
-                                ->with(['round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration'])
-                                ->orderBy('id', 'desc')
-                                ->get();
-                        }
+                        $matchesForTournament = $userMatches->get($tournament->id) ?? collect();
                     @endphp
 
                     <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/80 rounded-3xl p-6 md:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:border-zinc-700/60 transition-all duration-300">
@@ -223,11 +213,11 @@
 
                         <!-- Match Records -->
                         <div class="flex-grow">
-                            @if(count($userMatches) > 0)
+                            @if($matchesForTournament->count() > 0)
                                 <div class="space-y-3">
                                     <span class="block text-[9px] font-bold text-zinc-650 uppercase tracking-[0.2em] mb-1">Match History</span>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        @foreach($userMatches as $match)
+                                        @foreach($matchesForTournament as $match)
                                             @php
                                                 $matchStatus = $match->status->value ?? $match->status;
                                                 $opponent = $match->player_a_registration_id === $userReg->id 

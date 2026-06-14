@@ -40,6 +40,9 @@ trait TournamentListTrait
     {
         $query = Tournament::query()
             ->with(['game.translations', 'platform'])
+            ->withCount(['registrations' => function ($q) {
+                $q->whereNotIn('status', ['cancelled', 'refunded']);
+            }])
             ->whereIn('status', [
                 TournamentStatus::REGISTRATION_OPEN->value,
                 TournamentStatus::REGISTRATION_CLOSED->value,

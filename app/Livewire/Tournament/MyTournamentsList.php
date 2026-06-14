@@ -87,7 +87,10 @@ class MyTournamentsList extends Component
                 $q->where('user_id', $user->id)
                     ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
             })
-            ->with('game.translations');
+            ->with('game.translations')
+            ->withCount(['registrations' => function ($q) {
+                $q->whereNotIn('status', ['cancelled', 'refunded']);
+            }]);
 
         if ($this->tSubTab === 'active') {
             $query->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
@@ -103,8 +106,26 @@ class MyTournamentsList extends Component
             ]);
         }
 
+        $tournaments = $query->orderBy('created_at', 'desc')->paginate(10);
+        
+        // Eager-load all matches for the current paginated tournaments to prevent N+1 queries in loop
+        $tournamentIds = $tournaments->pluck('id')->toArray();
+        $userMatches = collect();
+        if (!empty($tournamentIds) && $registrations->isNotEmpty()) {
+            $userMatches = \App\Modules\Match\Models\GameMatch::whereIn('tournament_id', $tournamentIds)
+                ->where(function ($q) use ($registrations) {
+                    $q->whereIn('player_a_registration_id', $registrations)
+                      ->orWhereIn('player_b_registration_id', $registrations);
+                })
+                ->with(['round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration'])
+                ->orderBy('id', 'desc')
+                ->get()
+                ->groupBy('tournament_id');
+        }
+
         return view('livewire.tournament.my-tournaments-list', [
-            'tournaments' => $query->orderBy('created_at', 'desc')->paginate(10),
+            'tournaments' => $tournaments,
+            'userMatches' => $userMatches,
             'activeCount' => $activeCount,
             'historyCount' => $historyCount,
             'matchWins' => $matchWins,
