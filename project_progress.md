@@ -371,6 +371,8 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Expanded Filters & Schedules**: Added "One-time / Single Event" frequency option. Made Platform selection mandatory and implemented Platform/Frequency filters on both Admin and Player tournament lists.
   - **Draft Persistence**: Implemented local persistence using `localStorage` to automatically save tournament drafts, preventing data loss during creation.
   - **Scheduling Guidance**: Added instructional helper notes to Step 3 of the wizard to guide admins on chronological date requirements (Registration < Check-in < Start).
+  - **Dynamic Status Badges**: Implemented color-coded status badges for tournament list.
+    - *Technical Debt Note*: Currently uses inline styles to bypass CSS compilation issues in the environment. Future refactor needed to revert to standard Tailwind utility classes using a dedicated blade component once build pipeline is stabilized.
 
 - **Tests**:
   - `tests/Feature/Admin/AdminPanelTest.php`: 12 feature tests covering route authorization, component rendering, tournament CRUD & lifecycle, match override, dispute resolution, KYC approve/reject, withdrawal approve/reject, user suspend/unsuspend, and audit log access.
