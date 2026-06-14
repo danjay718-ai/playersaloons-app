@@ -1,4 +1,10 @@
 <div class="space-y-10" x-data="{ activeTab: 'overview' }">
+    <!-- Return Button -->
+    <button onclick="history.back()" class="flex items-center space-x-2 text-zinc-500 hover:text-white transition-colors text-xs font-bold font-orbitron uppercase tracking-widest mb-6 group">
+        <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i>
+        <span>Return</span>
+    </button>
+
     <!-- Messages / Error Flash -->
     @if(session()->has('message'))
         <div class="fixed top-24 right-6 z-[60] animate-bounce-in">
