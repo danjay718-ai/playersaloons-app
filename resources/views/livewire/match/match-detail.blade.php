@@ -124,7 +124,10 @@
                         @if($match->playerBRegistration)
                             <button wire:click="adminCompleteMatch({{ $match->player_b_registration_id }})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest">Force Win: {{ $match->playerBRegistration?->user?->username }}</button>
                         @endif
-                        <span class="text-[10px] bg-indigo-500 text-white px-2 py-0.5 rounded font-bold">ADMIN VIEW ACTIVE</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 uppercase tracking-widest">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 mr-1.5 animate-pulse"></span>
+                            ADMIN ACTIVE
+                        </span>
                     </div>
                 </div>
             @endif
