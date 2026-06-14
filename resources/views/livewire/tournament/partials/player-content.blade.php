@@ -1,4 +1,4 @@
-<div class="space-y-10" x-data="{ activeTab: 'overview' }">
+<div class="space-y-10" x-data="{ activeTab: localStorage.getItem('tournament_tab_{{ $tournament->id }}') || 'overview' }" x-init="$watch('activeTab', value => localStorage.setItem('tournament_tab_{{ $tournament->id }}', value))">
     <!-- Return Button -->
     <button onclick="history.back()" class="flex items-center space-x-2 text-zinc-500 hover:text-white transition-colors text-xs font-bold font-orbitron uppercase tracking-widest mb-6 group">
         <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i>
@@ -140,21 +140,26 @@
     </div>
 
     <!-- Enhanced Navigation Tabs -->
-    <div class="flex items-center space-x-2 bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 p-1.5 rounded-2xl max-w-fit mx-auto lg:mx-0">
+    <div class="flex overflow-x-auto no-scrollbar items-center gap-2 bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 p-1.5 rounded-2xl w-full lg:w-auto mx-auto lg:mx-0">
         <button @click="activeTab = 'overview'" 
             :class="activeTab === 'overview' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
-            class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300">
-            Intel
+            class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap">
+            Overview
         </button>
         <button @click="activeTab = 'participants'" 
             :class="activeTab === 'participants' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
-            class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300">
-            Warriors ({{ $tournament->registrations->count() }})
+            class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap">
+            Players ({{ $tournament->registrations->count() }})
         </button>
         <button @click="activeTab = 'bracket'" 
             :class="activeTab === 'bracket' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
-            class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300">
-            Battle Grid
+            class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap">
+            Matches
+        </button>
+        <button @click="activeTab = 'activity'" 
+            :class="activeTab === 'activity' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
+            class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap">
+            Activity
         </button>
     </div>
 
@@ -283,8 +288,44 @@
             @endif
         </div>
 
+        <!-- Activity Tab -->
+        <div x-show="activeTab === 'activity'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+            <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
+                <h2 class="text-2xl font-black font-orbitron tracking-widest text-white mb-8 flex items-center space-x-3">
+                    <span class="w-1.5 h-8 bg-amber-500 rounded-full"></span>
+                    <span>TOURNAMENT ACTIVITY</span>
+                </h2>
+                
+                @if(method_exists($tournament, 'activities') && $tournament->activities->count() > 0)
+                    <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-zinc-800 before:to-transparent">
+                        @foreach($tournament->activities()->latest()->get() as $activity)
+                            <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                                <div class="flex items-center justify-center w-10 h-10 rounded-full border border-zinc-800 bg-zinc-900 text-zinc-500 group-[.is-active]:text-amber-500 group-[.is-active]:border-amber-500/30 group-[.is-active]:bg-amber-500/10 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-[0_0_15px_rgba(245,158,11,0.1)] transition-colors z-10">
+                                    <i data-lucide="activity" class="w-4 h-4"></i>
+                                </div>
+                                <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-zinc-950/50 border border-zinc-800/50 shadow-sm relative">
+                                    <div class="flex flex-col space-y-1">
+                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                            <span class="text-sm font-bold text-zinc-300">{{ $activity->description }}</span>
+                                            <span class="text-[10px] font-medium text-zinc-500 whitespace-nowrap">{{ $activity->created_at->diffForHumans() }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-10">
+                        <i data-lucide="activity" class="w-12 h-12 mx-auto text-zinc-700 mb-4"></i>
+                        <h3 class="text-lg font-black text-zinc-400 font-orbitron tracking-widest uppercase">No Activity Yet</h3>
+                        <p class="text-sm font-medium text-zinc-600 mt-2">Activity feed will populate as the tournament progresses.</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
         <!-- Battle Grid (Dynamic Brackets) -->
-        <div x-show="activeTab === 'bracket'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="w-full">
+        <div x-show="activeTab === 'bracket'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="w-full">
             @if($rounds->isNotEmpty())
                 <div class="flex flex-nowrap overflow-x-auto gap-12 pb-10 pt-6 snap-x scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-zinc-950 relative">
                     <!-- Dynamic Bracket Connectors Container (SVG Background) -->
