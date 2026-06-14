@@ -12,9 +12,11 @@ use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Models\GameMatch;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchStatus;
+use App\Modules\Identity\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 class MatchDetail extends Component
@@ -29,18 +31,36 @@ class MatchDetail extends Component
 
     public string $disputeReason = '';
 
-    public $evidenceFile;
+    public ?TemporaryUploadedFile $evidenceFile = null;
 
-    public $submissionProof;
+    public ?TemporaryUploadedFile $submissionProof = null;
 
     public function confirmResult(ConfirmMatchResultAction $action)
     {
-        // ... (existing method)
+        $match = GameMatch::query()
+            ->where('uuid', $this->uuid)
+            ->with(['playerARegistration', 'playerBRegistration', 'resultSubmissions'])
+            ->firstOrFail();
+
+        if (! Auth::check()) {
+            session()->flash('error', 'You must be logged in to confirm a result.');
+
+            return;
+        }
+
+        try {
+            $action->execute($match, (int) Auth::id());
+            session()->flash('message', 'Match result confirmed! The match is now complete.');
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     public function adminCompleteMatch(int $winnerId)
     {
-        if (! Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (! $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
             return;
         }
 
@@ -77,7 +97,9 @@ class MatchDetail extends Component
             ->with(['playerARegistration', 'playerBRegistration', 'tournament'])
             ->firstOrFail();
 
-        if (! Auth::check() || ! Auth::user()->can('submitResult', $match)) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (! Auth::check() || ! $user->can('submitResult', $match)) {
             session()->flash('error', 'You are not authorized to submit results for this match.');
 
             return;
@@ -108,7 +130,9 @@ class MatchDetail extends Component
     {
         $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
 
-        if (! Auth::check() || ! Auth::user()->can('dispute', $match)) {
+        /** @var User $user */
+        $user = Auth::user();
+        if (! Auth::check() || ! $user->can('dispute', $match)) {
             session()->flash('error', 'You are not authorized to open a dispute for this match.');
             return;
         }
@@ -137,7 +161,12 @@ class MatchDetail extends Component
             return;
         }
 
-        if (! Auth::check() || (Auth::id() !== $match->playerARegistration?->user_id && Auth::id() !== $match->playerBRegistration?->user_id)) {
+        if (! Auth::check()) {
+            session()->flash('error', 'You are not authorized to submit evidence.');
+            return;
+        }
+
+        if (Auth::id() !== $match->playerARegistration?->user_id && Auth::id() !== $match->playerBRegistration?->user_id) {
             session()->flash('error', 'You are not authorized to submit evidence.');
 
             return;
@@ -179,6 +208,7 @@ class MatchDetail extends Component
             $match->refresh();
         }
 
+        /** @var User|null $user */
         $user = Auth::user();
         $isParticipant = $user && (
             $user->id === $match->playerARegistration?->user_id ||
@@ -192,7 +222,7 @@ class MatchDetail extends Component
         $latestSubmission = $match->resultSubmissions()->latest()->first();
         $isSubmitter = $user && $latestSubmission && $user->id === $latestSubmission->submitted_by;
             
-        $isAdmin = Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
+        $isAdmin = Auth::check() && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
         $layout = $isAdmin ? 'components.layouts.admin' : 'components.layouts.dashboard';
 
         return view('livewire.match.match-detail', [
