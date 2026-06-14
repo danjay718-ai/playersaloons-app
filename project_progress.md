@@ -394,10 +394,9 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Cockpit Overview**: Refactored the `PlayerDashboard` to act as a lightweight 'Cockpit' overview. It now features widgets for user welcome/balance, recent matches, upcoming tournaments, progression stats, announcements, and a video placeholder.
   - **Tabbed Navigation**: Re-implemented tabbed navigation within the dashboard to allow quick switching between the Cockpit view and the new dedicated pages (My Tournaments, Browse Tournaments, H2H, Leaderboards, Streams, Chat).
 
-- **Match Resolution Automation (v1.15)**:
-  - **Two-Way Confirmation**: Implemented a confirmation flow (`WAITING_FOR_CONFIRMATION` status) for match results, requiring opponent validation before finalization.
-  - **Database Update**: Added `result_submitted_at` to `matches` table to track submission time for auto-forfeit logic.
-  - **State Machine Refactor**: Updated `MatchStateMachine` to support `WAITING_FOR_CONFIRMATION` and ensured dispute flow remains compatible.
+- **Match Resolution Automation (v1.16)**:
+  - **AutoForfeitJob Registration**: Registered `AutoForfeitJob` in the Laravel scheduler to run every minute.
+  - **Infrastructure Requirement**: Production deployment requires a configured cron job (`php artisan schedule:run`) and a persistent queue worker (`php artisan queue:work`) supervised process.
   - **Testing Requirement**: Comprehensive test suite required to validate:
     - Successful confirmation by opponent.
     - Match finalization and winner advancement.

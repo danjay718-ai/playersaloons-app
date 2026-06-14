@@ -12,11 +12,15 @@
     - [ ] Implement `MatchmakerService` for querying waiting challenges.
     - [ ] Implement logic for ELO/Skill Level matching (optional for v1).
     - [ ] Implement stake validation (check balance/lock amount in wallet).
-- [x] **Match Resolution Automation**
+- [ ] **Match Resolution Automation**
     - [x] Implement `ConfirmMatchResultAction` for two-way confirmation.
     - [x] Develop `AutoForfeitJob` that uses `tournament.waiting_result_time` to auto-resolve `WAITING_FOR_CONFIRMATION` matches.
     - [x] Update `MatchStateMachine` to allow transition to `WAITING_FOR_CONFIRMATION`.
+    - [x] Register `AutoForfeitJob` in Scheduler.
     - [ ] Create/Update unit tests for confirmation flow and forfeit timeouts.
+    - [ ] **Infrastructure (Production Deployment)**:
+        - [ ] Ensure `php artisan schedule:run` is added to server crontab.
+        - [ ] Ensure `php artisan queue:work` is running as a supervised process (e.g., via Supervisor).
 - [ ] **Escrow/Wallet Integration**
     - [ ] Develop `LockStakeAction` to reserve funds during queueing.
     - [ ] Develop `ResolveStakeAction` to release funds to the winner or handle refunds on match failure.
