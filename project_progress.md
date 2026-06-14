@@ -367,4 +367,15 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - `tests/Feature/Auth/LoginRedirectTest.php`: 7 feature tests validating role-based login redirects, dashboard auto-routing, and guest restrictions.
   - **All 154 tests pass at 100%.**
 
+---
+
+## 🛠️ Performance & UX Optimizations
+
+- **Admin Tournament Modal Optimization**:
+  - [x] Integrate Alpine.js for instant modal visibility and backdrop control.
+  - [x] Componentize tournament details and cancellation logic (via optimized render and logic extraction).
+  - [x] Optimize server-side `render()` logic to prevent unnecessary relationship loading when modals are closed.
+  - [x] Implement `wire:loading` states and skeletons for improved perceived performance.
+  - [x] Fixed missing action imports in `TournamentAdmin` that caused transition failures.
+
 

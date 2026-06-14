@@ -9,6 +9,9 @@ use App\Modules\Tournament\Actions\CancelTournamentAction;
 use App\Modules\Tournament\Actions\CloseCheckinAction;
 use App\Modules\Tournament\Actions\CloseRegistrationAction;
 use App\Modules\Tournament\Actions\CompleteTournamentAction;
+use App\Modules\Tournament\Actions\GenerateBracketAction;
+use App\Modules\Tournament\Actions\OpenCheckinAction;
+use App\Modules\Tournament\Actions\OpenRegistrationAction;
 use App\Modules\Tournament\Actions\ProcessRefundAction;
 use App\Modules\Tournament\Actions\PublishTournamentAction;
 use App\Modules\Tournament\Actions\StartTournamentAction;
@@ -61,6 +64,21 @@ class TournamentAdmin extends AdminComponent
     {
         $this->selectedTournamentId = $id;
         $this->showDetailModal = true;
+    }
+
+    public function closeDetailModal(): void
+    {
+        $this->showDetailModal = false;
+        $this->selectedTournamentId = null;
+    }
+
+    public function closeCancelModal(): void
+    {
+        $this->showCancelModal = false;
+        // Don't nullify selectedTournamentId if detail modal is still open
+        if (!$this->showDetailModal) {
+            $this->selectedTournamentId = null;
+        }
     }
 
     // Lifecycle transitions
@@ -143,8 +161,8 @@ class TournamentAdmin extends AdminComponent
         try {
             $cancelAction->execute($tournament, $actor, $this->cancelReason, $this->cancelNotes);
             session()->flash('success', 'Tournament cancelled and refunds processed successfully.');
-            $this->showCancelModal = false;
-            $this->showDetailModal = false;
+            $this->closeCancelModal();
+            $this->closeDetailModal();
         } catch (\Exception $e) {
             session()->flash('error', 'Cancellation failed: '.$e->getMessage());
         }
@@ -166,7 +184,7 @@ class TournamentAdmin extends AdminComponent
 
         $tournament->delete();
         session()->flash('success', 'Tournament deleted successfully.');
-        $this->showDetailModal = false;
+        $this->closeDetailModal();
     }
 
     public function render()
@@ -190,7 +208,7 @@ class TournamentAdmin extends AdminComponent
         $tournaments = $query->paginate(10);
         $games = Game::with('translations')->get();
 
-        $selectedTournament = $this->selectedTournamentId
+        $selectedTournament = ($this->showDetailModal || $this->showCancelModal) && $this->selectedTournamentId
             ? Tournament::with(['game.translations', 'registrations.user', 'cancellation.cancelledBy', 'rounds.matches', 'platform'])->find($this->selectedTournamentId)
             : null;
 

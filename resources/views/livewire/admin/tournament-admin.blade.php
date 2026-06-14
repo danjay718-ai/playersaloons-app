@@ -1,4 +1,7 @@
-<div>
+<div x-data="{ 
+    showDetail: @entangle('showDetailModal'), 
+    showCancel: @entangle('showCancelModal') 
+}">
     <!-- Top Action Bar -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <!-- Search and Filters -->
@@ -218,21 +221,45 @@
     </div>
 
     <!-- Detail Modal -->
-    @if($showDetailModal && $selectedTournament)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showDetailModal', false)"></div>
-            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-3xl w-full overflow-hidden shadow-2xl relative z-10 max-h-[90vh] flex flex-col">
+    <div x-show="showDetail" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showDetail = false; $wire.closeDetailModal()"></div>
+        
+        <div x-show="showDetail"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+             class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-3xl w-full overflow-hidden shadow-2xl relative z-10 max-h-[90vh] flex flex-col">
+            
+            @if($selectedTournament)
                 <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
                     <div>
                         <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">{{ $selectedTournament->name }}</h3>
                         <p class="text-[9px] text-slate-500 font-mono mt-0.5">{{ $selectedTournament->uuid }}</p>
                     </div>
-                    <button wire:click="$set('showDetailModal', false)" class="text-slate-400 hover:text-white">
+                    <button @click="showDetail = false; $wire.closeDetailModal()" class="text-slate-400 hover:text-white">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
 
                 <div class="p-6 overflow-y-auto space-y-6 flex-grow">
+                    <!-- Loading Overlay for Internal Updates -->
+                    <div wire:loading wire:target="applyTransition, openCancelModal" class="absolute inset-0 bg-slate-950/50 backdrop-blur-[1px] z-50 flex items-center justify-center">
+                        <div class="flex flex-col items-center">
+                            <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-3">Processing...</span>
+                        </div>
+                    </div>
+
                     <!-- Status Actions and Controls -->
                     <div class="bg-[#0b0f19] border border-slate-800 rounded-lg p-4">
                         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -425,58 +452,77 @@
                 </div>
 
                 <div class="px-6 py-4 border-t border-slate-800 bg-[#0b0f19] flex justify-end">
-                    <button wire:click="$set('showDetailModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                    <button @click="showDetail = false; $wire.closeDetailModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
                         Close Details
                     </button>
                 </div>
-            </div>
+            @else
+                <!-- Loading Skeleton -->
+                <div class="p-12 flex flex-col items-center justify-center space-y-4">
+                    <div class="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                    <p class="text-xs text-slate-500 animate-pulse uppercase tracking-widest font-bold">Loading Details...</p>
+                </div>
+            @endif
         </div>
-    @endif
+    </div>
 
     <!-- Cancel Modal -->
-    @if($showCancelModal)
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" wire:click="$set('showCancelModal', false)"></div>
-            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
-                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider">Cancel Tournament</h3>
-                    <button wire:click="$set('showCancelModal', false)" class="text-slate-400 hover:text-white">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
+    <div x-show="showCancel" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[60] flex items-center justify-center p-4" style="display: none;">
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="showCancel = false; $wire.closeCancelModal()"></div>
+        
+        <div x-show="showCancel"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+            <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider">Cancel Tournament</h3>
+                <button @click="showCancel = false; $wire.closeCancelModal()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form wire:submit.prevent="cancelTournament" class="p-6 space-y-4">
+                <div class="bg-red-500/5 border border-red-500/10 text-red-400 p-3 rounded-lg text-xs leading-relaxed">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1 text-red-400 align-text-bottom"></i>
+                    <span><strong>Warning:</strong> Cancelling a tournament is irreversible. Any entry fees collected will be marked for refund.</span>
                 </div>
 
-                <form wire:submit.prevent="cancelTournament" class="p-6 space-y-4">
-                    <div class="bg-red-500/5 border border-red-500/10 text-red-400 p-3 rounded-lg text-xs leading-relaxed">
-                        <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1 text-red-400 align-text-bottom"></i>
-                        <span><strong>Warning:</strong> Cancelling a tournament is irreversible. Any entry fees collected will be marked for refund.</span>
-                    </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Reason for Cancellation</label>
+                    <input type="text" wire:model="cancelReason" placeholder="e.g. Insufficient players registered"
+                           class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-red-500">
+                    @error('cancelReason') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Reason for Cancellation</label>
-                        <input type="text" wire:model="cancelReason" placeholder="e.g. Insufficient players registered"
-                               class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-red-500">
-                        @error('cancelReason') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Additional Notes (Optional)</label>
+                    <textarea wire:model="cancelNotes" placeholder="Additional details..." rows="3"
+                              class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-red-500"></textarea>
+                    @error('cancelNotes') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Additional Notes (Optional)</label>
-                        <textarea wire:model="cancelNotes" placeholder="Additional details..." rows="3"
-                                  class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-red-500"></textarea>
-                        @error('cancelNotes') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                        <button type="button" wire:click="$set('showCancelModal', false)" 
-                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
-                            Keep Active
-                        </button>
-                        <button type="submit" 
-                                class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
-                            Confirm Cancellation
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" @click="showCancel = false; $wire.closeCancelModal()" 
+                            class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                        Keep Active
+                    </button>
+                    <button type="submit" 
+                            class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                        Confirm Cancellation
+                    </button>
+                </div>
+            </form>
         </div>
-    @endif
+    </div>
 </div>
