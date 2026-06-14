@@ -155,10 +155,11 @@
                                 <x-admin.action-dropdown>
                                     <div class="py-1" role="menu">
                                         <!-- Player View -->
-                                        <a href="/tournaments/{{ $tournament->uuid }}" target="_blank" rel="noopener" class="flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group">
+                                        <a href="/tournaments/{{ $tournament->uuid }}/view" target="_blank" rel="noopener" class="flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group">
                                             <i data-lucide="external-link" class="w-3.5 h-3.5 mr-2 text-slate-500 group-hover:text-indigo-400"></i>
                                             View Player Page
                                         </a>
+
                                         <!-- Admin View -->
                                         <button @click="open = false" wire:click="selectTournament({{ $tournament->id }})" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
                                             <i data-lucide="eye" class="w-3.5 h-3.5 mr-2 text-slate-500 group-hover:text-indigo-400"></i>
