@@ -9,6 +9,7 @@ use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchResultSubmission;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Shared\Enums\MatchStatus;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -24,9 +25,10 @@ class SubmitMatchResultAction
         GameMatch $match,
         int $submittedByUserId,
         int $winnerRegistrationId,
-        ?string $notes = null
+        ?string $notes = null,
+        ?UploadedFile $proofFile = null
     ): MatchResultSubmission {
-        return DB::transaction(function () use ($match, $submittedByUserId, $winnerRegistrationId, $notes): MatchResultSubmission {
+        return DB::transaction(function () use ($match, $submittedByUserId, $winnerRegistrationId, $notes, $proofFile): MatchResultSubmission {
             if ($winnerRegistrationId !== $match->player_a_registration_id && $winnerRegistrationId !== $match->player_b_registration_id) {
                 throw new InvalidArgumentException('Winner must be one of the match participants.');
             }
@@ -34,11 +36,17 @@ class SubmitMatchResultAction
             // Transition to WAITING_FOR_CONFIRMATION
             $this->stateMachine->transition($match, MatchStatus::WAITING_FOR_CONFIRMATION);
 
+            $proofPath = null;
+            if ($proofFile && $proofFile->isValid()) {
+                $proofPath = $proofFile->store("matches/{$match->id}/submissions", 'r2');
+            }
+
             $submission = MatchResultSubmission::query()->create([
                 'match_id' => $match->id,
                 'submitted_by' => $submittedByUserId,
                 'winner_registration_id' => $winnerRegistrationId,
                 'notes' => $notes,
+                'proof_path' => $proofPath,
                 'submitted_at' => Carbon::now(),
             ]);
 

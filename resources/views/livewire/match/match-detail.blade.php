@@ -177,6 +177,21 @@
                             @error('notes') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
+                        <!-- Proof Upload -->
+                        <div>
+                            <label for="submissionProof" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Upload Proof (Optional)</label>
+                            <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-4 text-center cursor-pointer relative hover:border-zinc-700 transition-colors">
+                                <input wire:model="submissionProof" id="submissionProof" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                <div class="space-y-1.5 text-zinc-400">
+                                    <i data-lucide="upload-cloud" class="w-6 h-6 mx-auto text-zinc-500"></i>
+                                    <p class="text-[10px] font-bold">
+                                        {{ $submissionProof ? $submissionProof->getClientOriginalName() : 'Click to upload match screenshot' }}
+                                    </p>
+                                </div>
+                            </div>
+                            @error('submissionProof') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
                         <!-- Submit Button -->
                         <div class="flex flex-col space-y-4 pt-2 border-t border-zinc-800/50">
                             <button type="submit" 
@@ -300,6 +315,14 @@
                                 <p class="text-xs text-zinc-500 italic leading-relaxed">
                                     "{{ $sub->notes }}"
                                 </p>
+                            @endif
+                            @if($sub->proof_path)
+                                <div class="mt-2">
+                                    <a href="/storage/{{ $sub->proof_path }}" target="_blank" class="inline-flex items-center space-x-1.5 text-[10px] font-bold text-violet-400 hover:text-violet-300 transition-colors uppercase tracking-wider">
+                                        <i data-lucide="image" class="w-3 h-3"></i>
+                                        <span>View Proof</span>
+                                    </a>
+                                </div>
                             @endif
                         </div>
                         <span class="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">

@@ -46,6 +46,7 @@ class MatchDispute extends Model implements HasMedia
         'resolution',
         'resolved_by',
         'resolved_at',
+        'reason',
     ];
 
     /**

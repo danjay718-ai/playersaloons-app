@@ -30,6 +30,8 @@ class MatchDetail extends Component
 
     public $evidenceFile;
 
+    public $submissionProof;
+
     public function confirmResult(ConfirmMatchResultAction $action)
     {
         // ... (existing method)
@@ -79,6 +81,7 @@ class MatchDetail extends Component
         $this->validate([
             'winnerRegistrationId' => ['required', 'integer', 'in:'.$match->player_a_registration_id.','.$match->player_b_registration_id],
             'notes' => ['nullable', 'string', 'max:500'],
+            'submissionProof' => ['nullable', 'file', 'max:10240', 'mimes:png,jpg,jpeg,webp,pdf'],
         ]);
 
         try {
@@ -86,10 +89,11 @@ class MatchDetail extends Component
                 $match,
                 (int) Auth::id(),
                 (int) $this->winnerRegistrationId,
-                $this->notes
+                $this->notes,
+                $this->submissionProof
             );
             session()->flash('message', 'Result submitted successfully!');
-            $this->reset(['winnerRegistrationId', 'notes']);
+            $this->reset(['winnerRegistrationId', 'notes', 'submissionProof']);
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }

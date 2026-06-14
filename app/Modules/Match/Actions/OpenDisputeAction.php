@@ -21,9 +21,9 @@ class OpenDisputeAction
     /**
      * Open a dispute on the match.
      */
-    public function execute(GameMatch $match, int $openedByUserId): MatchDispute
+    public function execute(GameMatch $match, int $openedByUserId, string $reason): MatchDispute
     {
-        return DB::transaction(function () use ($match, $openedByUserId): MatchDispute {
+        return DB::transaction(function () use ($match, $openedByUserId, $reason): MatchDispute {
             $playerAUserId = $match->playerARegistration?->user_id;
             $playerBUserId = $match->playerBRegistration?->user_id;
 
@@ -38,6 +38,7 @@ class OpenDisputeAction
                 'match_id' => $match->id,
                 'opened_by' => $openedByUserId,
                 'status' => DisputeStatus::OPEN,
+                'reason' => $reason,
             ]);
 
             MatchDisputed::dispatch($match->id, $dispute->id, $openedByUserId);

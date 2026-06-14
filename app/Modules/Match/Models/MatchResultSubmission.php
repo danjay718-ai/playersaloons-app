@@ -39,6 +39,7 @@ class MatchResultSubmission extends Model
         'winner_registration_id',
         'notes',
         'submitted_at',
+        'proof_path',
     ];
 
     /**
