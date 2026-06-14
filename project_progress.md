@@ -384,4 +384,11 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
     - Critical fields (fees, prizes, team size) are visually locked with icons and disabled in the UI when not in DRAFT.
     - Added server-side protection in `TournamentForm` to prevent updating locked fields for non-draft tournaments.
 
+- **Tournament Creation Refactor & Wizard**:
+  - [x] Refactored `TournamentForm` into a 4-step interactive wizard (Identity, Settings, Schedule, Prizes).
+  - [x] Integrated **Quill Rich Text Editor** for tournament descriptions and rules.
+  - [x] Added "One-time / Single Event" frequency option.
+  - [x] Made Platform selection optional for all tournaments.
+  - [x] Implemented Platform and Frequency filters on both Admin and Player tournament lists.
+
 
