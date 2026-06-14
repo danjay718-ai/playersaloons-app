@@ -375,7 +375,8 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
     - *Technical Debt Note*: Currently uses inline styles to bypass CSS compilation issues in the environment. Future refactor needed to revert to standard Tailwind utility classes using a dedicated blade component once build pipeline is stabilized.
 
 - **Tournament Access & Visibility Improvements (v1.7)**:
-  - **Player Restriction**: Updated `TournamentDetail` to enforce 'PLAYER' role requirement for registration.
+  - **Player Restriction (Logic)**: Updated `TournamentDetail` to enforce 'PLAYER' role requirement for registration in the backend.
+  - **Player Restriction (UI)**: Updated `tournament-detail.blade.php` to hide the 'Join' button and show an informative message for non-player roles.
   - **Tournament Visibility**: Refactored `TournamentList` to filter out inactive statuses (Draft, Completed, Cancelled, Refunded) by default, showing only active tournaments (Registration, Check-in, Ongoing).
 
 - **Tests**:
