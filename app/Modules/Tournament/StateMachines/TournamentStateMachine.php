@@ -33,39 +33,39 @@ class TournamentStateMachine extends AbstractStateMachine
             ],
             TournamentStatus::PUBLISHED->value => [
                 TournamentStatus::REGISTRATION_OPEN->value,
+                TournamentStatus::DRAFT->value,
                 TournamentStatus::CANCELLED->value,
             ],
             TournamentStatus::REGISTRATION_OPEN->value => [
                 TournamentStatus::REGISTRATION_CLOSED->value,
+                TournamentStatus::PUBLISHED->value,
                 TournamentStatus::CANCELLED->value,
             ],
             TournamentStatus::REGISTRATION_CLOSED->value => [
                 TournamentStatus::CHECKIN_OPEN->value,
+                TournamentStatus::REGISTRATION_OPEN->value,
                 TournamentStatus::CANCELLED->value,
             ],
             TournamentStatus::CHECKIN_OPEN->value => [
                 TournamentStatus::CHECKIN_CLOSED->value,
+                TournamentStatus::REGISTRATION_CLOSED->value,
                 TournamentStatus::CANCELLED->value,
             ],
             TournamentStatus::CHECKIN_CLOSED->value => [
                 TournamentStatus::BRACKET_GENERATED->value,
+                TournamentStatus::CHECKIN_OPEN->value,
                 TournamentStatus::CANCELLED->value,
             ],
             TournamentStatus::BRACKET_GENERATED->value => [
                 TournamentStatus::ONGOING->value,
+                TournamentStatus::CHECKIN_CLOSED->value,
                 TournamentStatus::CANCELLED->value,
             ],
             TournamentStatus::ONGOING->value => [
                 TournamentStatus::COMPLETED->value,
                 // NOTE: cancellation forbidden on ONGOING per spec
             ],
-            TournamentStatus::COMPLETED->value => [
-                TournamentStatus::REFUNDED->value,
-            ],
-            TournamentStatus::CANCELLED->value => [
-                TournamentStatus::REFUNDED->value,
-            ],
-            TournamentStatus::REFUNDED->value => [], // terminal
+            // ...
         ];
     }
 
@@ -94,6 +94,23 @@ class TournamentStateMachine extends AbstractStateMachine
 
         if ($tournament->registration_close_at === null) {
             throw new LogicException('Tournament registration_close_at must be set.');
+        }
+    }
+
+    /**
+     * Ensure minimum participants are checked in before generating bracket.
+     *
+     * @throws LogicException
+     */
+    public function guardCanCloseCheckin(Tournament $tournament): void
+    {
+        $checkedInCount = $tournament->checkins()->count();
+
+        if ($checkedInCount < ($tournament->min_participants ?? 2)) {
+            throw new LogicException(
+                "Not enough participants checked in: {$checkedInCount} checked in, "
+                ."minimum {$tournament->min_participants} required."
+            );
         }
     }
 
@@ -143,6 +160,10 @@ class TournamentStateMachine extends AbstractStateMachine
         // Apply guards for guarded transitions
         if ($tournament->status === TournamentStatus::DRAFT && $to === TournamentStatus::PUBLISHED) {
             $this->guardCanPublish($tournament);
+        }
+
+        if ($tournament->status === TournamentStatus::CHECKIN_OPEN && $to === TournamentStatus::CHECKIN_CLOSED) {
+            $this->guardCanCloseCheckin($tournament);
         }
 
         if ($tournament->status === TournamentStatus::CHECKIN_CLOSED && $to === TournamentStatus::BRACKET_GENERATED) {
