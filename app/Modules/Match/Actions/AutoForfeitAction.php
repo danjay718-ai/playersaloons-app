@@ -25,7 +25,11 @@ class AutoForfeitAction
                 ->event('auto_resolve_timeout')
                 ->log('Opponent failed to confirm within tournament limit.');
             
-            MatchCompleted::dispatch($match);
+            MatchCompleted::dispatch(
+                (int) $match->id,
+                (int) $match->tournament_id,
+                (int) $match->winner_registration_id
+            );
         });
     }
 }
