@@ -416,6 +416,11 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Alpine.js Warning Modal**: Shows a custom modal with a skull icon notifying players that they are eliminated when selecting the Matches tab.
   - **Navigation Flow**: Provides a "Go Back" option (reverts tab to Overview) and a "Continue" option (allows them to proceed viewing matches).
 
+- **My Tournaments UI Redesign (v1.19)**:
+  - **Player Statistics Banner**: Added a top row statistics grid showing Active Tournaments, Tournament History, Match Victories (Wins), and Match Defeats (Losses).
+  - **Active Tab Alignment**: Re-designed active tournament cards to match the neon styling, banner images, status badges, and fee/prize layouts of the Browse Tournaments page.
+  - **History List View**: Re-engineered the history tab as a detailed chronological list item view displaying game category, end date, and user match histories (including round number, opponent name, and custom outcome badges like "WON" or "LOST").
+
 - **Tournament Admin Features (v1.6-1.11)**:
   - Need to add feature tests for:
     - Admin Tournament Filter Persistence (`TournamentAdmin` component).
@@ -430,7 +435,10 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
       - Player has not lost -> navigating to Matches tab does not trigger modal.
       - Clicking "Go Back" in modal resets active tab to "Overview".
       - Clicking "Continue" in modal closes the modal and keeps active tab on "Matches".
-    - `MyTournamentsList` (active/history tabs).
+    - `MyTournamentsList` logic and styling:
+      - Calculating stats banner counts (active, history, wins, losses).
+      - Active tab matching Browse page cards.
+      - History tab presenting lists of user match details (opponent, round, win/loss badge).
     - `PlayerTournamentList` (Browse Tournaments filtering).
     - `HeadToHeadList` (matchmaking simulation, challenge creation).
   - Need to add integration/E2E tests for:
