@@ -64,11 +64,6 @@ class TournamentAdmin extends AdminComponent
 
     protected $paginationTheme = 'tailwind';
 
-    protected function paginationView()
-    {
-        return 'vendor.livewire.custom-pagination';
-    }
-
     public function updatingSearch(): void
     {
         $this->resetPage();

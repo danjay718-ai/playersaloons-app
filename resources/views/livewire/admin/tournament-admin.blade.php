@@ -262,7 +262,7 @@
             Showing {{ $tournaments->firstItem() }} to {{ $tournaments->lastItem() }} of {{ $tournaments->total() }} results
         </div>
         <div class="flex gap-2">
-            {{ $tournaments->links() }}
+            {{ $tournaments->links('vendor.livewire.custom-pagination') }}
         </div>
     </div>
 
