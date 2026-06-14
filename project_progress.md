@@ -405,6 +405,12 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
     - Dispute flow initiated from confirmation state.
     - `AutoForfeitJob` timeout resolution (waiting for implementation).
 
+- **Tournament UI Enhancements (v1.17)**:
+  - **Persistent Tabs**: Implemented `localStorage` state persistence for tournament content tabs using Alpine.js, scoped per tournament ID.
+  - **Activity Feed Tab**: Added a new 'Activity' tab featuring a vertical timeline layout to display chronological tournament events (`$tournament->activities`).
+  - **Mobile Layout & Usability**: Re-designed the navigation tab container to use horizontal scrolling on mobile devices to prevent wrapping breakages, and applied `whitespace-nowrap`.
+  - **Simplified Terminology**: Renamed default tabs from 'Intel/Warriors/Battle Grid' to clearer 'Overview/Players/Matches'.
+
 - **Tournament Admin Features (v1.6-1.11)**:
   - Need to add feature tests for:
     - Admin Tournament Filter Persistence (`TournamentAdmin` component).
