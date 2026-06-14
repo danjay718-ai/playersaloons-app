@@ -70,7 +70,18 @@ class GameMatch extends Model
             'scheduled_at' => 'datetime',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'result_submitted_at' => 'datetime',
         ];
+    }
+
+    public function isTimedOut(): bool
+    {
+        if ($this->status !== MatchStatus::WAITING_FOR_CONFIRMATION || !$this->result_submitted_at) {
+            return false;
+        }
+
+        $waitTime = $this->tournament->waiting_result_time;
+        return $this->result_submitted_at->addMinutes($waitTime)->isPast();
     }
 
     /**
