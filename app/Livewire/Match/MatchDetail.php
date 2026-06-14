@@ -53,7 +53,11 @@ class MatchDetail extends Component
                 $match->completed_at = now();
                 $match->save();
 
-                \App\Modules\Match\Events\MatchCompleted::dispatch($match);
+                \App\Modules\Match\Events\MatchCompleted::dispatch(
+                    (int) $match->id,
+                    (int) $match->tournament_id,
+                    (int) $match->winner_registration_id
+                );
             });
             session()->flash('message', 'Match finalized by administrator.');
         } catch (\Exception $e) {
