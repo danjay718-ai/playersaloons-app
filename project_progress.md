@@ -383,6 +383,20 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Modular Tournament Components**: Refactored tournament listing into a shared `TournamentListTrait` to maintain consistency across public and player-context components (`PublicTournamentList` and `PlayerTournamentList`) while ensuring layout/theme isolation.
   - **Route Separation**: Explicitly separated public (`/tournaments`) and authenticated player (`/tournaments/browse`) routes, fixing 404 and layout issues for guest users.
 
-- **Head-to-Head Feature Modularization (v1.11)**:
-  - **Dedicated H2H Page**: Extracted 'Head-to-Head' duels from the `PlayerDashboard` into a dedicated Livewire page (`/head-to-head`), improving load times and simplifying the dashboard DOM.
-  - **Navigation Update**: Updated sidebar to include a direct link to the new H2H page and removed H2H tab from the main dashboard.
+---
+
+## ⚠️ Pending Test Coverage
+
+- **Tournament Admin Features (v1.6-1.11)**:
+  - Need to add feature tests for:
+    - Admin Tournament Filter Persistence (`TournamentAdmin` component).
+    - Frequency tabs functionality in admin and player contexts.
+    - Custom pagination component rendering.
+    - Role-based restriction on the 'Join Tournament' button.
+    - Tournament status filtering on player-side listing.
+  - Need to add component tests for:
+    - `MyTournamentsList` (active/history tabs).
+    - `PlayerTournamentList` (Browse Tournaments filtering).
+    - `HeadToHeadList` (matchmaking simulation, challenge creation).
+  - Need to add integration/E2E tests for:
+    - Navigation between dashboard, my-tournaments, and browse-tournaments pages.
