@@ -191,6 +191,16 @@ class Tournament extends Model implements HasMedia
     }
 
     /**
+     * Get checkins for the tournament via registrations.
+     *
+     * @return HasManyThrough<TournamentCheckin, TournamentRegistration, Tournament>
+     */
+    public function checkins(): HasManyThrough
+    {
+        return $this->hasManyThrough(TournamentCheckin::class, TournamentRegistration::class, 'tournament_id', 'registration_id');
+    }
+
+    /**
      * Get the cancellation details of the tournament.
      *
      * @return HasOne<TournamentCancellation, Tournament>
