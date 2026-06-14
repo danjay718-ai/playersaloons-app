@@ -38,7 +38,7 @@ class SubmitMatchResultAction
 
             $proofPath = null;
             if ($proofFile && $proofFile->isValid()) {
-                $proofPath = $proofFile->store("matches/{$match->id}/submissions", 'r2');
+                $proofPath = $proofFile->store("matches/{$match->id}/submissions", 'public');
             }
 
             $submission = MatchResultSubmission::query()->create([

@@ -86,7 +86,7 @@ class MatchDetail extends Component
         $this->validate([
             'winnerRegistrationId' => ['required', 'integer', 'in:'.$match->player_a_registration_id.','.$match->player_b_registration_id],
             'notes' => ['nullable', 'string', 'max:500'],
-            'submissionProof' => ['nullable', 'file', 'max:10240', 'mimes:png,jpg,jpeg,webp,pdf'],
+            'submissionProof' => ['nullable', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
         ]);
 
         try {
@@ -144,7 +144,7 @@ class MatchDetail extends Component
         }
 
         $this->validate([
-            'evidenceFile' => ['required', 'file', 'max:20480', 'mimes:png,jpg,jpeg,webp,pdf,mp4,mov'],
+            'evidenceFile' => ['required', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
         ]);
 
         try {

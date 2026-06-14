@@ -302,7 +302,7 @@
                                 <span>Active Dispute Logged</span>
                             </div>
                             <p class="text-xs text-red-400/80 leading-relaxed">
-                                A dispute has been opened for this match. Please submit screenshot or video evidence immediately for admins to review and declare the correct bracket winner.
+                                A dispute has been opened for this match. Please submit screenshot evidence (PNG, JPG, or WEBP, max 2MB) immediately for admins to review and declare the correct bracket winner.
                             </p>
                         </div>
 
@@ -318,7 +318,7 @@
                                             {{ $evidenceFile ? $evidenceFile->getClientOriginalName() : 'Click or drag file to upload' }}
                                         </p>
                                         <p class="text-[10px] text-zinc-600">
-                                            Supported types: Images (PNG, JPG, WEBP), PDFs, Videos (MP4, MOV) up to 20MB.
+                                            Images only: PNG, JPG, WEBP &mdash; max 2MB.
                                         </p>
                                     </div>
                                 </div>
@@ -406,7 +406,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pl-4">
                                 @foreach($disp->evidence as $ev)
                                     <div class="bg-zinc-950 border border-zinc-850 rounded-xl p-3 flex items-center space-x-2.5">
-                                        <i data-lucide="file-text" class="w-4 h-4 text-violet-400"></i>
+                                        <i data-lucide="image" class="w-4 h-4 text-violet-400"></i>
                                         <div class="truncate">
                                             <!-- clickable absolute storage path link -->
                                             <a href="/storage/{{ $ev->file_path }}" target="_blank" class="block text-xs font-semibold text-zinc-300 hover:text-violet-400 transition-colors truncate">

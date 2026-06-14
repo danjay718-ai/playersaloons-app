@@ -16,18 +16,15 @@ use LogicException;
 
 class SubmitEvidenceAction
 {
-    private const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20 MB
+    private const MAX_FILE_BYTES = 2 * 1024 * 1024; // 2 MB
 
     /**
      * @var string[]
      */
     private const ALLOWED_MIME_TYPES = [
-        'application/pdf',
         'image/jpeg',
         'image/png',
         'image/webp',
-        'video/mp4',
-        'video/quicktime',
     ];
 
     /**
@@ -59,12 +56,12 @@ class SubmitEvidenceAction
             }
 
             if (! in_array($file->getMimeType(), self::ALLOWED_MIME_TYPES, true)) {
-                throw new InvalidArgumentException('Invalid file type. Only PDFs, images, and MP4/MOV videos are allowed.');
+                throw new InvalidArgumentException('Invalid file type. Only JPEG, PNG, and WebP images are allowed.');
             }
 
-            // Store file in R2 disk
-            $path = $file->store("disputes/{$dispute->id}/evidence", 'r2');
-            if ($path === false) {
+            // Store file on local public disk (switch to R2/S3 on deployment)
+            $path = $file->store("disputes/{$dispute->id}/evidence", 'public');
+            if ($path === false || $path === null) {
                 throw new LogicException('Failed to store evidence file.');
             }
 

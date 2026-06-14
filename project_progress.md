@@ -451,3 +451,22 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
     - `HeadToHeadList` (matchmaking simulation, challenge creation).
   - Need to add integration/E2E tests for:
     - Navigation between dashboard, my-tournaments, and browse-tournaments pages.
+
+---
+
+## 🚀 Deployment Considerations
+
+### File Storage — Switch Local → R2/S3
+
+Currently, all user-uploaded files (dispute evidence screenshots and match result proof images) are stored on the **local `public` disk** (`storage/app/public/`). This works for local development but is **not suitable for production** (files won't persist across deployments and won't scale).
+
+**Before going live:**
+1. Install the required adapter: `composer require league/flysystem-aws-s3-v3`.
+2. Set the correct `.env` variables for Cloudflare R2 (or AWS S3):
+   - `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT`, `R2_PUBLIC_URL`
+3. In `SubmitEvidenceAction::execute()` — change disk from `'public'` → `'r2'`.
+4. In `SubmitMatchResultAction::execute()` — change disk from `'public'` → `'r2'`.
+5. Update any file URL helpers (currently `/storage/{{ $path }}`) to use `Storage::disk('r2')->url($path)` so URLs resolve correctly from R2/CDN.
+6. Run `php artisan storage:link` if keeping any local public files on the server.
+
+> **Note:** File type restriction is currently **images only** (PNG, JPG, WEBP, max 2MB). If video evidence is needed in production, update `SubmitEvidenceAction::ALLOWED_MIME_TYPES` and the Livewire validation in `MatchDetail.php` accordingly.
