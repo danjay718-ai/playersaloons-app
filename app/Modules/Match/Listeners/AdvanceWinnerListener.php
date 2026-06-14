@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Listeners;
 
+use App\Modules\Match\Actions\StartMatchAction;
 use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Modules\Tournament\Actions\CompleteTournamentAction;
 use App\Modules\Tournament\Models\Round;
 use App\Shared\Enums\MatchStatus;
+use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\DB;
 
 class AdvanceWinnerListener
 {
     public function __construct(
         private readonly MatchStateMachine $stateMachine,
-        private readonly CompleteTournamentAction $completeTournamentAction
+        private readonly CompleteTournamentAction $completeTournamentAction,
+        private readonly StartMatchAction $startMatchAction
     ) {}
 
     /**
@@ -92,6 +95,11 @@ class AdvanceWinnerListener
             if ($nextMatch->player_a_registration_id !== null && $nextMatch->player_b_registration_id !== null) {
                 $this->stateMachine->transition($nextMatch, MatchStatus::READY);
                 MatchCreated::dispatch((int) $nextMatch->getKey(), (int) $nextMatch->tournament_id, (int) $nextMatch->round_id);
+
+                // Auto-start the match if the tournament is already ongoing
+                if ($match->tournament->status === TournamentStatus::ONGOING) {
+                    $this->startMatchAction->execute($nextMatch);
+                }
             }
         });
     }
