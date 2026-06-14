@@ -394,9 +394,15 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Cockpit Overview**: Refactored the `PlayerDashboard` to act as a lightweight 'Cockpit' overview. It now features widgets for user welcome/balance, recent matches, upcoming tournaments, progression stats, announcements, and a video placeholder.
   - **Tabbed Navigation**: Re-implemented tabbed navigation within the dashboard to allow quick switching between the Cockpit view and the new dedicated pages (My Tournaments, Browse Tournaments, H2H, Leaderboards, Streams, Chat).
 
----
-
-## ⚠️ Pending Test Coverage
+- **Match Resolution Automation (v1.15)**:
+  - **Two-Way Confirmation**: Implemented a confirmation flow (`WAITING_FOR_CONFIRMATION` status) for match results, requiring opponent validation before finalization.
+  - **Database Update**: Added `result_submitted_at` to `matches` table to track submission time for auto-forfeit logic.
+  - **State Machine Refactor**: Updated `MatchStateMachine` to support `WAITING_FOR_CONFIRMATION` and ensured dispute flow remains compatible.
+  - **Testing Requirement**: Comprehensive test suite required to validate:
+    - Successful confirmation by opponent.
+    - Match finalization and winner advancement.
+    - Dispute flow initiated from confirmation state.
+    - `AutoForfeitJob` timeout resolution (waiting for implementation).
 
 - **Tournament Admin Features (v1.6-1.11)**:
   - Need to add feature tests for:

@@ -33,11 +33,11 @@ class MatchStateMachine extends AbstractStateMachine
                 MatchStatus::FORFEITED->value,
             ],
             MatchStatus::IN_PROGRESS->value => [
-                MatchStatus::RESULT_SUBMITTED->value,
+                MatchStatus::WAITING_FOR_CONFIRMATION->value,
                 MatchStatus::DISPUTED->value,
                 MatchStatus::FORFEITED->value,
             ],
-            MatchStatus::RESULT_SUBMITTED->value => [
+            MatchStatus::WAITING_FOR_CONFIRMATION->value => [
                 MatchStatus::COMPLETED->value,
                 MatchStatus::DISPUTED->value,
             ],
