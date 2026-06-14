@@ -42,8 +42,9 @@
         <nav class="px-4 space-y-2">
             @php
                 $navItems = [
-                    ['label' => 'Overview', 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'active' => !request()->query('tab')],
-                    ['label' => 'Tournaments', 'icon' => 'trophy', 'url' => '/dashboard?tab=tournaments', 'active' => request()->query('tab') === 'tournaments'],
+                    ['label' => 'Overview', 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'active' => request()->is('dashboard')],
+                    ['label' => 'Browse Tournaments', 'icon' => 'search', 'url' => '/tournaments', 'active' => request()->is('tournaments*')],
+                    ['label' => 'My Tournaments', 'icon' => 'trophy', 'url' => '/my-tournaments', 'active' => request()->is('my-tournaments')],
                     ['label' => 'Head-to-Head', 'icon' => 'swords', 'url' => '/dashboard?tab=head-to-head', 'active' => request()->query('tab') === 'head-to-head'],
                     ['label' => 'Leaderboards', 'icon' => 'award', 'url' => '/dashboard?tab=leaderboards', 'active' => request()->query('tab') === 'leaderboards'],
                     ['label' => 'Streams', 'icon' => 'tv', 'url' => '/dashboard?tab=streams', 'active' => request()->query('tab') === 'streams'],
