@@ -173,10 +173,10 @@ class TournamentAdmin extends AdminComponent
                     break;
                 // Rollbacks
                 case 'reopen_checkin':
-                    $stateMachine->transition($tournament, TournamentStatus::CHECKIN_OPEN);
+                    $stateMachine->transition($tournament, TournamentStatus::CHECKIN_OPEN, ['triggered_by' => 'admin_manual', 'user_id' => Auth::id()]);
                     break;
                 case 'reopen_registration':
-                    $stateMachine->transition($tournament, TournamentStatus::REGISTRATION_OPEN);
+                    $stateMachine->transition($tournament, TournamentStatus::REGISTRATION_OPEN, ['triggered_by' => 'admin_manual', 'user_id' => Auth::id()]);
                     break;
             }
             session()->flash('success', 'State transition executed successfully.');

@@ -8,6 +8,7 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use App\Shared\StateMachines\AbstractStateMachine;
+use Illuminate\Support\Facades\Auth;
 use LogicException;
 
 class TournamentStateMachine extends AbstractStateMachine
@@ -153,7 +154,7 @@ class TournamentStateMachine extends AbstractStateMachine
      * @throws InvalidStateTransitionException
      * @throws LogicException
      */
-    public function transition(Tournament $tournament, TournamentStatus $to): void
+    public function transition(Tournament $tournament, TournamentStatus $to, array $context = []): void
     {
         $this->assertValidTransition($tournament->status, $to);
 
@@ -190,5 +191,11 @@ class TournamentStateMachine extends AbstractStateMachine
 
         $tournament->status = $to;
         $tournament->save();
+
+        activity()
+            ->performedOn($tournament)
+            ->causedBy(Auth::user())
+            ->withProperties(array_merge($context, ['to' => $to->value]))
+            ->log("Tournament status changed to {$to->value}");
     }
 }
