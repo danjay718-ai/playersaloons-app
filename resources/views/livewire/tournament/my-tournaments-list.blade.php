@@ -11,7 +11,7 @@
             <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 hover:border-violet-500/50 transition-all">
                 <h3 class="text-lg font-bold text-white">{{ $tournament->name }}</h3>
                 <p class="text-sm text-zinc-500 mb-4">{{ $tournament->game->translations->first()?->name }}</p>
-                <a href="/tournaments/{{ $tournament->uuid }}" wire:navigate class="text-indigo-400 text-sm font-bold">View Details</a>
+                <a href="/tournaments/{{ $tournament->uuid }}/view" wire:navigate class="text-indigo-400 text-sm font-bold">View Details</a>
             </div>
         @empty
             <div class="col-span-full p-10 text-center text-zinc-600">No tournaments found.</div>
