@@ -20,27 +20,6 @@ class PlayerDashboard extends Component
     // Bound to the 'tab' query parameter
     public string $tab = 'overview';
 
-    // Dashboard Tournament filters and sub-tabs
-    public string $tSearch = '';
-
-    public string $tGameId = '';
-
-    public string $tStatus = '';
-
-    public string $tFrequency = 'daily'; // Default is daily
-
-    public string $tSubTab = 'my_tournaments'; // Default is my_tournaments
-
-    // Chat properties
-    public string $chatMessage = '';
-
-    public array $messages = [];
-
-    protected $queryString = [
-        'tab' => ['except' => 'overview'],
-        'tSubTab' => ['except' => 'my_tournaments'],
-    ];
-
     public function mount()
     {
         $user = Auth::user();
@@ -50,69 +29,10 @@ class PlayerDashboard extends Component
                 return redirect()->to('/admin');
             }
         }
-
-        $tabQuery = request()->query('tab', 'overview');
-        if (in_array($tabQuery, ['overview', 'tournaments', 'head-to-head', 'leaderboards', 'streams', 'chat'])) {
-            $this->tab = $tabQuery;
-        }
-
-        $subTabQuery = request()->query('tSubTab', 'my_tournaments');
-        if (in_array($subTabQuery, ['my_tournaments', 'browse_tournaments'])) {
-            $this->tSubTab = $subTabQuery;
-        }
-
-        // Initialize mock chat messages
-        $this->messages = [
-            ['username' => 'NeonSpecter', 'text' => 'Who wants to duel in FIFA? Stake is $10.', 'time' => '12:04', 'avatar' => 'NS'],
-            ['username' => 'ViperZero', 'text' => 'I\'m down, invite me!', 'time' => '12:05', 'avatar' => 'VZ'],
-            ['username' => 'GamerGod', 'text' => 'Valorant tournament is stacked today, good luck to everyone!', 'time' => '12:06', 'avatar' => 'GG'],
-            ['username' => 'HyperDrift', 'text' => 'Let\'s goooo! Streaming the match soon.', 'time' => '12:08', 'avatar' => 'HD'],
-        ];
-    }
-
-    public function sendMessage(): void
-    {
-        if (trim($this->chatMessage) === '') {
-            return;
-        }
-
-        $user = Auth::user();
-
-        $this->messages[] = [
-            'username' => $user->username,
-            'text' => $this->chatMessage,
-            'time' => now()->format('H:i'),
-            'avatar' => strtoupper(substr($user->username, 0, 2)),
-        ];
-
-        $this->chatMessage = '';
-        $this->dispatch('chat-updated');
-
-        $botNames = ['NeonSpecter', 'ViperZero', 'GamerGod', 'HyperDrift', 'SaloonsBot'];
-        $botAnswers = [
-            'Nice shot! Anyone wants to play next?',
-            'Good luck with that match!',
-            'Let\'s check the leaderboards, top players are insane.',
-            'GG! Add me on Discord later.',
-            'System alert: New tournaments will start in 1 hour!',
-        ];
-
-        $randomBot = $botNames[array_rand($botNames)];
-        $randomReply = $botAnswers[array_rand($botAnswers)];
-
-        $this->messages[] = [
-            'username' => $randomBot,
-            'text' => $randomReply,
-            'time' => now()->format('H:i'),
-            'avatar' => strtoupper(substr($randomBot, 0, 2)),
-        ];
     }
 
     /**
-     * Render the dashboard view.
-     * Implements lazy-loading based on active tab to optimize performance.
-     *
-     * @return \Illuminate\View\View
+     * Render the dashboard overview.
      */
     public function render()
     {
@@ -122,143 +42,42 @@ class PlayerDashboard extends Component
             return redirect()->to('/login');
         }
 
-        // Initialize empty containers
-        $activeMatches = collect();
-        $activeTournaments = collect();
-        $closedTournaments = collect();
-        $browseTournaments = collect();
+        $userRegistrationIds = TournamentRegistration::query()
+            ->where('user_id', $user->id)
+            ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
+            ->pluck('id');
+
+        // Stats (Matches/Earnings)
+        $allUserMatches = GameMatch::query()
+            ->where(function ($q) use ($userRegistrationIds) {
+                $q->whereIn('player_a_registration_id', $userRegistrationIds)
+                    ->orWhereIn('player_b_registration_id', $userRegistrationIds);
+            })
+            ->whereIn('status', [MatchStatus::COMPLETED->value, MatchStatus::FORFEITED->value])
+            ->get();
+
+        $totalMatches = $allUserMatches->count();
+        $wins = $allUserMatches->filter(fn($m) => $userRegistrationIds->contains($m->winner_registration_id))->count();
+
         $playerStats = [
-            'total_matches' => 0,
-            'wins' => 0,
-            'losses' => 0,
-            'win_rate' => 0.0,
-            'earnings' => 0.00,
-            'ranking' => 0, // TODO: Ranking system not implemented
-            'xp' => 0,      // TODO: XP system not implemented
-            'xp_next' => 0, // TODO: XP system not implemented
-            'streak' => 0,  // TODO: Streak system not implemented
+            'total_matches' => $totalMatches,
+            'wins' => $wins,
+            'losses' => $totalMatches - $wins,
+            'earnings' => $user->wallet ? (float) $user->wallet->ledgerEntries()->where('type', LedgerType::PRIZE->value)->sum('amount') : 0.00,
         ];
-        $games = [];
 
-        // ── LAZY LOAD: Overview Tab Data ─────────────────────────────────────
-        if ($this->tab === 'overview') {
-            $userRegistrationIds = TournamentRegistration::query()
-                ->where('user_id', $user->id)
-                ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
-                ->pluck('id');
-
-            // 1. Compute real match stats
-            $allUserMatches = GameMatch::query()
-                ->where(function ($q) use ($userRegistrationIds) {
-                    $q->whereIn('player_a_registration_id', $userRegistrationIds)
-                        ->orWhereIn('player_b_registration_id', $userRegistrationIds);
-                })
-                ->whereIn('status', [MatchStatus::COMPLETED->value, MatchStatus::FORFEITED->value])
-                ->with(['winnerRegistration'])
-                ->get();
-
-            $totalMatches = $allUserMatches->count();
-            $wins = $allUserMatches->filter(function ($match) use ($userRegistrationIds) {
-                return $match->winnerRegistration !== null
-                    && $userRegistrationIds->contains($match->winner_registration_id);
-            })->count();
-
-            $playerStats['total_matches'] = $totalMatches;
-            $playerStats['wins'] = $wins;
-            $playerStats['losses'] = $totalMatches - $wins;
-            $playerStats['win_rate'] = $totalMatches > 0 ? round(($wins / $totalMatches) * 100, 1) : 0.0;
-
-            // 2. Earnings
-            try {
-                if ($user->wallet) {
-                    $playerStats['earnings'] = (float) $user->wallet
-                        ->ledgerEntries()
-                        ->where('type', LedgerType::PRIZE->value)
-                        ->sum('amount');
-                }
-            } catch (\Throwable) {
-                $playerStats['earnings'] = 0.00;
-            }
-
-            // 3. Recent matches (Battle Log)
-            $activeMatches = GameMatch::query()
-                ->where(function ($q) use ($userRegistrationIds) {
-                    $q->whereIn('player_a_registration_id', $userRegistrationIds)
-                        ->orWhereIn('player_b_registration_id', $userRegistrationIds);
-                })
-                ->with(['tournament', 'round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration.user'])
-                ->orderBy('updated_at', 'desc')
-                ->take(5)
-                ->get();
-        }
-
-        // ── LAZY LOAD: Tournaments Tab Data ──────────────────────────────────
-        if ($this->tab === 'tournaments') {
-            // 1. User Tournaments
-            $activeTournaments = Tournament::query()
-                ->whereHas('registrations', function ($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                        ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
-                })
-                ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
-                ->with('game.translations')
-                ->get();
-
-            $closedTournaments = Tournament::query()
-                ->whereHas('registrations', function ($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                        ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
-                })
-                ->whereIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
-                ->with('game.translations')
-                ->get();
-
-            // 2. Browse tournaments
-            $browseQuery = Tournament::query()
-                ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
-                ->with(['game.translations', 'registrations']);
-
-            if ($this->tSearch) {
-                $browseQuery->where('name', 'like', '%'.$this->tSearch.'%');
-            }
-            if ($this->tGameId) {
-                $browseQuery->where('game_id', $this->tGameId);
-            }
-            if ($this->tStatus) {
-                $browseQuery->where('status', $this->tStatus);
-            }
-            if ($this->tFrequency) {
-                $browseQuery->where('frequency', $this->tFrequency);
-            }
-
-            $browseTournaments = $browseQuery->orderBy('created_at', 'desc')->get();
-
-            $games = Game::query()
-                ->with('translations')
-                ->where('is_active', true)
-                ->get();
-        }
-
-        $titles = [
-            'overview' => 'DASHBOARD',
-            'tournaments' => 'TOURNAMENTS HUB',
-            'head-to-head' => 'HEAD-TO-HEAD DUELS',
-            'leaderboards' => 'GLOBAL LEADERBOARDS',
-            'streams' => 'LIVE BROADCASTS',
-            'chat' => 'GLOBAL COMMUNICATIONS',
-        ];
+        $activeTournaments = Tournament::query()
+            ->whereHas('registrations', fn($q) => $q->where('user_id', $user->id)->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]))
+            ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+            ->get();
 
         return view('livewire.dashboard.player-dashboard', [
             'user' => $user,
-            'activeMatches' => $activeMatches,
-            'activeTournaments' => $activeTournaments,
-            'closedTournaments' => $closedTournaments,
-            'browseTournaments' => $browseTournaments,
             'playerStats' => $playerStats,
-            'games' => $games,
+            'activeTournaments' => $activeTournaments,
         ])->layout('components.layouts.dashboard', [
             'title' => 'Gamer Terminal | PlayerSaloons',
-            'dashboard_title' => $titles[$this->tab] ?? 'DASHBOARD',
+            'dashboard_title' => 'DASHBOARD',
         ]);
     }
 }
