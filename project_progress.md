@@ -388,9 +388,9 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Prototype/Mock Implementation**: Current H2H functionality uses mock in-memory data for UI demonstration. Production implementation (backend tables, matchmaking engine, websockets) is tracked in [PlayerSaloons_Execution_Checklist_v1.md].
   - **Navigation Update**: Updated sidebar to include a direct link to the new H2H page and removed H2H tab from the main dashboard.
 
-- **Dashboard Modularization (v1.12)**:
-  - **Dedicated Feature Pages**: Extracted `Leaderboards`, `Streams`, and `Global Chat` from the monolithic `PlayerDashboard` into their own dedicated Livewire pages (`/leaderboards`, `/streams`, `/chat`), further improving dashboard performance by reducing DOM complexity and unnecessary data queries.
-  - **Dashboard Simplification**: Refactored `PlayerDashboard` into a lightweight "Cockpit Overview", showing only essential stats and active tournament snapshots, eliminating unused data fetches.
+- **Dashboard Redesign (v1.13)**:
+  - **Cockpit Overview**: Refactored the `PlayerDashboard` to act as a lightweight 'Cockpit' overview. It now features widgets for user welcome/balance, recent matches, upcoming tournaments, progression stats, announcements, and a video placeholder.
+  - **Tabbed Navigation**: Re-implemented tabbed navigation within the dashboard to allow quick switching between the Cockpit view and the new dedicated pages (My Tournaments, Browse Tournaments, H2H, Leaderboards, Streams, Chat).
 
 ---
 

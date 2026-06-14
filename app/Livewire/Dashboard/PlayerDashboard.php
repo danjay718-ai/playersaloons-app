@@ -29,6 +29,11 @@ class PlayerDashboard extends Component
                 return redirect()->to('/admin');
             }
         }
+        
+        $tabQuery = request()->query('tab', 'overview');
+        if (in_array($tabQuery, ['overview', 'tournaments', 'head-to-head', 'leaderboards', 'streams', 'chat'])) {
+            $this->tab = $tabQuery;
+        }
     }
 
     public function render()
@@ -39,17 +44,31 @@ class PlayerDashboard extends Component
             return redirect()->to('/login');
         }
 
-        // Summary Data for Widgets
-        $activeTournamentsCount = Tournament::query()
-            ->whereHas('registrations', fn($q) => $q->where('user_id', $user->id)->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]))
+        // Summary Data for Cockpit
+        $activeTournaments = Tournament::query()
+            ->whereHas('registrations', fn($q) => $q->where('user_id', $user->id))
             ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
-            ->count();
+            ->with('game.translations')
+            ->orderBy('start_at', 'asc')
+            ->take(3)
+            ->get();
+
+        $recentMatches = GameMatch::query()
+            ->where(function ($q) use ($user) {
+                $q->whereHas('playerARegistration', fn($qr) => $qr->where('user_id', $user->id))
+                  ->orWhereHas('playerBRegistration', fn($qr) => $qr->where('user_id', $user->id));
+            })
+            ->with('tournament')
+            ->orderBy('updated_at', 'desc')
+            ->take(3)
+            ->get();
 
         $earnings = $user->wallet ? (float) $user->wallet->ledgerEntries()->where('type', LedgerType::PRIZE->value)->sum('amount') : 0.00;
 
         return view('livewire.dashboard.player-dashboard', [
             'user' => $user,
-            'activeTournamentsCount' => $activeTournamentsCount,
+            'activeTournaments' => $activeTournaments,
+            'recentMatches' => $recentMatches,
             'earnings' => $earnings,
         ])->layout('components.layouts.dashboard', [
             'title' => 'Gamer Terminal | PlayerSaloons',
