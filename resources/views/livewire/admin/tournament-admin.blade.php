@@ -20,6 +20,17 @@
     <!-- Filters Card -->
     <div class="bg-[#0f172a] border border-slate-800 rounded-xl p-4 mb-6">
         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Filter Tournaments</h2>
+        
+        <!-- Frequency Tabs -->
+        <div class="flex gap-2 mb-4 border-b border-slate-800 pb-2">
+            @foreach(['all' => 'All', 'daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'one-time' => 'One-time'] as $key => $label)
+                <button wire:click="$set('activeTab', '{{ $key }}')" 
+                        class="px-4 py-2 text-sm font-medium rounded-lg transition-colors {{ $activeTab === $key ? 'bg-indigo-900 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+                    {{ $label }}
+                </button>
+            @endforeach
+        </div>
+
         <div class="flex flex-wrap items-center gap-3">
             <select wire:model.live="statusFilter" 
                     class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
@@ -42,14 +53,6 @@
                 <option value="">All Platforms</option>
                 @foreach($platforms as $platform)
                     <option value="{{ $platform->id }}">{{ $platform->name }}</option>
-                @endforeach
-            </select>
-
-            <select wire:model.live="frequencyFilter" 
-                    class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
-                <option value="">All Frequencies</option>
-                @foreach($frequencies as $freq)
-                    <option value="{{ $freq }}">{{ ucfirst($freq) }}</option>
                 @endforeach
             </select>
 

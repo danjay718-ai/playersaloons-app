@@ -39,7 +39,7 @@ class TournamentAdmin extends AdminComponent
     public string $platformFilter = '';
 
     #[Url]
-    public string $frequencyFilter = '';
+    public string $activeTab = 'all';
 
     #[Url]
     public string $startDateFilter = '';
@@ -84,7 +84,7 @@ class TournamentAdmin extends AdminComponent
         $this->resetPage();
     }
 
-    public function updatingFrequencyFilter(): void
+    public function updatingActiveTab(): void
     {
         $this->resetPage();
     }
@@ -253,8 +253,8 @@ class TournamentAdmin extends AdminComponent
             $query->where('platform_id', $this->platformFilter);
         }
 
-        if ($this->frequencyFilter) {
-            $query->where('frequency', $this->frequencyFilter);
+        if ($this->activeTab !== 'all') {
+            $query->where('frequency', $this->activeTab);
         }
 
         if ($this->startDateFilter) {
@@ -268,7 +268,6 @@ class TournamentAdmin extends AdminComponent
         $tournaments = $query->paginate($this->perPage);
         $games = Game::with('translations')->get();
         $platforms = \App\Modules\CMS\Models\Platform::where('is_active', true)->get();
-        $frequencies = ['daily', 'weekly', 'monthly', 'one-time'];
 
         $selectedTournament = ($this->showDetailModal || $this->showCancelModal) && $this->selectedTournamentId
             ? Tournament::with(['game.translations', 'registrations.user', 'cancellation.cancelledBy', 'rounds.matches', 'platform'])->find($this->selectedTournamentId)
@@ -278,7 +277,6 @@ class TournamentAdmin extends AdminComponent
             'tournaments' => $tournaments,
             'games' => $games,
             'platforms' => $platforms,
-            'frequencies' => $frequencies,
             'selectedTournament' => $selectedTournament,
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Tournament Management',
