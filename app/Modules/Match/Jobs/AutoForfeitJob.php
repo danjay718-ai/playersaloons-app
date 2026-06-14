@@ -15,7 +15,7 @@ class AutoForfeitJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function handle(MatchStateMachine $stateMachine): void
+    public function handle(AutoForfeitAction $action): void
     {
         $matches = GameMatch::query()
             ->where('status', MatchStatus::WAITING_FOR_CONFIRMATION)
@@ -23,17 +23,8 @@ class AutoForfeitJob implements ShouldQueue
             ->get();
 
         foreach ($matches as $match) {
-            $submittedAt = $match->result_submitted_at;
-            if (!$submittedAt) continue;
-
-            $waitTime = $match->tournament->waiting_result_time; // Mandatory: Tournament must have a value
-
-            if ($submittedAt->addMinutes($waitTime)->isPast()) {
-                // Time expired: Auto-confirm/forfeit the match
-                $stateMachine->transition($match, MatchStatus::COMPLETED);
-                
-                // Dispatch event to trigger bracket progression
-                \App\Modules\Match\Events\MatchCompleted::dispatch($match);
+            if ($match->isTimedOut()) {
+                $action->execute($match);
             }
         }
     }
