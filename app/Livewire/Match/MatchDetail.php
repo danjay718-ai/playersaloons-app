@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Match;
 
+use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
@@ -167,6 +168,12 @@ class MatchDetail extends Component
                 },
             ])
             ->firstOrFail();
+
+        // JIT Timeout Check
+        if ($match->isTimedOut()) {
+            app(AutoForfeitAction::class)->execute($match);
+            $match->refresh();
+        }
 
         $user = Auth::user();
         $isParticipant = $user && (

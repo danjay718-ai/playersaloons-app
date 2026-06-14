@@ -219,8 +219,28 @@
                         </div>
                     </form>
                 @elseif($statusVal === 'waiting_for_confirmation' && !$isSubmitter)
-                    <div class="space-y-4">
-                        <p class="text-sm text-zinc-400">Your opponent has submitted a match result. Please confirm it to finalize the match.</p>
+                    <div class="space-y-4" x-data="{
+                        endTime: new Date('{{ $match->result_submitted_at->addMinutes($match->tournament->waiting_result_time)->toIso8601String() }}').getTime(),
+                        timeLeft: 0,
+                        init() {
+                            this.updateTimer();
+                            setInterval(() => this.updateTimer(), 1000);
+                        },
+                        updateTimer() {
+                            const now = new Date().getTime();
+                            const diff = this.endTime - now;
+                            this.timeLeft = Math.max(0, Math.floor(diff / 1000));
+                        },
+                        formatTime(seconds) {
+                            const m = Math.floor(seconds / 60);
+                            const s = seconds % 60;
+                            return `${m}m ${s}s`;
+                        }
+                    }">
+                        <p class="text-sm text-zinc-400">
+                            Your opponent has submitted a match result. Please confirm it to finalize the match before time runs out: 
+                            <span class="font-black text-amber-400" x-text="formatTime(timeLeft)"></span>.
+                        </p>
                         
                         <div class="space-y-2">
                             <label for="disputeReason" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">WANT TO DISPUTE INSTEAD? (REASON REQUIRED)</label>
