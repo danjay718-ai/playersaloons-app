@@ -112,6 +112,6 @@ class TournamentDetail extends Component
             'isCheckedIn' => $isCheckedIn,
             'userRegistration' => $userRegistration,
             'rounds' => $rounds,
-        ])->layout('components.layouts.app', ['title' => $tournament->name.' | PlayerSaloons']);
+        ])->layout('components.layouts.dashboard', ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
     }
 }
