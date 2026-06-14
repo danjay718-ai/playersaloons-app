@@ -182,10 +182,10 @@ class PlayerDashboard extends Component
         }
 
         // Initialize empty containers
-        $activeMatches = [];
-        $activeTournaments = [];
-        $closedTournaments = [];
-        $browseTournaments = [];
+        $activeMatches = collect();
+        $activeTournaments = collect();
+        $closedTournaments = collect();
+        $browseTournaments = collect();
         $playerStats = [
             'total_matches' => 0,
             'wins' => 0,
