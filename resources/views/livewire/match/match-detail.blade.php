@@ -167,6 +167,20 @@
                             </button>
                         </div>
                     </form>
+                @elseif($match->status->value === \App\Shared\Enums\MatchStatus::WAITING_FOR_CONFIRMATION->value && !$isSubmitter)
+                    <div class="space-y-4">
+                        <p class="text-sm text-zinc-400">Your opponent has submitted a match result. Please confirm it to finalize the match.</p>
+                        <div class="flex items-center space-x-4">
+                            <button type="button" wire:click="confirmResult"
+                                class="flex-grow flex justify-center py-2.5 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 transition-all duration-200">
+                                Confirm Result
+                            </button>
+                            <button type="button" wire:click="openDispute"
+                                class="bg-red-950/20 border border-red-900/60 hover:border-red-750 text-red-400 hover:text-red-300 font-bold text-sm py-2.5 px-4 rounded-lg transition-colors duration-200">
+                                Open Dispute
+                            </button>
+                        </div>
+                    </div>
                 @else
                     <div class="bg-zinc-950/40 border border-zinc-800 rounded-xl p-6 text-center text-zinc-500">
                         <i data-lucide="lock" class="w-6 h-6 mx-auto text-zinc-650 mb-2"></i>

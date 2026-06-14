@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Livewire\Match;
 
+use App\Modules\Match\Actions\ConfirmMatchResultAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Models\GameMatch;
 use App\Shared\Enums\DisputeStatus;
+use App\Shared\Enums\MatchStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -26,6 +28,18 @@ class MatchDetail extends Component
     public string $disputeReason = '';
 
     public $evidenceFile;
+
+    public function confirmResult(ConfirmMatchResultAction $action)
+    {
+        $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
+
+        try {
+            $action->execute($match, (int) Auth::id());
+            session()->flash('message', 'Result confirmed successfully!');
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+        }
+    }
 
     public function mount(string $uuid): void
     {
@@ -143,6 +157,9 @@ class MatchDetail extends Component
             ->where('status', '!=', DisputeStatus::RESOLVED->value)
             ->first();
             
+        $latestSubmission = $match->resultSubmissions()->latest()->first();
+        $isSubmitter = $user && $latestSubmission && $user->id === $latestSubmission->submitted_by;
+            
         $layout = (Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) 
             ? 'components.layouts.admin' 
             : 'components.layouts.dashboard';
@@ -150,6 +167,7 @@ class MatchDetail extends Component
         return view('livewire.match.match-detail', [
             'match' => $match,
             'isParticipant' => $isParticipant,
+            'isSubmitter' => $isSubmitter,
             'activeDispute' => $activeDispute,
         ])->layout($layout, ['title' => 'Match Hub | PlayerSaloons', 'dashboard_title' => 'MATCH HUB']);
     }
