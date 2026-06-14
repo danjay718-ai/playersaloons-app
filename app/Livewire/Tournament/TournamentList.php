@@ -19,13 +19,16 @@ class TournamentList extends Component
 
     public string $search = '';
 
-    public string $frequency = 'daily'; // Default is daily
+    public string $frequency = '';
+
+    public string $platformId = '';
 
     protected $queryString = [
         'status' => ['except' => ''],
         'gameId' => ['except' => ''],
         'search' => ['except' => ''],
-        'frequency' => ['except' => 'daily'],
+        'frequency' => ['except' => ''],
+        'platformId' => ['except' => ''],
     ];
 
     public function updatingStatus(): void
@@ -48,9 +51,14 @@ class TournamentList extends Component
         $this->resetPage();
     }
 
+    public function updatingPlatformId(): void
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
-        $query = Tournament::query()->with('game.translations');
+        $query = Tournament::query()->with(['game.translations', 'platform']);
 
         if ($this->status) {
             $query->where('status', $this->status);
@@ -68,12 +76,18 @@ class TournamentList extends Component
             $query->where('frequency', $this->frequency);
         }
 
+        if ($this->platformId) {
+            $query->where('platform_id', $this->platformId);
+        }
+
         $tournaments = $query->orderBy('created_at', 'desc')->paginate(9);
         $games = Game::query()->with('translations')->get();
+        $platforms = \App\Modules\CMS\Models\Platform::where('is_active', true)->get();
 
         return view('livewire.tournament.tournament-list', [
             'tournaments' => $tournaments,
             'games' => $games,
+            'platforms' => $platforms,
         ])->layout('components.layouts.app', ['title' => 'Tournaments | PlayerSaloons']);
     }
 }

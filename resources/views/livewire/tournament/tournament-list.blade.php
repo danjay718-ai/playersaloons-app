@@ -60,9 +60,23 @@
                 <label for="frequency" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2.5 ml-1">Schedule / Frequency</label>
                 <select wire:model.live="frequency" id="frequency"
                     class="block w-full px-4 py-3 bg-zinc-950/80 border border-zinc-800 rounded-xl text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-300 appearance-none cursor-pointer">
-                    <option value="daily">Daily (Default)</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
+                    <option value="">All Schedules</option>
+                    <option value="one-time">One-time / Single Event</option>
+                    <option value="daily">Daily Recurring</option>
+                    <option value="weekly">Weekly Recurring</option>
+                    <option value="monthly">Monthly Recurring</option>
+                </select>
+            </div>
+
+            <!-- Platform Filter -->
+            <div>
+                <label for="platformId" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2.5 ml-1">Platform</label>
+                <select wire:model.live="platformId" id="platformId"
+                    class="block w-full px-4 py-3 bg-zinc-950/80 border border-zinc-800 rounded-xl text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all duration-300 appearance-none cursor-pointer">
+                    <option value="">All Platforms</option>
+                    @foreach($platforms as $platform)
+                        <option value="{{ $platform->id }}">{{ $platform->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
