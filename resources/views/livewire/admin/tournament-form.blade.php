@@ -43,7 +43,7 @@
             return $wire.name.trim().length > 0 && $wire.game_id > 0;
         }
         if (this.step === 2) {
-            return $wire.platform_id && $wire.platform_id > 0 && $wire.frequency && $wire.team_size >= 1;
+            return $wire.platform_id && $wire.platform_id > 0 && $wire.frequency && $wire.team_size >= 1 && $wire.waiting_result_time > 0;
         }
         if (this.step === 3) {
             return $wire.registration_open_at && 
@@ -286,8 +286,8 @@
                                     @error('waiting_time') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Result Wait (m)</label>
-                                    <input type="number" wire:model="waiting_result_time" placeholder="30" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Result Wait (m) <span class="text-red-500">*</span></label>
+                                    <input type="number" wire:model="waiting_result_time" placeholder="e.g. 30" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
                                     @error('waiting_result_time') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
                                 </div>
                             </div>
