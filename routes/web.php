@@ -31,9 +31,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/tournaments', TournamentList::class);
-Route::get('/tournaments/{uuid}', TournamentDetail::class);
-
 // Guest only routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');

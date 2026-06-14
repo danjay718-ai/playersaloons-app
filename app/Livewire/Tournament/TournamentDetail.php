@@ -11,6 +11,7 @@ use App\Modules\Tournament\Models\TournamentCheckin;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Shared\Enums\CheckinStatus;
 use App\Shared\Enums\RegistrationStatus;
+use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -21,6 +22,18 @@ class TournamentDetail extends Component
     public function mount(string $uuid): void
     {
         $this->uuid = $uuid;
+    }
+
+    private function getActiveTournamentQuery()
+    {
+        return Tournament::query()->whereIn('status', [
+            TournamentStatus::REGISTRATION_OPEN->value,
+            TournamentStatus::REGISTRATION_CLOSED->value,
+            TournamentStatus::CHECKIN_OPEN->value,
+            TournamentStatus::CHECKIN_CLOSED->value,
+            TournamentStatus::BRACKET_GENERATED->value,
+            TournamentStatus::ONGOING->value,
+        ]);
     }
 
     public function register(RegisterForTournamentAction $action)
@@ -34,7 +47,7 @@ class TournamentDetail extends Component
             return;
         }
 
-        $tournament = Tournament::query()->where('uuid', $this->uuid)->firstOrFail();
+        $tournament = $this->getActiveTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
         $user = Auth::user();
 
         try {
@@ -51,7 +64,7 @@ class TournamentDetail extends Component
             return redirect()->to('/login');
         }
 
-        $tournament = Tournament::query()->where('uuid', $this->uuid)->firstOrFail();
+        $tournament = $this->getActiveTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
         $user = Auth::user();
 
         try {
@@ -64,7 +77,7 @@ class TournamentDetail extends Component
 
     public function render()
     {
-        $tournament = Tournament::query()
+        $tournament = $this->getActiveTournamentQuery()
             ->where('uuid', $this->uuid)
             ->with([
                 'game.translations',
