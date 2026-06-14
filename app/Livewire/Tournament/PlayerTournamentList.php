@@ -39,6 +39,13 @@ class PlayerTournamentList extends Component
         $this->resetPage();
     }
 
+    public string $layout = 'components.layouts.dashboard';
+
+    public function mount(string $layout = 'components.layouts.dashboard')
+    {
+        $this->layout = $layout;
+    }
+
     public function render()
     {
         $query = Tournament::query()
@@ -69,6 +76,6 @@ class PlayerTournamentList extends Component
         return view('livewire.tournament.player-tournament-list', [
             'tournaments' => $query->orderBy('created_at', 'desc')->paginate(12),
             'games' => $games,
-        ])->layout('components.layouts.dashboard', ['title' => 'Browse Tournaments | PlayerSaloons', 'dashboard_title' => 'BROWSE TOURNAMENTS']);
+        ])->layout($this->layout, ['title' => 'Browse Tournaments | PlayerSaloons', 'dashboard_title' => 'BROWSE TOURNAMENTS']);
     }
 }

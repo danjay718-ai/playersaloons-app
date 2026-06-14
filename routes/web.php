@@ -31,6 +31,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/tournaments', \App\Livewire\Tournament\PlayerTournamentList::class, ['layout' => 'components.layouts.app']);
+
 // Guest only routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
@@ -42,9 +44,10 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
     Route::get('/my-tournaments', \App\Livewire\Tournament\MyTournamentsList::class)->name('my-tournaments');
-    Route::get('/tournaments/browse', \App\Livewire\Tournament\PlayerTournamentList::class)->name('tournaments.browse');
+    Route::get('/tournaments/browse', \App\Livewire\Tournament\PlayerTournamentList::class, ['layout' => 'components.layouts.dashboard'])->name('tournaments.browse');
     Route::get('/tournaments/{uuid}/view', \App\Livewire\Tournament\TournamentDetail::class)->name('tournaments.view');
     Route::get('/matches/{uuid}', MatchDetail::class);
+
     Route::get('/wallet', WalletDashboard::class);
     Route::get('/profile', ProfileDashboard::class);
     Route::get('/teams', TeamDashboard::class);
