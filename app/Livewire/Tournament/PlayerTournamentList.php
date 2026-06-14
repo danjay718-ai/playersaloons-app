@@ -37,8 +37,11 @@ class PlayerTournamentList extends Component
             $query->where('name', 'like', '%' . $this->search . '%');
         }
 
+        $games = Game::query()->with('translations')->where('is_active', true)->get();
+
         return view('livewire.tournament.player-tournament-list', [
             'tournaments' => $query->orderBy('created_at', 'desc')->paginate(12),
+            'games' => $games,
         ])->layout('components.layouts.dashboard', ['title' => 'Browse Tournaments | PlayerSaloons', 'dashboard_title' => 'BROWSE TOURNAMENTS']);
     }
 }
