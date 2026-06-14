@@ -11,10 +11,20 @@
         </div>
     </div>
 
-    <!-- Filters Section (Glassmorphism) -->
-    <div class="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 rounded-2xl p-4 md:p-6 shadow-2xl shadow-black/60 relative overflow-hidden group">
-        <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+    <!-- Filters Section -->
+    <div class="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        
+        <!-- Frequency Tabs -->
+        <div class="flex gap-2 mb-6 border-b border-zinc-800 pb-2">
+            @foreach(['all' => 'All', 'daily' => 'Daily', 'weekly' => 'Weekly', 'monthly' => 'Monthly', 'one-time' => 'One-time'] as $key => $label)
+                <button wire:click="$set('activeTab', '{{ $key }}')" 
+                        class="px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-lg transition-colors {{ $activeTab === $key ? 'bg-indigo-900 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800' }}">
+                    {{ $label }}
+                </button>
+            @endforeach
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
             <!-- Search -->
             <div>
                 <label for="search" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2.5 ml-1">Search</label>

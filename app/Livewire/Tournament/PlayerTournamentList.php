@@ -7,6 +7,7 @@ namespace App\Livewire\Tournament;
 use App\Modules\CMS\Models\Game;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -14,11 +15,29 @@ class PlayerTournamentList extends Component
 {
     use WithPagination;
 
-    public string $status = '';
-    public string $gameId = '';
+    #[Url]
     public string $search = '';
-    public string $frequency = '';
-    public string $platformId = '';
+
+    #[Url]
+    public string $gameId = '';
+
+    #[Url]
+    public string $activeTab = 'all';
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingGameId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingActiveTab(): void
+    {
+        $this->resetPage();
+    }
 
     public function render()
     {
@@ -35,6 +54,14 @@ class PlayerTournamentList extends Component
 
         if ($this->search) {
             $query->where('name', 'like', '%' . $this->search . '%');
+        }
+
+        if ($this->gameId) {
+            $query->where('game_id', $this->gameId);
+        }
+
+        if ($this->activeTab !== 'all') {
+            $query->where('frequency', $this->activeTab);
         }
 
         $games = Game::query()->with('translations')->where('is_active', true)->get();
