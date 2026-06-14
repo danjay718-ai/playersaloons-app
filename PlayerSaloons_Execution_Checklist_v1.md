@@ -12,10 +12,11 @@
     - [ ] Implement `MatchmakerService` for querying waiting challenges.
     - [ ] Implement logic for ELO/Skill Level matching (optional for v1).
     - [ ] Implement stake validation (check balance/lock amount in wallet).
-- [ ] **Real-Time Integration**
-    - [ ] Setup Laravel Reverb (Websockets).
-    - [ ] Create events (`ChallengeCreated`, `MatchFound`).
-    - [ ] Frontend integration: Listen for real-time match found events to trigger UI transition.
+- [x] **Match Resolution Automation**
+    - [x] Implement `ConfirmMatchResultAction` for two-way confirmation.
+    - [x] Develop `AutoForfeitJob` that uses `tournament.waiting_result_time` to auto-resolve `WAITING_FOR_CONFIRMATION` matches.
+    - [x] Update `MatchStateMachine` to allow transition to `WAITING_FOR_CONFIRMATION`.
+    - [ ] Create/Update unit tests for confirmation flow and forfeit timeouts.
 - [ ] **Escrow/Wallet Integration**
     - [ ] Develop `LockStakeAction` to reserve funds during queueing.
     - [ ] Develop `ResolveStakeAction` to release funds to the winner or handle refunds on match failure.
