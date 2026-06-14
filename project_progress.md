@@ -379,6 +379,6 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Player Restriction (UI)**: Updated `tournament-detail.blade.php` to hide the 'Join' button and show an informative message for non-player roles.
   - **Tournament Visibility**: Refactored `TournamentList` to filter out inactive statuses (Draft, Completed, Cancelled, Refunded) by default, showing only active tournaments (Registration, Check-in, Ongoing).
 
-- **Modular Dashboard & Navigation (v1.9)**:
-  - **Modularized Player Pages**: Refactored the monolithic `PlayerDashboard` into independent, dedicated pages for `My Tournaments` and `Browse Tournaments` to improve performance and separation of concerns.
-  - **Sidebar Refactor**: Optimized sidebar hover transitions for smoother UX and updated navigation to support new dedicated routes while staying within the player dashboard theme.
+- **Tournament Modularization & Routing Fixes (v1.10)**:
+  - **Modular Tournament Components**: Refactored tournament listing into a shared `TournamentListTrait` to maintain consistency across public and player-context components (`PublicTournamentList` and `PlayerTournamentList`) while ensuring layout/theme isolation.
+  - **Route Separation**: Explicitly separated public (`/tournaments`) and authenticated player (`/tournaments/browse`) routes, fixing 404 and layout issues for guest users.
