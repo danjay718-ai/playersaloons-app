@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-14 | **Branch**: `main`
+**Last Updated**: 2026-06-15 | **Branch**: `main`
 **New Admin Features & Compliance Plan**: [PlayerSaloons_New_Admin_Features_Implementation_Plan_v1.md]
 
 ---
@@ -113,13 +113,14 @@ Templates creation/updating, lifecycle state transitions, registration and check
   - `CreateTournamentTemplateAction`, `UpdateTournamentTemplateAction`, `DeleteTournamentTemplateAction`.
   - `CloseCheckinAction` (marks MISSED check-ins), `CloseRegistrationAction` (calculates tournament prize pool).
   - `ProcessRefundAction` (transitions CANCELLED → REFUNDED).
-  - `BracketGenerationService` (single-elimination bracket, rounds, and matches with byes for non-power-of-2 participant counts).
+  - `BracketGenerationService` (single-elimination bracket, rounds, and matches with byes for non-power-of-2 participant counts). **Refactored (v1.23)**: Added `.values()` for safe 0-based Collection indexing, renamed vars for clarity, extracted `nextPowerOfTwo()` private method, fixed bye-slot seeding to use `Collection::get()` instead of unsafe `[]` operator.
 - **Listeners & Jobs (`app/Modules/Tournament/`)**:
   - `AutoCancelTournamentJob` (triggered if checked-in participants < min).
   - `AwardPrizesListener` (calculates distributions, credits winners, handles platform rake and rounding remainder).
   - `IssueRefundsListener` (credits cancelled tournament registrations).
 - **Tests**:
   - Full suite of tournament feature tests passing at 100%.
+  - Unit tests for `BracketGenerationService` covering 2, 5, 6, and 8 player bracket sizes with byes mathematics.
 
 ---
 
@@ -132,6 +133,7 @@ Match execution, disputes flow, rematch logic, bracket advancement.
   - `AdvanceWinnerListener` (automates bracket progression), `BroadcastBracketUpdateListener`, `NotifyParticipantsListener`. 
 - **Tests**: 
   - Full suite of match feature tests passing at 100%.
+  - Feature tests for the complete `confirmResult` -> `MatchCompleted` -> `AdvanceWinnerListener` flow and `AutoForfeitJob` timeout.
 
 --- 
 
@@ -399,11 +401,7 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Backfill Command**: Created `tournaments:start-matches` Artisan command to manually fix matches stuck in 'READY' status for ongoing tournaments.
   - **AutoForfeitJob Registration**: Registered `AutoForfeitJob` in the Laravel scheduler to run every minute.
   - **Infrastructure Requirement**: Production deployment requires a configured cron job (`php artisan schedule:run`) and a persistent queue worker (`php artisan queue:work`) supervised process.
-  - **Testing Requirement**: Comprehensive test suite required to validate:
-    - Successful confirmation by opponent.
-    - Match finalization and winner advancement.
-    - Dispute flow initiated from confirmation state.
-    - `AutoForfeitJob` timeout resolution (waiting for implementation).
+  - **Testing Coverage (v1.23)**: Implemented `ConfirmResultFlowTest` validating successful opponent confirmation, winner advancement/progression, and `AutoForfeitJob` timeout resolution.
 
 - **Tournament UI Enhancements (v1.17)**:
   - **Persistent Tabs**: Implemented `localStorage` state persistence for tournament content tabs using Alpine.js, scoped per tournament ID.
@@ -434,6 +432,13 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **UI Copy Updated**: Updated hint text and dispute description in `match-detail.blade.php` to reflect the new restrictions.
   - **Storage URL Compatibility**: Existing blade templates already used `/storage/{{ $path }}` for both fields — confirmed correct for the `public` disk with no additional changes.
   - **Deployment Note**: Added `🚀 Deployment Considerations` section to this file with a step-by-step checklist to migrate back to R2/S3 before going live.
+
+- **Match Result Confirmation Fixes (v1.23)**:
+  - **`confirmResult` Stub Fixed**: The `MatchDetail::confirmResult()` Livewire method was a no-op stub (`// ... (existing method)`). Implemented the full body: load match with relations, auth guard, delegate to `ConfirmMatchResultAction`, and flash messages.
+  - **`MatchCompleted::dispatch()` TypeError Fixed**: `ConfirmMatchResultAction::execute()` was passing a `GameMatch` object to `MatchCompleted::dispatch()` but the event constructor expects `(int $matchId, int $tournamentId, int $winnerRegistrationId)`. Fixed by extracting `winner_registration_id` from the latest submission, persisting it on the match, and dispatching with correct `int` arguments.
+  - **`BracketGenerationService`**: Fixed unsafe Eloquent Collection index access (`$participants[(int)]` → `$participants->get(int)`) by adding `.values()` after `orderBy()`. Renamed `$p` → `$bracketSize` for clarity. Extracted `nextPowerOfTwo()` as a private method. Documented that `TournamentParticipant` rows are exclusively checked-in players (created by `CheckinParticipantAction`), so no additional filter is needed.
+  - **`Prize Pool Retention`**: Fixed a bug where a manually set or guaranteed prize pool in the tournament wizard was overwritten with `0.00` when registration closed (or when completing a tournament). Updated `CloseRegistrationAction` and `PrizeCalculationService` to retain the higher of the manually entered prize pool and the calculated registration fees (minus platform rake).
+  - **Testing Coverage (v1.23)**: Implemented unit tests for `BracketGenerationService` covering 2, 5, 6, and 8 player tournament bracket generation structures (byes math & propagation). Implemented feature tests for the complete `confirmResult` → `MatchCompleted` → `AdvanceWinnerListener` flow and the `AutoForfeitJob` timeout mechanism.
 
 - **Admin Dispute Evidence UI (v1.22)**:
   - **Detail Modal — Dispute Section Redesign**: Replaced the plain file-link list with a full dispute card per dispute showing: filed-by user with timestamp, status badge (open/under_review/resolved with distinct colours), player's note/reason in a labelled block, and a 2-column image thumbnail grid (clickable to open full image in new tab) with hover overlay showing uploader name. Fallback for broken image links included.
