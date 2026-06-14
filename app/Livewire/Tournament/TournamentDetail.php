@@ -21,10 +21,16 @@ class TournamentDetail extends Component
 
     public string $layout = 'components.layouts.dashboard';
 
-    public function mount(string $uuid, string $layout = 'components.layouts.dashboard'): void
+    public function mount(string $uuid): void
     {
         $this->uuid = $uuid;
-        $this->layout = $layout;
+        
+        $user = Auth::user();
+        if ($user && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
+            $this->layout = 'components.layouts.admin';
+        } else {
+            $this->layout = 'components.layouts.dashboard';
+        }
     }
 
     private function getTournamentQuery()
