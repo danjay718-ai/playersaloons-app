@@ -23,6 +23,8 @@ class MatchDetail extends Component
 
     public string $notes = '';
 
+    public string $disputeReason = '';
+
     public $evidenceFile;
 
     public function mount(string $uuid): void
@@ -68,13 +70,17 @@ class MatchDetail extends Component
 
         if (! Auth::check() || ! Auth::user()->can('dispute', $match)) {
             session()->flash('error', 'You are not authorized to open a dispute for this match.');
-
             return;
         }
 
+        $this->validate([
+            'disputeReason' => 'required|string|min:10',
+        ]);
+
         try {
-            $action->execute($match, (int) Auth::id());
+            $action->execute($match, (int) Auth::id(), $this->disputeReason);
             session()->flash('message', 'Dispute opened successfully. Please upload screenshots as evidence below.');
+            $this->reset('disputeReason');
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
