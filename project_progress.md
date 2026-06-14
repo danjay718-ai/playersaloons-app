@@ -395,6 +395,8 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Tabbed Navigation**: Re-implemented tabbed navigation within the dashboard to allow quick switching between the Cockpit view and the new dedicated pages (My Tournaments, Browse Tournaments, H2H, Leaderboards, Streams, Chat).
 
 - **Match Resolution Automation (v1.16)**:
+  - **Match Startup Automation**: Implemented `AutoStartMatchesListener` and updated `AdvanceWinnerListener` to automatically transition 'READY' matches to 'IN_PROGRESS' when a tournament starts or a player advances, enabling immediate action for participants.
+  - **Backfill Command**: Created `tournaments:start-matches` Artisan command to manually fix matches stuck in 'READY' status for ongoing tournaments.
   - **AutoForfeitJob Registration**: Registered `AutoForfeitJob` in the Laravel scheduler to run every minute.
   - **Infrastructure Requirement**: Production deployment requires a configured cron job (`php artisan schedule:run`) and a persistent queue worker (`php artisan queue:work`) supervised process.
   - **Testing Requirement**: Comprehensive test suite required to validate:
