@@ -4,16 +4,28 @@
 }">
     <!-- Top Action Bar -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-        <!-- Search and Filters -->
-        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+        <!-- Search -->
+        <div class="w-full sm:w-64">
             <input type="text" wire:model.live="search" placeholder="Search tournaments..." 
-                   class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full sm:w-64">
-            
+                   class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full">
+        </div>
+
+        <a href="{{ route('admin.tournaments.create') }}" wire:navigate
+                class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 py-2.5 rounded-lg flex items-center shadow-[0_4px_12px_rgba(79,70,229,0.2)] transition-colors w-full sm:w-auto justify-center">
+            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+            <span>Create Tournament</span>
+        </a>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="bg-[#0f172a] border border-slate-800 rounded-xl p-4 mb-6">
+        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Filter Tournaments</h2>
+        <div class="flex flex-wrap items-center gap-3">
             <select wire:model.live="statusFilter" 
                     class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
                 <option value="">All Statuses</option>
                 @foreach(\App\Shared\Enums\TournamentStatus::cases() as $status)
-                    <option value="{{ $status->value }}">{{ strtoupper($status->name) }}</option>
+                    <option value="{{ $status->value }}">{{ strtoupper(str_replace('_', ' ', $status->name)) }}</option>
                 @endforeach
             </select>
 
@@ -32,13 +44,23 @@
                     <option value="{{ $platform->id }}">{{ $platform->name }}</option>
                 @endforeach
             </select>
-        </div>
 
-        <a href="{{ route('admin.tournaments.create') }}" wire:navigate
-                class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 py-2.5 rounded-lg flex items-center shadow-[0_4px_12px_rgba(79,70,229,0.2)] transition-colors w-full sm:w-auto justify-center">
-            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-            <span>Create Tournament</span>
-        </a>
+            <select wire:model.live="frequencyFilter" 
+                    class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                <option value="">All Frequencies</option>
+                @foreach($frequencies as $freq)
+                    <option value="{{ $freq }}">{{ ucfirst($freq) }}</option>
+                @endforeach
+            </select>
+
+            <div class="flex items-center gap-2">
+                <input type="date" wire:model.live="startDateFilter" 
+                       class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                <span class="text-slate-500 text-sm">to</span>
+                <input type="date" wire:model.live="endDateFilter" 
+                       class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+            </div>
+        </div>
     </div>
 
     <!-- Feedback Alerts -->

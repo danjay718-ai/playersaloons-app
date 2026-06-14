@@ -18,6 +18,7 @@ use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Url;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
@@ -25,13 +26,26 @@ class TournamentAdmin extends AdminComponent
 {
     use WithPagination, WithFileUploads;
 
+    #[Url]
     public string $search = '';
 
+    #[Url]
     public string $statusFilter = '';
 
+    #[Url]
     public string $gameFilter = '';
 
+    #[Url]
     public string $platformFilter = '';
+
+    #[Url]
+    public string $frequencyFilter = '';
+
+    #[Url]
+    public string $startDateFilter = '';
+
+    #[Url]
+    public string $endDateFilter = '';
 
     // Modal control
     public bool $showDetailModal = false;
@@ -63,6 +77,21 @@ class TournamentAdmin extends AdminComponent
     }
 
     public function updatingPlatformFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFrequencyFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStartDateFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingEndDateFilter(): void
     {
         $this->resetPage();
     }
@@ -216,9 +245,22 @@ class TournamentAdmin extends AdminComponent
             $query->where('platform_id', $this->platformFilter);
         }
 
+        if ($this->frequencyFilter) {
+            $query->where('frequency', $this->frequencyFilter);
+        }
+
+        if ($this->startDateFilter) {
+            $query->whereDate('start_at', '>=', $this->startDateFilter);
+        }
+
+        if ($this->endDateFilter) {
+            $query->whereDate('start_at', '<=', $this->endDateFilter);
+        }
+
         $tournaments = $query->paginate(10);
         $games = Game::with('translations')->get();
         $platforms = \App\Modules\CMS\Models\Platform::where('is_active', true)->get();
+        $frequencies = ['daily', 'weekly', 'monthly', 'one-time'];
 
         $selectedTournament = ($this->showDetailModal || $this->showCancelModal) && $this->selectedTournamentId
             ? Tournament::with(['game.translations', 'registrations.user', 'cancellation.cancelledBy', 'rounds.matches', 'platform'])->find($this->selectedTournamentId)
@@ -228,6 +270,7 @@ class TournamentAdmin extends AdminComponent
             'tournaments' => $tournaments,
             'games' => $games,
             'platforms' => $platforms,
+            'frequencies' => $frequencies,
             'selectedTournament' => $selectedTournament,
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Tournament Management',
