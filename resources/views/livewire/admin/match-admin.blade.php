@@ -197,64 +197,86 @@
                     @if($selectedMatch->disputes->count() > 0)
                         <div>
                             <span class="text-[10px] text-red-400 font-bold uppercase tracking-wider block mb-2">Disputes logged ({{ $selectedMatch->disputes->count() }})</span>
-                            <div class="space-y-3">
+                            <div class="space-y-4">
                                 @foreach($selectedMatch->disputes as $disp)
-                                    <div class="bg-red-500/5 border border-red-500/15 rounded-lg p-4 space-y-3">
-                                        <div class="flex items-center justify-between">
+                                    <div class="bg-red-500/5 border border-red-500/15 rounded-xl p-4 space-y-3">
+
+                                        {{-- Header row: who filed + status badge --}}
+                                        <div class="flex items-start justify-between gap-3">
                                             <div>
-                                                <span class="text-slate-550 block">Opened By</span>
-                                                <span class="text-slate-300 font-semibold">{{ $disp->openedBy->username }}</span>
+                                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Filed By</span>
+                                                <span class="text-slate-200 font-semibold text-sm">{{ $disp->openedBy->username }}</span>
+                                                @if($disp->created_at)
+                                                    <span class="text-slate-600 text-[10px] block">{{ $disp->created_at->format('M d, Y · H:i') }}</span>
+                                                @endif
                                             </div>
-                                            <div>
-                                                <span class="text-slate-550 block">Dispute status</span>
-                                                <span class="inline-block px-2 py-0.5 rounded border font-bold uppercase text-[9px]
-                                                      {{ $disp->status->value === 'resolved' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20' }}">
-                                                    {{ $disp->status->value }}
-                                                </span>
-                                            </div>
+                                            <span class="inline-block shrink-0 px-2.5 py-1 rounded-lg border font-bold uppercase text-[9px] tracking-wider
+                                                  {{ match($disp->status->value) {
+                                                      'resolved'     => 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+                                                      'under_review' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                                                      default        => 'bg-red-500/10 text-red-400 border-red-500/20',
+                                                  } }}">
+                                                {{ str_replace('_', ' ', $disp->status->value) }}
+                                            </span>
                                         </div>
 
-                                        @if($disp->status->value === 'resolved')
-                                            <div class="grid grid-cols-2 gap-2 border-t border-slate-800/60 pt-2 text-xs">
-                                                <div>
-                                                    <span class="text-slate-550">Resolution</span>
-                                                    <span class="text-slate-300 font-bold block uppercase mt-0.5">{{ str_replace('_', ' ', $disp->resolution->value) }}</span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-slate-550">Resolved By Admin ID</span>
-                                                    <span class="text-slate-300 block mt-0.5">{{ $disp->resolved_by }} (on {{ $disp->resolved_at?->format('M d, H:i') }})</span>
-                                                </div>
+                                        {{-- Dispute reason / note --}}
+                                        @if($disp->reason)
+                                            <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-3 py-2.5">
+                                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Player's Note</span>
+                                                <p class="text-slate-300 leading-relaxed">{{ $disp->reason }}</p>
                                             </div>
                                         @endif
 
-                                        <!-- Evidence uploads -->
+                                        {{-- Evidence image previews --}}
                                         @if($disp->evidence->count() > 0)
-                                            <div class="border-t border-slate-800/60 pt-2">
-                                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">Evidence Files</span>
-                                                <div class="grid grid-cols-2 gap-3">
+                                            <div class="border-t border-slate-800/60 pt-3">
+                                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">Evidence Screenshots ({{ $disp->evidence->count() }})</span>
+                                                <div class="grid grid-cols-2 gap-2">
                                                     @foreach($disp->evidence as $ev)
-                                                        <div class="bg-slate-900 border border-slate-850 p-2.5 rounded-lg flex items-center justify-between">
-                                                            <div class="truncate mr-2">
-                                                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">UPLOADED BY</span>
-                                                                <span class="text-slate-300 truncate block">{{ $ev->uploadedBy->username }}</span>
+                                                        <a href="/storage/{{ $ev->file_path }}" target="_blank"
+                                                           class="group relative block rounded-lg overflow-hidden border border-slate-800 bg-slate-950 hover:border-indigo-500/50 transition-colors">
+                                                            <img src="/storage/{{ $ev->file_path }}"
+                                                                 alt="Evidence"
+                                                                 class="w-full h-28 object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                                                 onerror="this.closest('a').innerHTML='<div class=\'flex items-center justify-center h-28 text-slate-600\'><svg xmlns=\'http://www.w3.org/2000/svg\' class=\'w-6 h-6\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\'/></svg></div>'">
+                                                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                                                                <span class="text-[10px] text-white font-semibold truncate">{{ $ev->uploadedBy->username }}</span>
+                                                                <i data-lucide="external-link" class="w-3 h-3 text-white ml-auto shrink-0"></i>
                                                             </div>
-                                                            <a href="/storage/{{ $ev->file_path }}" target="_blank" class="p-1.5 bg-slate-800 hover:bg-slate-750 text-indigo-400 rounded-lg" title="Open File">
-                                                                <i data-lucide="external-link" class="w-4 h-4"></i>
-                                                            </a>
-                                                        </div>
+                                                        </a>
                                                     @endforeach
                                                 </div>
                                             </div>
+                                        @else
+                                            <p class="text-[10px] text-slate-600 italic border-t border-slate-800/60 pt-2">No evidence screenshots uploaded yet.</p>
                                         @endif
 
-                                        <!-- Resolve CTA inside details -->
-                                        @if($disp->status->value === 'open')
-                                            <div class="pt-2 text-right">
-                                                <button wire:click="openDisputeModal({{ $disp->id }})" class="bg-red-650 hover:bg-red-600 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg">
+                                        {{-- Resolution info (if resolved) --}}
+                                        @if($disp->status->value === 'resolved')
+                                            <div class="grid grid-cols-2 gap-2 border-t border-slate-800/60 pt-3 text-xs">
+                                                <div>
+                                                    <span class="text-slate-550 block">Resolution</span>
+                                                    <span class="text-slate-300 font-bold block uppercase mt-0.5">{{ str_replace('_', ' ', $disp->resolution->value) }}</span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-slate-550 block">Resolved By (Admin ID)</span>
+                                                    <span class="text-slate-300 block mt-0.5">{{ $disp->resolved_by }} · {{ $disp->resolved_at?->format('M d, H:i') }}</span>
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        {{-- Resolve CTA --}}
+                                        @if(in_array($disp->status->value, ['open', 'under_review']))
+                                            <div class="pt-2 flex justify-end">
+                                                <button wire:click="openDisputeModal({{ $disp->id }})" 
+                                                        class="inline-flex items-center gap-1.5 bg-red-600/90 hover:bg-red-500 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors">
+                                                    <i data-lucide="gavel" class="w-3.5 h-3.5"></i>
                                                     Resolve Dispute
                                                 </button>
                                             </div>
                                         @endif
+
                                     </div>
                                 @endforeach
                             </div>
@@ -340,64 +362,136 @@
     @if($showDisputeModal)
         <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" wire:click="$set('showDisputeModal', false)"></div>
-            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
-                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider">Resolve Match Dispute</h3>
+            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl relative z-10 max-h-[90vh] flex flex-col">
+
+                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center shrink-0">
+                    <div>
+                        <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider">Resolve Match Dispute</h3>
+                        <p class="text-[10px] text-slate-500 mt-0.5">Review the player's note and evidence before ruling.</p>
+                    </div>
                     <button wire:click="$set('showDisputeModal', false)" class="text-slate-400 hover:text-white">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
 
                 @php
-                    $resolveDispute = \App\Modules\Match\Models\MatchDispute::with('match.playerARegistration.user', 'match.playerBRegistration.user')->find($selectedDisputeId);
+                    $resolveDispute = \App\Modules\Match\Models\MatchDispute::with(
+                        'match.playerARegistration.user',
+                        'match.playerBRegistration.user',
+                        'openedBy',
+                        'evidence.uploadedBy'
+                    )->find($selectedDisputeId);
                 @endphp
 
                 @if($resolveDispute)
-                    <form wire:submit.prevent="resolveDispute" class="p-6 space-y-4">
-                        <div class="bg-red-500/5 border border-red-500/10 text-red-400 p-3 rounded-lg text-xs leading-relaxed">
-                            <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1 text-red-400 align-text-bottom"></i>
-                            <span>You are resolving this dispute as an administrator. Select the correct resolution outcome below.</span>
-                        </div>
+                    <div class="overflow-y-auto flex-grow">
+                        <form wire:submit.prevent="resolveDispute" class="p-6 space-y-5">
 
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Resolution Action</label>
-                            <div class="space-y-2">
-                                <label class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-3 cursor-pointer hover:border-slate-700">
-                                    <input type="radio" wire:model="resolution" value="player_a" class="text-indigo-600 focus:ring-indigo-500 mr-3">
-                                    <div class="text-xs">
-                                        <span class="font-bold text-slate-200 block">Award Win to A</span>
-                                        <span class="text-slate-450">{{ $resolveDispute->match->playerARegistration?->user->username }}</span>
-                                    </div>
-                                </label>
-                                <label class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-3 cursor-pointer hover:border-slate-700">
-                                    <input type="radio" wire:model="resolution" value="player_b" class="text-indigo-600 focus:ring-indigo-500 mr-3">
-                                    <div class="text-xs">
-                                        <span class="font-bold text-slate-200 block">Award Win to B</span>
-                                        <span class="text-slate-450">{{ $resolveDispute->match->playerBRegistration?->user->username }}</span>
-                                    </div>
-                                </label>
-                                <label class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-3 cursor-pointer hover:border-slate-700">
-                                    <input type="radio" wire:model="resolution" value="rematch" class="text-indigo-600 focus:ring-indigo-500 mr-3">
-                                    <div class="text-xs">
-                                        <span class="font-bold text-slate-200 block">Schedule Rematch</span>
-                                        <span class="text-slate-450">Creates a new fresh match slot for these players</span>
-                                    </div>
-                                </label>
+                            {{-- Filed by + status --}}
+                            <div class="flex items-center justify-between text-xs">
+                                <div>
+                                    <span class="text-slate-500 block">Dispute filed by</span>
+                                    <span class="text-slate-200 font-bold text-sm">{{ $resolveDispute->openedBy->username }}</span>
+                                </div>
+                                <span class="inline-block px-2.5 py-1 rounded-lg border font-bold uppercase text-[9px] tracking-wider
+                                      {{ match($resolveDispute->status->value) {
+                                          'under_review' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                                          default        => 'bg-red-500/10 text-red-400 border-red-500/20',
+                                      } }}">
+                                    {{ str_replace('_', ' ', $resolveDispute->status->value) }}
+                                </span>
                             </div>
-                            @error('resolution') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
 
-                        <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                            <button type="button" wire:click="$set('showDisputeModal', false)" 
-                                    class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
-                                Cancel
-                            </button>
-                            <button type="submit" 
-                                    class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
-                                Resolve Dispute
-                            </button>
-                        </div>
-                    </form>
+                            {{-- Player's note / reason --}}
+                            @if($resolveDispute->reason)
+                                <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-4 py-3">
+                                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">
+                                        <i data-lucide="message-square" class="w-3 h-3 inline mr-1 align-text-bottom"></i>
+                                        Player's Note
+                                    </span>
+                                    <p class="text-slate-300 text-xs leading-relaxed">{{ $resolveDispute->reason }}</p>
+                                </div>
+                            @endif
+
+                            {{-- Evidence screenshots --}}
+                            @if($resolveDispute->evidence->count() > 0)
+                                <div>
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">
+                                        <i data-lucide="image" class="w-3 h-3 inline mr-1 align-text-bottom"></i>
+                                        Evidence Screenshots ({{ $resolveDispute->evidence->count() }})
+                                    </span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach($resolveDispute->evidence as $ev)
+                                            <a href="/storage/{{ $ev->file_path }}" target="_blank"
+                                               class="group relative block rounded-xl overflow-hidden border border-slate-800 bg-slate-950 hover:border-indigo-500/60 transition-all">
+                                                <img src="/storage/{{ $ev->file_path }}"
+                                                     alt="Evidence screenshot"
+                                                     class="w-full h-36 object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
+                                                     onerror="this.closest('a').innerHTML='<div class=\'flex flex-col items-center justify-center h-36 text-slate-600 gap-2\'><svg xmlns=\'http://www.w3.org/2000/svg\' class=\'w-8 h-8\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\'/></svg><span class=\'text-[10px]\'>No preview</span></div>'">
+                                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-2.5">
+                                                    <span class="text-[10px] text-white font-semibold truncate">by {{ $ev->uploadedBy->username }}</span>
+                                                    <i data-lucide="zoom-in" class="w-4 h-4 text-white shrink-0"></i>
+                                                </div>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @else
+                                <div class="bg-slate-900/40 border border-slate-800/60 rounded-lg p-3 text-center">
+                                    <i data-lucide="image-off" class="w-5 h-5 mx-auto text-slate-600 mb-1"></i>
+                                    <p class="text-[10px] text-slate-600">No evidence screenshots uploaded yet.</p>
+                                </div>
+                            @endif
+
+                            {{-- Divider --}}
+                            <div class="border-t border-slate-800"></div>
+
+                            {{-- Resolution radio buttons --}}
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
+                                    <i data-lucide="gavel" class="w-3.5 h-3.5 inline mr-1 align-text-bottom text-red-400"></i>
+                                    Admin Ruling
+                                </label>
+                                <div class="space-y-2">
+                                    <label class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-3.5 cursor-pointer hover:border-emerald-600/50 hover:bg-emerald-900/10 transition-all has-[:checked]:border-emerald-500/50 has-[:checked]:bg-emerald-900/10">
+                                        <input type="radio" wire:model="resolution" value="player_a" class="text-emerald-600 focus:ring-emerald-500 mr-3 shrink-0">
+                                        <div class="text-xs">
+                                            <span class="font-bold text-slate-100 block">Award Win to Player A</span>
+                                            <span class="text-slate-400">{{ $resolveDispute->match->playerARegistration?->user->username }}</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-3.5 cursor-pointer hover:border-emerald-600/50 hover:bg-emerald-900/10 transition-all has-[:checked]:border-emerald-500/50 has-[:checked]:bg-emerald-900/10">
+                                        <input type="radio" wire:model="resolution" value="player_b" class="text-emerald-600 focus:ring-emerald-500 mr-3 shrink-0">
+                                        <div class="text-xs">
+                                            <span class="font-bold text-slate-100 block">Award Win to Player B</span>
+                                            <span class="text-slate-400">{{ $resolveDispute->match->playerBRegistration?->user->username }}</span>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-3.5 cursor-pointer hover:border-amber-600/50 hover:bg-amber-900/10 transition-all has-[:checked]:border-amber-500/50 has-[:checked]:bg-amber-900/10">
+                                        <input type="radio" wire:model="resolution" value="rematch" class="text-amber-600 focus:ring-amber-500 mr-3 shrink-0">
+                                        <div class="text-xs">
+                                            <span class="font-bold text-slate-100 block">Schedule Rematch</span>
+                                            <span class="text-slate-400">Creates a fresh match slot between these two players</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                @error('resolution') <span class="text-red-400 text-xs mt-2 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-800 flex justify-end gap-3">
+                                <button type="button" wire:click="$set('showDisputeModal', false)" 
+                                        class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" 
+                                        class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase px-5 py-2.5 rounded-lg transition-colors">
+                                    <i data-lucide="gavel" class="w-3.5 h-3.5"></i>
+                                    Submit Ruling
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
                 @endif
             </div>
         </div>
