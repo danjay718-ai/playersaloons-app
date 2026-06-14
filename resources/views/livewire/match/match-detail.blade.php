@@ -196,7 +196,28 @@
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="flex flex-col space-y-4 pt-2 border-t border-zinc-800/50">
+                        <div class="flex flex-col space-y-4 pt-2 border-t border-zinc-800/50" x-data="{
+                            endTime: new Date('{{ $match->started_at->addMinutes($match->tournament->waiting_result_time)->toIso8601String() }}').getTime(),
+                            timeLeft: 0,
+                            init() {
+                                this.updateTimer();
+                                setInterval(() => this.updateTimer(), 1000);
+                            },
+                            updateTimer() {
+                                const now = new Date().getTime();
+                                const diff = this.endTime - now;
+                                this.timeLeft = Math.max(0, Math.floor(diff / 1000));
+                            },
+                            formatTime(seconds) {
+                                const m = Math.floor(seconds / 60);
+                                const s = seconds % 60;
+                                return `${m}m ${s}s`;
+                            }
+                        }">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center mb-2">
+                                SUBMISSION DEADLINE: <span class="text-amber-400" x-text="formatTime(timeLeft)"></span>
+                            </div>
+
                             <button type="submit" 
                                 class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 shadow-md shadow-violet-900/20 uppercase tracking-widest font-orbitron">
                                 Submit Match Results
