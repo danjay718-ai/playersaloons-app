@@ -27,15 +27,6 @@ class MatchDetail extends Component
 
     public function mount(string $uuid): void
     {
-        $user = Auth::user();
-        if ($user) {
-            $adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER'];
-            if ($user->hasAnyRole($adminRoles)) {
-                $this->redirect('/admin');
-
-                return;
-            }
-        }
         $this->uuid = $uuid;
     }
 
@@ -145,11 +136,15 @@ class MatchDetail extends Component
         $activeDispute = $match->disputes()
             ->where('status', '!=', DisputeStatus::RESOLVED->value)
             ->first();
+            
+        $layout = (Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) 
+            ? 'components.layouts.admin' 
+            : 'components.layouts.dashboard';
 
         return view('livewire.match.match-detail', [
             'match' => $match,
             'isParticipant' => $isParticipant,
             'activeDispute' => $activeDispute,
-        ])->layout('components.layouts.app', ['title' => 'Match Hub | PlayerSaloons']);
+        ])->layout($layout, ['title' => 'Match Hub | PlayerSaloons', 'dashboard_title' => 'MATCH HUB']);
     }
 }
