@@ -60,6 +60,14 @@
                 <input type="date" wire:model.live="endDateFilter" 
                        class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
             </div>
+
+            <select wire:model.live="perPage" 
+                    class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                <option value="5">5 per page</option>
+                <option value="10">10 per page</option>
+                <option value="25">25 per page</option>
+                <option value="50">50 per page</option>
+            </select>
         </div>
     </div>
 

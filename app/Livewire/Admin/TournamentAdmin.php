@@ -47,6 +47,9 @@ class TournamentAdmin extends AdminComponent
     #[Url]
     public string $endDateFilter = '';
 
+    #[Url]
+    public int $perPage = 10;
+
     // Modal control
     public bool $showDetailModal = false;
     public bool $showCancelModal = false;
@@ -92,6 +95,11 @@ class TournamentAdmin extends AdminComponent
     }
 
     public function updatingEndDateFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPerPage(): void
     {
         $this->resetPage();
     }
@@ -257,7 +265,7 @@ class TournamentAdmin extends AdminComponent
             $query->whereDate('start_at', '<=', $this->endDateFilter);
         }
 
-        $tournaments = $query->paginate(10);
+        $tournaments = $query->paginate($this->perPage);
         $games = Game::with('translations')->get();
         $platforms = \App\Modules\CMS\Models\Platform::where('is_active', true)->get();
         $frequencies = ['daily', 'weekly', 'monthly', 'one-time'];
