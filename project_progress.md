@@ -427,6 +427,21 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Pre-fetched Matches**: Replaced loop-level N+1 query structures on `/my-tournaments` page by pre-fetching all player matches for paginated tournaments in a single DB query, reducing page load queries drastically.
   - **Eager Activity Logs**: Swapped inline database loops for Spatie activity logs in `player-content.blade.php` with the pre-fetched `$activityLogs` collection passed from the component.
 
+- **File Storage Fix & Restriction (v1.21)**:
+  - **S3/R2 Removed Locally**: Switched dispute evidence (`SubmitEvidenceAction`) and match result proof (`SubmitMatchResultAction`) uploads from the `r2` disk to the local `public` disk, resolving the `Class "League\Flysystem\AwsS3V3\PortableVisibilityConverter" not found` error.
+  - **Images Only, 2MB Cap**: Restricted allowed file types to images only (PNG, JPG, WEBP) and capped size at 2MB for both upload flows. Removed PDF and video (MP4/MOV) support for now.
+  - **Validation Sync**: Updated Livewire `MatchDetail` component validation for both `evidenceFile` and `submissionProof` to reflect the new limits (`max:2048`, `mimes:png,jpg,jpeg,webp`).
+  - **UI Copy Updated**: Updated hint text and dispute description in `match-detail.blade.php` to reflect the new restrictions.
+  - **Storage URL Compatibility**: Existing blade templates already used `/storage/{{ $path }}` for both fields — confirmed correct for the `public` disk with no additional changes.
+  - **Deployment Note**: Added `🚀 Deployment Considerations` section to this file with a step-by-step checklist to migrate back to R2/S3 before going live.
+
+- **Admin Dispute Evidence UI (v1.22)**:
+  - **Detail Modal — Dispute Section Redesign**: Replaced the plain file-link list with a full dispute card per dispute showing: filed-by user with timestamp, status badge (open/under_review/resolved with distinct colours), player's note/reason in a labelled block, and a 2-column image thumbnail grid (clickable to open full image in new tab) with hover overlay showing uploader name. Fallback for broken image links included.
+  - **Resolve CTA Scope Expanded**: The "Resolve Dispute" button now appears for both `open` and `under_review` dispute statuses (previously only `open`).
+  - **Dispute Resolution Modal Upgraded**: Widened from `max-w-md` to `max-w-2xl`, made scrollable (`max-h-[90vh]`). Now eager-loads `openedBy` and `evidence.uploadedBy` relations. Shows: filed-by header with status badge, player note block, evidence image thumbnail grid (with zoom-in hover overlay), then the admin ruling radio buttons (with `has-[:checked]` highlight styles for emerald/amber). Submit button renamed to "Submit Ruling" with a gavel icon.
+  - **No backend changes required**: All data was already available via existing relations; only the Blade template was updated.
+
+
 - **Tournament Admin Features (v1.6-1.11)**:
   - Need to add feature tests for:
     - Admin Tournament Filter Persistence (`TournamentAdmin` component).
