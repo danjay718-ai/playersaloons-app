@@ -53,6 +53,7 @@ class TournamentAdmin extends AdminComponent
     // Modal control
     public bool $showDetailModal = false;
     public bool $showCancelModal = false;
+    public bool $showDeleteModal = false;
 
     // Selected ID
     public ?int $selectedTournamentId = null;
@@ -184,6 +185,18 @@ class TournamentAdmin extends AdminComponent
         $this->showCancelModal = true;
     }
 
+    public function openDeleteModal(int $id): void
+    {
+        $this->selectedTournamentId = $id;
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal(): void
+    {
+        $this->showDeleteModal = false;
+        $this->selectedTournamentId = null;
+    }
+
     public function cancelTournament(CancelTournamentAction $cancelAction): void
     {
         $this->validate([
@@ -212,9 +225,13 @@ class TournamentAdmin extends AdminComponent
         }
     }
 
-    public function deleteTournament(int $id): void
+    public function deleteTournament(): void
     {
-        $tournament = Tournament::withCount('registrations')->findOrFail($id);
+        if (! $this->selectedTournamentId) {
+            return;
+        }
+
+        $tournament = Tournament::withCount('registrations')->findOrFail($this->selectedTournamentId);
 
         if ($tournament->status !== TournamentStatus::DRAFT) {
             session()->flash('error', 'Only draft tournaments can be deleted.');
@@ -228,7 +245,7 @@ class TournamentAdmin extends AdminComponent
 
         $tournament->delete();
         session()->flash('success', 'Tournament deleted successfully.');
-        $this->closeDetailModal();
+        $this->closeDeleteModal();
     }
 
     public function render()
