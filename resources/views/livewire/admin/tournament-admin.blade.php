@@ -94,23 +94,25 @@
                             </td>
                             <td class="p-4">
                                 @php
-                                    $statusColors = [
-                                        'draft' => 'bg-slate-850 text-slate-400 border-slate-800',
-                                        'published' => 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-                                        'registration_open' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-                                        'registration_closed' => 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-                                        'checkin_open' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-                                        'checkin_closed' => 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-                                        'bracket_generated' => 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-                                        'ongoing' => 'bg-red-500/10 text-red-400 border-red-500/20',
-                                        'completed' => 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-                                        'cancelled' => 'bg-slate-800 text-slate-500 border-slate-700',
-                                        'refunded' => 'bg-slate-700 text-slate-400 border-slate-600',
-                                    ];
-                                    $col = $statusColors[$tournament->status->value] ?? 'bg-slate-800 text-slate-400 border-slate-750';
+                                    $statusValue = $tournament->status->value;
+                                    $s = match($statusValue) {
+                                        'DRAFT' => ['text' => '#94a3b8', 'border' => '#334155', 'bg' => '#0f172a'],
+                                        'PUBLISHED' => ['text' => '#60a5fa', 'border' => '#1e3a8a', 'bg' => '#172554'],
+                                        'REGISTRATION_OPEN' => ['text' => '#34d399', 'border' => '#064e3b', 'bg' => '#022c22'],
+                                        'REGISTRATION_CLOSED' => ['text' => '#fbbf24', 'border' => '#78350f', 'bg' => '#451a03'],
+                                        'CHECKIN_OPEN' => ['text' => '#e879f9', 'border' => '#701a75', 'bg' => '#4a044e'],
+                                        'CHECKIN_CLOSED' => ['text' => '#fb7185', 'border' => '#881337', 'bg' => '#4c0519'],
+                                        'BRACKET_GENERATED' => ['text' => '#818cf8', 'border' => '#3730a3', 'bg' => '#1e1b4b'],
+                                        'ONGOING' => ['text' => '#a78bfa', 'border' => '#5b21b6', 'bg' => '#2e1065'],
+                                        'COMPLETED' => ['text' => '#a1a1aa', 'border' => '#3f3f46', 'bg' => '#18181b'],
+                                        'CANCELLED' => ['text' => '#f87171', 'border' => '#991b1b', 'bg' => '#450a0a'],
+                                        'REFUNDED' => ['text' => '#fb923c', 'border' => '#9a3412', 'bg' => '#431407'],
+                                        default => ['text' => '#94a3b8', 'border' => '#334155', 'bg' => '#0f172a'],
+                                    };
                                 @endphp
-                                <span class="inline-flex px-2 py-0.5 rounded border text-[9px] font-bold uppercase {{ $col }}">
-                                    {{ str_replace('_', ' ', $tournament->status->value) }}
+                                <span class="inline-flex px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest" 
+                                      style="color: {{ $s['text'] }}; border-color: {{ $s['border'] }}; background-color: {{ $s['bg'] }};">
+                                    {{ str_replace('_', ' ', $statusValue) }}
                                 </span>
                             </td>
                             <td class="p-4 text-slate-400">
@@ -274,7 +276,23 @@
                         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
                                 <span class="text-[10px] text-slate-500 font-bold uppercase block tracking-wider">CURRENT STATE</span>
-                                <span class="inline-block mt-1 px-2.5 py-1 rounded bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 text-xs font-black uppercase tracking-wider">
+                                <span class="inline-block mt-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border 
+                                    @php
+                                        $statusColors = [
+                                            'draft' => 'text-slate-400 border-slate-700 bg-slate-900',
+                                            'published' => 'text-blue-400 border-blue-900/50 bg-blue-950/85',
+                                            'registration_open' => 'text-emerald-400 border-emerald-900/50 bg-emerald-950/85',
+                                            'registration_closed' => 'text-amber-400 border-amber-900/50 bg-amber-950/85',
+                                            'checkin_open' => 'text-fuchsia-400 border-fuchsia-900/50 bg-fuchsia-950/85',
+                                            'checkin_closed' => 'text-rose-400 border-rose-900/50 bg-rose-950/85',
+                                            'bracket_generated' => 'text-indigo-400 border-indigo-900/50 bg-indigo-950/85',
+                                            'ongoing' => 'text-violet-400 border-violet-800/50 bg-violet-950/85',
+                                            'completed' => 'text-zinc-400 border-zinc-800 bg-zinc-900',
+                                            'cancelled' => 'text-red-400 border-red-900/50 bg-red-950/85',
+                                            'refunded' => 'text-orange-400 border-orange-900/50 bg-orange-950/85',
+                                        ];
+                                        echo $statusColors[$selectedTournament->status->value] ?? 'text-slate-400 border-slate-700 bg-slate-900';
+                                    @endphp">
                                     {{ str_replace('_', ' ', $selectedTournament->status->value) }}
                                 </span>
                             </div>
