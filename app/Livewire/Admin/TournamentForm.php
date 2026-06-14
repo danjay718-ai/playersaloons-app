@@ -17,6 +17,7 @@ class TournamentForm extends AdminComponent
     use WithFileUploads;
 
     public bool $isEditMode = false;
+    public bool $isLocked = false;
     public ?int $tournamentId = null;
 
     // Form fields
@@ -54,8 +55,14 @@ class TournamentForm extends AdminComponent
             $this->tournamentId = $id;
             $tournament = Tournament::findOrFail($id);
 
+            // If not in DRAFT, it's a Limited Edit (Locked structural fields)
             if ($tournament->status !== TournamentStatus::DRAFT) {
-                session()->flash('error', 'Only draft tournaments can be edited.');
+                $this->isLocked = true;
+            }
+
+            // Final statuses are still strictly non-editable
+            if (in_array($tournament->status, [TournamentStatus::COMPLETED, TournamentStatus::CANCELLED, TournamentStatus::REFUNDED])) {
+                session()->flash('error', 'Completed or cancelled tournaments cannot be edited.');
                 $this->redirect('/admin/tournaments', navigate: true);
                 return;
             }
@@ -158,10 +165,28 @@ class TournamentForm extends AdminComponent
 
         if ($this->isEditMode && $this->tournamentId) {
             $tournament = Tournament::findOrFail($this->tournamentId);
-            if ($tournament->status !== TournamentStatus::DRAFT) {
-                session()->flash('error', 'Only draft tournaments can be edited.');
+            
+            // Re-verify strictly final statuses
+            if (in_array($tournament->status, [TournamentStatus::COMPLETED, TournamentStatus::CANCELLED, TournamentStatus::REFUNDED])) {
+                session()->flash('error', 'Completed or cancelled tournaments cannot be edited.');
                 return;
             }
+
+            // If locked, filter out sensitive fields to ensure they are NOT updated
+            if ($tournament->status !== TournamentStatus::DRAFT) {
+                unset(
+                    $data['game_id'], 
+                    $data['entry_fee'], 
+                    $data['prize_pool'], 
+                    $data['max_participants'], 
+                    $data['min_participants'], 
+                    $data['team_size'], 
+                    $data['platform_id'], 
+                    $data['frequency'],
+                    $data['winning_points']
+                );
+            }
+
             $tournament->update($data);
             session()->flash('success', 'Tournament updated successfully.');
         } else {

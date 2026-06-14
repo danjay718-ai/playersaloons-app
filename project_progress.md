@@ -377,5 +377,11 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - [x] Optimize server-side `render()` logic to prevent unnecessary relationship loading when modals are closed.
   - [x] Implement `wire:loading` states and skeletons for improved perceived performance.
   - [x] Fixed missing action imports in `TournamentAdmin` that caused transition failures.
+  - [x] Created reusable `x-admin.action-dropdown` Blade component for consistent 'kebab' action menus.
+  - [x] Refactored `TournamentAdmin` to use the new reusable dropdown component.
+  - [x] Implemented "Limited Edit" (Option A) for tournaments:
+    - Edit button now appears for all active statuses (Published, Registration Open, etc.).
+    - Critical fields (fees, prizes, team size) are visually locked with icons and disabled in the UI when not in DRAFT.
+    - Added server-side protection in `TournamentForm` to prevent updating locked fields for non-draft tournaments.
 
 
