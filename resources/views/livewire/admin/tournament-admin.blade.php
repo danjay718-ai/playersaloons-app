@@ -192,10 +192,18 @@
                                                 <i data-lucide="user-minus" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
                                                 Close Check-in
                                             </button>
+                                            <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'reopen_registration')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                <i data-lucide="undo" class="w-3.5 h-3.5 mr-2 text-amber-500"></i>
+                                                Re-open Registration
+                                            </button>
                                         @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::CHECKIN_CLOSED)
                                             <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'generate_bracket')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
                                                 <i data-lucide="git-merge" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
                                                 Generate Bracket
+                                            </button>
+                                            <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'reopen_checkin')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                                <i data-lucide="undo" class="w-3.5 h-3.5 mr-2 text-amber-500"></i>
+                                                Re-open Check-in
                                             </button>
                                         @elseif($tournament->status == \App\Shared\Enums\TournamentStatus::BRACKET_GENERATED)
                                             <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'start')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">

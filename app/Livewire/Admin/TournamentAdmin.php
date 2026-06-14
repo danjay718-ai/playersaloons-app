@@ -140,6 +140,7 @@ class TournamentAdmin extends AdminComponent
         }
 
         $tournament = Tournament::findOrFail($this->selectedTournamentId);
+        $stateMachine = app(\App\Modules\Tournament\StateMachines\TournamentStateMachine::class);
 
         try {
             switch ($transitionName) {
@@ -169,6 +170,13 @@ class TournamentAdmin extends AdminComponent
                     break;
                 case 'process_refund':
                     app(ProcessRefundAction::class)->execute($tournament);
+                    break;
+                // Rollbacks
+                case 'reopen_checkin':
+                    $stateMachine->transition($tournament, TournamentStatus::CHECKIN_OPEN);
+                    break;
+                case 'reopen_registration':
+                    $stateMachine->transition($tournament, TournamentStatus::REGISTRATION_OPEN);
                     break;
             }
             session()->flash('success', 'State transition executed successfully.');
