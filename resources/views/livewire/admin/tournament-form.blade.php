@@ -56,7 +56,7 @@
                                 <span>Game</span>
                                 @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                             </label>
-                            <select wire:model="game_id" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <select wire:model="game_id" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <option value="">Select Game</option>
                                 @foreach($games as $game)
                                     <option value="{{ $game->id }}">{{ $game->translations->first()?->name ?? $game->slug }}</option>
@@ -70,7 +70,7 @@
                                 <span>Entry Fee ($)</span>
                                 @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                             </label>
-                            <input type="text" wire:model="entry_fee" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <input type="text" wire:model="entry_fee" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                             @error('entry_fee') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                     </div>
@@ -108,7 +108,7 @@
                                 <span>Platform</span>
                                 @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                             </label>
-                            <select wire:model="platform_id" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <select wire:model="platform_id" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <option value="">Select Platform</option>
                                 @foreach($platforms as $plat)
                                     <option value="{{ $plat->id }}">{{ $plat->name }}</option>
@@ -122,7 +122,7 @@
                                 <span>Frequency</span>
                                 @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                             </label>
-                            <select wire:model="frequency" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <select wire:model="frequency" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <option value="daily">Daily</option>
                                 <option value="weekly">Weekly</option>
                                 <option value="monthly">Monthly</option>
@@ -135,7 +135,7 @@
                                 <span>Team Size</span>
                                 @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                             </label>
-                            <input type="number" wire:model="team_size" :disabled="$isLocked" min="1" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <input type="number" wire:model="team_size" @disabled($isLocked) min="1" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                             @error('team_size') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
@@ -144,7 +144,7 @@
                                 <span>Winning Pts</span>
                                 @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                             </label>
-                            <input type="number" wire:model="winning_points" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <input type="number" wire:model="winning_points" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                             @error('winning_points') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
@@ -153,7 +153,7 @@
                                 <span>Min Players</span>
                                 @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                             </label>
-                            <input type="number" wire:model="min_participants" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <input type="number" wire:model="min_participants" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                             @error('min_participants') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
@@ -162,7 +162,7 @@
                                 <span>Max Players</span>
                                 @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                             </label>
-                            <input type="number" wire:model="max_participants" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <input type="number" wire:model="max_participants" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                             @error('max_participants') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
                     </div>
@@ -175,7 +175,7 @@
                                     <span>Prize Pool ($)</span>
                                     @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                                 </label>
-                                <input type="text" wire:model="prize_pool" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <input type="text" wire:model="prize_pool" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                 @error('prize_pool') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                             </div>
                             <div>
@@ -183,7 +183,7 @@
                                     <span>1st Prize ($)</span>
                                     @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                                 </label>
-                                <input type="text" wire:model="prize_1st" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <input type="text" wire:model="prize_1st" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                 @error('prize_1st') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                             </div>
                             <div>
@@ -191,7 +191,7 @@
                                     <span>2nd Prize ($)</span>
                                     @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                                 </label>
-                                <input type="text" wire:model="prize_2nd" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <input type="text" wire:model="prize_2nd" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                 @error('prize_2nd') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                             </div>
                             <div>
@@ -199,7 +199,7 @@
                                     <span>3rd Prize ($)</span>
                                     @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                                 </label>
-                                <input type="text" wire:model="prize_3rd" :disabled="$isLocked" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <input type="text" wire:model="prize_3rd" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                 @error('prize_3rd') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                             </div>
                         </div>
