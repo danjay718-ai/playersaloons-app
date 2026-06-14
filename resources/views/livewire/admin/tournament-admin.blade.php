@@ -257,8 +257,13 @@
     </div>
 
     <!-- Pagination -->
-    <div class="mt-6">
-        {{ $tournaments->links() }}
+    <div class="mt-8 flex items-center justify-between border-t border-slate-800 pt-6">
+        <div class="text-xs text-slate-500">
+            Showing {{ $tournaments->firstItem() }} to {{ $tournaments->lastItem() }} of {{ $tournaments->total() }} results
+        </div>
+        <div class="flex gap-2">
+            {{ $tournaments->links() }}
+        </div>
     </div>
 
     <!-- Detail Modal -->
