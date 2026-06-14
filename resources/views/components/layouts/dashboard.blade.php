@@ -45,7 +45,7 @@
                     ['label' => 'Overview', 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'active' => request()->is('dashboard')],
                     ['label' => 'Tournaments', 'icon' => 'search', 'url' => '/tournaments/browse', 'active' => request()->is('tournaments/browse*')],
                     ['label' => 'My Games', 'icon' => 'trophy', 'url' => '/my-tournaments', 'active' => request()->is('my-tournaments')],
-                    ['label' => 'H2H Duels', 'icon' => 'swords', 'url' => '/dashboard?tab=head-to-head', 'active' => request()->query('tab') === 'head-to-head'],
+                    ['label' => 'H2H Duels', 'icon' => 'swords', 'url' => '/head-to-head', 'active' => request()->is('head-to-head')],
                     ['label' => 'Leaderboard', 'icon' => 'award', 'url' => '/dashboard?tab=leaderboards', 'active' => request()->query('tab') === 'leaderboards'],
                     ['label' => 'Streams', 'icon' => 'tv', 'url' => '/dashboard?tab=streams', 'active' => request()->query('tab') === 'streams'],
                     ['label' => 'Chat', 'icon' => 'message-square', 'url' => '/dashboard?tab=chat', 'active' => request()->query('tab') === 'chat'],

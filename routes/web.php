@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
     Route::get('/my-tournaments', \App\Livewire\Tournament\MyTournamentsList::class)->name('my-tournaments');
     Route::get('/tournaments/browse', \App\Livewire\Tournament\PlayerTournamentList::class, ['layout' => 'components.layouts.dashboard'])->name('tournaments.browse');
+    Route::get('/head-to-head', \App\Livewire\Match\HeadToHeadList::class)->name('head-to-head');
     Route::get('/tournaments/{uuid}/view', \App\Livewire\Tournament\TournamentDetail::class)->name('tournaments.view');
     Route::get('/matches/{uuid}', MatchDetail::class);
 

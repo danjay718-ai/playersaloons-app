@@ -382,3 +382,7 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
 - **Tournament Modularization & Routing Fixes (v1.10)**:
   - **Modular Tournament Components**: Refactored tournament listing into a shared `TournamentListTrait` to maintain consistency across public and player-context components (`PublicTournamentList` and `PlayerTournamentList`) while ensuring layout/theme isolation.
   - **Route Separation**: Explicitly separated public (`/tournaments`) and authenticated player (`/tournaments/browse`) routes, fixing 404 and layout issues for guest users.
+
+- **Head-to-Head Feature Modularization (v1.11)**:
+  - **Dedicated H2H Page**: Extracted 'Head-to-Head' duels from the `PlayerDashboard` into a dedicated Livewire page (`/head-to-head`), improving load times and simplifying the dashboard DOM.
+  - **Navigation Update**: Updated sidebar to include a direct link to the new H2H page and removed H2H tab from the main dashboard.
