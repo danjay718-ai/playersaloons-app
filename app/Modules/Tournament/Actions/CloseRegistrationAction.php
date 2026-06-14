@@ -42,9 +42,13 @@ class CloseRegistrationAction
                 ->value('value');
 
             $rakePercentage = $rakeSetting !== null ? (float) $rakeSetting : 10.0;
-            $prizePool = $totalFees * (1.0 - ($rakePercentage / 100.0));
+            $calculatedPrizePool = $totalFees * (1.0 - ($rakePercentage / 100.0));
 
-            $tournament->prize_pool = number_format($prizePool, 2, '.', '');
+            // Use the maximum of the manually set prize pool and the dynamically calculated one
+            $currentPrizePool = (float) ($tournament->prize_pool ?? 0.00);
+            $finalPrizePool = max($currentPrizePool, $calculatedPrizePool);
+
+            $tournament->prize_pool = number_format($finalPrizePool, 2, '.', '');
             $tournament->save();
 
             $totalRegistrations = $tournament->registrations()->count();

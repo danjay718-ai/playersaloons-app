@@ -40,7 +40,11 @@ class PrizeCalculationService
         $rakePercentage = $rakeSetting !== null ? (float) $rakeSetting : 10.0;
 
         $rakeAmount = round($totalEntryFees * ($rakePercentage / 100.0), 2);
-        $prizePool = round($totalEntryFees - $rakeAmount, 2);
+        $calculatedPrizePool = round($totalEntryFees - $rakeAmount, 2);
+
+        // Keep the higher of the manual tournament prize pool and the calculated one
+        $currentPrizePool = (float) ($tournament->prize_pool ?? 0.00);
+        $prizePool = max($currentPrizePool, $calculatedPrizePool);
 
         // Get template prizes
         $prizes = $tournament->template
