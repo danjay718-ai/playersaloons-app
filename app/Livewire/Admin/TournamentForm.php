@@ -19,6 +19,7 @@ class TournamentForm extends AdminComponent
     public bool $isEditMode = false;
     public bool $isLocked = false;
     public ?int $tournamentId = null;
+    public int $step = 1;
 
     // Form fields
     public string $name = '';
@@ -92,12 +93,51 @@ class TournamentForm extends AdminComponent
             $this->winning_points = $tournament->winning_points;
         } else {
             $this->game_id = Game::first()?->id ?? 0;
+            $this->frequency = 'one-time';
         }
     }
 
     protected function getDefaultRules(): string
     {
-        return "1. Respect all players and admins.\n2. Ensure a stable internet connection.\n3. Check-in is required 15 mins before start.\n4. Disputes must be submitted with screenshots.\n5. Unsportsmanlike behavior will result in disqualification.";
+        return "<ul><li>Respect all players and admins.</li><li>Ensure a stable internet connection.</li><li>Check-in is required 15 mins before start.</li><li>Disputes must be submitted with screenshots.</li><li>Unsportsmanlike behavior will result in disqualification.</li></ul>";
+    }
+
+    public function validateStep(int $step): bool
+    {
+        $rules = match($step) {
+            1 => [
+                'name' => 'required|string|max:255',
+                'game_id' => 'required|exists:games,id',
+                'description' => 'required|string|min:10',
+                'rules' => 'required|string|min:10',
+            ],
+            2 => [
+                'platform_id' => 'required|exists:platforms,id',
+                'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
+                'team_size' => 'required|integer|min:1',
+                'winning_points' => 'nullable|integer|min:0',
+            ],
+            3 => [
+                'registration_open_at' => 'required|date',
+                'registration_close_at' => 'required|date|after:registration_open_at',
+                'checkin_open_at' => 'required|date|after:registration_close_at',
+                'checkin_close_at' => 'required|date|after:checkin_open_at',
+                'start_at' => 'required|date|after:checkin_close_at',
+            ],
+            4 => [
+                'entry_fee' => 'required|numeric|min:0',
+                'prize_pool' => 'required|numeric|min:0',
+                'min_participants' => 'required|integer|min:2',
+                'max_participants' => 'required|integer|min:2|gte:min_participants',
+            ],
+            default => [],
+        };
+
+        if ($rules) {
+            $this->validate($rules);
+        }
+
+        return true;
     }
 
     public function saveTournament(CreateTournamentAction $createAction): void
@@ -114,10 +154,10 @@ class TournamentForm extends AdminComponent
             'checkin_open_at' => 'required|date|after:registration_close_at',
             'checkin_close_at' => 'required|date|after:checkin_open_at',
             'start_at' => 'required|date|after:checkin_close_at',
-            'description' => 'nullable|string',
-            'rules' => 'nullable|string',
-            'platform_id' => 'nullable|exists:platforms,id',
-            'frequency' => 'required|string|in:daily,weekly,monthly',
+            'description' => 'required|string',
+            'rules' => 'required|string',
+            'platform_id' => 'required|exists:platforms,id',
+            'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
             'waiting_time' => 'nullable|integer|min:0',
             'waiting_result_time' => 'nullable|integer|min:0',
             'team_size' => 'required|integer|min:1',
