@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             GamesTableSeeder::class,
             SystemSettingsSeeder::class,
             TournamentsTableSeeder::class,
+            PlayerAccountSeeder::class,
         ]);
     }
 }
