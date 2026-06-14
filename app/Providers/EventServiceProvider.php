@@ -21,6 +21,7 @@ use App\Modules\Tournament\Events\TournamentCancelled;
 use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Events\TournamentStarted;
 use App\Modules\Tournament\Listeners\AwardPrizesListener;
+use App\Modules\Tournament\Listeners\AutoStartMatchesListener;
 use App\Modules\Tournament\Listeners\BroadcastTournamentLifecycleListener;
 use App\Modules\Tournament\Listeners\IssueRefundsListener;
 use App\Modules\Tournament\Listeners\TournamentNotificationListener;
@@ -87,6 +88,7 @@ class EventServiceProvider extends ServiceProvider
         // ── Tournament ──────────────────────────────────────────────────────
         TournamentStarted::class => [
             BroadcastTournamentLifecycleListener::class,
+            AutoStartMatchesListener::class,
         ],
         TournamentCompleted::class => [
             AwardPrizesListener::class,
