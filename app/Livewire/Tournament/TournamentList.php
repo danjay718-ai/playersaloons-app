@@ -6,6 +6,7 @@ namespace App\Livewire\Tournament;
 
 use App\Modules\CMS\Models\Game;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\TournamentStatus;
 use Livewire\Component;
 use Livewire\WithPagination;
 
