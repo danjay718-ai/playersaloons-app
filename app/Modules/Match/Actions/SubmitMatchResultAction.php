@@ -31,7 +31,7 @@ class SubmitMatchResultAction
                 throw new InvalidArgumentException('Winner must be one of the match participants.');
             }
 
-            // Transition state first (will check validity of IN_PROGRESS -> WAITING_FOR_CONFIRMATION)
+            // Transition to WAITING_FOR_CONFIRMATION
             $this->stateMachine->transition($match, MatchStatus::WAITING_FOR_CONFIRMATION);
 
             $submission = MatchResultSubmission::query()->create([
@@ -41,7 +41,7 @@ class SubmitMatchResultAction
                 'notes' => $notes,
                 'submitted_at' => Carbon::now(),
             ]);
-            
+
             $match->result_submitted_at = Carbon::now();
             $match->save();
 
