@@ -154,22 +154,12 @@
                                         <i data-lucide="eye" class="w-4 h-4"></i>
                                     </button>
 
-                                    {{-- Quick dispute resolve --}}
+                                    {{-- Quick dispute badge (opens detail modal) --}}
                                     @if(isset($match->disputes) && $match->disputes->where('status', \App\Shared\Enums\DisputeStatus::OPEN)->first())
-                                        @php $openDispute = $match->disputes->where('status', \App\Shared\Enums\DisputeStatus::OPEN)->first(); @endphp
-                                        <button wire:click="openDisputeModal({{ $openDispute->id }})"
+                                        <button wire:click="selectMatch({{ $match->id }})"
                                                 class="p-1.5 text-red-400 hover:text-white bg-red-950/40 hover:bg-red-900/60 border border-red-900/50 rounded-lg transition-colors"
-                                                title="Resolve Dispute">
+                                                title="View Dispute">
                                             <i data-lucide="shield-alert" class="w-4 h-4"></i>
-                                        </button>
-                                    @endif
-
-                                    {{-- Override --}}
-                                    @if(!in_array($match->status->value, ['completed','forfeited']) && $match->player_a_registration_id && $match->player_b_registration_id)
-                                        <button wire:click="openOverrideModal({{ $match->id }})"
-                                                class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-900/50 rounded-lg transition-colors"
-                                                title="Override Result">
-                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
                                         </button>
                                     @endif
                                 </div>
