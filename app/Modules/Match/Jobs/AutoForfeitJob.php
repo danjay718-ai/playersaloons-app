@@ -2,8 +2,8 @@
 
 namespace App\Modules\Match\Jobs;
 
+use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Models\GameMatch;
-use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Shared\Enums\MatchStatus;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
