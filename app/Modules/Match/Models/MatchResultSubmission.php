@@ -79,6 +79,16 @@ class MatchResultSubmission extends Model
     }
 
     /**
+     * Alias for submittedBy relationship.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->submittedBy();
+    }
+
+    /**
      * Get the user who submitted the result.
      *
      * @return BelongsTo<User, $this>
