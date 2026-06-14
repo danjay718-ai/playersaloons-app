@@ -17,7 +17,7 @@
     <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <a href="/tournaments/{{ $match->tournament->uuid }}" wire:navigate class="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors uppercase tracking-wider flex items-center space-x-1">
+                <a href="/tournaments/{{ $match->tournament->uuid }}/view" wire:navigate class="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors uppercase tracking-wider flex items-center space-x-1">
                     <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
                     <span>{{ $match->tournament->name }}</span>
                 </a>

@@ -164,7 +164,8 @@
 
                         <!-- Footer Action -->
                         <div class="pt-2">
-                            <a href="/tournaments/{{ $tournament->uuid }}" wire:navigate
+                            <a href="/tournaments/{{ $tournament->uuid }}/view" wire:navigate
+
                                 class="w-full relative flex items-center justify-center space-x-2 py-3.5 px-6 rounded-2xl bg-zinc-950 border border-zinc-800 group-hover:border-cyan-500/50 text-xs font-black uppercase tracking-[0.2em] text-zinc-400 group-hover:text-white group-hover:bg-cyan-500/10 transition-all duration-300 overflow-hidden">
                                 <div class="absolute inset-0 translate-x-[-100%] group-hover:translate-x-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent transition-transform duration-700 pointer-events-none"></div>
                                 <span>Join Tournament</span>

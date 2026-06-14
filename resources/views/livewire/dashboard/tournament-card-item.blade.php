@@ -72,7 +72,7 @@
         </div>
 
         <!-- Action button -->
-        <a href="/tournaments/{{ $tournament->uuid }}" wire:navigate
+        <a href="/tournaments/{{ $tournament->uuid }}/view" wire:navigate
            class="w-full text-center bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-[10px] font-black font-orbitron uppercase tracking-widest text-white py-2.5 rounded-xl transition-all duration-300 shadow-[0_4px_15px_rgba(168,85,247,0.25)] hover:shadow-[0_4px_20px_rgba(217,70,239,0.5)]">
             VIEW TOURNAMENT
         </a>
