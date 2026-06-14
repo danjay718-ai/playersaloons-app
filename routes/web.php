@@ -31,7 +31,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/tournaments', \App\Livewire\Tournament\PlayerTournamentList::class, ['layout' => 'components.layouts.app']);
+Route::get('/tournaments', \App\Livewire\Tournament\PublicTournamentList::class);
 
 // Guest only routes
 Route::middleware('guest')->group(function () {

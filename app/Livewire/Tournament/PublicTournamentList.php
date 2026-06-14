@@ -4,7 +4,7 @@ namespace App\Livewire\Tournament;
 
 use Livewire\Component;
 
-class PlayerTournamentList extends Component
+class PublicTournamentList extends Component
 {
     use TournamentListTrait;
 
@@ -13,6 +13,6 @@ class PlayerTournamentList extends Component
         return view('livewire.tournament.player-tournament-list', [
             'tournaments' => $this->getTournamentQuery()->paginate(12),
             'games' => $this->getGames(),
-        ])->layout('components.layouts.dashboard', ['title' => 'Browse Tournaments | PlayerSaloons', 'dashboard_title' => 'BROWSE TOURNAMENTS']);
+        ])->layout('components.layouts.app', ['title' => 'Tournaments | PlayerSaloons']);
     }
 }
