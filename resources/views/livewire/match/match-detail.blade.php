@@ -197,7 +197,7 @@
 
                         <!-- Submit Button -->
                         <div class="flex flex-col space-y-4 pt-2 border-t border-zinc-800/50" x-data="{
-                            endTime: new Date('{{ $match->started_at->addMinutes($match->tournament->waiting_result_time)->toIso8601String() }}').getTime(),
+                            endTime: new Date('{{ ($match->started_at ?? now())->addMinutes($match->tournament->waiting_result_time)->toIso8601String() }}').getTime(),
                             timeLeft: 0,
                             init() {
                                 this.updateTimer();
@@ -241,7 +241,7 @@
                     </form>
                 @elseif($statusVal === 'waiting_for_confirmation' && !$isSubmitter)
                     <div class="space-y-4" x-data="{
-                        endTime: new Date('{{ $match->result_submitted_at->addMinutes($match->tournament->waiting_result_time)->toIso8601String() }}').getTime(),
+                        endTime: new Date('{{ $match->result_submitted_at?->addMinutes($match->tournament->waiting_result_time)->toIso8601String() ?? now()->toIso8601String() }}').getTime(),
                         timeLeft: 0,
                         init() {
                             this.updateTimer();
