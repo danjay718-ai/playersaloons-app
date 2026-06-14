@@ -379,7 +379,5 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Player Restriction (UI)**: Updated `tournament-detail.blade.php` to hide the 'Join' button and show an informative message for non-player roles.
   - **Tournament Visibility**: Refactored `TournamentList` to filter out inactive statuses (Draft, Completed, Cancelled, Refunded) by default, showing only active tournaments (Registration, Check-in, Ongoing).
 
-- **Tests**:
-  - `tests/Feature/Admin/AdminPanelTest.php`: 12 feature tests covering route authorization, component rendering, tournament CRUD & lifecycle, match override, dispute resolution, KYC approve/reject, withdrawal approve/reject, user suspend/unsuspend, and audit log access.
-  - `tests/Feature/Auth/LoginRedirectTest.php`: 7 feature tests validating role-based login redirects, dashboard auto-routing, and guest restrictions.
-  - **All 154 tests pass at 100%.**
+- **UI Polish & Refactors (v1.8)**:
+  - **Reusable Components**: Extracted the tournament deletion logic into a reusable `x-admin.delete-modal` Blade component for consistent UI across the admin panel.
