@@ -21,12 +21,13 @@ class ConfirmMatchResultAction
     {
         DB::transaction(function () use ($match, $userId) {
             // 1. Authorization: User must be the opponent (not the submitter)
-            $submitterId = $match->resultSubmissions()->latest()->first()?->submitted_by;
-            
+            $latestSubmission = $match->resultSubmissions()->latest()->first();
+            $submitterId = $latestSubmission?->submitted_by;
+
             if ($userId === $submitterId) {
                 throw new LogicException('You cannot confirm your own submission.');
             }
-            
+
             if (($match->playerARegistration?->user_id !== $userId) && ($match->playerBRegistration?->user_id !== $userId)) {
                 throw new LogicException('You are not authorized to confirm this match.');
             }
@@ -36,11 +37,20 @@ class ConfirmMatchResultAction
                 throw new LogicException('Match is not awaiting confirmation.');
             }
 
-            // 3. Transition to COMPLETED
+            // 3. Set the winner from the latest submission
+            $winnerRegistrationId = (int) $latestSubmission->winner_registration_id;
+            $match->winner_registration_id = $winnerRegistrationId;
+            $match->save();
+
+            // 4. Transition to COMPLETED
             $this->stateMachine->transition($match, MatchStatus::COMPLETED);
-            
-            // Dispatch completion event for further processing (bracket progression, etc.)
-            MatchCompleted::dispatch($match);
+
+            // 5. Dispatch completion event for further processing (bracket progression, etc.)
+            MatchCompleted::dispatch(
+                (int) $match->id,
+                (int) $match->tournament_id,
+                $winnerRegistrationId,
+            );
         });
     }
 }
