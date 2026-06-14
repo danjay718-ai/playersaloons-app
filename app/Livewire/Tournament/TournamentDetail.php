@@ -29,6 +29,11 @@ class TournamentDetail extends Component
             return redirect()->to('/login');
         }
 
+        if (! Auth::user()->hasRole('PLAYER')) {
+            session()->flash('error', 'Only players can join tournaments.');
+            return;
+        }
+
         $tournament = Tournament::query()->where('uuid', $this->uuid)->firstOrFail();
         $user = Auth::user();
 

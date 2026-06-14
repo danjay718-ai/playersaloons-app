@@ -58,7 +58,16 @@ class TournamentList extends Component
 
     public function render()
     {
-        $query = Tournament::query()->with(['game.translations', 'platform']);
+        $query = Tournament::query()
+            ->with(['game.translations', 'platform'])
+            ->whereIn('status', [
+                TournamentStatus::REGISTRATION_OPEN->value,
+                TournamentStatus::REGISTRATION_CLOSED->value,
+                TournamentStatus::CHECKIN_OPEN->value,
+                TournamentStatus::CHECKIN_CLOSED->value,
+                TournamentStatus::BRACKET_GENERATED->value,
+                TournamentStatus::ONGOING->value,
+            ]);
 
         if ($this->status) {
             $query->where('status', $this->status);

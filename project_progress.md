@@ -374,12 +374,9 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Dynamic Status Badges**: Implemented color-coded status badges for tournament list.
     - *Technical Debt Note*: Currently uses inline styles to bypass CSS compilation issues in the environment. Future refactor needed to revert to standard Tailwind utility classes using a dedicated blade component once build pipeline is stabilized.
 
-- **Advanced Tournament Filtering & UI Improvements (v1.6)**:
-  - **Advanced Filters & Persistence**: Added persistent filters (Search, Status, Game, Platform, Start Date Range) to the Admin Tournaments page using Livewire `#[Url]` for URL persistence.
-  - **Frequency Tabs**: Converted the frequency dropdown filter into interactive tabs (All, Daily, Weekly, Monthly, One-time).
-  - **Dynamic Pagination**: Implemented dynamic 'per-page' limit selection (5, 10, 25, 50) with URL persistence.
-  - **Modern UI**: Replaced standard pagination with a custom, modern Tailwind CSS design for a consistent dark-neon look.
-  - **UX Improvement**: Updated the 'View Player Page' action link to open in a new tab (`target="_blank"`).
+- **Tournament Access & Visibility Improvements (v1.7)**:
+  - **Player Restriction**: Updated `TournamentDetail` to enforce 'PLAYER' role requirement for registration.
+  - **Tournament Visibility**: Refactored `TournamentList` to filter out inactive statuses (Draft, Completed, Cancelled, Refunded) by default, showing only active tournaments (Registration, Check-in, Ongoing).
 
 - **Tests**:
   - `tests/Feature/Admin/AdminPanelTest.php`: 12 feature tests covering route authorization, component rendering, tournament CRUD & lifecycle, match override, dispute resolution, KYC approve/reject, withdrawal approve/reject, user suspend/unsuspend, and audit log access.
