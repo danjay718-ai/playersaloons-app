@@ -420,6 +420,7 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Player Statistics Banner**: Added a top row statistics grid showing Active Tournaments, Tournament History, Match Victories (Wins), and Match Defeats (Losses).
   - **Active Tab Alignment**: Re-designed active tournament cards to match the neon styling, banner images, status badges, and fee/prize layouts of the Browse Tournaments page.
   - **History List View**: Re-engineered the history tab as a detailed chronological list item view displaying game category, end date, and user match histories (including round number, opponent name, and custom outcome badges like "WON" or "LOST").
+  - **Elimination Lifecycle Shift**: Tournaments where a player has lost are immediately moved from the "Active" tab to the "History" tab, and the stats banner counts reflect this database-driven status.
 
 - **Tournament Admin Features (v1.6-1.11)**:
   - Need to add feature tests for:
@@ -436,9 +437,10 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
       - Clicking "Go Back" in modal resets active tab to "Overview".
       - Clicking "Continue" in modal closes the modal and keeps active tab on "Matches".
     - `MyTournamentsList` logic and styling:
-      - Calculating stats banner counts (active, history, wins, losses).
+      - Calculating stats banner counts (active, history, wins, losses) directly from DB aggregates.
       - Active tab matching Browse page cards.
       - History tab presenting lists of user match details (opponent, round, win/loss badge).
+      - Player elimination shifting tournaments from the Active list to the History list.
     - `PlayerTournamentList` (Browse Tournaments filtering).
     - `HeadToHeadList` (matchmaking simulation, challenge creation).
   - Need to add integration/E2E tests for:

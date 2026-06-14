@@ -26,30 +26,27 @@ class MyTournamentsList extends Component
         $user = Auth::user();
 
         // 1. Calculate Stats
-        $activeCount = Tournament::query()
-            ->whereHas('registrations', function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                    ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
-            })
-            ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
-            ->count();
-
-        $historyCount = Tournament::query()
-            ->whereHas('registrations', function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                    ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
-            })
-            ->whereIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
-            ->count();
-
         $registrations = \App\Modules\Tournament\Models\TournamentRegistration::where('user_id', $user->id)
             ->whereNotIn('status', [RegistrationStatus::CANCELLED, RegistrationStatus::REFUNDED])
             ->pluck('id');
 
+        $lostTournamentIds = [];
         $matchWins = 0;
         $matchLosses = 0;
 
         if ($registrations->isNotEmpty()) {
+            // Get tournament IDs where the user has lost a match
+            $lostTournamentIds = \App\Modules\Match\Models\GameMatch::whereIn('status', [\App\Shared\Enums\MatchStatus::COMPLETED, \App\Shared\Enums\MatchStatus::FORFEITED])
+                ->where(function ($query) use ($registrations) {
+                    $query->whereIn('player_a_registration_id', $registrations)
+                          ->orWhereIn('player_b_registration_id', $registrations);
+                })
+                ->whereNotNull('winner_registration_id')
+                ->whereNotIn('winner_registration_id', $registrations)
+                ->pluck('tournament_id')
+                ->unique()
+                ->toArray();
+
             $matchWins = \App\Modules\Match\Models\GameMatch::whereIn('status', [\App\Shared\Enums\MatchStatus::COMPLETED, \App\Shared\Enums\MatchStatus::FORFEITED])
                 ->whereIn('winner_registration_id', $registrations)
                 ->count();
@@ -64,6 +61,26 @@ class MyTournamentsList extends Component
                 ->count();
         }
 
+        $activeCount = Tournament::query()
+            ->whereHas('registrations', function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
+            })
+            ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+            ->whereNotIn('id', $lostTournamentIds)
+            ->count();
+
+        $historyCount = Tournament::query()
+            ->whereHas('registrations', function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
+            })
+            ->where(function ($q) use ($lostTournamentIds) {
+                $q->whereIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+                  ->orWhereIn('id', $lostTournamentIds);
+            })
+            ->count();
+
         // 2. Fetch Tournaments
         $query = Tournament::query()
             ->whereHas('registrations', function ($q) use ($user) {
@@ -73,14 +90,17 @@ class MyTournamentsList extends Component
             ->with('game.translations');
 
         if ($this->tSubTab === 'active') {
-            $query->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value]);
+            $query->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+                  ->whereNotIn('id', $lostTournamentIds);
         } else {
-            $query->whereIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
-                  ->with([
-                      'registrations' => function ($q) use ($user) {
-                          $q->where('user_id', $user->id);
-                      }
-                  ]);
+            $query->where(function ($q) use ($lostTournamentIds) {
+                $q->whereIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+                  ->orWhereIn('id', $lostTournamentIds);
+            })->with([
+                'registrations' => function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                }
+            ]);
         }
 
         return view('livewire.tournament.my-tournaments-list', [
