@@ -116,6 +116,7 @@ class TournamentForm extends AdminComponent
                 'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
                 'team_size' => 'required|integer|min:1',
                 'winning_points' => 'nullable|integer|min:0',
+                'waiting_result_time' => 'required|integer|min:1',
             ],
             3 => [
                 'registration_open_at' => 'required|date',
@@ -159,7 +160,7 @@ class TournamentForm extends AdminComponent
             'platform_id' => 'required|exists:platforms,id',
             'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
             'waiting_time' => 'nullable|integer|min:0',
-            'waiting_result_time' => 'nullable|integer|min:0',
+            'waiting_result_time' => 'required|integer|min:1',
             'team_size' => 'required|integer|min:1',
             'prize_1st' => 'nullable|numeric|min:0',
             'prize_2nd' => 'nullable|numeric|min:0',
