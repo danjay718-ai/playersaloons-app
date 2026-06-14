@@ -31,6 +31,8 @@ class TournamentAdmin extends AdminComponent
 
     public string $gameFilter = '';
 
+    public string $platformFilter = '';
+
     // Modal control
     public bool $showDetailModal = false;
     public bool $showCancelModal = false;
@@ -56,6 +58,11 @@ class TournamentAdmin extends AdminComponent
     }
 
     public function updatingGameFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPlatformFilter(): void
     {
         $this->resetPage();
     }
@@ -205,8 +212,13 @@ class TournamentAdmin extends AdminComponent
             $query->where('game_id', $this->gameFilter);
         }
 
+        if ($this->platformFilter) {
+            $query->where('platform_id', $this->platformFilter);
+        }
+
         $tournaments = $query->paginate(10);
         $games = Game::with('translations')->get();
+        $platforms = \App\Modules\CMS\Models\Platform::where('is_active', true)->get();
 
         $selectedTournament = ($this->showDetailModal || $this->showCancelModal) && $this->selectedTournamentId
             ? Tournament::with(['game.translations', 'registrations.user', 'cancellation.cancelledBy', 'rounds.matches', 'platform'])->find($this->selectedTournamentId)
@@ -215,6 +227,7 @@ class TournamentAdmin extends AdminComponent
         return view('livewire.admin.tournament-admin', [
             'tournaments' => $tournaments,
             'games' => $games,
+            'platforms' => $platforms,
             'selectedTournament' => $selectedTournament,
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Tournament Management',

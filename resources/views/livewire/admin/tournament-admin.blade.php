@@ -24,6 +24,14 @@
                     <option value="{{ $game->id }}">{{ $game->translations->first()?->name ?? $game->slug }}</option>
                 @endforeach
             </select>
+
+            <select wire:model.live="platformFilter" 
+                    class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                <option value="">All Platforms</option>
+                @foreach($platforms as $platform)
+                    <option value="{{ $platform->id }}">{{ $platform->name }}</option>
+                @endforeach
+            </select>
         </div>
 
         <a href="{{ route('admin.tournaments.create') }}" wire:navigate
