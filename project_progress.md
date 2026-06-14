@@ -411,6 +411,11 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Mobile Layout & Usability**: Re-designed the navigation tab container to use horizontal scrolling on mobile devices to prevent wrapping breakages, and applied `whitespace-nowrap`.
   - **Simplified Terminology**: Renamed default tabs from 'Intel/Warriors/Battle Grid' to clearer 'Overview/Players/Matches'.
 
+- **Tournament Elimination Warning Modal (v1.18)**:
+  - **Elimination Verification**: Calculates `$hasLost` status inside `TournamentDetail` by checking if the logged-in player has a resolved match (`COMPLETED` or `FORFEITED`) in the tournament where they are not the winner.
+  - **Alpine.js Warning Modal**: Shows a custom modal with a skull icon notifying players that they are eliminated when selecting the Matches tab.
+  - **Navigation Flow**: Provides a "Go Back" option (reverts tab to Overview) and a "Continue" option (allows them to proceed viewing matches).
+
 - **Tournament Admin Features (v1.6-1.11)**:
   - Need to add feature tests for:
     - Admin Tournament Filter Persistence (`TournamentAdmin` component).
@@ -420,6 +425,11 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
     - Tournament status filtering on player-side listing.
     - Restricted details view (`viewRestrictedDetails` policy) limiting Players, Matches, and Activity tabs visibility to registered participants, organizers, and admins.
   - Need to add component tests for:
+    - `TournamentDetail` elimination modal:
+      - Player has lost -> navigating to Matches tab triggers warning modal.
+      - Player has not lost -> navigating to Matches tab does not trigger modal.
+      - Clicking "Go Back" in modal resets active tab to "Overview".
+      - Clicking "Continue" in modal closes the modal and keeps active tab on "Matches".
     - `MyTournamentsList` (active/history tabs).
     - `PlayerTournamentList` (Browse Tournaments filtering).
     - `HeadToHeadList` (matchmaking simulation, challenge creation).

@@ -131,6 +131,19 @@ class TournamentDetail extends Component
             }
         }
 
+        $hasLost = false;
+        if ($user && $userRegistration) {
+            $hasLost = \App\Modules\Match\Models\GameMatch::where('tournament_id', $tournament->id)
+                ->where(function ($query) use ($userRegistration) {
+                    $query->where('player_a_registration_id', $userRegistration->id)
+                          ->orWhere('player_b_registration_id', $userRegistration->id);
+                })
+                ->whereIn('status', [\App\Shared\Enums\MatchStatus::COMPLETED, \App\Shared\Enums\MatchStatus::FORFEITED])
+                ->whereNotNull('winner_registration_id')
+                ->where('winner_registration_id', '!=', $userRegistration->id)
+                ->exists();
+        }
+
         // Bracket rounds sorted
         $rounds = collect();
         if ($tournament->brackets->isNotEmpty()) {
@@ -150,6 +163,7 @@ class TournamentDetail extends Component
             'userRegistration' => $userRegistration,
             'rounds' => $rounds,
             'activityLogs' => $activityLogs,
+            'hasLost' => $hasLost,
         ])->layout($this->layout, ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
     }
 }
