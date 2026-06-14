@@ -19,13 +19,20 @@ class TournamentDetail extends Component
 {
     public string $uuid;
 
-    public function mount(string $uuid): void
+    public string $layout = 'components.layouts.dashboard';
+
+    public function mount(string $uuid, string $layout = 'components.layouts.dashboard'): void
     {
         $this->uuid = $uuid;
+        $this->layout = $layout;
     }
 
-    private function getActiveTournamentQuery()
+    private function getTournamentQuery()
     {
+        if (Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
+            return Tournament::query();
+        }
+
         return Tournament::query()->whereIn('status', [
             TournamentStatus::REGISTRATION_OPEN->value,
             TournamentStatus::REGISTRATION_CLOSED->value,
@@ -47,7 +54,7 @@ class TournamentDetail extends Component
             return;
         }
 
-        $tournament = $this->getActiveTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
+        $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
         $user = Auth::user();
 
         try {
@@ -64,7 +71,7 @@ class TournamentDetail extends Component
             return redirect()->to('/login');
         }
 
-        $tournament = $this->getActiveTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
+        $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
         $user = Auth::user();
 
         try {
@@ -77,7 +84,7 @@ class TournamentDetail extends Component
 
     public function render()
     {
-        $tournament = $this->getActiveTournamentQuery()
+        $tournament = $this->getTournamentQuery()
             ->where('uuid', $this->uuid)
             ->with([
                 'game.translations',
@@ -125,6 +132,6 @@ class TournamentDetail extends Component
             'isCheckedIn' => $isCheckedIn,
             'userRegistration' => $userRegistration,
             'rounds' => $rounds,
-        ])->layout('components.layouts.dashboard', ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
+        ])->layout($this->layout, ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
     }
 }
