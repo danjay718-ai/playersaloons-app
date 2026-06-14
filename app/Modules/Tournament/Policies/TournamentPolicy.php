@@ -55,4 +55,19 @@ class TournamentPolicy
         return $user->hasPermissionTo('tournaments.cancel')
             && $tournament->created_by === $user->id;
     }
+
+    /**
+     * Determine whether the user can view restricted tournament details (players, matches, activity).
+     */
+    public function viewRestrictedDetails(User $user, Tournament $tournament): bool
+    {
+        // 1. Check if user is registered for the tournament
+        $isRegistered = $tournament->registrations()->where('user_id', $user->id)->exists();
+        if ($isRegistered) {
+            return true;
+        }
+
+        // 2. Check if user has management permissions for tournaments
+        return $user->hasPermissionTo('tournaments.manage');
+    }
 }

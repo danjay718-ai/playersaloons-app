@@ -125,6 +125,29 @@ class PolicyTest extends TestCase
         // 4. Cancel checks
         $this->assertTrue($this->organizer->can('cancel', $tournament));
         $this->assertFalse($otherOrganizer->can('cancel', $tournament));
+
+        // 5. Restricted Details View checks
+        // Non-registered players cannot view
+        $this->assertFalse($this->playerA->can('viewRestrictedDetails', $tournament));
+
+        // Organizers can view
+        $this->assertTrue($this->organizer->can('viewRestrictedDetails', $tournament));
+
+        // Admin / Super Admin can view
+        $this->assertTrue($this->admin->can('viewRestrictedDetails', $tournament));
+        $this->assertTrue($this->superAdmin->can('viewRestrictedDetails', $tournament));
+
+        // Register playerA
+        $tournament->registrations()->create([
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $this->playerA->id,
+            'status' => 'confirmed',
+            'payment_status' => 'free',
+            'registered_at' => now(),
+        ]);
+
+        // Registered player can now view
+        $this->assertTrue($this->playerA->can('viewRestrictedDetails', $tournament));
     }
 
     /**

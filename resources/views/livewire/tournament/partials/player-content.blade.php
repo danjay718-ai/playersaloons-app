@@ -1,4 +1,4 @@
-<div class="space-y-10" x-data="{ activeTab: localStorage.getItem('tournament_tab_{{ $tournament->id }}') || 'overview' }" x-init="$watch('activeTab', value => localStorage.setItem('tournament_tab_{{ $tournament->id }}', value))">
+<div class="space-y-10" x-data="{ activeTab: localStorage.getItem('tournament_tab_{{ $tournament->id }}') || 'overview', canViewRestricted: @json(\Illuminate\Support\Facades\Gate::allows('viewRestrictedDetails', $tournament)) }" x-init="if (!canViewRestricted) { activeTab = 'overview'; } $watch('activeTab', value => { if (canViewRestricted) { localStorage.setItem('tournament_tab_{{ $tournament->id }}', value); } })">
     <!-- Return Button -->
     <button onclick="history.back()" class="flex items-center space-x-2 text-zinc-500 hover:text-white transition-colors text-xs font-bold font-orbitron uppercase tracking-widest mb-6 group">
         <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i>
@@ -146,19 +146,43 @@
             class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap">
             Overview
         </button>
-        <button @click="activeTab = 'participants'" 
-            :class="activeTab === 'participants' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
-            class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap">
+
+        <button 
+            @can('viewRestrictedDetails', $tournament)
+                @click="activeTab = 'participants'" 
+                :class="activeTab === 'participants' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
+                class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap"
+            @else
+                disabled
+                class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap opacity-40 cursor-not-allowed text-zinc-600"
+                title="Only tournament participants can view players"
+            @endcan>
             Players ({{ $tournament->registrations->count() }})
         </button>
-        <button @click="activeTab = 'bracket'" 
-            :class="activeTab === 'bracket' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
-            class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap">
+
+        <button 
+            @can('viewRestrictedDetails', $tournament)
+                @click="activeTab = 'bracket'" 
+                :class="activeTab === 'bracket' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
+                class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap"
+            @else
+                disabled
+                class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap opacity-40 cursor-not-allowed text-zinc-600"
+                title="Only tournament participants can view matches"
+            @endcan>
             Matches
         </button>
-        <button @click="activeTab = 'activity'" 
-            :class="activeTab === 'activity' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
-            class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap">
+
+        <button 
+            @can('viewRestrictedDetails', $tournament)
+                @click="activeTab = 'activity'" 
+                :class="activeTab === 'activity' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
+                class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap"
+            @else
+                disabled
+                class="px-6 md:px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap opacity-40 cursor-not-allowed text-zinc-600"
+                title="Only tournament participants can view activity"
+            @endcan>
             Activity
         </button>
     </div>
@@ -259,6 +283,7 @@
         </div>
 
         <!-- Warriors Tab (Participant Grid) -->
+        @can('viewRestrictedDetails', $tournament)
         <div x-show="activeTab === 'participants'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
             @if($tournament->registrations->count() > 0)
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -287,8 +312,10 @@
                 </div>
             @endif
         </div>
+        @endcan
 
         <!-- Activity Tab -->
+        @can('viewRestrictedDetails', $tournament)
         <div x-show="activeTab === 'activity'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
             <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
                 <h2 class="text-2xl font-black font-orbitron tracking-widest text-white mb-8 flex items-center space-x-3">
@@ -323,8 +350,10 @@
                 @endif
             </div>
         </div>
+        @endcan
 
         <!-- Battle Grid (Dynamic Brackets) -->
+        @can('viewRestrictedDetails', $tournament)
         <div x-show="activeTab === 'bracket'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="w-full">
             @if($rounds->isNotEmpty())
                 <div class="flex flex-nowrap overflow-x-auto gap-12 pb-10 pt-6 snap-x scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-zinc-950 relative">
@@ -420,6 +449,7 @@
                 </div>
             @endif
         </div>
+        @endcan
     </div>
 </div>
 

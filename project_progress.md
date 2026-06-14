@@ -193,7 +193,7 @@ Team creation, management, invitations, captaincy transfers.
 ## ✅ Phase 13 — Authorization (RBAC)
 
 - **Modular Policies (`app/Modules/`)**:
-  - `TournamentPolicy`: Governs tournament creation, publication, cancellation, and management. Restricts manage/cancel capabilities to the tournament creator for tournament organizers.
+  - `TournamentPolicy`: Governs tournament creation, publication, cancellation, management, and restricted details view. Restricts viewing players, matches, and activity tabs to registered participants or organizers/admins via `viewRestrictedDetails` policy.
   - `MatchPolicy`: Governs match starting, result submissions, and match disputes. Restricts submit and dispute actions to players involved in the match.
   - `WalletPolicy`: Governs wallet viewing, withdrawal requests, and wallet freezing/unfreezing. Enforces that only `SUPER_ADMIN` can unfreeze frozen wallets.
   - `WithdrawalPolicy`: Governs withdrawal review, approval, and rejection. Enforces **Four-Eyes check** (requester cannot self-approve or self-review/reject their own withdrawal request).
@@ -418,6 +418,7 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
     - Custom pagination component rendering.
     - Role-based restriction on the 'Join Tournament' button.
     - Tournament status filtering on player-side listing.
+    - Restricted details view (`viewRestrictedDetails` policy) limiting Players, Matches, and Activity tabs visibility to registered participants, organizers, and admins.
   - Need to add component tests for:
     - `MyTournamentsList` (active/history tabs).
     - `PlayerTournamentList` (Browse Tournaments filtering).
