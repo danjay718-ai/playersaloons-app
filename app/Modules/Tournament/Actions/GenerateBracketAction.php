@@ -6,14 +6,12 @@ namespace App\Modules\Tournament\Actions;
 
 use App\Modules\Tournament\Events\TournamentBracketGenerated;
 use App\Modules\Tournament\Models\Bracket;
-use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentParticipant;
 use App\Modules\Tournament\Services\BracketGenerationService;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class GenerateBracketAction
