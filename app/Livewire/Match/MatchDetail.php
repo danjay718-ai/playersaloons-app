@@ -12,6 +12,7 @@ use App\Modules\Match\Models\GameMatch;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchStatus;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -31,11 +32,27 @@ class MatchDetail extends Component
 
     public function confirmResult(ConfirmMatchResultAction $action)
     {
+        // ... (existing method)
+    }
+
+    public function adminCompleteMatch(int $winnerId)
+    {
+        if (! Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
+            return;
+        }
+
         $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
 
         try {
-            $action->execute($match, (int) Auth::id());
-            session()->flash('message', 'Result confirmed successfully!');
+            DB::transaction(function () use ($match, $winnerId) {
+                $match->winner_registration_id = $winnerId;
+                $match->status = MatchStatus::COMPLETED;
+                $match->completed_at = now();
+                $match->save();
+
+                \App\Modules\Match\Events\MatchCompleted::dispatch($match);
+            });
+            session()->flash('message', 'Match finalized by administrator.');
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
@@ -160,14 +177,14 @@ class MatchDetail extends Component
         $latestSubmission = $match->resultSubmissions()->latest()->first();
         $isSubmitter = $user && $latestSubmission && $user->id === $latestSubmission->submitted_by;
             
-        $layout = (Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) 
-            ? 'components.layouts.admin' 
-            : 'components.layouts.dashboard';
+        $isAdmin = Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
+        $layout = $isAdmin ? 'components.layouts.admin' : 'components.layouts.dashboard';
 
         return view('livewire.match.match-detail', [
             'match' => $match,
             'isParticipant' => $isParticipant,
             'isSubmitter' => $isSubmitter,
+            'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
         ])->layout($layout, ['title' => 'Match Hub | PlayerSaloons', 'dashboard_title' => 'MATCH HUB']);
     }

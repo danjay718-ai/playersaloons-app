@@ -106,16 +106,40 @@
     </div>
 
     <!-- Match Participant Hub Actions -->
-    @if($isParticipant)
+    @if($isParticipant || $isAdmin)
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
+            <!-- Admin Control (Only visible to Admin) -->
+            @if($isAdmin)
+                <div class="lg:col-span-2 bg-indigo-950/20 border border-indigo-500/30 rounded-2xl p-5 md:p-6 mb-4">
+                    <div class="flex items-center space-x-2 border-b border-indigo-500/20 pb-3 mb-4">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-indigo-400"></i>
+                        <h3 class="text-sm font-black font-orbitron tracking-widest text-indigo-100 uppercase">ADMIN OVERRIDE CONTROLS</h3>
+                    </div>
+                    <div class="flex flex-wrap gap-4">
+                        <p class="text-xs text-indigo-300/80 mb-2 w-full">As an administrator, you can manually declare the winner and finalize this match instantly.</p>
+                        @if($match->playerARegistration)
+                            <button wire:click="adminCompleteMatch({{ $match->player_a_registration_id }})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest">Force Win: {{ $match->playerARegistration?->user?->username }}</button>
+                        @endif
+                        @if($match->playerBRegistration)
+                            <button wire:click="adminCompleteMatch({{ $match->player_b_registration_id }})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest">Force Win: {{ $match->playerBRegistration?->user?->username }}</button>
+                        @endif
+                        <span class="text-[10px] bg-indigo-500 text-white px-2 py-0.5 rounded font-bold">ADMIN VIEW ACTIVE</span>
+                    </div>
+                </div>
+            @endif
+
             <!-- Result Submission or Dispute info -->
             <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
                 <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase border-b border-zinc-850 pb-3">
                     SUBMIT RESULTS
                 </h2>
 
-                @if(in_array($match->status->value ?? $match->status, ['READY', 'IN_PROGRESS']))
+                @php
+                    $statusVal = $match->status->value ?? $match->status;
+                @endphp
+
+                @if(in_array($statusVal, ['ready', 'in_progress']))
                     <form wire:submit.prevent="submitResult" class="space-y-4">
                         <!-- Select Winner -->
                         <div>
@@ -154,22 +178,38 @@
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="flex items-center space-x-4">
+                        <div class="flex flex-col space-y-4 pt-2 border-t border-zinc-800/50">
                             <button type="submit" 
-                                class="flex-grow flex justify-center py-2.5 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 shadow-md shadow-violet-900/20">
+                                class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 shadow-md shadow-violet-900/20 uppercase tracking-widest font-orbitron">
                                 Submit Match Results
                             </button>
                             
-                            <!-- Open Dispute Quick button -->
-                            <button type="button" wire:click="openDispute"
-                                class="bg-red-950/20 border border-red-900/60 hover:border-red-750 text-red-400 hover:text-red-300 font-bold text-sm py-2.5 px-4 rounded-lg transition-colors duration-200">
-                                Open Dispute
-                            </button>
+                            <div class="space-y-3">
+                                <div class="flex items-center space-x-2">
+                                    <div class="h-px flex-grow bg-zinc-800"></div>
+                                    <span class="text-[9px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Conflict / Dispute</span>
+                                    <div class="h-px flex-grow bg-zinc-800"></div>
+                                </div>
+                                
+                                <textarea wire:model="disputeReason" rows="1" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-red-500/50" placeholder="Reason for dispute..."></textarea>
+                                
+                                <button type="button" wire:click="openDispute"
+                                    class="w-full bg-red-950/20 border border-red-900/40 hover:border-red-750 text-red-400 hover:text-red-300 font-bold text-[10px] py-2 rounded-lg transition-colors duration-200 uppercase tracking-widest font-orbitron">
+                                    Open Official Dispute
+                                </button>
+                            </div>
                         </div>
                     </form>
-                @elseif($match->status->value === \App\Shared\Enums\MatchStatus::WAITING_FOR_CONFIRMATION->value && !$isSubmitter)
+                @elseif($statusVal === 'waiting_for_confirmation' && !$isSubmitter)
                     <div class="space-y-4">
                         <p class="text-sm text-zinc-400">Your opponent has submitted a match result. Please confirm it to finalize the match.</p>
+                        
+                        <div class="space-y-2">
+                            <label for="disputeReason" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">WANT TO DISPUTE INSTEAD? (REASON REQUIRED)</label>
+                            <textarea wire:model="disputeReason" id="disputeReason" rows="2" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs text-zinc-200 focus:outline-none focus:border-red-500" placeholder="Describe the issue..."></textarea>
+                            @error('disputeReason') <span class="text-[10px] text-red-500 block">{{ $message }}</span> @enderror
+                        </div>
+
                         <div class="flex items-center space-x-4">
                             <button type="button" wire:click="confirmResult"
                                 class="flex-grow flex justify-center py-2.5 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 transition-all duration-200">
