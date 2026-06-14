@@ -379,9 +379,11 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
   - **Player Restriction (UI)**: Updated `tournament-detail.blade.php` to hide the 'Join' button and show an informative message for non-player roles.
   - **Tournament Visibility**: Refactored `TournamentList` to filter out inactive statuses (Draft, Completed, Cancelled, Refunded) by default, showing only active tournaments (Registration, Check-in, Ongoing).
 
-- **Tournament Modularization & Routing Fixes (v1.10)**:
-  - **Modular Tournament Components**: Refactored tournament listing into a shared `TournamentListTrait` to maintain consistency across public and player-context components (`PublicTournamentList` and `PlayerTournamentList`) while ensuring layout/theme isolation.
-  - **Route Separation**: Explicitly separated public (`/tournaments`) and authenticated player (`/tournaments/browse`) routes, fixing 404 and layout issues for guest users.
+- **Tournament Lifecycle & Admin Control Improvements (v1.14)**:
+  - **State Rollbacks**: Implemented valid state transition rollbacks in `TournamentStateMachine` (e.g., re-opening check-in from closed status), allowing for better tournament management flexibility.
+  - **Check-in Validation Guard**: Added a mandatory participant count validation (`guardCanCloseCheckin`) to prevent premature check-in closure if tournament participation requirements are not met.
+  - **Admin UI Enhancements**: Exposed new rollback transitions ('Re-open Registration', 'Re-open Check-in') directly in the Admin Tournament action dropdown for immediate workflow adjustment.
+  - **Bug Fix**: Added missing `checkins()` relationship to the `Tournament` model to support participation validation logic.
 
 - **Head-to-Head Feature Modularization (v1.11)**:
   - **Dedicated H2H Page**: Extracted 'Head-to-Head' duels from the `PlayerDashboard` into a dedicated Livewire page (`/head-to-head`), improving load times and simplifying the dashboard DOM.
