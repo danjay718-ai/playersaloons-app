@@ -13,13 +13,18 @@ use App\Shared\Enums\CheckinStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Url;
 use Livewire\Component;
+use Spatie\Activitylog\Models\Activity;
 
 class TournamentDetail extends Component
 {
     public string $uuid;
 
     public string $layout = 'components.layouts.dashboard';
+
+    #[Url]
+    public string $activeTab = 'overview';
 
     public function mount(string $uuid): void
     {
@@ -132,12 +137,19 @@ class TournamentDetail extends Component
             $rounds = $tournament->brackets->first()->rounds()->orderBy('round_number')->get();
         }
 
+        $activityLogs = Activity::query()
+            ->where('subject_type', Tournament::class)
+            ->where('subject_id', $tournament->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('livewire.tournament.tournament-detail', [
             'tournament' => $tournament,
             'isRegistered' => $isRegistered,
             'isCheckedIn' => $isCheckedIn,
             'userRegistration' => $userRegistration,
             'rounds' => $rounds,
+            'activityLogs' => $activityLogs,
         ])->layout($this->layout, ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
     }
 }
