@@ -49,7 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/leaderboards', \App\Livewire\Match\LeaderboardList::class)->name('leaderboards');
     Route::get('/streams', \App\Livewire\Stream\StreamList::class)->name('streams');
     Route::get('/chat', \App\Livewire\Community\GlobalChat::class)->name('chat');
-    Route::get('/tournaments/{uuid}/view', [\App\Livewire\Tournament\TournamentDetail::class, ['layout' => 'components.layouts.dashboard']])->name('tournaments.view');
+    Route::get('/tournaments/{uuid}/view', \App\Livewire\Tournament\TournamentDetail::class)->name('tournaments.view');
     Route::get('/matches/{uuid}', MatchDetail::class);
 
     Route::get('/wallet', WalletDashboard::class);
