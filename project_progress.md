@@ -490,3 +490,18 @@ Currently, all user-uploaded files (dispute evidence screenshots and match resul
 6. Run `php artisan storage:link` if keeping any local public files on the server.
 
 > **Note:** File type restriction is currently **images only** (PNG, JPG, WEBP, max 2MB). If video evidence is needed in production, update `SubmitEvidenceAction::ALLOWED_MIME_TYPES` and the Livewire validation in `MatchDetail.php` accordingly.
+
+---
+
+## ✅ Phase 6 — Identity Module Fixes & Test Coverage Audit (v1.24)
+
+Audited the full Identity & Onboarding flow against `documentation/01_identity_onboarding.md`. Fixed source bugs, aligned tests to the doc-specified names and assertions, and removed dead code.
+
+- **`RegisterUserAction`**: Moved `UserRegistered::dispatch()` outside `DB::transaction()`. Previously the event could be picked up by a queued listener before the transaction committed, causing a missing-row race condition.
+- **`SubmitKycAction`**: Replaced `(new KycSubmission)->newQuery()` with `KycSubmission::query()`. Removed unreachable `$path === false` guard (file is already validated before `store()` is called).
+- **`CreateWalletListener`**: Replaced `(new Wallet)->newQuery()` with `Wallet::query()`.
+- **`KycSubmission`, `User` models**: Added `declare(strict_types=1)` to match module convention.
+- **`ProfileDashboard`**: Removed dead `resolveView()` pass-through method; calls `->layout()` directly on the view. Removed unused `Factory` / `View` imports.
+- **`RegisterUserActionTest`**: Renamed to doc-specified method names. Fixed wallet balance assertion (`'0'` → `'0.00'`). Added `Event::assertDispatched(UserRegistered::class)`. Split wallet assertion into `test_wallet_is_created_after_registration`. Added `test_registration_fails_with_invalid_email` and `test_registration_fails_with_existing_username`.
+- **`SubmitKycActionTest`**: Renamed to doc-specified method names. Fixed `'national_id'` → `'id_card'` (must match `ProfileDashboard` allowed values: `passport`, `id_card`, `drivers_license`). Added `Event::assertDispatched(UserKycSubmitted::class)` to the success test.
+- **`01_identity_onboarding.md`**: Updated to reflect post-transaction event dispatch, explicit KYC document type list, corrected test assertion details, and added `UserKycSubmitted` no-listener gap note.
