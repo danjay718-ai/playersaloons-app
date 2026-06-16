@@ -9,8 +9,6 @@ use App\Modules\Identity\Actions\SubmitKycAction;
 use App\Modules\Identity\Actions\UpdateProfileAction;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -157,15 +155,6 @@ class ProfileDashboard extends Component
     }
 
     /**
-     * @param  View|Factory  $view
-     * @return mixed
-     */
-    private function resolveView($view)
-    {
-        return $view;
-    }
-
-    /**
      * @return mixed
      */
     public function render()
@@ -186,12 +175,10 @@ class ProfileDashboard extends Component
             ->latest('id')
             ->first();
 
-        $view = view('livewire.profile.profile-dashboard', [
+        return view('livewire.profile.profile-dashboard', [
             'user' => $user,
             'latestKyc' => $latestKyc,
-        ]);
-
-        return $this->resolveView($view)->layout('components.layouts.dashboard', [
+        ])->layout('components.layouts.dashboard', [
             'title' => 'My Profile | PlayerSaloons',
             'dashboard_title' => 'USER PROFILE',
         ]);

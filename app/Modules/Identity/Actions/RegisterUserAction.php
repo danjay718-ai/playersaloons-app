@@ -24,7 +24,7 @@ class RegisterUserAction
      */
     public function execute(array $data): User
     {
-        return DB::transaction(function () use ($data): User {
+        $user = DB::transaction(function () use ($data): User {
             $user = new User;
             $user->fill([
                 'uuid' => Str::uuid()->toString(),
@@ -45,9 +45,12 @@ class RegisterUserAction
 
             $user->assignRole('PLAYER');
 
-            UserRegistered::dispatch((int) $user->getKey(), $data['email'], $data['username']);
-
             return $user;
         });
+
+        // Dispatch after transaction commits so queued listeners find the user in the DB.
+        UserRegistered::dispatch((int) $user->getKey(), $data['email'], $data['username']);
+
+        return $user;
     }
 }

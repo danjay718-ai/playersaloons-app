@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Modules\Identity\Models;
 
 use App\Modules\Community\Models\Notification;

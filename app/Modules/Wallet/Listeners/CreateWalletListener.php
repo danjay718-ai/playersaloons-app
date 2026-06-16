@@ -29,7 +29,7 @@ class CreateWalletListener
     public function handle(UserRegistered $event): void
     {
         // Idempotency guard — skip if wallet already exists
-        if ((new Wallet)->newQuery()->where('user_id', $event->userId)->exists()) {
+        if (Wallet::query()->where('user_id', $event->userId)->exists()) {
             return;
         }
 

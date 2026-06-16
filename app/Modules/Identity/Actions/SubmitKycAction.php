@@ -42,8 +42,7 @@ class SubmitKycAction
                 throw new InvalidArgumentException('At least one KYC document is required.');
             }
 
-            $latestSubmission = (new KycSubmission)
-                ->newQuery()
+            $latestSubmission = KycSubmission::query()
                 ->where('user_id', $user->getKey())
                 ->latest('id')
                 ->first();
@@ -77,11 +76,7 @@ class SubmitKycAction
 
                 $path = $document->store('kyc/'.((int) $user->getKey()), 'local');
 
-                if ($path === false) {
-                    throw new LogicException('Unable to store KYC document.');
-                }
-
-                $paths[] = $path;
+                $paths[] = (string) $path;
             }
 
             $submission = $latestSubmission instanceof KycSubmission
