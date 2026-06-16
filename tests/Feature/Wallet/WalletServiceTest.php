@@ -9,6 +9,8 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Actions\ApproveWithdrawalAction;
 use App\Modules\Wallet\Actions\FreezeWalletAction;
 use App\Modules\Wallet\Actions\ProcessDepositAction;
+use App\Modules\Wallet\Actions\ProcessWithdrawalAction;
+use App\Modules\Wallet\Actions\RejectWithdrawalAction;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
 use App\Modules\Wallet\Actions\ReviewWithdrawalAction;
 use App\Modules\Wallet\Actions\SuspendWalletAction;
@@ -424,5 +426,208 @@ class WalletServiceTest extends TestCase
 
         app(UnfreezeWalletAction::class)->execute($wallet, $superAdmin);
         $this->assertSame(WalletStatus::ACTIVE, $wallet->status);
+    }
+
+    // ------------------------------------------------------------------
+    // Task #5 – missing tests
+    // ------------------------------------------------------------------
+
+    public function test_process_deposit_is_idempotent(): void
+    {
+        Event::fake([WalletCredited::class]);
+
+        $user  = $this->createUser();
+        $wallet = $this->createWallet($user, '0.00');
+
+        $first  = app(ProcessDepositAction::class)->execute($wallet, '50.00', 'stripe', 'ch_idem');
+        $second = app(ProcessDepositAction::class)->execute($wallet, '50.00', 'stripe', 'ch_idem');
+
+        $this->assertSame($first->getKey(), $second->getKey());
+
+        $wallet->refresh();
+        // Only one credit should have been applied
+        $this->assertSame('50.00', $wallet->getAttribute('cached_balance'));
+        Event::assertDispatchedTimes(WalletCredited::class, 1);
+    }
+
+    public function test_reject_withdrawal_action(): void
+    {
+        $user = $this->createUser();
+        $wallet = $this->createWallet($user, '100.00');
+
+        $operator = $this->createUser('operator');
+        $operator->assignRole('FINANCE_OPERATOR');
+
+        $withdrawal = Withdrawal::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'wallet_id' => $wallet->getKey(),
+            'user_id' => $user->getKey(),
+            'amount' => '50.00',
+            'status' => WithdrawalStatus::PENDING,
+        ]);
+
+        app(RejectWithdrawalAction::class)->execute($withdrawal, $operator, 'Fraudulent request');
+
+        $this->assertSame(WithdrawalStatus::REJECTED, $withdrawal->status);
+        $withdrawal->refresh();
+        $this->assertSame('Fraudulent request', $withdrawal->getAttribute('review_notes'));
+        $this->assertSame($operator->getKey(), $withdrawal->getAttribute('reviewed_by'));
+        // Wallet balance must remain unchanged after rejection
+        $wallet->refresh();
+        $this->assertSame('100.00', $wallet->getAttribute('cached_balance'));
+    }
+
+    public function test_process_withdrawal_sets_processed_status_and_timestamp(): void
+    {
+        // Wallet debit is handled by CreateLedgerEntryListener on WithdrawalApproved (async).
+        // ProcessWithdrawalAction only advances status to PROCESSED and stamps processed_at.
+        Event::fake([\App\Modules\Wallet\Events\WithdrawalApproved::class]);
+
+        $user = $this->createUser();
+        $wallet = $this->createWallet($user, '200.00');
+
+        KycSubmission::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->getKey(),
+            'status' => KycStatus::APPROVED,
+            'document_type' => 'passport',
+            'document_paths' => ['kyc.png'],
+        ]);
+
+        $operator = $this->createUser('operator');
+        $operator->assignRole('FINANCE_OPERATOR');
+
+        $withdrawal = app(RequestWithdrawalAction::class)->execute($user, '80.00');
+        app(ReviewWithdrawalAction::class)->execute($withdrawal, $operator);
+        app(ApproveWithdrawalAction::class)->execute($withdrawal, $operator);
+        app(ProcessWithdrawalAction::class)->execute($withdrawal, $operator);
+
+        $this->assertSame(WithdrawalStatus::PROCESSED, $withdrawal->status);
+        $withdrawal->refresh();
+        $this->assertNotNull($withdrawal->getAttribute('processed_at'));
+
+        // Balance is NOT touched here — debit is the listener's responsibility
+        $wallet->refresh();
+        $this->assertSame('200.00', $wallet->getAttribute('cached_balance'));
+    }
+
+    public function test_create_ledger_entry_listener_debits_wallet_on_withdrawal_approved(): void
+    {
+        $user = $this->createUser();
+        $wallet = $this->createWallet($user, '200.00');
+
+        KycSubmission::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->getKey(),
+            'status' => KycStatus::APPROVED,
+            'document_type' => 'passport',
+            'document_paths' => ['kyc.png'],
+        ]);
+
+        $operator = $this->createUser('operator');
+        $operator->assignRole('FINANCE_OPERATOR');
+
+        $withdrawal = app(RequestWithdrawalAction::class)->execute($user, '80.00');
+        app(ReviewWithdrawalAction::class)->execute($withdrawal, $operator);
+        app(ApproveWithdrawalAction::class)->execute($withdrawal, $operator);
+
+        // Simulate the queued listener synchronously
+        $listener = app(\App\Modules\Wallet\Listeners\CreateLedgerEntryListener::class);
+        $listener->handle(new \App\Modules\Wallet\Events\WithdrawalApproved(
+            (int) $withdrawal->getKey(),
+            (int) $wallet->getKey(),
+            (int) $operator->getKey(),
+        ));
+
+        $wallet->refresh();
+        $this->assertSame('120.00', $wallet->getAttribute('cached_balance'));
+
+        $debit = $wallet->ledgerEntries()->where('reference_type', Withdrawal::class)->first();
+        $this->assertNotNull($debit);
+        $this->assertSame('-80.00', $debit->getAttribute('amount'));
+    }
+
+    public function test_create_ledger_entry_listener_is_idempotent_on_withdrawal_approved(): void
+    {
+        // If WithdrawalApproved fires twice (e.g. queue retry), debit must only happen once.
+        $user = $this->createUser();
+        $wallet = $this->createWallet($user, '200.00');
+
+        KycSubmission::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->getKey(),
+            'status' => KycStatus::APPROVED,
+            'document_type' => 'passport',
+            'document_paths' => ['kyc.png'],
+        ]);
+
+        $operator = $this->createUser('operator');
+        $operator->assignRole('FINANCE_OPERATOR');
+
+        $withdrawal = app(RequestWithdrawalAction::class)->execute($user, '80.00');
+        app(ReviewWithdrawalAction::class)->execute($withdrawal, $operator);
+        app(ApproveWithdrawalAction::class)->execute($withdrawal, $operator);
+
+        $event = new \App\Modules\Wallet\Events\WithdrawalApproved(
+            (int) $withdrawal->getKey(),
+            (int) $wallet->getKey(),
+            (int) $operator->getKey(),
+        );
+
+        $listener = app(\App\Modules\Wallet\Listeners\CreateLedgerEntryListener::class);
+        $listener->handle($event);
+
+        // Simulate retry — status is now APPROVED still but debit already done.
+        // The listener re-checks status; since withdrawal was not yet PROCESSED,
+        // we manually advance so idempotency guard kicks in on second call.
+        $withdrawal->refresh();
+        // On second fire with same APPROVED status, a second debit would occur
+        // UNLESS there's a ledger idempotency guard. Verify only ONE debit entry exists.
+        $listener->handle($event);
+
+        $wallet->refresh();
+        $this->assertSame('120.00', $wallet->getAttribute('cached_balance'));
+        $this->assertSame(1, $wallet->ledgerEntries()->where('reference_type', Withdrawal::class)->count());
+    }
+
+    public function test_process_withdrawal_requires_role(): void
+    {
+        $user = $this->createUser();
+        $wallet = $this->createWallet($user, '100.00');
+
+        $unauthorized = $this->createUser('player2');
+
+        $withdrawal = Withdrawal::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'wallet_id' => $wallet->getKey(),
+            'user_id' => $user->getKey(),
+            'amount' => '50.00',
+            'status' => WithdrawalStatus::APPROVED,
+        ]);
+
+        $this->expectException(AuthorizationException::class);
+        app(ProcessWithdrawalAction::class)->execute($withdrawal, $unauthorized);
+    }
+
+    public function test_wallet_cached_balance_matches_ledger_sum(): void
+    {
+        $user   = $this->createUser();
+        $wallet = $this->createWallet($user, '0.00');
+
+        $this->walletService->credit($wallet, '500.00', LedgerType::DEPOSIT, 'dep', '1');
+        $this->walletService->credit($wallet, '200.00', LedgerType::PRIZE, 'prize', '1');
+        $this->walletService->debit($wallet, '150.00', LedgerType::ENTRY_FEE, 'fee', '1');
+        $this->walletService->debit($wallet, '50.00', LedgerType::WITHDRAWAL, 'wd', '1');
+
+        $wallet->refresh();
+        $cachedBalance = $wallet->getAttribute('cached_balance');
+
+        $ledgerSum = number_format(
+            (float) $wallet->ledgerEntries()->sum('amount'),
+            2, '.', ''
+        );
+
+        $this->assertSame($ledgerSum, $cachedBalance);
+        $this->assertSame('500.00', $cachedBalance);
     }
 }
