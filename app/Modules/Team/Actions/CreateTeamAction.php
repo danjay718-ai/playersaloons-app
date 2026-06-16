@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Team\Actions;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Team\Events\TeamCreated;
 use App\Modules\Team\Models\Team;
 use App\Modules\Team\Models\TeamMember;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,8 @@ class CreateTeamAction
                 'status' => 'active',
                 'joined_at' => now(),
             ]);
+
+            TeamCreated::dispatch($team->id, $team->name, $captain->id);
 
             return $team;
         });

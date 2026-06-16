@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Team\Actions;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Team\Events\TeamCaptainChanged;
 use App\Modules\Team\Models\Team;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -24,6 +25,8 @@ class TransferTeamCaptainAction
         }
 
         DB::transaction(function () use ($team, $newCaptain, $member) {
+            $previousCaptainId = $team->captain_user_id;
+
             // Demote current captain if they are still a member
             $team->members()->where('user_id', $team->captain_user_id)->update(['role' => 'member']);
 
@@ -33,6 +36,8 @@ class TransferTeamCaptainAction
             // Update team record
             $team->captain_user_id = $newCaptain->id;
             $team->save();
+
+            TeamCaptainChanged::dispatch($team->id, $previousCaptainId, $newCaptain->id);
         });
     }
 }

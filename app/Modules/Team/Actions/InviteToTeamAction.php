@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Team\Actions;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Team\Events\TeamMemberInvited;
 use App\Modules\Team\Models\Team;
 use App\Modules\Team\Models\TeamInvitation;
 use App\Shared\Enums\TeamInvitationStatus;
@@ -25,13 +26,15 @@ class InviteToTeamAction
             throw new LogicException('User already has a pending invitation to this team.');
         }
 
-        return TeamInvitation::create([
+        return tap(TeamInvitation::create([
             'uuid' => Str::uuid()->toString(),
             'team_id' => $team->id,
             'invited_user_id' => $invitedUser->id,
             'invited_by_user_id' => $inviter->id,
             'status' => TeamInvitationStatus::PENDING,
             'expires_at' => now()->addDays(7),
-        ]);
+        ]), function (TeamInvitation $invitation) use ($team, $invitedUser, $inviter) {
+            TeamMemberInvited::dispatch($invitation->id, $team->id, $invitedUser->id, $inviter->id);
+        });
     }
 }
