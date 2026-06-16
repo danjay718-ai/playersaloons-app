@@ -52,7 +52,7 @@ class SubmitEvidenceAction
             }
 
             if ($file->getSize() > self::MAX_FILE_BYTES) {
-                throw new InvalidArgumentException('Evidence file size exceeds the 20MB limit.');
+                throw new InvalidArgumentException('Evidence file size exceeds the 2MB limit.');
             }
 
             if (! in_array($file->getMimeType(), self::ALLOWED_MIME_TYPES, true)) {
@@ -61,7 +61,7 @@ class SubmitEvidenceAction
 
             // Store file on local public disk (switch to R2/S3 on deployment)
             $path = $file->store("disputes/{$dispute->id}/evidence", 'public');
-            if ($path === false || $path === null) {
+            if ($path === false) {
                 throw new LogicException('Failed to store evidence file.');
             }
 

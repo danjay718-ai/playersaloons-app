@@ -15,10 +15,10 @@ class MatchStateMachine extends AbstractStateMachine
     /**
      * Valid state transitions.
      *
-     * Lifecycle: PENDING → READY → IN_PROGRESS → RESULT_SUBMITTED → COMPLETED
+     * Lifecycle: PENDING → READY → IN_PROGRESS → WAITING_FOR_CONFIRMATION → COMPLETED
      *
-     * Dispute path:   IN_PROGRESS → DISPUTED → COMPLETED (admin resolves)
-     * Forfeit path:   IN_PROGRESS → FORFEITED  (terminal)
+     * Dispute path:   IN_PROGRESS / WAITING_FOR_CONFIRMATION → DISPUTED → COMPLETED (admin resolves)
+     * Forfeit path:   IN_PROGRESS / READY → FORFEITED  (terminal)
      *
      * @return array<string, string[]>
      */
