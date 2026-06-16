@@ -522,6 +522,18 @@ Audited the full financial operations flow against `documentation/03_financial_o
 
 ---
 
+## ✅ Team Module Fixes & Convention Alignment (v1.27)
+
+Audited Team module against `documentation/04_team_management.md`. Fixed PHPStan errors, applied missing conventions, wired unused components, and aligned docs to reality.
+
+- **Models (`Team`, `TeamMember`, `TeamInvitation`)**: Added `declare(strict_types=1)`. Fixed `$fillable` PHPDoc from `array<int, string>` → `list<string>` to satisfy covariant override constraint (PHPStan Level 5, 3 errors resolved).
+- **`InvitationStateMachine`**: Was completely unused — actions were directly mutating `$invitation->status`. Wired into `AcceptTeamInvitationAction`, `DeclineTeamInvitationAction`, and `RevokeTeamInvitationAction` via constructor injection.
+- **Event Dispatch**: All 7 team events existed but were never dispatched. Fixed by emitting the correct event from each action: `TeamCreated`, `TeamUpdated`, `TeamDeleted`, `TeamMemberInvited`, `TeamMemberJoined`, `TeamMemberRemoved`, `TeamCaptainChanged`. Added `User $actingUser` param to `UpdateTeamAction`, `DisbandTeamAction`, and `RemoveTeamMemberAction` to carry actor ID into events.
+- **`04_team_management.md`**: Corrected stale test names (`test_captain_can_invite_player` → `test_can_invite_user`, etc.), added all 11 test cases across 4 sections, fixed `teams.logo_url` → `teams.logo_path`.
+- **Tests**: Updated test file to use `app()` for DI-injected actions and pass the required `User` actor arg. All **11 team tests passing**.
+
+---
+
 ## ✅ Phase 6 — Identity Module Fixes & Test Coverage Audit (v1.24)
 
 Audited the full Identity & Onboarding flow against `documentation/01_identity_onboarding.md`. Fixed source bugs, aligned tests to the doc-specified names and assertions, and removed dead code.
