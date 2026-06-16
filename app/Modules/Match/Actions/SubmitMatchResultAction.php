@@ -19,7 +19,7 @@ class SubmitMatchResultAction
     public function __construct(private readonly MatchStateMachine $stateMachine) {}
 
     /**
-     * Submit match result (in_progress -> result_submitted).
+     * Submit match result (in_progress -> waiting_for_confirmation).
      */
     public function execute(
         GameMatch $match,

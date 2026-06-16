@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $scheduled_at
  * @property Carbon|null $started_at
  * @property Carbon|null $completed_at
+ * @property Carbon|null $result_submitted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Tournament $tournament

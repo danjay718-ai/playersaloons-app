@@ -379,7 +379,7 @@ class TournamentModuleTest extends TestCase
         $tournament = $publishAction->execute($tournament);
         $tournament = $openRegAction->execute($tournament);
 
-        // Only register 2 players (min is 4)
+        // Register 2 players (below min_participants of 4) — nobody checks in
         $p1 = $this->createPlayer('p1@example.com', 'p1', 10.00);
         $p2 = $this->createPlayer('p2@example.com', 'p2', 10.00);
         $registerAction->execute($tournament, $p1);
@@ -387,10 +387,14 @@ class TournamentModuleTest extends TestCase
 
         $tournament = $closeRegAction->execute($tournament);
         $tournament = $openCheckinAction->execute($tournament);
-        $tournament = $closeCheckinAction->execute($tournament);
+
+        // Force to CHECKIN_CLOSED directly — bypasses the guard so we can test
+        // the auto-cancel job behavior with 0 participants vs min_participants=4
+        $tournament->status = TournamentStatus::CHECKIN_CLOSED;
+        $tournament->save();
 
         // Dispatch AutoCancelTournamentJob
-        AutoCancelTournamentJob::dispatchSync($tournament->id);
+        AutoCancelTournamentJob::dispatchSync();
 
         $tournament = $tournament->fresh();
         $this->assertEquals(TournamentStatus::CANCELLED, $tournament->status);

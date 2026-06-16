@@ -20,7 +20,7 @@ class WalletService
     /**
      * Credit a wallet with an amount.
      *
-     * @param  string|float|float  $amount
+     * @param  string|float  $amount
      *
      * @throws WalletFrozenException
      */
@@ -71,7 +71,7 @@ class WalletService
     /**
      * Debit a wallet with an amount.
      *
-     * @param  string|float|float  $amount
+     * @param  string|float  $amount
      *
      * @throws WalletFrozenException
      * @throws WalletSuspendedException
