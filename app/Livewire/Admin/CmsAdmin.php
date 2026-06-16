@@ -175,10 +175,11 @@ class CmsAdmin extends AdminComponent
     {
         $this->selectedGameId = $gameId;
         $game = Game::findOrFail($gameId);
+        /** @var \App\Modules\CMS\Models\GameTranslation|null $translation */
         $translation = $game->translations()->where('locale', $this->gameLocale)->first();
 
-        $this->gameName = $translation?->name ?? '';
-        $this->gameDescription = $translation?->description ?? '';
+        $this->gameName = $translation !== null ? $translation->name : '';
+        $this->gameDescription = $translation !== null ? $translation->description : '';
         $this->showGameModal = true;
     }
 
@@ -224,11 +225,12 @@ class CmsAdmin extends AdminComponent
         $this->selectedPageId = $id;
         $this->isPageEdit = true;
         $page = CmsPage::findOrFail($id);
+        /** @var \App\Modules\CMS\Models\CmsPageTranslation|null $translation */
         $translation = $page->translations()->where('locale', $this->pageLocale)->first();
 
         $this->pageSlug = $page->slug;
-        $this->pageTitle = $translation?->title ?? '';
-        $this->pageContent = $translation?->content ?? '';
+        $this->pageTitle = $translation !== null ? $translation->title : '';
+        $this->pageContent = $translation !== null ? $translation->content : '';
         $this->showPageModal = true;
     }
 
@@ -276,8 +278,7 @@ class CmsAdmin extends AdminComponent
     public function publishPage(int $id): void
     {
         $page = CmsPage::findOrFail($id);
-        $page->published_at = now();
-        $page->save();
+        $page->update(['published_at' => now()]);
 
         session()->flash('success', 'CMS page published successfully.');
     }

@@ -81,7 +81,7 @@ class TournamentForm extends AdminComponent
             $this->start_at = $tournament->start_at ? $tournament->start_at->format('Y-m-d\TH:i') : '';
 
             $this->description = $tournament->description ?? '';
-            $this->rules = $tournament->rules ?: $this->getDefaultRules();
+            $this->rules = (string) ($tournament->getAttribute('rules') ?: $this->getDefaultRules());
             $this->platform_id = $tournament->platform_id;
             $this->frequency = $tournament->frequency ?? 'daily';
             $this->waiting_time = $tournament->waiting_time;
@@ -92,7 +92,9 @@ class TournamentForm extends AdminComponent
             $this->prize_3rd = $tournament->prize_3rd !== null ? (string) $tournament->prize_3rd : null;
             $this->winning_points = $tournament->winning_points;
         } else {
-            $this->game_id = Game::first()?->id ?? 0;
+            /** @var \App\Modules\CMS\Models\Game|null $firstGame */
+            $firstGame = Game::first();
+            $this->game_id = $firstGame !== null ? $firstGame->id : 0;
             $this->frequency = 'one-time';
         }
     }
