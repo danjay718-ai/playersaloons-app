@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-16 | **Branch**: `main`
+**Last Updated**: 2026-06-17 | **Branch**: `main`
 **New Admin Features & Compliance Plan**: [PlayerSaloons_New_Admin_Features_Implementation_Plan_v1.md]
 
 ---
@@ -500,6 +500,25 @@ Currently, all user-uploaded files (dispute evidence screenshots and match resul
 6. Run `php artisan storage:link` if keeping any local public files on the server.
 
 > **Note:** File type restriction is currently **images only** (PNG, JPG, WEBP, max 2MB). If video evidence is needed in production, update `SubmitEvidenceAction::ALLOWED_MIME_TYPES` and the Livewire validation in `MatchDetail.php` accordingly.
+
+---
+
+## ✅ Financial Operations Audit & Fixes (v1.26)
+
+Audited the full financial operations flow against `documentation/03_financial_operations.md`. Fixed source bugs, resolved PHPStan errors, aligned all tests to the correct architecture.
+
+- **`ProcessWithdrawalAction`**: Removed erroneous `WalletService::debit()` call. Debit is handled by `CreateLedgerEntryListener` on `WithdrawalApproved` (async/queued). Added missing role guard (`FINANCE_OPERATOR / ADMIN / SUPER_ADMIN`). Added `processed_at` stamp.
+- **`CreateLedgerEntryListener`**: Fixed idempotency on `WithdrawalApproved`. Old guard (`status !== APPROVED`) was insufficient — on queue retry the status is still `APPROVED`, causing double debit. Now checks for existing `LedgerEntry` with matching `reference_type + reference_id` before debiting.
+- **`MatchStateMachine`**: Fixed `WAITING_FOR_CONFIRMATION` → `RESULT_SUBMITTED` mismatch. The enum and tests both use `RESULT_SUBMITTED`; the machine was the odd one out.
+- **`TournamentStateMachine`**: Added missing `COMPLETED → REFUNDED` and `CANCELLED → REFUNDED` transitions (`REFUNDED` existed in the enum but not in the transition table). Extracted `activity()` call into a `protected logTransition()` method so unit tests can override it without hitting the `activity_log` DB table.
+- **`Withdrawal` model**: Added `@property WithdrawalStatus $status` PHPDoc. Added `processed_at` to `$fillable` and `casts`. Fixed `$fillable` PHPDoc to `list<string>`. Fixed `BelongsTo` return type PHPDoc to `BelongsTo<T, $this>`.
+- **`Deposit` model**: Added `fee_amount` to `$fillable` and `casts`. Fixed `$fillable` PHPDoc. Fixed `BelongsTo` return type PHPDoc.
+- **`KycSubmission` model**: Added `@property KycStatus $status` PHPDoc. Fixed `$fillable` PHPDoc to `list<string>`.
+- **`WithdrawalStateMachine`**: Added null-safety guards for `$kyc` and `$wallet` before calling approval guards.
+- **Docblock fixes**: Removed duplicate `float` in `@param string|float|float $amount` in `ProcessDepositAction` and `RequestWithdrawalAction`.
+- **`TournamentStateMachineTest`**: Switched to anonymous subclass overriding `logTransition()` to suppress `activity_log` DB calls in unit tests.
+- **Tests**: 88 tests passing (40 wallet feature + 48 state machine unit). Added 7 new test cases covering deposit idempotency, reject withdrawal, process withdrawal role guard, process withdrawal status/timestamp, `CreateLedgerEntryListener` debit, listener idempotency, and ledger sum = cached balance.
+- **PHPStan**: 0 errors on all modified files at Level 5.
 
 ---
 
