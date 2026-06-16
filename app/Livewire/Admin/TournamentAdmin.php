@@ -126,6 +126,21 @@ class TournamentAdmin extends AdminComponent
         }
     }
 
+    /** @var string[] */
+    private const ALLOWED_TRANSITIONS = [
+        'publish',
+        'open_registration',
+        'close_registration',
+        'open_checkin',
+        'close_checkin',
+        'generate_bracket',
+        'start',
+        'complete',
+        'process_refund',
+        'reopen_checkin',
+        'reopen_registration',
+    ];
+
     // Lifecycle transitions
     public function applyTransitionById(int $tournamentId, string $transitionName): void
     {
@@ -139,46 +154,34 @@ class TournamentAdmin extends AdminComponent
             return;
         }
 
+        if (! in_array($transitionName, self::ALLOWED_TRANSITIONS, strict: true)) {
+            session()->flash('error', 'Invalid transition.');
+            return;
+        }
+
         $tournament = Tournament::findOrFail($this->selectedTournamentId);
+
+        $actor = Auth::user();
+        if (! $actor || ! $actor->can('manage', $tournament)) {
+            abort(403);
+        }
+
         $stateMachine = app(\App\Modules\Tournament\StateMachines\TournamentStateMachine::class);
 
         try {
-            switch ($transitionName) {
-                case 'publish':
-                    app(PublishTournamentAction::class)->execute($tournament);
-                    break;
-                case 'open_registration':
-                    app(OpenRegistrationAction::class)->execute($tournament);
-                    break;
-                case 'close_registration':
-                    app(CloseRegistrationAction::class)->execute($tournament);
-                    break;
-                case 'open_checkin':
-                    app(OpenCheckinAction::class)->execute($tournament);
-                    break;
-                case 'close_checkin':
-                    app(CloseCheckinAction::class)->execute($tournament);
-                    break;
-                case 'generate_bracket':
-                    app(GenerateBracketAction::class)->execute($tournament);
-                    break;
-                case 'start':
-                    app(StartTournamentAction::class)->execute($tournament);
-                    break;
-                case 'complete':
-                    app(CompleteTournamentAction::class)->execute($tournament);
-                    break;
-                case 'process_refund':
-                    app(ProcessRefundAction::class)->execute($tournament);
-                    break;
-                // Rollbacks
-                case 'reopen_checkin':
-                    $stateMachine->transition($tournament, TournamentStatus::CHECKIN_OPEN, ['triggered_by' => 'admin_manual', 'user_id' => Auth::id()]);
-                    break;
-                case 'reopen_registration':
-                    $stateMachine->transition($tournament, TournamentStatus::REGISTRATION_OPEN, ['triggered_by' => 'admin_manual', 'user_id' => Auth::id()]);
-                    break;
-            }
+            match ($transitionName) {
+                'publish'            => app(PublishTournamentAction::class)->execute($tournament),
+                'open_registration'  => app(OpenRegistrationAction::class)->execute($tournament),
+                'close_registration' => app(CloseRegistrationAction::class)->execute($tournament),
+                'open_checkin'       => app(OpenCheckinAction::class)->execute($tournament),
+                'close_checkin'      => app(CloseCheckinAction::class)->execute($tournament),
+                'generate_bracket'   => app(GenerateBracketAction::class)->execute($tournament),
+                'start'              => app(StartTournamentAction::class)->execute($tournament),
+                'complete'           => app(CompleteTournamentAction::class)->execute($tournament),
+                'process_refund'     => app(ProcessRefundAction::class)->execute($tournament),
+                'reopen_checkin'     => $stateMachine->transition($tournament, TournamentStatus::CHECKIN_OPEN, ['triggered_by' => 'admin_manual', 'user_id' => Auth::id()]),
+                'reopen_registration'=> $stateMachine->transition($tournament, TournamentStatus::REGISTRATION_OPEN, ['triggered_by' => 'admin_manual', 'user_id' => Auth::id()]),
+            };
             session()->flash('success', 'State transition executed successfully.');
         } catch (\Exception $e) {
             session()->flash('error', 'Transition failed: '.$e->getMessage());
@@ -221,6 +224,10 @@ class TournamentAdmin extends AdminComponent
 
         if (! $actor) {
             return;
+        }
+
+        if (! $actor->can('cancel', $tournament)) {
+            abort(403);
         }
 
         try {

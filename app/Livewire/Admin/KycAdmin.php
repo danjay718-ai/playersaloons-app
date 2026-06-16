@@ -75,6 +75,10 @@ class KycAdmin extends AdminComponent
             return;
         }
 
+        if (! $reviewer->can('approve', $submission)) {
+            abort(403);
+        }
+
         try {
             $action->execute($submission, $reviewer);
             session()->flash('success', 'KYC submission approved successfully.');
@@ -105,6 +109,10 @@ class KycAdmin extends AdminComponent
 
         if (! $reviewer) {
             return;
+        }
+
+        if (! $reviewer->can('reject', $submission)) {
+            abort(403);
         }
 
         try {

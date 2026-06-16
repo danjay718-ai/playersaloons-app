@@ -89,6 +89,10 @@ class WithdrawalAdmin extends AdminComponent
             return;
         }
 
+        if (! $reviewer->can('approve', $withdrawal)) {
+            abort(403);
+        }
+
         try {
             $action->execute($withdrawal, $reviewer, $this->approveNotes);
             session()->flash('success', 'Withdrawal approved.');
@@ -123,8 +127,6 @@ class WithdrawalAdmin extends AdminComponent
         }
 
         try {
-            // Make sure we use the correct action inject
-            $action = app(RejectWithdrawalAction::class);
             $action->execute($withdrawal, $reviewer, $this->rejectReason);
             session()->flash('success', 'Withdrawal request rejected.');
             $this->showRejectModal = false;
@@ -141,9 +143,18 @@ class WithdrawalAdmin extends AdminComponent
         }
 
         $withdrawal = Withdrawal::findOrFail($this->selectedWithdrawalId);
+        $operator = Auth::user();
+
+        if (! $operator) {
+            return;
+        }
+
+        if (! $operator->can('approve', $withdrawal)) {
+            abort(403);
+        }
 
         try {
-            $action->execute($withdrawal);
+            $action->execute($withdrawal, $operator);
             session()->flash('success', 'Withdrawal payout marked as PROCESSED.');
             $this->showDetailModal = false;
         } catch (\Exception $e) {
