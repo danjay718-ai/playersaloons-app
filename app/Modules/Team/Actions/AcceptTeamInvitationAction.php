@@ -4,27 +4,21 @@ declare(strict_types=1);
 
 namespace App\Modules\Team\Actions;
 
+use App\Modules\Team\Events\TeamMemberJoined;
 use App\Modules\Team\Models\TeamInvitation;
 use App\Modules\Team\Models\TeamMember;
+use App\Modules\Team\StateMachines\InvitationStateMachine;
 use App\Shared\Enums\TeamInvitationStatus;
 use Illuminate\Support\Facades\DB;
-use LogicException;
 
 class AcceptTeamInvitationAction
 {
+    public function __construct(private readonly InvitationStateMachine $stateMachine) {}
+
     public function execute(TeamInvitation $invitation): void
     {
-        if ($invitation->status !== TeamInvitationStatus::PENDING) {
-            throw new LogicException('Only pending invitations can be accepted.');
-        }
-
-        if ($invitation->expires_at && $invitation->expires_at->isPast()) {
-            throw new LogicException('This invitation has expired.');
-        }
-
         DB::transaction(function () use ($invitation) {
-            $invitation->status = TeamInvitationStatus::ACCEPTED;
-            $invitation->save();
+            $this->stateMachine->transition($invitation, TeamInvitationStatus::ACCEPTED);
 
             TeamMember::create([
                 'team_id' => $invitation->team_id,
@@ -33,6 +27,8 @@ class AcceptTeamInvitationAction
                 'status' => 'active',
                 'joined_at' => now(),
             ]);
+
+            TeamMemberJoined::dispatch($invitation->team_id, $invitation->invited_user_id);
         });
     }
 }

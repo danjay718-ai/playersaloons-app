@@ -49,7 +49,7 @@ class TeamModuleTest extends TestCase
         $team = (new CreateTeamAction)->execute(['name' => 'Old Name'], $user);
 
         $action = new UpdateTeamAction;
-        $action->execute($team, ['name' => 'New Name', 'logo_path' => 'logos/1.png']);
+        $action->execute($team, ['name' => 'New Name', 'logo_path' => 'logos/1.png'], $user);
 
         $this->assertDatabaseHas('teams', [
             'id' => $team->id,
@@ -64,7 +64,7 @@ class TeamModuleTest extends TestCase
         $team = (new CreateTeamAction)->execute(['name' => 'To Disband'], $user);
 
         $action = new DisbandTeamAction;
-        $action->execute($team);
+        $action->execute($team, $user);
 
         $this->assertSoftDeleted('teams', [
             'id' => $team->id,
@@ -108,7 +108,7 @@ class TeamModuleTest extends TestCase
 
         $invitation = (new InviteToTeamAction)->execute($team, $userToInvite, $captain);
 
-        $action = new AcceptTeamInvitationAction;
+        $action = app(AcceptTeamInvitationAction::class);
         $action->execute($invitation);
 
         $this->assertDatabaseHas('team_invitations', [
@@ -130,7 +130,7 @@ class TeamModuleTest extends TestCase
         $team = (new CreateTeamAction)->execute(['name' => 'Team A'], $captain);
         $invitation = (new InviteToTeamAction)->execute($team, $userToInvite, $captain);
 
-        $action = new DeclineTeamInvitationAction;
+        $action = app(DeclineTeamInvitationAction::class);
         $action->execute($invitation);
 
         $this->assertDatabaseHas('team_invitations', [
@@ -146,7 +146,7 @@ class TeamModuleTest extends TestCase
         $team = (new CreateTeamAction)->execute(['name' => 'Team A'], $captain);
         $invitation = (new InviteToTeamAction)->execute($team, $userToInvite, $captain);
 
-        $action = new RevokeTeamInvitationAction;
+        $action = app(RevokeTeamInvitationAction::class);
         $action->execute($invitation);
 
         $this->assertDatabaseHas('team_invitations', [
@@ -162,7 +162,7 @@ class TeamModuleTest extends TestCase
         $team = (new CreateTeamAction)->execute(['name' => 'Team A'], $captain);
 
         $invitation = (new InviteToTeamAction)->execute($team, $newCaptain, $captain);
-        (new AcceptTeamInvitationAction)->execute($invitation);
+        app(AcceptTeamInvitationAction::class)->execute($invitation);
 
         $action = new TransferTeamCaptainAction;
         $action->execute($team, $newCaptain);
@@ -192,10 +192,10 @@ class TeamModuleTest extends TestCase
         $team = (new CreateTeamAction)->execute(['name' => 'Team A'], $captain);
 
         $invitation = (new InviteToTeamAction)->execute($team, $member, $captain);
-        (new AcceptTeamInvitationAction)->execute($invitation);
+        app(AcceptTeamInvitationAction::class)->execute($invitation);
 
         $action = new RemoveTeamMemberAction;
-        $action->execute($team, $member);
+        $action->execute($team, $member, $captain);
 
         $this->assertDatabaseMissing('team_members', [
             'team_id' => $team->id,

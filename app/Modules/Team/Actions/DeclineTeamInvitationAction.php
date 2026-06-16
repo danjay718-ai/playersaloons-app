@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace App\Modules\Team\Actions;
 
 use App\Modules\Team\Models\TeamInvitation;
+use App\Modules\Team\StateMachines\InvitationStateMachine;
 use App\Shared\Enums\TeamInvitationStatus;
-use LogicException;
 
 class DeclineTeamInvitationAction
 {
+    public function __construct(private readonly InvitationStateMachine $stateMachine) {}
+
     public function execute(TeamInvitation $invitation): void
     {
-        if ($invitation->status !== TeamInvitationStatus::PENDING) {
-            throw new LogicException('Only pending invitations can be declined.');
-        }
-
-        $invitation->status = TeamInvitationStatus::DECLINED;
-        $invitation->save();
+        $this->stateMachine->transition($invitation, TeamInvitationStatus::DECLINED);
     }
 }
