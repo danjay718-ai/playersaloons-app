@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-15 | **Branch**: `main`
+**Last Updated**: 2026-06-16 | **Branch**: `main`
 **New Admin Features & Compliance Plan**: [PlayerSaloons_New_Admin_Features_Implementation_Plan_v1.md]
 
 ---
@@ -471,6 +471,16 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
     - `HeadToHeadList` (matchmaking simulation, challenge creation).
   - Need to add integration/E2E tests for:
     - Navigation between dashboard, my-tournaments, and browse-tournaments pages.
+
+---
+
+## ✅ PHPStan Fixes (v1.25)
+
+Resolved 5 PHPStan Level 8 errors across Match, Wallet, and Tournament modules.
+
+- **`GameMatch` model**: Added missing `@property Carbon|null $result_submitted_at` to PHPDoc. The column was already cast to `datetime` but not declared, causing a `string|null` type mismatch when assigning `Carbon::now()` in `SubmitMatchResultAction`.
+- **`Wallet` model**: Added `@property WalletStatus $status` PHPDoc. Without it, PHPStan inferred the property as `string` (from the `$fillable` array), making strict enum comparisons (`=== WalletStatus::FROZEN/SUSPENDED`) in `WalletService` always evaluate to false.
+- **`TournamentModuleTest`**: Fixed `AutoCancelTournamentJob::dispatchSync($tournament->id)` → `dispatchSync()`. The job has no constructor and queries tournaments internally; passing an argument violated the Larastan `larastan.jobs.noConstructor` rule.
 
 ---
 
