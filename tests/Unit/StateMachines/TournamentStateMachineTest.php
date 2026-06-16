@@ -22,7 +22,10 @@ class TournamentStateMachineTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->machine = new TournamentStateMachine;
+        // Use an anonymous subclass to suppress the activity() DB call in unit tests
+        $this->machine = new class extends TournamentStateMachine {
+            protected function logTransition(\App\Modules\Tournament\Models\Tournament $tournament, \App\Shared\Enums\TournamentStatus $to, array $context = []): void {}
+        };
     }
 
     protected function tearDown(): void
