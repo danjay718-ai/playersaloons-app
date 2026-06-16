@@ -105,8 +105,13 @@ class MatchAdmin extends AdminComponent
 
         $match = GameMatch::findOrFail($this->selectedMatchId);
 
-        if ($this->winnerRegistrationId != $match->player_a_registration_id
-            && $this->winnerRegistrationId != $match->player_b_registration_id) {
+        $actor = Auth::user();
+        if (! $actor || ! $actor->can('submitResult', $match)) {
+            abort(403);
+        }
+
+        if ($this->winnerRegistrationId !== $match->player_a_registration_id
+            && $this->winnerRegistrationId !== $match->player_b_registration_id) {
             session()->flash('error', 'Winner must be one of the match participants.');
             return;
         }
@@ -119,7 +124,7 @@ class MatchAdmin extends AdminComponent
                         ->first();
                     if ($dispute) {
                         $dispute->status      = DisputeStatus::RESOLVED;
-                        $dispute->resolution  = $this->winnerRegistrationId == $match->player_a_registration_id
+                        $dispute->resolution  = $this->winnerRegistrationId === $match->player_a_registration_id
                             ? DisputeResolution::PLAYER_A
                             : DisputeResolution::PLAYER_B;
                         $dispute->resolved_by = Auth::id();
@@ -155,10 +160,14 @@ class MatchAdmin extends AdminComponent
 
         $dispute       = MatchDispute::findOrFail($this->selectedDisputeId);
         $resolutionEnum = DisputeResolution::from($this->resolution);
-        $adminId       = (int) Auth::id();
+        $actor         = Auth::user();
+
+        if (! $actor) {
+            return;
+        }
 
         try {
-            $resolver->execute($dispute, $adminId, $resolutionEnum);
+            $resolver->execute($dispute, $actor, $resolutionEnum);
             session()->flash('success', 'Dispute resolved successfully.');
             $this->closeDisputeModal();
             $this->closeDetailModal();

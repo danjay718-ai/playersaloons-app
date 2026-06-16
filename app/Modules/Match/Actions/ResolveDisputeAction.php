@@ -9,9 +9,11 @@ use App\Modules\Match\Events\MatchRematchCreated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\StateMachines\MatchStateMachine;
+use App\Modules\Identity\Models\User;
 use App\Shared\Enums\DisputeResolution;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchStatus;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,13 +25,19 @@ class ResolveDisputeAction
 
     /**
      * Resolve a match dispute.
+     *
+     * @throws AuthorizationException
      */
     public function execute(
         MatchDispute $dispute,
-        int $resolvedByAdminUserId,
+        User $actor,
         DisputeResolution $resolution
     ): void {
-        DB::transaction(function () use ($dispute, $resolvedByAdminUserId, $resolution) {
+        if (! $actor->hasAnyRole(['ADMIN', 'SUPER_ADMIN'])) {
+            throw new AuthorizationException('Only admins may resolve disputes.');
+        }
+
+        DB::transaction(function () use ($dispute, $actor, $resolution) {
             if ($dispute->status === DisputeStatus::RESOLVED) {
                 throw new LogicException('Dispute is already resolved.');
             }
@@ -39,7 +47,7 @@ class ResolveDisputeAction
             // Update dispute record
             $dispute->status = DisputeStatus::RESOLVED;
             $dispute->resolution = $resolution;
-            $dispute->resolved_by = $resolvedByAdminUserId;
+            $dispute->resolved_by = $actor->getKey();
             $dispute->resolved_at = Carbon::now();
             $dispute->save();
 
