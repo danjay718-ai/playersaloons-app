@@ -75,6 +75,12 @@ class WithdrawalStateMachine extends AbstractStateMachine
         $this->assertValidTransition($withdrawal->status, $to);
 
         if ($to === WithdrawalStatus::APPROVED) {
+            if (! $kyc instanceof KycSubmission) {
+                throw new \LogicException('KYC submission is required to approve a withdrawal.');
+            }
+            if (! $wallet instanceof Wallet) {
+                throw new \LogicException('Wallet is required to approve a withdrawal.');
+            }
             $this->guardCanApprove($kyc);
             $this->guardSufficientBalance($wallet, (float) $withdrawal->amount);
         }

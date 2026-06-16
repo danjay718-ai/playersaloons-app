@@ -7,12 +7,16 @@ use App\Shared\Enums\WithdrawalStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property WithdrawalStatus $status
+ * @property string $amount
+ */
 class Withdrawal extends Model
 {
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'uuid',
@@ -23,6 +27,7 @@ class Withdrawal extends Model
         'reviewed_by',
         'review_notes',
         'reviewed_at',
+        'processed_at',
     ];
 
     /**
@@ -36,13 +41,14 @@ class Withdrawal extends Model
             'status' => WithdrawalStatus::class,
             'amount' => 'decimal:2',
             'reviewed_at' => 'datetime',
+            'processed_at' => 'datetime',
         ];
     }
 
     /**
      * Get the wallet this withdrawal was requested from.
      *
-     * @return BelongsTo<Wallet, Withdrawal>
+     * @return BelongsTo<Wallet, $this>
      */
     public function wallet(): BelongsTo
     {
@@ -52,7 +58,7 @@ class Withdrawal extends Model
     /**
      * Get the user who requested the withdrawal.
      *
-     * @return BelongsTo<User, Withdrawal>
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -62,7 +68,7 @@ class Withdrawal extends Model
     /**
      * Get the admin/reviewer who reviewed the withdrawal.
      *
-     * @return BelongsTo<User, Withdrawal>
+     * @return BelongsTo<User, $this>
      */
     public function reviewer(): BelongsTo
     {

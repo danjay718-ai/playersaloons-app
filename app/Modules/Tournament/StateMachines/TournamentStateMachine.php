@@ -66,6 +66,13 @@ class TournamentStateMachine extends AbstractStateMachine
                 TournamentStatus::COMPLETED->value,
                 // NOTE: cancellation forbidden on ONGOING per spec
             ],
+            TournamentStatus::COMPLETED->value => [
+                TournamentStatus::REFUNDED->value,
+            ],
+            TournamentStatus::CANCELLED->value => [
+                TournamentStatus::REFUNDED->value,
+            ],
+            TournamentStatus::REFUNDED->value => [],
             // ...
         ];
     }
@@ -192,6 +199,15 @@ class TournamentStateMachine extends AbstractStateMachine
         $tournament->status = $to;
         $tournament->save();
 
+        $this->logTransition($tournament, $to, $context);
+    }
+
+    /**
+     * Log the state transition via activity log.
+     * Extracted to allow suppression in unit tests.
+     */
+    protected function logTransition(Tournament $tournament, TournamentStatus $to, array $context = []): void
+    {
         activity()
             ->performedOn($tournament)
             ->causedBy(Auth::user())
