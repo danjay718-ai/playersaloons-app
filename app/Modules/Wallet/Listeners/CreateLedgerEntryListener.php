@@ -25,7 +25,7 @@ class CreateLedgerEntryListener implements ShouldQueue
      */
     public string $queue = 'wallet';
 
-    public function __construct(private readonly WalletService $walletService) {}
+    public function __construct(private WalletService $walletService) {}
 
     /**
      * Handle incoming domain events.
@@ -45,8 +45,18 @@ class CreateLedgerEntryListener implements ShouldQueue
     {
         $withdrawal = Withdrawal::query()->findOrFail($event->withdrawalId);
 
-        // Idempotency: only process if withdrawal is APPROVED (not processed yet)
+        // Idempotency: skip if not in APPROVED state or if debit ledger entry already exists
         if ($withdrawal->status !== WithdrawalStatus::APPROVED) {
+            return;
+        }
+
+        $alreadyDebited = $withdrawal->wallet
+            ->ledgerEntries()
+            ->where('reference_type', Withdrawal::class)
+            ->where('reference_id', (string) $withdrawal->getKey())
+            ->exists();
+
+        if ($alreadyDebited) {
             return;
         }
 
@@ -59,7 +69,6 @@ class CreateLedgerEntryListener implements ShouldQueue
             'Withdrawal payout approved'
         );
 
-        // We can optionally store the ledger entry relation or log it
         WalletDebited::dispatch(
             (int) $withdrawal->getAttribute('wallet_id'),
             (int) $ledgerEntry->getKey(),
