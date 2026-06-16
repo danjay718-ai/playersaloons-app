@@ -8,6 +8,7 @@ use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Admin\StaffActivityDashboard;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Admin\TournamentForm;
 use App\Livewire\Admin\UserAdmin;
@@ -78,5 +79,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', UserAdmin::class);
         Route::get('/audit-logs', AuditLogAdmin::class);
         Route::get('/cms', CmsAdmin::class);
+        Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');
     });
 });
