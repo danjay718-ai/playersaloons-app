@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-17 | **Branch**: `main`
+**Last Updated**: 2026-06-17 (v1.28) | **Branch**: `main`
 **New Admin Features & Compliance Plan**: [PlayerSaloons_New_Admin_Features_Implementation_Plan_v1.md]
 
 ---
@@ -546,3 +546,37 @@ Audited the full Identity & Onboarding flow against `documentation/01_identity_o
 - **`RegisterUserActionTest`**: Renamed to doc-specified method names. Fixed wallet balance assertion (`'0'` → `'0.00'`). Added `Event::assertDispatched(UserRegistered::class)`. Split wallet assertion into `test_wallet_is_created_after_registration`. Added `test_registration_fails_with_invalid_email` and `test_registration_fails_with_existing_username`.
 - **`SubmitKycActionTest`**: Renamed to doc-specified method names. Fixed `'national_id'` → `'id_card'` (must match `ProfileDashboard` allowed values: `passport`, `id_card`, `drivers_license`). Added `Event::assertDispatched(UserKycSubmitted::class)` to the success test.
 - **`01_identity_onboarding.md`**: Updated to reflect post-transaction event dispatch, explicit KYC document type list, corrected test assertion details, and added `UserKycSubmitted` no-listener gap note.
+
+---
+
+## ✅ Admin Operations Audit & Staff Activity Feature (v1.28)
+
+Audited the full Admin & Operations flow against `documentation/05_admin_operations.md`. Fixed security gaps, resolved PHPStan errors, corrected a failing test, and delivered the Staff Activity Dashboard.
+
+### Security Fixes
+- **`WithdrawalAdmin::approve()` and `processPayout()`**: Added missing `$reviewer->can('approve', $withdrawal)` policy guard at the Livewire layer. Previously the `WithdrawalPolicy` four-eyes check was enforced inside the action but bypassed at the component level — inconsistent with the KYC pattern (`KycAdmin` correctly calls `$reviewer->can()` before delegating).
+- **`ResolveDisputeAction`**: Changed signature from `int $resolvedByAdminUserId` to `User $actor`. Added `hasAnyRole(['ADMIN', 'SUPER_ADMIN'])` role guard. The action was the only one in the codebase without an authorization check; if called directly (outside `MatchAdmin`) there was no gate. Updated `MatchAdmin::resolveDispute()` to pass `Auth::user()` instead of `Auth::id()`.
+
+### PHPStan Level 5 Fixes
+- **`CmsAdmin`** (3 errors):
+  - `published_at = now()` → `update(['published_at' => now()])` to avoid `Carbon` assigned to `string|null` property (the cast is on the model, not reflected in the bare property type).
+  - `$translation?->name ?? ''` and `$translation?->content ?? ''` → explicit `@var ModelClass|null` PHPDoc + ternary, resolving `nullsafe.neverNull` from Larastan inferring `first()` as non-nullable on a typed `HasMany`.
+- **`TournamentForm`** (2 errors):
+  - `$tournament->rules` resolved to the `HasMany` relation collection (not the string column) due to PHPDoc `@property-read Collection|TournamentRule[] $rules`. Fixed by using `$tournament->getAttribute('rules')` to explicitly retrieve the raw column value.
+  - `Game::first()?->id ?? 0` → `@var Game|null` PHPDoc + ternary, resolving `nullsafe.neverNull`.
+- **`AdminPanelTest`** (1 error): Removed dead `$superAdmin` property that was written in `setUp()` but never read.
+
+### Test Fix
+- **`test_tournament_admin_can_create_tournament`**: Was calling `->test(TournamentAdmin::class)` and setting `$name`, which doesn't exist on `TournamentAdmin`. Tournament creation was extracted to `TournamentForm` in v1.4. Fixed to use `TournamentForm::class` and supplied all required fields (`platform_id`, `description`, `rules`, `frequency`, `team_size`, `waiting_result_time`).
+
+### New Feature — Staff Activity Dashboard
+- **`app/Livewire/Admin/StaffActivityDashboard.php`**: New Livewire component at `/admin/staff-activity`. Restricted to `ADMIN` and `SUPER_ADMIN` (enforced in `boot()`). Displays per-staff action counts with breakdown by event type, date-range and username filters (defaults to last 7 days), and a top-10 actions summary across all staff in the period.
+- **`resources/views/livewire/admin/staff-activity-dashboard.blade.php`**: Dark-neon styled table matching admin panel design system. Shows staff member, role badge, total action count, inline action breakdown pills, and last-active timestamp.
+- **Route**: Added `Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity')` to the admin prefix group in `routes/web.php`.
+
+### Documentation
+- **`documentation/05_admin_operations.md`**: Updated to reflect all security fixes (policy guards, `ResolveDisputeAction` actor change), corrected `AssignRoleAction` note (SUPER_ADMIN only, not all admins), added Section 6 for Staff Activity Dashboard, updated test case list including new staff activity tests, and removed the `test_staff_redirect_from_player_dashboard` pending test (already covered by `test_admin_visiting_player_dashboard_redirects_to_admin_dashboard`).
+
+### Tests
+- **4 new tests** in `AdminPanelTest`: `test_player_cannot_access_staff_activity_dashboard`, `test_admin_can_access_staff_activity_dashboard`, `test_staff_activity_dashboard_shows_staff_members`, `test_staff_activity_dashboard_filters_by_date`, `test_staff_activity_dashboard_filters_by_staff_name`.
+- **All 21 `AdminPanelTest` tests passing**. PHPStan Level 5: 0 errors across all modified files.
