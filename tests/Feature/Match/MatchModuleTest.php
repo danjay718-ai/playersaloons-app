@@ -11,7 +11,6 @@ use App\Modules\Match\Actions\ConfirmMatchResultAction;
 use App\Modules\Match\Actions\ForfeitMatchAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\ResolveDisputeAction;
-use App\Modules\Match\Actions\StartMatchAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Events\TournamentBracketUpdated;
@@ -173,24 +172,9 @@ class MatchModuleTest extends TestCase
             TournamentBracketUpdated::class,
         ]);
 
-        $match = GameMatch::query()->where('status', MatchStatus::READY)->firstOrFail();
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
 
-        // 1. Start Match
-        app(StartMatchAction::class)->execute($match);
-        $match->refresh();
-
-        $this->assertEquals(MatchStatus::IN_PROGRESS, $match->status);
-        $this->assertNotNull($match->started_at);
-
-        // Verify start notification was created
-        $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->playerA->id,
-            'title' => 'Match Started',
-        ]);
-        $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->playerB->id,
-            'title' => 'Match Started',
-        ]);
+        // 1. Match is already IN_PROGRESS (auto-started by AutoStartMatchesListener)
 
         // 2. Submit Result (Player A claims win)
         $notes = 'We played and I won 16-10.';
@@ -202,7 +186,7 @@ class MatchModuleTest extends TestCase
         );
         $match->refresh();
 
-        $this->assertEquals(MatchStatus::RESULT_SUBMITTED, $match->status);
+        $this->assertEquals(MatchStatus::WAITING_FOR_CONFIRMATION, $match->status);
         $this->assertDatabaseHas('match_result_submissions', [
             'id' => $submission->id,
             'match_id' => $match->id,
@@ -217,8 +201,8 @@ class MatchModuleTest extends TestCase
             'title' => 'Match Result Submitted',
         ]);
 
-        // 3. Confirm Result
-        app(ConfirmMatchResultAction::class)->execute($match, $this->regA->id);
+        // 3. Confirm Result — must be confirmed by the opponent (playerB), not the submitter
+        app(ConfirmMatchResultAction::class)->execute($match, $this->playerB->id);
         $match->refresh();
 
         $this->assertEquals(MatchStatus::COMPLETED, $match->status);
@@ -252,7 +236,7 @@ class MatchModuleTest extends TestCase
             TournamentBracketUpdated::class,
         ]);
 
-        $match = GameMatch::query()->where('status', MatchStatus::READY)->firstOrFail();
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
 
         // Player A forfeits the match
         app(ForfeitMatchAction::class)->execute($match, $this->regA->id);
@@ -278,20 +262,19 @@ class MatchModuleTest extends TestCase
      */
     public function test_dispute_resolution_winner_flow(): void
     {
-        Storage::fake('r2');
+        Storage::fake('public');
 
         Event::fake([
             TournamentBracketUpdated::class,
         ]);
 
-        $match = GameMatch::query()->where('status', MatchStatus::READY)->firstOrFail();
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
 
-        // Start match & submit a result
-        app(StartMatchAction::class)->execute($match);
+        // Match is already IN_PROGRESS — submit a result
         app(SubmitMatchResultAction::class)->execute($match, $this->playerA->id, $this->regA->id);
 
         // Player B disputes the result
-        $dispute = app(OpenDisputeAction::class)->execute($match, $this->playerB->id);
+        $dispute = app(OpenDisputeAction::class)->execute($match, $this->playerB->id, 'I disagree with the result.');
         $match->refresh();
 
         $this->assertEquals(MatchStatus::DISPUTED, $match->status);
@@ -311,7 +294,7 @@ class MatchModuleTest extends TestCase
         $file = UploadedFile::fake()->create('screenshot.jpg', 100, 'image/jpeg');
         $evidence = app(SubmitEvidenceAction::class)->execute($dispute, $this->playerB->id, $file);
 
-        Storage::disk('r2')->assertExists($evidence->file_path);
+        Storage::disk('public')->assertExists($evidence->file_path);
         $dispute->refresh();
         $this->assertEquals(DisputeStatus::UNDER_REVIEW, $dispute->status);
 
@@ -347,12 +330,11 @@ class MatchModuleTest extends TestCase
             TournamentBracketUpdated::class,
         ]);
 
-        $match = GameMatch::query()->where('status', MatchStatus::READY)->firstOrFail();
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
 
-        // Start match & submit result & open dispute
-        app(StartMatchAction::class)->execute($match);
+        // Match is already IN_PROGRESS — submit result & open dispute
         app(SubmitMatchResultAction::class)->execute($match, $this->playerA->id, $this->regA->id);
-        $dispute = app(OpenDisputeAction::class)->execute($match, $this->playerB->id);
+        $dispute = app(OpenDisputeAction::class)->execute($match, $this->playerB->id, 'I disagree with the result.');
 
         // Admin resolves dispute as a REMATCH
         app(ResolveDisputeAction::class)->execute($dispute, $this->adminUser->id, DisputeResolution::REMATCH);
@@ -381,11 +363,10 @@ class MatchModuleTest extends TestCase
     public function test_rematch_timeout_job(): void
     {
         // Setup dispute -> Rematch (must run without faking rematch events so rematch match is created normally)
-        $match = GameMatch::query()->where('status', MatchStatus::READY)->firstOrFail();
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
 
-        app(StartMatchAction::class)->execute($match);
         app(SubmitMatchResultAction::class)->execute($match, $this->playerA->id, $this->regA->id);
-        $dispute = app(OpenDisputeAction::class)->execute($match, $this->playerB->id); // Player B opened dispute
+        $dispute = app(OpenDisputeAction::class)->execute($match, $this->playerB->id, 'I disagree with the result.'); // Player B opened dispute
 
         app(ResolveDisputeAction::class)->execute($dispute, $this->adminUser->id, DisputeResolution::REMATCH);
 
@@ -407,8 +388,7 @@ class MatchModuleTest extends TestCase
      */
     public function test_invalid_winner_registration(): void
     {
-        $match = GameMatch::query()->where('status', MatchStatus::READY)->firstOrFail();
-        app(StartMatchAction::class)->execute($match);
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
 
         $this->expectException(InvalidArgumentException::class);
 
