@@ -8,7 +8,9 @@ use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Admin\StaffActivityDashboard;
 use App\Livewire\Admin\TournamentAdmin;
+use App\Livewire\Admin\TournamentForm;
 use App\Livewire\Admin\UserAdmin;
 use App\Livewire\Admin\WithdrawalAdmin;
 use App\Modules\CMS\Models\Game;
@@ -37,8 +39,6 @@ class AdminPanelTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $superAdmin;
-
     private User $admin;
 
     private User $player;
@@ -53,7 +53,6 @@ class AdminPanelTest extends TestCase
         $this->seed(PlatformSystemUserSeeder::class);
         $this->seed(SystemSettingsSeeder::class);
 
-        $this->superAdmin = $this->createUserWithRole('SUPER_ADMIN', 'superadmin@example.com');
         $this->admin = $this->createUserWithRole('ADMIN', 'admin@example.com');
         $this->player = $this->createUserWithRole('PLAYER', 'player@example.com');
 
@@ -200,10 +199,18 @@ class AdminPanelTest extends TestCase
      */
     public function test_tournament_admin_can_create_tournament(): void
     {
+        $platform = \App\Modules\CMS\Models\Platform::query()->create(['name' => 'PC', 'slug' => 'pc']);
+
         Livewire::actingAs($this->admin)
-            ->test(TournamentAdmin::class)
+            ->test(TournamentForm::class)
             ->set('name', 'New Admin Cup')
             ->set('game_id', $this->game->id)
+            ->set('platform_id', $platform->id)
+            ->set('description', 'A test tournament description for admin cup.')
+            ->set('rules', '<ul><li>Follow the rules.</li></ul>')
+            ->set('frequency', 'one-time')
+            ->set('team_size', 1)
+            ->set('waiting_result_time', 10)
             ->set('entry_fee', '10.00')
             ->set('prize_pool', '150.00')
             ->set('min_participants', 4)
@@ -378,5 +385,52 @@ class AdminPanelTest extends TestCase
 
         $this->assertEquals(WithdrawalStatus::APPROVED, $withdrawal->fresh()->status);
         $this->assertEquals($this->admin->id, $withdrawal->fresh()->reviewed_by);
+    }
+
+    /**
+     * Test StaffActivityDashboard access and rendering.
+     */
+    public function test_player_cannot_access_staff_activity_dashboard(): void
+    {
+        $response = $this->actingAs($this->player)->get('/admin/staff-activity');
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_access_staff_activity_dashboard(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/admin/staff-activity');
+        $response->assertStatus(200);
+        $response->assertSee('Staff Activity Dashboard');
+    }
+
+    public function test_staff_activity_dashboard_shows_staff_members(): void
+    {
+        // Log an activity for the admin so they appear in the dashboard
+        activity()->causedBy($this->admin)->log('kyc_approved');
+
+        Livewire::actingAs($this->admin)
+            ->test(StaffActivityDashboard::class)
+            ->assertSee($this->admin->username);
+    }
+
+    public function test_staff_activity_dashboard_filters_by_date(): void
+    {
+        activity()->causedBy($this->admin)->log('kyc_approved');
+
+        Livewire::actingAs($this->admin)
+            ->test(StaffActivityDashboard::class)
+            ->set('dateFrom', now()->subDays(7)->format('Y-m-d'))
+            ->set('dateTo', now()->format('Y-m-d'))
+            ->assertSee($this->admin->username);
+    }
+
+    public function test_staff_activity_dashboard_filters_by_staff_name(): void
+    {
+        activity()->causedBy($this->admin)->log('kyc_approved');
+
+        Livewire::actingAs($this->admin)
+            ->test(StaffActivityDashboard::class)
+            ->set('staffFilter', 'admin')
+            ->assertSee('admin');
     }
 }
