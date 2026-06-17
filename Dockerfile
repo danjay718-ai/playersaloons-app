@@ -33,10 +33,13 @@ WORKDIR /var/www
 COPY . /var/www
 
 # Install PHP dependencies (no dev, optimized autoloader)
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN APP_ENV=local COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Install JS dependencies and build assets
 RUN npm ci && npm run build && rm -rf node_modules
+
+# Run post-install scripts after build env is clean
+RUN APP_ENV=local composer dump-autoload --optimize
 
 # Copy nginx config
 COPY docker/nginx/prod.conf /etc/nginx/http.d/default.conf
