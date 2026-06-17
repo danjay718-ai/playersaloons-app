@@ -1,0 +1,196 @@
+services:
+  # ─── Web (Laravel App) ───────────────────────────────────────────────────────
+  - type: web
+    name: playersaloons-web
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: singapore
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: APP_NAME
+        value: PlayerSaloons
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        value: https://playersaloons-web.onrender.com   # update after first deploy
+
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: error
+
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: playersaloons-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: playersaloons-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: playersaloons-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: playersaloons-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: playersaloons-db
+          property: password
+
+      - key: REDIS_HOST
+        fromService:
+          name: playersaloons-redis
+          type: redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: playersaloons-redis
+          type: redis
+          property: port
+      - key: REDIS_PASSWORD
+        fromService:
+          name: playersaloons-redis
+          type: redis
+          property: password
+
+      - key: SESSION_DRIVER
+        value: redis
+      - key: SESSION_CONNECTION
+        value: session
+      - key: CACHE_STORE
+        value: redis
+      - key: REDIS_CACHE_CONNECTION
+        value: cache
+      - key: QUEUE_CONNECTION
+        value: redis
+      - key: REDIS_QUEUE_CONNECTION
+        value: queue
+
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      - key: REVERB_APP_ID
+        sync: false
+      - key: REVERB_APP_KEY
+        sync: false
+      - key: REVERB_APP_SECRET
+        sync: false
+      - key: REVERB_HOST
+        value: playersaloons-reverb.onrender.com   # update after reverb deploy
+      - key: REVERB_PORT
+        value: 443
+      - key: REVERB_SCHEME
+        value: https
+      - key: VITE_REVERB_APP_KEY
+        sync: false
+      - key: VITE_REVERB_HOST
+        value: playersaloons-reverb.onrender.com
+      - key: VITE_REVERB_PORT
+        value: 443
+      - key: VITE_REVERB_SCHEME
+        value: https
+
+      - key: FILESYSTEM_DISK
+        value: r2
+      - key: MEDIA_DISK
+        value: r2
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: R2_ENDPOINT
+        sync: false
+
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: PlayerSaloons
+
+    buildCommand: |
+      composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+      npm ci
+      npm run build
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+    startCommand: |
+      php artisan migrate --force
+      php artisan db:seed --class=RolesAndPermissionsSeeder --force
+      php artisan db:seed --class=PlatformSystemUserSeeder --force
+      php artisan db:seed --class=GamesTableSeeder --force
+      php artisan db:seed --class=SystemSettingsSeeder --force
+      php artisan storage:link
+      php-fpm
+
+  # ─── Queue Worker (Horizon) ───────────────────────────────────────────────────
+  - type: worker
+    name: playersaloons-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: singapore
+    plan: starter
+    startCommand: php artisan horizon
+    envVars:
+      - fromGroup: playersaloons-env
+
+  # ─── Scheduler ───────────────────────────────────────────────────────────────
+  - type: worker
+    name: playersaloons-scheduler
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: singapore
+    plan: starter
+    startCommand: sh -c "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
+    envVars:
+      - fromGroup: playersaloons-env
+
+  # ─── Reverb (WebSocket Server) ───────────────────────────────────────────────
+  - type: web
+    name: playersaloons-reverb
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: singapore
+    plan: starter
+    startCommand: php artisan reverb:start --host=0.0.0.0 --port=8080 --no-interaction
+    envVars:
+      - fromGroup: playersaloons-env
+
+databases:
+  # ─── MySQL ───────────────────────────────────────────────────────────────────
+  - name: playersaloons-db
+    databaseName: playersaloons
+    user: playersaloons
+    region: singapore
+    plan: starter
+
+  # ─── Redis ───────────────────────────────────────────────────────────────────
+  - name: playersaloons-redis
+    region: singapore
+    plan: starter
