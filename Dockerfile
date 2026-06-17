@@ -19,7 +19,7 @@ RUN apk add --no-cache \
     make
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql bcmath gd intl zip pcntl opcache
+RUN docker-php-ext-install pdo_mysql bcmath gd intl zip pcntl opcache exif
 
 # Install Redis extension
 RUN pecl install redis && docker-php-ext-enable redis
