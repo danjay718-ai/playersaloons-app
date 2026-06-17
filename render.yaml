@@ -79,8 +79,9 @@ services:
       - key: REDIS_QUEUE_CONNECTION
         value: queue
 
+      # Broadcasting disabled until Reverb is configured — change to "reverb" once ready
       - key: BROADCAST_CONNECTION
-        value: reverb
+        value: log
       - key: REVERB_APP_ID
         sync: false
       - key: REVERB_APP_KEY
@@ -88,7 +89,7 @@ services:
       - key: REVERB_APP_SECRET
         sync: false
       - key: REVERB_HOST
-        value: playersaloons-reverb.onrender.com   # update after reverb deploys
+        value: playersaloons-reverb.onrender.com
       - key: REVERB_PORT
         value: 443
       - key: REVERB_SCHEME
@@ -96,7 +97,7 @@ services:
       - key: VITE_REVERB_APP_KEY
         sync: false
       - key: VITE_REVERB_HOST
-        value: playersaloons-reverb.onrender.com   # update after reverb deploys
+        value: playersaloons-reverb.onrender.com
       - key: VITE_REVERB_PORT
         value: 443
       - key: VITE_REVERB_SCHEME
