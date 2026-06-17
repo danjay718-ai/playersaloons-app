@@ -50,21 +50,11 @@ services:
           name: playersaloons-db
           property: password
 
-      - key: REDIS_HOST
+      - key: REDIS_URL
         fromService:
           name: playersaloons-redis
           type: redis
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          name: playersaloons-redis
-          type: redis
-          property: port
-      - key: REDIS_PASSWORD
-        fromService:
-          name: playersaloons-redis
-          type: redis
-          property: password
+          property: connectionString
 
       - key: SESSION_DRIVER
         value: redis
@@ -176,21 +166,11 @@ services:
         fromDatabase:
           name: playersaloons-db
           property: password
-      - key: REDIS_HOST
+      - key: REDIS_URL
         fromService:
           name: playersaloons-redis
           type: redis
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          name: playersaloons-redis
-          type: redis
-          property: port
-      - key: REDIS_PASSWORD
-        fromService:
-          name: playersaloons-redis
-          type: redis
-          property: password
+          property: connectionString
       - key: QUEUE_CONNECTION
         value: redis
       - key: CACHE_STORE
@@ -240,21 +220,11 @@ services:
         fromDatabase:
           name: playersaloons-db
           property: password
-      - key: REDIS_HOST
+      - key: REDIS_URL
         fromService:
           name: playersaloons-redis
           type: redis
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          name: playersaloons-redis
-          type: redis
-          property: port
-      - key: REDIS_PASSWORD
-        fromService:
-          name: playersaloons-redis
-          type: redis
-          property: password
+          property: connectionString
       - key: QUEUE_CONNECTION
         value: redis
       - key: CACHE_STORE
@@ -288,21 +258,11 @@ services:
         sync: false
       - key: REVERB_APP_SECRET
         sync: false
-      - key: REDIS_HOST
+      - key: REDIS_URL
         fromService:
           name: playersaloons-redis
           type: redis
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          name: playersaloons-redis
-          type: redis
-          property: port
-      - key: REDIS_PASSWORD
-        fromService:
-          name: playersaloons-redis
-          type: redis
-          property: password
+          property: connectionString
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL
