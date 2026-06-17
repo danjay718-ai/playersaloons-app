@@ -32,8 +32,14 @@ WORKDIR /var/www
 # Copy app
 COPY . /var/www
 
+# Install PHP dependencies (no dev, optimized autoloader)
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Install JS dependencies and build assets
+RUN npm ci && npm run build && rm -rf node_modules
+
 # Copy nginx config
-COPY docker/nginx/render.conf /etc/nginx/http.d/default.conf
+COPY docker/nginx/prod.conf /etc/nginx/http.d/default.conf
 
 # Copy startup script
 COPY docker/start.sh /start.sh
@@ -43,6 +49,6 @@ RUN chmod +x /start.sh
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-EXPOSE 10000
+EXPOSE 80
 
 CMD ["/start.sh"]

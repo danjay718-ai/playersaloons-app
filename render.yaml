@@ -126,40 +126,6 @@ services:
       - key: REDIS_REVERB_PREFIX
         value: "ps:reverb:"
 
-  # ─── Reverb (WebSocket Server) ───────────────────────────────────────────────
-  - type: web
-    name: playersaloons-reverb
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    region: singapore
-    plan: starter
-    envVars:
-      - key: SERVICE_TYPE
-        value: reverb
-      - key: APP_ENV
-        value: production
-      - key: APP_KEY
-        fromService:
-          name: playersaloons-web
-          type: web
-          envVarKey: APP_KEY
-      - key: REVERB_APP_ID
-        sync: false
-      - key: REVERB_APP_KEY
-        sync: false
-      - key: REVERB_APP_SECRET
-        sync: false
-      - key: REDIS_URL
-        fromService:
-          name: playersaloons-redis
-          type: redis
-          property: connectionString
-      - key: LOG_CHANNEL
-        value: stderr
-      - key: LOG_LEVEL
-        value: error
-
 databases:
   # ─── MySQL ───────────────────────────────────────────────────────────────────
   - name: playersaloons-db
