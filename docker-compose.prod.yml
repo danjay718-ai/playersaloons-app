@@ -12,8 +12,6 @@ services:
       SERVICE_TYPE: web
     env_file:
       - .env
-    ports:
-      - "80:80"
     volumes:
       - storage_data:/var/www/storage/app/public
     depends_on:
