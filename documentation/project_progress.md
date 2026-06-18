@@ -580,3 +580,111 @@ Audited the full Admin & Operations flow against `documentation/05_admin_operati
 ### Tests
 - **4 new tests** in `AdminPanelTest`: `test_player_cannot_access_staff_activity_dashboard`, `test_admin_can_access_staff_activity_dashboard`, `test_staff_activity_dashboard_shows_staff_members`, `test_staff_activity_dashboard_filters_by_date`, `test_staff_activity_dashboard_filters_by_staff_name`.
 - **All 21 `AdminPanelTest` tests passing**. PHPStan Level 5: 0 errors across all modified files.
+
+---
+
+## 🔲 Pending / Not Yet Done
+
+This section consolidates all known incomplete work across the project. For detailed task lists, see `PlayerSaloons_Execution_Checklist_v1.md`.
+
+### Testing Debt
+The following tests are identified but not yet written:
+
+**Tournament & Admin UI**
+- `test_admin_tournament_filter_persistence`
+- `test_admin_frequency_tab_functionality` / `test_player_frequency_tab_functionality`
+- `test_join_tournament_button_is_restricted_by_role`
+- `test_tournament_listing_filters_by_status`
+- `test_view_restricted_details_policy`
+- `test_custom_pagination_rendering`
+- `test_admin_navigation_flow` (wire:navigate SPA transitions)
+
+**Livewire Component Tests**
+- Elimination modal (4 cases: show/hide, go back, continue)
+- My Tournaments stats banner calculation
+- Elimination shifts tournament to history tab
+- N+1 query prevention on `/my-tournaments`
+- Player tournament list filtering
+- H2H matchmaking simulation
+
+### Feature Gaps (Not Implemented)
+Items where schema or stub exists but logic is missing:
+
+| Feature | Status | Notes |
+|---|---|---|
+| H2H Production Backend | ❌ Not started | UI is mock only. Schema, matchmaking engine, and escrow missing. |
+| File Storage → R2/S3 | ⚠️ Deferred | Currently using local `public` disk. See deployment notes below. |
+| External Payout Integration | ❌ Not started | `PROCESSED` state is manual. No PayPal/Stripe Connect. |
+| Referral System Logic | ❌ Not started | Integer ref ID in DB, no reward logic. |
+| 2FA | ❌ Not started | Schema has `two_factor_secret` but no UI/Action. |
+| `last_login_at` | ❌ Not started | Column exists, not updated on login. |
+| `UserKycSubmitted` listener | ❌ Not started | Event dispatched but no listener registered. |
+| `deposits.fee_amount` | ❌ Not started | Field in DB and `$fillable`, but fee deduction not implemented. |
+| Broadcast Messages UI | ❌ Not started | `broadcast_messages` table exists, no admin UI. |
+| CMS Blog/News | ❌ Not started | — |
+| Compliance/Blacklisting | ❌ Not started | — |
+| Translation Management | ❌ Not started | — |
+| Streaming Integration | ❌ Not started | `twitch_stream_url`/`youtube_stream_url` in schema, no live integration. |
+| Team Tournaments | ❌ Not started | `tournament_registrations.team_id` placeholder unused. |
+| Auto-Forfeit timeout config | ⚠️ Partial | `AutoForfeitJob` uses `waiting_result_time` but not exposed in `SystemSettings` UI. |
+
+---
+
+## 🚀 Deployment Notes
+
+**First deployed**: 2026-06-18 via Docker Compose + Coolify on Linode (IP: 139.162.61.8)
+**Domain**: app-testing.website (HTTP only, SSL pending)
+
+### Current Production Setup
+- Docker Compose: `docker-compose.prod.yml`
+- 5 containers: `app` (nginx + php-fpm), `reverb`, `worker` (Horizon), `scheduler`, `mysql`, `redis`
+- `.env` loaded via Coolify environment variables UI
+
+### Issues Encountered on First Deploy
+
+**1. Login redirect loop (`/login?_token=...&identity=...&password=...`)**
+- **Cause A**: No `trustProxies` configured — Laravel behind Coolify/Traefik didn't know it was receiving HTTPS-proxied requests, causing session/cookie inconsistency.
+- **Fix A**: Added `$middleware->trustProxies(at: '*')` in `bootstrap/app.php`.
+- **Cause B**: `SESSION_ENCRYPT=true` — encrypted sessions failed to decrypt on container restart/redeploy due to key loading inconsistency.
+- **Fix B**: Set `SESSION_ENCRYPT=false`.
+- **Cause C**: `SESSION_SECURE_COOKIE=true` but site was on HTTP — browser refused to send secure cookie over non-HTTPS.
+- **Fix C**: Set `SESSION_SECURE_COOKIE=false` until SSL is configured.
+- **Cause D**: Old session cookies in browser from local dev.
+- **Fix D**: Clear browser cookies for the domain, or use incognito to test.
+
+**2. `APP_URL=http://localhost`**
+- Caused incorrect redirects and CSRF origin mismatches.
+- Fix: Set `APP_URL=https://app-testing.website`.
+
+### Pre-Deployment Checklist (For Future Deploys)
+
+```
+✅ bootstrap/app.php → trustProxies(at: '*') is present
+✅ APP_URL = exact HTTPS domain
+✅ APP_ENV = production
+✅ APP_DEBUG = false
+✅ SESSION_DRIVER = redis
+✅ SESSION_DOMAIN = yourdomain.com
+✅ SESSION_SECURE_COOKIE = true (only after SSL is active)
+✅ SESSION_ENCRYPT = false
+✅ REDIS_HOST = redis (container service name, not localhost)
+✅ DB_HOST = mysql (container service name, not localhost)
+✅ REVERB_HOST = domain name (not raw IP)
+✅ REVERB_SCHEME = https, REVERB_PORT = 443 (after SSL)
+✅ php artisan config:cache runs on deploy (handled in start.sh)
+✅ php artisan migrate --force runs on deploy (handled in start.sh)
+```
+
+### SSL Setup (Coolify — Let's Encrypt)
+1. In Coolify dashboard → your application → **Domains** section
+2. Enter domain: `app-testing.website`
+3. Enable HTTPS/SSL toggle (Coolify + Traefik handle Let's Encrypt automatically)
+4. After SSL is active, update `.env`: `SESSION_SECURE_COOKIE=true`, `REVERB_SCHEME=https`, `REVERB_PORT=443`
+5. Restart (not full redeploy needed for `.env`-only changes)
+
+### Pending Production Work
+- [ ] Configure SSL via Coolify (Let's Encrypt)
+- [ ] Update `SESSION_SECURE_COOKIE=true` after SSL is active
+- [ ] Verify Horizon dashboard and queue workers are processing
+- [ ] Run `php artisan storage:link` if local file storage is used
+- [ ] Migrate file storage to R2/S3 before accepting real user uploads
