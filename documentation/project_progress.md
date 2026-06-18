@@ -1,7 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-17 (v1.28) | **Branch**: `main`
-**New Admin Features & Compliance Plan**: [PlayerSaloons_New_Admin_Features_Implementation_Plan_v1.md]
+**Last Updated**: 2026-06-19 (v1.28) | **Branch**: `main`
 
 ---
 

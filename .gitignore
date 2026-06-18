@@ -26,14 +26,4 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 *:Zone.Identifier
-
-# PlayerSaloons baseline and checklist docs
-/PlayerSaloons_Architecture_Baseline_v1.md
-/PlayerSaloons_Baseline_Addendum_v1.md
-/PlayerSaloons_Execution_Checklist_v1.md
-/PlayerSaloons_Architecture_Baseline_v1.md:Zone.Identifier
-/PlayerSaloons_Baseline_Addendum_v1.md:Zone.Identifier
-/PlayerSaloons_Execution_Checklist_v1.md:Zone.Identifier
-# project_progress.md removed from here to be committed
-
-/documentation
+*.Zone.Identifier

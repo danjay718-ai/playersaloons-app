@@ -1,0 +1,86 @@
+# User Flow: Player Onboarding & Identity
+
+This document outlines the step-by-step flow for a player joining the platform, from registration to KYC compliance.
+
+## 1. Registration
+Players sign up for an account to begin their journey.
+
+*   **Action**: Player fills out the registration form.
+*   **UI Component**: `app/Livewire/Auth/Register.php`
+*   **View**: `resources/views/livewire/auth/register.blade.php`
+*   **Logic (Actions)**:
+    *   `app/Modules/Identity/Actions/RegisterUserAction.php`: Atomically creates User, Profile, and assigns the `PLAYER` role. `UserRegistered` is dispatched **after** the transaction commits to guarantee queued listeners can query committed data.
+*   **Connected Files**:
+    *   `app/Modules/Identity/Models/User.php`: The custom User model.
+    *   `app/Modules/Identity/Events/UserRegistered.php`: Dispatched upon successful registration.
+    *   `app/Modules/Wallet/Listeners/CreateWalletListener.php`: Subscribes to `UserRegistered` to create the player's initial wallet (runs on `wallet` queue).
+    *   `database/migrations/0001_01_01_000000_create_users_table.php`
+
+## 2. Email Verification
+Ensures the player's email is valid and owned by them.
+
+*   **Action**: Player clicks the link sent to their email.
+*   **UI Component**: `app/Livewire/Auth/EmailVerification.php`
+*   **Connected Files**:
+    *   `app/Modules/Identity/Events/EmailVerified.php`: Dispatched upon successful verification.
+    *   `app/Shared/Events/DomainEvent.php`: Base event class.
+
+## 3. KYC Submission
+Identity verification is required for financial transactions (e.g., withdrawals).
+
+*   **Action**: Player uploads identity documents (ID, Passport, or Driver's License).
+*   **UI Component**: `app/Livewire/Profile/ProfileDashboard.php`
+*   **View**: `resources/views/livewire/profile/profile-dashboard.blade.php`
+*   **Logic (Actions)**:
+    *   `app/Modules/Identity/Actions/SubmitKycAction.php`: Handles file uploads and state transitions. Accepted document types: `passport`, `id_card`, `drivers_license`.
+*   **Connected Files**:
+    *   `app/Modules/Identity/Models/KycSubmission.php`: Model for storing KYC data.
+    *   `app/Modules/Identity/StateMachines/KycStateMachine.php`: Governs the transition from `NOT_SUBMITTED` to `SUBMITTED`.
+    *   `app/Modules/Identity/Events/UserKycSubmitted.php`: Dispatched after submission. No listeners registered yet — placeholder for future compliance hooks.
+    *   `database/migrations/2026_06_07_100002_create_kyc_submissions_table.php`
+
+## 4. Profile Updates
+Managing display name, bio, and preferences.
+
+*   **Action**: Player updates their public-facing profile information.
+*   **UI Component**: `app/Livewire/Profile/ProfileDashboard.php`
+*   **Logic (Actions)**:
+    *   `app/Modules/Identity/Actions/UpdateProfileAction.php`: Updates bio, country, timezone, etc.
+    *   `app/Modules/Identity/Actions/UploadAvatarAction.php`: Handles profile picture updates.
+*   **Connected Files**:
+    *   `app/Modules/Identity/Models/UserProfile.php`: Model for profile details.
+    *   `app/Modules/Community/Services/NotificationService.php`: Updates notification preferences from the profile dashboard.
+
+## 🧪 Isolated Test Cases
+To ensure flow integrity, the following tests must be implemented and passing:
+
+### 1. Registration Tests — `tests/Feature/Identity/RegisterUserActionTest.php`
+*   **Success**: `test_player_can_register_successfully`
+    *   Assert `users` table has entry.
+    *   Assert `user_profiles` table has linked entry.
+    *   Assert role `PLAYER` is assigned.
+    *   Assert `UserRegistered` event dispatched with correct `userId`, `email`, `username`.
+*   **Wallet**: `test_wallet_is_created_after_registration`
+    *   Assert `wallets` table has entry with `cached_balance = 0.00`.
+*   **Validation**: `test_registration_fails_with_invalid_email`
+*   **Duplicate**: `test_registration_fails_with_existing_username`
+
+### 2. KYC Tests — `tests/Feature/Identity/SubmitKycActionTest.php`
+*   **Success**: `test_player_can_submit_kyc_documents`
+    *   Assert `kyc_submissions` status is `SUBMITTED`.
+    *   Assert files are stored on the `local` disk.
+    *   Assert `UserKycSubmitted` event dispatched.
+*   **Unauthorized**: `test_player_cannot_submit_kyc_twice_while_pending`
+*   **State Machine**: `test_kyc_transition_from_rejected_to_submitted`
+    *   Assert resubmission reuses the same `kyc_submissions` row (no duplicate created).
+    *   Assert `review_notes` is cleared on resubmission.
+
+## 🛠️ Feature Gaps & Unused Schema
+*   **Missing Features**:
+    *   **Referral System Logic**: The referral integer ID is in the DB but the logic to reward referrers is not yet implemented.
+    *   **2FA Support**: Schema has `two_factor_secret` and `two_factor_recovery_codes` (via Laravel Fortify/standard) but UI/Action logic is missing.
+    *   **Social Login**: `provider_name` and `provider_id` are in some variations of the plan but not yet in the current migration.
+    *   **`UserKycSubmitted` listener**: Event is dispatched but has no registered listener. Add a listener when compliance/notification hooks are implemented.
+*   **Unused Schema Columns**:
+    *   `users.last_login_at`: Column exists in some migrations but isn't being updated in `Login` logic yet.
+    *   `user_profiles.metadata`: JSON field currently empty/not used by `UpdateProfileAction`.
