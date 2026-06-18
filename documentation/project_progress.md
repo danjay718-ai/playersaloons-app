@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-19 (v1.28) | **Branch**: `main`
+**Last Updated**: 2026-06-19 (v1.29) | **Branch**: `main`
 
 ---
 
@@ -687,3 +687,24 @@ Items where schema or stub exists but logic is missing:
 - [ ] Verify Horizon dashboard and queue workers are processing
 - [ ] Run `php artisan storage:link` if local file storage is used
 - [ ] Migrate file storage to R2/S3 before accepting real user uploads
+
+---
+
+## ✅ Quick Fixes & Production Verification (v1.29)
+
+### `last_login_at` — now updated on login
+- **`app/Livewire/Auth/Login.php`**: Added `$user?->update(['last_login_at' => now()])` after successful `Auth::attempt()`.
+- **`app/Modules/Identity/Models/User.php`**: Added `last_login_at` to `$fillable` and `casts` (`'datetime'`). Column already existed in the migration.
+- **Usage**: Currently recorded but not yet displayed in UI. Planned use: Admin User panel (last seen), future online presence tracking.
+
+### Horizon Production Verified
+- `/horizon` accessible at production URL. Status: **Active**. Workers confirmed running via `worker` container.
+- Zero metrics are expected until real user activity generates jobs.
+
+### Documentation Reorganization
+- Deleted redundant files: `PlayerSaloons_New_Admin_Features_Implementation_Plan_v1.md`, `PlayerSaloons_Baseline_Addendum_v1.md`, all `Zone.Identifier` artifacts.
+- Moved all docs to `documentation/` folder (git mv — history preserved).
+- Created `documentation/ONBOARDING.md` — single start-here file with setup, conventions, doc update format, data storage map, Definition of Done, and feature/bug tracking guide.
+- Created `documentation/guides/r2-storage-migration.md` — step-by-step R2 migration guide (Obsidian-compatible).
+- Updated `README.md` to point to ONBOARDING.md.
+- Fixed `.gitignore` — removed incorrect ignores of `/documentation` folder and root doc files.

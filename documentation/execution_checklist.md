@@ -36,7 +36,7 @@
 ### Infrastructure (Production Deployment)
 - [x] Scheduler runs via dedicated `scheduler` container in `docker-compose.prod.yml`.
 - [x] Queue worker runs via dedicated `worker` container (Horizon) in `docker-compose.prod.yml`.
-- [ ] Verify Horizon dashboard is accessible and workers are processing queues in production.
+- [x] Verify Horizon dashboard is accessible and workers are processing queues in production. *(Status: Active, confirmed v1.29)*
 
 ### Escrow/Wallet Integration
 - [ ] Develop `LockStakeAction` — reserve funds during H2H queueing.
@@ -93,7 +93,7 @@ These tests are identified but not yet implemented. Priority order within each s
 ### Identity
 - [ ] Referral System Logic — integer ref ID is in DB but reward logic not implemented
 - [ ] 2FA — schema has `two_factor_secret` / `two_factor_recovery_codes` but no UI/Action
-- [ ] `last_login_at` update on successful login (column exists, not being written)
+- [x] `last_login_at` update on successful login (column exists, now updated in `Login.php` — v1.29)
 - [ ] `UserKycSubmitted` listener — event dispatched but no listener registered yet
 
 ### Financial
