@@ -59,6 +59,7 @@ class User extends Authenticatable implements HasMedia
         'password',
         'email_verified_at',
         'status',
+        'last_login_at',
     ];
 
     /**
@@ -80,6 +81,7 @@ class User extends Authenticatable implements HasMedia
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
         ];

@@ -35,6 +35,7 @@ class Login extends Component
             session()->regenerate();
 
             $user = Auth::user();
+            $user?->update(['last_login_at' => now()]);
             $adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER'];
 
             if ($user && $user->hasAnyRole($adminRoles)) {
