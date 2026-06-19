@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-19 (v1.31)
+**Last Updated**: 2026-06-19 (v1.32)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -165,6 +165,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Admin/AdminPanelTest.php` | Admin access guards, KYC approve/reject, match override, tournament create (TournamentForm), staff activity |
 | `Wallet/WalletFeatureTest.php` | Deposit idempotency, withdrawal lifecycle, ledger sum = cached balance, listener idempotency |
 | `Tournament/TournamentModuleTest.php` | Registration, check-in, bracket generation, cancellation, refunds, prize distribution |
+| `Tournament/TournamentSecurityTest.php` | Join button role restriction, listing status filter, viewRestrictedDetails policy |
 | `Match/MatchModuleTest.php` | Result submission, confirmation flow, dispute, forfeit, bracket advancement |
 | `Match/ConfirmResultFlowTest.php` | Full flow: confirmResult → MatchCompleted → AdvanceWinnerListener + AutoForfeitJob timeout |
 | `Team/TeamModuleTest.php` | All 11 team actions: create, invite, accept, decline, revoke, remove, transfer, disband |

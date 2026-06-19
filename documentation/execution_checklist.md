@@ -52,9 +52,9 @@ These tests are identified but not yet implemented. Priority order within each s
 - [ ] `test_admin_tournament_filter_persistence` — search/status filters survive page refresh.
 - [ ] `test_admin_frequency_tab_functionality` — Daily/Weekly/Monthly filter in admin tournament list.
 - [ ] `test_player_frequency_tab_functionality` — same filter on player-side browse.
-- [ ] `test_join_tournament_button_is_restricted_by_role` — only PLAYER role sees Join button.
-- [ ] `test_tournament_listing_filters_by_status` — player list excludes Draft/Cancelled/Completed.
-- [ ] `test_view_restricted_details_policy` — Matches/Activity tabs hidden from non-participants.
+- [x] `test_join_tournament_button_is_restricted_by_role` — only PLAYER role sees Join button *(done v1.32)*
+- [x] `test_tournament_listing_filters_by_status` — player list excludes Draft/Cancelled/Completed *(done v1.32)*
+- [x] `test_view_restricted_details_policy` — Matches/Activity tabs hidden from non-participants *(done v1.32)*
 - [ ] `test_custom_pagination_rendering` — dark-neon pagination renders correctly.
 - [ ] `test_admin_navigation_flow` — `wire:navigate` SPA transitions between list and create/edit.
 

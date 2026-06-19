@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-19 (v1.31) | **Branch**: `main`
+**Last Updated**: 2026-06-19 (v1.32) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,14 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ Security tests — Tournament access controls (v1.32)
+
+- **`TournamentSecurityTest`**: 3 new security-adjacent tests covering: Join button restricted to PLAYER role, player tournament listing filters out DRAFT/CANCELLED/COMPLETED statuses, and `viewRestrictedDetails` policy hides Matches/Players/Activity tabs from non-participants.
+- **Tests**: 3 new tests, all passing.
+- **PHPStan**: 0 errors at Level 5.
 
 ---
 
