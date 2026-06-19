@@ -37,6 +37,7 @@ class OnlinePresenceTest extends TestCase
 
     public function test_middleware_sets_redis_key_for_authenticated_user(): void
     {
+        $this->withMiddleware(UpdateUserOnlineStatus::class);
         $user = $this->makeUser();
 
         Redis::shouldReceive('setex')
@@ -48,6 +49,8 @@ class OnlinePresenceTest extends TestCase
 
     public function test_middleware_does_not_set_key_for_guest(): void
     {
+        $this->withMiddleware(UpdateUserOnlineStatus::class);
+
         Redis::shouldReceive('setex')->never();
 
         $this->get('/');
