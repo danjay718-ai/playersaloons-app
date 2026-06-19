@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Modules\Identity\Events\UserKycSubmitted;
 use App\Modules\Identity\Events\UserRegistered;
 use App\Modules\Identity\Events\UserSuspended;
 use App\Modules\Identity\Events\UserUnsuspended;
+use App\Modules\Identity\Listeners\NotifyAdminsOfKycSubmissionListener;
 use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Events\MatchDisputed;
@@ -54,6 +56,9 @@ class EventServiceProvider extends ServiceProvider
         // ── Identity ────────────────────────────────────────────────────────
         UserRegistered::class => [
             CreateWalletListener::class,
+        ],
+        UserKycSubmitted::class => [
+            NotifyAdminsOfKycSubmissionListener::class,
         ],
         UserSuspended::class => [
             SuspendWalletListener::class,
