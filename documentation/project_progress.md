@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-19 (v1.29) | **Branch**: `main`
+**Last Updated**: 2026-06-19 (v1.30) | **Branch**: `main`
 
 ---
 
@@ -682,11 +682,19 @@ Items where schema or stub exists but logic is missing:
 5. Restart (not full redeploy needed for `.env`-only changes)
 
 ### Pending Production Work
-- [ ] Configure SSL via Coolify (Let's Encrypt)
-- [ ] Update `SESSION_SECURE_COOKIE=true` after SSL is active
+- [x] Configure SSL via Coolify (Let's Encrypt) *(done v1.30)*
+- [x] Update `SESSION_SECURE_COOKIE=true`, `REVERB_SCHEME=https`, `REVERB_PORT=443` after SSL *(done v1.30)*
 - [ ] Verify Horizon dashboard and queue workers are processing
 - [ ] Run `php artisan storage:link` if local file storage is used
 - [ ] Migrate file storage to R2/S3 before accepting real user uploads
+
+---
+
+## ✅ SSL env vars updated in Coolify (v1.30)
+
+- **Deployment**: SSL now active on `app-testing.website`. Updated Coolify environment variables: `SESSION_SECURE_COOKIE=true`, `REVERB_SCHEME=https`, `REVERB_PORT=443`. Restarted via Coolify (no redeploy needed).
+- **Tests**: No code changes — config-only update.
+- **PHPStan**: N/A.
 
 ---
 
