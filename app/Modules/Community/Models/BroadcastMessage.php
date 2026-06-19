@@ -3,13 +3,22 @@
 namespace App\Modules\Community\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $uuid
+ * @property string $title
+ * @property string $message
+ * @property Carbon|null $starts_at
+ * @property Carbon|null $ends_at
+ */
 class BroadcastMessage extends Model
 {
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'uuid',
