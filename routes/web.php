@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Livewire\Admin\AdminDashboard;
 use App\Livewire\Admin\AdminProfile;
 use App\Livewire\Admin\AuditLogAdmin;
+use App\Livewire\Admin\BroadcastNotificationAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
@@ -79,6 +80,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', UserAdmin::class);
         Route::get('/audit-logs', AuditLogAdmin::class);
         Route::get('/cms', CmsAdmin::class);
+        Route::get('/notifications', BroadcastNotificationAdmin::class)->name('admin.notifications');
         Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');
     });
 });

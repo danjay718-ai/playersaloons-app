@@ -72,7 +72,21 @@ Managing player accounts and roles.
     *   `app/Modules/Identity/Events/UserSuspended.php`.
     *   `app/Http/Middleware/UpdateUserOnlineStatus.php`: Sets `user_online:{id}` Redis key (TTL 300s) on every authenticated web request.
 
-## 6. Staff Activity Dashboard
+## 6. Broadcast Notifications
+Managing platform-wide broadcast messages.
+
+*   **Route**: `/admin/notifications`
+*   **UI Component**: `app/Livewire/Admin/BroadcastNotificationAdmin.php`
+*   **Blade Partials** (reusable via `@include`):
+    *   `livewire/admin/partials/broadcast/_table.blade.php`
+    *   `livewire/admin/partials/broadcast/_form-modal.blade.php`
+    *   `livewire/admin/partials/broadcast/_confirm-modal.blade.php`
+*   **Actions by role**:
+    *   ADMIN / SUPER_ADMIN: Create, Edit, Expire (sets `ends_at = now()`)
+    *   SUPER_ADMIN only: Delete (permanent)
+*   **Status logic**: Active (within window), Scheduled (starts_at in future), Expired (ends_at in past).
+
+## 7. Staff Activity Dashboard
 Monitoring admin actions across the platform.
 
 *   **Action**: Super-admin views a per-staff breakdown of all logged actions for a date range.

@@ -83,7 +83,7 @@ These tests are identified but not yet implemented. Priority order within each s
 ### CMS & Content
 - [ ] CMS Module — Blog/News pages
 - [ ] Translation Management Panel
-- [ ] Notification Broadcast Panel (UI for `broadcast_messages` table — schema exists, UI missing)
+- [x] Notification Broadcast Panel (UI for `broadcast_messages` table — schema exists, UI missing) *(done v1.35)*
 
 ### Compliance & User Management
 - [ ] Compliance/Blacklisting (Middleware + Admin Page)

@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-19 (v1.34) | **Branch**: `main`
+**Last Updated**: 2026-06-19 (v1.35) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,17 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ Broadcast Notification Admin Panel (v1.35)
+
+- **`BroadcastNotificationAdmin`**: New Livewire admin component at `/admin/notifications`. CRUD for `broadcast_messages` — create, edit, expire (all admins), delete permanently (SUPER_ADMIN only). Search by title/message, paginated list with status badges (Active/Scheduled/Expired).
+- **Blade**: Modular partials — `_table.blade.php`, `_form-modal.blade.php`, `_confirm-modal.blade.php` — all reusable via `@include`.
+- **`tests/TestCase.php`**: Added `withoutMiddleware(UpdateUserOnlineStatus::class)` globally to prevent Redis connection errors across all test HTTP requests.
+- **`BroadcastMessage` model**: Added `@property` PHPDoc annotations + fixed `$fillable` to `list<string>`.
+- **Tests**: 9 new tests in `BroadcastNotificationAdminTest` — access guards, create, edit, expire, delete (SUPER_ADMIN), search. All passing.
+- **PHPStan**: 0 new errors at Level 5.
 
 ---
 
