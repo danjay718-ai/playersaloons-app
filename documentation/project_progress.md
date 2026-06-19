@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-19 (v1.32) | **Branch**: `main`
+**Last Updated**: 2026-06-19 (v1.33) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,16 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ Online presence tracking — Redis-based (v1.33)
+
+- **`UpdateUserOnlineStatus`**: New middleware appended to `web` group. Sets `user_online:{id}` Redis key with 300s TTL on every authenticated request.
+- **`User::isOnline()`**: New method — returns `true` if Redis key exists for the user.
+- **`user-admin.blade.php`**: Added online dot indicator (emerald = online, slate = offline) next to username in the user list table.
+- **Tests**: 4 new tests in `OnlinePresenceTest` — middleware sets key for auth user, skips guest, `isOnline()` true/false. All passing.
+- **PHPStan**: 0 new errors at Level 5.
 
 ---
 
