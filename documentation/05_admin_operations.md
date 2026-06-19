@@ -66,9 +66,11 @@ Managing player accounts and roles.
 *   **Logic (Actions)**:
     *   `app/Modules/Identity/Actions/SuspendUserAction.php`: Disables account access. Enforces `ADMIN | SUPER_ADMIN`.
     *   `app/Modules/Identity/Actions/AssignRoleAction.php`: Updates RBAC roles. **Restricted to `SUPER_ADMIN` only** (not plain ADMIN).
+*   **Online Presence**: Each row in the user table shows a dot indicator — emerald if online (active in last 5 min via `User::isOnline()` / Redis), slate if offline.
 *   **Connected Files**:
     *   `app/Modules/Identity/Policies/UserPolicy.php`: Restricts moderation to staff.
     *   `app/Modules/Identity/Events/UserSuspended.php`.
+    *   `app/Http/Middleware/UpdateUserOnlineStatus.php`: Sets `user_online:{id}` Redis key (TTL 300s) on every authenticated web request.
 
 ## 6. Staff Activity Dashboard
 Monitoring admin actions across the platform.
