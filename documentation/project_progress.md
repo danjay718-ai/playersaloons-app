@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-19 (v1.33) | **Branch**: `main`
+**Last Updated**: 2026-06-19 (v1.34) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,14 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ Fix: missing `last_login_at` migration (v1.34)
+
+- **`2026_06_19_112307_add_last_login_at_to_users_table.php`**: Added missing migration for `last_login_at` column on `users` table. Column was being updated in `Login.php` (since v1.29) but no migration existed — caused `SQLSTATE HY000: no such column` on local SQLite.
+- **Tests**: No new tests — covered by existing login flow.
+- **PHPStan**: N/A.
 
 ---
 
