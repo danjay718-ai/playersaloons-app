@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Redis;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -119,5 +120,13 @@ class User extends Authenticatable implements HasMedia
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Determine if the user is currently online (active within last 5 minutes).
+     */
+    public function isOnline(): bool
+    {
+        return (bool) Redis::exists('user_online:'.$this->id);
     }
 }
