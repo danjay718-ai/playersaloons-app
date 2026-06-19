@@ -36,7 +36,7 @@ Identity verification is required for financial transactions (e.g., withdrawals)
 *   **Connected Files**:
     *   `app/Modules/Identity/Models/KycSubmission.php`: Model for storing KYC data.
     *   `app/Modules/Identity/StateMachines/KycStateMachine.php`: Governs the transition from `NOT_SUBMITTED` to `SUBMITTED`.
-    *   `app/Modules/Identity/Events/UserKycSubmitted.php`: Dispatched after submission. No listeners registered yet — placeholder for future compliance hooks.
+    *   `app/Modules/Identity/Events/UserKycSubmitted.php`: Dispatched after submission. Handled by `NotifyAdminsOfKycSubmissionListener` (notifies all ADMIN/SUPER_ADMIN users via in-app notification).
     *   `database/migrations/2026_06_07_100002_create_kyc_submissions_table.php`
 
 ## 4. Profile Updates
@@ -80,7 +80,5 @@ To ensure flow integrity, the following tests must be implemented and passing:
     *   **Referral System Logic**: The referral integer ID is in the DB but the logic to reward referrers is not yet implemented.
     *   **2FA Support**: Schema has `two_factor_secret` and `two_factor_recovery_codes` (via Laravel Fortify/standard) but UI/Action logic is missing.
     *   **Social Login**: `provider_name` and `provider_id` are in some variations of the plan but not yet in the current migration.
-    *   **`UserKycSubmitted` listener**: Event is dispatched but has no registered listener. Add a listener when compliance/notification hooks are implemented.
 *   **Unused Schema Columns**:
-    *   `users.last_login_at`: Column exists in some migrations but isn't being updated in `Login` logic yet.
     *   `user_profiles.metadata`: JSON field currently empty/not used by `UpdateProfileAction`.

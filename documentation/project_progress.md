@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-19 (v1.30) | **Branch**: `main`
+**Last Updated**: 2026-06-19 (v1.31) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,15 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ NotifyAdminsOfKycSubmissionListener (v1.31)
+
+- **`NotifyAdminsOfKycSubmissionListener`**: New queued listener on `notifications` queue. Handles `UserKycSubmitted` — sends an in-app notification to all users with `ADMIN` or `SUPER_ADMIN` role via `NotificationService`.
+- **`EventServiceProvider`**: Registered `UserKycSubmitted → NotifyAdminsOfKycSubmissionListener`.
+- **Tests**: 3 new tests in `NotifyAdminsOfKycSubmissionListenerTest` — admins notified, non-admins skipped, all admin roles covered. All passing.
+- **PHPStan**: 0 errors on new files at Level 5.
 
 ---
 

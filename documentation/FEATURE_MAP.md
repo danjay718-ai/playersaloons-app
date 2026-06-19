@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-18 (v1.28)
+**Last Updated**: 2026-06-19 (v1.31)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -97,7 +97,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Feature | Action/Service | Event | Listener |
 |---|---|---|---|
 | Register | `RegisterUserAction` | `UserRegistered` | `CreateWalletListener` |
-| KYC Submit | `SubmitKycAction` | `UserKycSubmitted` | *(none yet)* |
+| KYC Submit | `SubmitKycAction` | `UserKycSubmitted` | `NotifyAdminsOfKycSubmissionListener` |
 | KYC Approve | `ApproveKycAction` | `UserKycApproved` | — |
 | KYC Reject | `RejectKycAction` | `UserKycRejected` | — |
 | Suspend User | `SuspendUserAction` | `UserSuspended` | — |
@@ -158,6 +158,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|
 | `Identity/RegisterUserActionTest.php` | Registration success, wallet creation, event dispatch, validation failures |
 | `Identity/SubmitKycActionTest.php` | KYC submission, resubmission from rejected, event dispatch |
+| `Identity/NotifyAdminsOfKycSubmissionListenerTest.php` | Admin notification on KYC submit, non-admins not notified, all admin roles notified |
 | `Authorization/PolicyTest.php` | All 8 policies across Tournament, Match, Wallet, Withdrawal, KYC, Team, User, Dispute |
 | `Api/ApiEndpointsTest.php` | 401/403 gates, pagination, status filters, referral URL format |
 | `Community/NotificationServiceTest.php` | Preference-aware delivery (in-app, realtime, email) |

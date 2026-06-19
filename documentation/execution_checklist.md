@@ -94,7 +94,7 @@ These tests are identified but not yet implemented. Priority order within each s
 - [ ] Referral System Logic — integer ref ID is in DB but reward logic not implemented
 - [ ] 2FA — schema has `two_factor_secret` / `two_factor_recovery_codes` but no UI/Action
 - [x] `last_login_at` update on successful login (column exists, now updated in `Login.php` — v1.29)
-- [ ] `UserKycSubmitted` listener — event dispatched but no listener registered yet
+- [x] `UserKycSubmitted` listener — event dispatched but no listener registered yet *(done v1.31 — `NotifyAdminsOfKycSubmissionListener`)*
 
 ### Financial
 - [ ] External Payout Integration — `PROCESSED` state is currently manual; no PayPal/Stripe Connect
