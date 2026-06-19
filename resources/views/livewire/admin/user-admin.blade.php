@@ -56,7 +56,8 @@
                     @forelse($users as $usr)
                         <tr class="hover:bg-slate-900/40" wire:key="user-{{ $usr->id }}">
                             <td class="p-4 font-semibold text-slate-200">
-                                <span class="block text-slate-200 hover:text-indigo-400 cursor-pointer" wire:click="selectUser({{ $usr->id }})">
+                                <span class="flex items-center gap-2 text-slate-200 hover:text-indigo-400 cursor-pointer" wire:click="selectUser({{ $usr->id }})">
+                                    <span class="inline-block w-2 h-2 rounded-full flex-shrink-0 {{ $usr->isOnline() ? 'bg-emerald-400' : 'bg-slate-600' }}" title="{{ $usr->isOnline() ? 'Online' : 'Offline' }}"></span>
                                     {{ $usr->username }}
                                 </span>
                                 <span class="block text-[10px] text-slate-500 font-normal mt-0.5">{{ $usr->email }}</span>
