@@ -632,7 +632,7 @@ Items where schema or stub exists but logic is missing:
 ## 🚀 Deployment Notes
 
 **First deployed**: 2026-06-18 via Docker Compose + Coolify on Linode (IP: 139.162.61.8)
-**Domain**: app-testing.website (HTTP only, SSL pending)
+**Domain**: app-testing.website (HTTPS — SSL active via Coolify/Let's Encrypt)
 
 ### Current Production Setup
 - Docker Compose: `docker-compose.prod.yml`
@@ -684,9 +684,9 @@ Items where schema or stub exists but logic is missing:
 ### Pending Production Work
 - [x] Configure SSL via Coolify (Let's Encrypt) *(done v1.30)*
 - [x] Update `SESSION_SECURE_COOKIE=true`, `REVERB_SCHEME=https`, `REVERB_PORT=443` after SSL *(done v1.30)*
-- [ ] Verify Horizon dashboard and queue workers are processing
-- [ ] Run `php artisan storage:link` if local file storage is used
-- [ ] Migrate file storage to R2/S3 before accepting real user uploads
+- [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
+- [x] `php artisan storage:link` — handled in `start.sh` on deploy
+- [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
 
 ---
 
