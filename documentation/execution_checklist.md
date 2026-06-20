@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-06-18 (v1.28)
+**Status**: Active Backlog | **Last Updated**: 2026-06-20 (v1.39)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -15,13 +15,14 @@
 ## 🎯 Head-to-Head (H2H) Production Realization
 
 ### Database Schema
-- [ ] Create `head_to_head_challenges` table (`id`, `user_id`, `game_id`, `stake_amount`, `status`, `created_at`).
-- [ ] Create `head_to_head_matches` table (linking two players, outcome, stake resolution).
+- [x] Create `head_to_head_challenges` table (`id`, `user_id`, `game_id`, `stake_amount`, `status`, `created_at`). *(done v1.39)*
+- [x] Create `head_to_head_matches` table (linking two players, outcome, stake resolution). *(done v1.39)*
 
 ### Matchmaking Engine
-- [ ] Implement `MatchmakerService` for querying waiting challenges.
+- [x] Implement `MatchmakerService` for querying waiting challenges. *(done v1.39)*
 - [ ] Implement ELO/Skill Level matching (optional for v1).
-- [ ] Implement stake validation (check balance/lock amount in wallet).
+- [x] Implement stake validation (check balance/lock amount in wallet). *(done v1.39)*
+- [ ] Add H2H proof upload and admin dispute review flow.
 
 ### Tournament & Match Lifecycle Automation
 - [x] Implement `AutoStartMatchesListener` — transitions READY matches to IN_PROGRESS when tournament starts.
@@ -39,8 +40,8 @@
 - [x] Verify Horizon dashboard is accessible and workers are processing queues in production. *(Status: Active, confirmed v1.29)*
 
 ### Escrow/Wallet Integration
-- [ ] Develop `LockStakeAction` — reserve funds during H2H queueing.
-- [ ] Develop `ResolveStakeAction` — release funds to winner or refund on failure.
+- [x] Develop `LockStakeAction` — reserve funds during H2H queueing. *(done v1.39)*
+- [x] Develop `ResolveStakeAction` — release funds to winner or refund on failure. *(done v1.39)*
 
 ---
 
@@ -67,7 +68,7 @@ These tests are identified but not yet implemented. Priority order within each s
 - [ ] `test_elimination_shifts_tournament_to_history` — lost player's tournament moves to History tab.
 - [ ] `test_n_plus_one_query_prevention` — matches pre-fetched in single query (not per-tournament loop).
 - [ ] `test_player_tournament_list_filtering` — Search, Game, Status, Frequency filters work.
-- [ ] `test_head_to_head_matchmaking_simulation` — H2H mock challenge creation and matching.
+- [x] `test_head_to_head_matchmaking_simulation` — H2H challenge creation, stake lock, matching, and payout. *(done v1.39)*
 
 ---
 

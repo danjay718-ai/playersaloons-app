@@ -72,6 +72,26 @@ Resolving conflicts when players disagree on results.
     *   `app/Modules/Match/Models/MatchEvidence.php`: Immutable evidence records.
     *   `app/Modules/Match/Events/MatchDisputed.php`.
 
+## 7. Head-to-Head Duels
+Player-created wager matches outside tournament brackets.
+
+*   **Action**: Player creates or accepts an open H2H challenge from `/head-to-head`.
+*   **UI Component**: `app/Livewire/Match/HeadToHeadList.php`
+*   **Logic (Actions/Services)**:
+    *   `app/Modules/Match/Actions/CreateHeadToHeadChallengeAction.php`: Creates a waiting challenge and locks creator stake.
+    *   `app/Modules/Match/Services/HeadToHeadMatchmakerService.php`: Finds compatible waiting challenges by game, stake, platform, and region.
+    *   `app/Modules/Match/Actions/AcceptHeadToHeadChallengeAction.php`: Locks opponent stake and creates an in-progress H2H match.
+    *   `app/Modules/Match/Actions/SubmitHeadToHeadResultAction.php`: Records submitted winner and moves the H2H match to `WAITING_FOR_CONFIRMATION`.
+    *   `app/Modules/Match/Actions/ConfirmHeadToHeadResultAction.php`: Opponent confirms and releases both locked stakes to the winner.
+    *   `app/Modules/Match/Actions/DisputeHeadToHeadResultAction.php`: Marks the result disputed; admin review and proof upload are still pending follow-up work.
+*   **Connected Files**:
+    *   `app/Modules/Match/Models/HeadToHeadChallenge.php`
+    *   `app/Modules/Match/Models/HeadToHeadMatch.php`
+    *   `app/Modules/Match/StateMachines/HeadToHeadMatchStateMachine.php`
+    *   `app/Shared/Enums/HeadToHeadChallengeStatus.php`
+    *   `app/Shared/Enums/HeadToHeadMatchStatus.php`
+*   **Fair-play rule**: H2H MVP does not auto-award wins from an unconfirmed claim. Confirmation releases payout; disputes keep stakes locked for admin review.
+
 ## 🧪 Isolated Test Cases
 ### 1. Registration & Wallet
 *   **Success**: `test_player_can_register_for_tournament_with_sufficient_balance`

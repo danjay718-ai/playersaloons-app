@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-20 | **Current version**: v1.38 | **Branch**: `main`
+**As of**: 2026-06-20 | **Current version**: v1.39 | **Branch**: `main`
 
 ---
 
@@ -11,10 +11,11 @@
 - `predis/predis` installed — local dev gumagamit ng `REDIS_CLIENT=predis`
 - Match confirmation flow now uses canonical `WAITING_FOR_CONFIRMATION`; `RESULT_SUBMITTED` remains legacy-compatible only
 - Welcome page header now shows logo image only, without adjacent `PLAYERSALOONS` text
+- H2H MVP is now DB-backed with challenge queue, stake lock, match acceptance, result submit/confirm, and winner payout
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.38)
+## ✅ Natapos ngayong session (v1.30–v1.39)
 
 | Version | Item |
 |---|---|
@@ -27,6 +28,7 @@
 | v1.36 | Player Notification Bell — DB-backed + realtime refresh |
 | v1.37 | Match confirmation flow alignment — `WAITING_FOR_CONFIRMATION` canonical state |
 | v1.38 | Welcome logo text cleanup — removed visible header wordmark beside logo |
+| v1.39 | H2H Production MVP — persisted queue, stake lock/payout, submit/confirm result |
 
 ---
 
@@ -36,14 +38,16 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 
 | Priority | Item | Effort |
 |---|---|---|
-| 🟢 | R2 storage migration | Medium — guide ready at `documentation/guides/r2-storage-migration.md` |
+| 🟢 | H2H proof upload + admin dispute review | Medium/Large — MVP dispute entry exists, admin resolution pending |
+| 🟢 | H2H timeout/auto-expiry policy | Medium — decide and implement fair handling for stale submitted/unresolved duels |
+| 🟡 | H2H ELO/skill matching | Optional for v1; matchmaker currently uses game/stake/platform/region |
 | 🟢 | Referral system logic | Medium |
-| 🔵 | H2H production backend | Large |
 | 🔵 | 2FA | Large |
 | 🔵 | External payout integration | Large + business decision |
 | 🔵 | Compliance/blacklisting, contact inquiries, newsletter admin | Medium/Large |
 | 🔵 | CMS Blog/News + translation management | Medium |
 | 🟡 | Remaining testing debt | Tournament filters, pagination, elimination modal, N+1 checks |
+| ⚪ | R2 storage migration | Deferred during testing; Docker volumes are acceptable until full launch |
 
 ### Already Done / Do Not Re-open
 
@@ -52,6 +56,14 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - Broadcast Messages admin UI — done v1.35
 - Player notification bell — done v1.36
 - Match confirmation state mismatch — fixed v1.37
+- H2H mock-only challenge queue — replaced with DB-backed MVP v1.39
+
+### H2H Follow-up Scope
+
+- Add proof uploads for H2H result submissions.
+- Add admin dispute review and resolution: player A wins, player B wins, refund/void.
+- Add timeout policy for stale `WAITING_FOR_CONFIRMATION` H2H matches without creating unfair auto-win behavior.
+- Add optional ELO/skill matching after enough player history exists.
 
 ---
 

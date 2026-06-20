@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-20 (v1.38) | **Branch**: `main`
+**Last Updated**: 2026-06-20 (v1.39) | **Branch**: `main`
 
 ---
 
@@ -611,7 +611,7 @@ Items where schema or stub exists but logic is missing:
 
 | Feature | Status | Notes |
 |---|---|---|
-| H2H Production Backend | ❌ Not started | UI is mock only. Schema, matchmaking engine, and escrow missing. |
+| H2H Admin Review / Proof Uploads | ⚠️ Partial | H2H MVP is DB-backed with stake lock/payout; proof upload and admin dispute review still pending. |
 | File Storage → R2/S3 | ⚠️ Deferred | Currently using local `public` disk. See deployment notes below. |
 | External Payout Integration | ❌ Not started | `PROCESSED` state is manual. No PayPal/Stripe Connect. |
 | Referral System Logic | ❌ Not started | Integer ref ID in DB, no reward logic. |
@@ -687,6 +687,17 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ H2H Production MVP (v1.39)
+
+- **`HeadToHeadList`**: Replaced mock in-memory H2H challenge data with DB-backed challenge queue, open challenge list, personal duel list, game handle capture, result submission, confirmation, and dispute entry point.
+- **`head_to_head_challenges` / `head_to_head_matches`**: Added persisted H2H schema with game/platform, stake amount, handles, timers, statuses, result submission, and completion fields.
+- **Actions/Services**: Added `CreateHeadToHeadChallengeAction`, `AcceptHeadToHeadChallengeAction`, `CancelHeadToHeadChallengeAction`, `SubmitHeadToHeadResultAction`, `ConfirmHeadToHeadResultAction`, `DisputeHeadToHeadResultAction`, stake lock/refund/payout actions, and `HeadToHeadMatchmakerService`.
+- **Wallet**: Added `H2H_STAKE` and `H2H_PAYOUT` ledger types. Stakes are debited when queued/accepted; confirmed winner receives both stakes via ledger-backed payout.
+- **Tests**: Added `HeadToHeadModuleTest`; H2H create/cancel/accept/confirm payout plus Livewire render flow pass. Match regression subset passes: 29 tests, 92 assertions.
+- **PHPStan**: Attempted on H2H PHP files, but the runner exited with code 1 without diagnostics/output in this environment. PHP syntax checks passed for changed H2H PHP files.
 
 ---
 

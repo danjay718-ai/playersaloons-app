@@ -4,74 +4,180 @@ declare(strict_types=1);
 
 namespace App\Livewire\Match;
 
+use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\Platform;
+use App\Modules\Identity\Models\User;
+use App\Modules\Match\Actions\AcceptHeadToHeadChallengeAction;
+use App\Modules\Match\Actions\CancelHeadToHeadChallengeAction;
+use App\Modules\Match\Actions\ConfirmHeadToHeadResultAction;
+use App\Modules\Match\Actions\CreateHeadToHeadChallengeAction;
+use App\Modules\Match\Actions\DisputeHeadToHeadResultAction;
+use App\Modules\Match\Actions\SubmitHeadToHeadResultAction;
+use App\Modules\Match\Models\HeadToHeadChallenge;
+use App\Modules\Match\Models\HeadToHeadMatch;
+use App\Modules\Match\Services\HeadToHeadMatchmakerService;
+use App\Shared\Enums\HeadToHeadChallengeStatus;
+use App\Shared\Enums\HeadToHeadMatchStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class HeadToHeadList extends Component
 {
-    // Head-to-Head properties
     public float $stakeAmount = 10.00;
-    public string $selectedGame = 'Valorant';
-    public array $challenges = [];
-    public bool $isSearching = false;
-    public ?array $matchedOpponent = null;
+    public string $gameId = '';
+    public string $platformId = '';
+    public string $gameHandle = '';
+    public string $region = '';
+    public string $matchTimerMinutes = '30';
+    public ?int $resultWinnerUserId = null;
+    public string $resultNotes = '';
 
-    public function mount()
+    public function mount(): void
     {
-        // Initialize mock H2H challenges
-        $this->challenges = [
-            ['id' => 1, 'username' => 'ShadowBlade', 'game' => 'CS2', 'stake' => 15.00, 'avatar' => 'SB', 'status' => 'waiting'],
-            ['id' => 2, 'username' => 'AlphaKnight', 'game' => 'FIFA 24', 'stake' => 25.00, 'avatar' => 'AK', 'status' => 'waiting'],
-            ['id' => 3, 'username' => 'CyberPunk', 'game' => 'Tekken 8', 'stake' => 50.00, 'avatar' => 'CP', 'status' => 'waiting'],
-        ];
+        $this->gameId = (string) Game::query()->where('is_active', true)->value('id');
     }
 
-    public function createChallenge(): void
+    public function createChallenge(CreateHeadToHeadChallengeAction $action): void
     {
-        $user = Auth::user();
-        if ($this->stakeAmount <= 0) {
+        $this->validateChallengeInput();
+
+        $action->execute($this->user(), [
+            'game_id' => (int) $this->gameId,
+            'platform_id' => $this->platformId !== '' ? (int) $this->platformId : null,
+            'stake_amount' => $this->stakeAmount,
+            'creator_game_handle' => $this->gameHandle,
+            'region' => $this->region !== '' ? $this->region : null,
+            'match_timer_minutes' => $this->matchTimerMinutes !== '' ? (int) $this->matchTimerMinutes : null,
+        ]);
+
+        session()->flash('h2h_status', 'Challenge posted and stake locked.');
+    }
+
+    public function findDuel(HeadToHeadMatchmakerService $matchmaker, AcceptHeadToHeadChallengeAction $accept): void
+    {
+        $this->validateChallengeInput();
+
+        $challenge = $matchmaker->findOpponentChallenge(
+            (int) $this->user()->getKey(),
+            (int) $this->gameId,
+            $this->stakeAmount,
+            $this->platformId !== '' ? (int) $this->platformId : null,
+            $this->region !== '' ? $this->region : null
+        );
+
+        if (! $challenge) {
+            $this->createChallenge(app(CreateHeadToHeadChallengeAction::class));
+            session()->flash('h2h_status', 'No matching duel found. Your challenge is now waiting.');
             return;
         }
 
-        $this->challenges[] = [
-            'id' => count($this->challenges) + 1,
-            'username' => $user->username,
-            'game' => $this->selectedGame,
-            'stake' => $this->stakeAmount,
-            'avatar' => strtoupper(substr($user->username, 0, 2)),
-            'status' => 'waiting',
-        ];
+        $accept->execute($challenge, $this->user(), $this->gameHandle);
+        session()->flash('h2h_status', 'Duel matched. Game handles are now visible.');
     }
 
-    public function findDuel(): void
+    public function acceptChallenge(int $challengeId, AcceptHeadToHeadChallengeAction $action): void
     {
-        $this->isSearching = true;
-        $this->matchedOpponent = null;
+        $this->validate([
+            'gameHandle' => ['required', 'string', 'max:100'],
+        ]);
+
+        $challenge = HeadToHeadChallenge::query()->findOrFail($challengeId);
+        $action->execute($challenge, $this->user(), $this->gameHandle);
+
+        session()->flash('h2h_status', 'Challenge accepted and stake locked.');
     }
 
-    public function cancelSearch(): void
+    public function cancelChallenge(int $challengeId, CancelHeadToHeadChallengeAction $action): void
     {
-        $this->isSearching = false;
-        $this->matchedOpponent = null;
+        $challenge = HeadToHeadChallenge::query()->findOrFail($challengeId);
+        $action->execute($challenge, $this->user());
+
+        session()->flash('h2h_status', 'Challenge cancelled and stake refunded.');
     }
 
-    public function simulateMatchFound(): void
+    public function submitResult(int $matchId, SubmitHeadToHeadResultAction $action): void
     {
-        $this->isSearching = false;
-        $opponents = [
-            ['username' => 'ViperZero', 'level' => 45, 'winrate' => '68%', 'game' => 'Valorant', 'avatar' => 'VZ'],
-            ['username' => 'ShadowBlade', 'level' => 52, 'winrate' => '71%', 'game' => 'CS2', 'avatar' => 'SB'],
-            ['username' => 'NeonSpecter', 'level' => 38, 'winrate' => '62%', 'game' => 'FIFA 24', 'avatar' => 'NS'],
-        ];
+        $this->validate([
+            'resultWinnerUserId' => ['required', 'integer'],
+            'resultNotes' => ['nullable', 'string', 'max:1000'],
+        ]);
 
-        $this->matchedOpponent = $opponents[array_rand($opponents)];
+        $match = HeadToHeadMatch::query()->findOrFail($matchId);
+        $action->execute($match, $this->user(), (int) $this->resultWinnerUserId, $this->resultNotes ?: null);
+
+        $this->reset('resultNotes');
+        session()->flash('h2h_status', 'Result submitted. Waiting for opponent confirmation.');
+    }
+
+    public function confirmResult(int $matchId, ConfirmHeadToHeadResultAction $action): void
+    {
+        $match = HeadToHeadMatch::query()->findOrFail($matchId);
+        $action->execute($match, $this->user());
+
+        session()->flash('h2h_status', 'Result confirmed. Winner payout released.');
+    }
+
+    public function disputeResult(int $matchId, DisputeHeadToHeadResultAction $action): void
+    {
+        $match = HeadToHeadMatch::query()->findOrFail($matchId);
+        $action->execute($match, $this->user());
+
+        session()->flash('h2h_status', 'Result disputed. Stake remains locked for admin review.');
     }
 
     public function render()
     {
-        return view('livewire.match.head-to-head-list')->layout('components.layouts.dashboard', [
+        $user = $this->user();
+
+        $waitingChallenges = HeadToHeadChallenge::query()
+            ->with(['creator', 'game.translations', 'platform'])
+            ->where('status', HeadToHeadChallengeStatus::WAITING->value)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->latest()
+            ->take(12)
+            ->get();
+
+        $myMatches = HeadToHeadMatch::query()
+            ->with(['creator', 'opponent', 'game.translations', 'platform'])
+            ->where(function ($query) use ($user) {
+                $query->where('creator_user_id', $user->getKey())
+                    ->orWhere('opponent_user_id', $user->getKey());
+            })
+            ->latest()
+            ->take(8)
+            ->get();
+
+        return view('livewire.match.head-to-head-list', [
+            'games' => Game::query()->with('translations')->where('is_active', true)->get(),
+            'platforms' => Platform::query()->where('is_active', true)->get(),
+            'waitingChallenges' => $waitingChallenges,
+            'myMatches' => $myMatches,
+        ])->layout('components.layouts.dashboard', [
             'title' => 'Head-to-Head | PlayerSaloons',
             'dashboard_title' => 'HEAD-TO-HEAD DUELS',
         ]);
+    }
+
+    private function validateChallengeInput(): void
+    {
+        $this->validate([
+            'gameId' => ['required', 'integer', 'exists:games,id'],
+            'platformId' => ['nullable', 'integer', 'exists:platforms,id'],
+            'stakeAmount' => ['required', 'numeric', 'min:1', 'max:1000'],
+            'gameHandle' => ['required', 'string', 'max:100'],
+            'region' => ['nullable', 'string', 'max:50'],
+            'matchTimerMinutes' => ['nullable', 'integer', 'in:15,30,60'],
+        ]);
+    }
+
+    private function user(): User
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user;
     }
 }

@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-20 (v1.36)
+**Last Updated**: 2026-06-20 (v1.39)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -40,7 +40,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /tournaments/browse` | `app/Livewire/Tournament/PlayerTournamentList.php` | Browse & filter all active tournaments |
 | `GET /tournaments/{uuid}/view` | `app/Livewire/Tournament/TournamentDetail.php` | Tournament detail, registration, check-in, bracket, matches |
 | `GET /matches/{uuid}` | `app/Livewire/Match/MatchDetail.php` | Match lobby: result submission, evidence, dispute |
-| `GET /head-to-head` | `app/Livewire/Match/HeadToHeadList.php` | H2H duel UI (mock/prototype) |
+| `GET /head-to-head` | `app/Livewire/Match/HeadToHeadList.php` | DB-backed H2H challenge queue, stake lock, result submit/confirm flow |
 | `GET /leaderboards` | `app/Livewire/Match/LeaderboardList.php` | Leaderboard (stub) |
 | `GET /streams` | `app/Livewire/Stream/StreamList.php` | Streams (stub) |
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` | Global chat (mock) |
@@ -134,6 +134,16 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Resolve dispute | `ResolveDisputeAction` | `MatchCompleted` | `AdvanceWinnerListener` |
 | Auto-start | — | — | `AutoStartMatchesListener` (on `TournamentStarted` + `MatchCompleted`) |
 | Auto-forfeit timeout | — | — | `AutoForfeitJob` (scheduler, every minute) |
+
+### Head-to-Head Duels
+| Feature | Action/Service | Event | Listener/Job |
+|---|---|---|---|
+| Create H2H challenge | `CreateHeadToHeadChallengeAction` + `LockHeadToHeadStakeAction` | — | — |
+| Matchmake / accept challenge | `HeadToHeadMatchmakerService` + `AcceptHeadToHeadChallengeAction` | — | — |
+| Cancel waiting challenge | `CancelHeadToHeadChallengeAction` + `RefundHeadToHeadStakeAction` | — | — |
+| Submit H2H result | `SubmitHeadToHeadResultAction` | — | — |
+| Confirm H2H result | `ConfirmHeadToHeadResultAction` + `ResolveHeadToHeadStakeAction` | — | — |
+| Dispute H2H result | `DisputeHeadToHeadResultAction` | — | Admin review follow-up pending |
 
 ### Wallet & Finance
 | Feature | Action/Service | Event | Listener |
