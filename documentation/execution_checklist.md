@@ -84,6 +84,7 @@ These tests are identified but not yet implemented. Priority order within each s
 - [ ] CMS Module — Blog/News pages
 - [ ] Translation Management Panel
 - [x] Notification Broadcast Panel (UI for `broadcast_messages` table — schema exists, UI missing) *(done v1.35)*
+- [x] Player notification bell UI — database-backed dropdown with realtime refresh *(done v1.36)*
 
 ### Compliance & User Management
 - [ ] Compliance/Blacklisting (Middleware + Admin Page)

@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-19 (v1.35)
+**Last Updated**: 2026-06-20 (v1.36)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -90,6 +90,12 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /api/v1/notifications` | `NotificationApiController` | Notification list (paginated) |
 | `POST /api/v1/notifications/{id}/read` | `NotificationApiController` | Mark as read |
 
+### Shared Player Layout Components
+
+| Surface | Component | Description |
+|---|---|---|
+| Player dashboard topbar | `app/Livewire/Notification/NotificationBell.php` | Shows latest 10 user notifications, unread count, single/all mark-as-read actions, and refreshes from realtime Reverb broadcasts |
+
 ---
 
 ## 📦 Feature → Backend Mapping
@@ -151,6 +157,11 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Transfer captain | `TransferTeamCaptainAction` | `TeamCaptainChanged` | — |
 | Disband team | `DisbandTeamAction` | `TeamDeleted` | — |
 
+### Notifications & Realtime
+| Feature | Component/Service | Event | Listener/Frontend |
+|---|---|---|---|
+| Player notification bell | `NotificationBell` + `NotificationService` | `BroadcastNotification` (`user.{uuid}`) | Laravel Echo/Reverb listener dispatches `notification.received` to refresh Livewire |
+
 ---
 
 ## 🧪 Test Coverage Map
@@ -165,6 +176,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Authorization/PolicyTest.php` | All 8 policies across Tournament, Match, Wallet, Withdrawal, KYC, Team, User, Dispute |
 | `Api/ApiEndpointsTest.php` | 401/403 gates, pagination, status filters, referral URL format |
 | `Community/NotificationServiceTest.php` | Preference-aware delivery (in-app, realtime, email) |
+| `Community/NotificationBellTest.php` | Player notification bell list, unread count, single/all mark-as-read, ownership guard, realtime refresh event |
 | `Admin/AdminPanelTest.php` | Admin access guards, KYC approve/reject, match override, tournament create (TournamentForm), staff activity |
 | `Admin/BroadcastNotificationAdminTest.php` | Access guards, create/edit/expire/delete broadcasts, SUPER_ADMIN delete restriction, search filter |
 | `Wallet/WalletFeatureTest.php` | Deposit idempotency, withdrawal lifecycle, ledger sum = cached balance, listener idempotency |

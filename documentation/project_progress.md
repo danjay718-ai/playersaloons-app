@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-19 (v1.35) | **Branch**: `main`
+**Last Updated**: 2026-06-20 (v1.36) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,16 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ Player Notification Bell (v1.36)
+
+- **`NotificationBell`**: New Livewire component for the player dashboard topbar. Loads the latest 10 authenticated-user notifications, shows unread count/state, and supports single or bulk mark-as-read actions scoped through `auth()->user()->notifications()`.
+- **Realtime frontend**: Added Laravel Echo + Pusher JS client wiring in `resources/js/app.js` for Laravel Reverb private user channels (`user.{uuid}`). Incoming `.notification.received` broadcasts dispatch a Livewire refresh event.
+- **`dashboard.blade.php`**: Replaced static mock notification dropdown with the database-backed `<livewire:notification-bell />` component and exposes the authenticated user's UUID as a meta tag for Echo channel subscription.
+- **Tests**: 6 tests in `NotificationBellTest`, all passing.
+- **PHPStan**: 0 errors on changed PHP files at Level 5.
 
 ---
 

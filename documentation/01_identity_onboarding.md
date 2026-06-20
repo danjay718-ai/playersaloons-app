@@ -51,6 +51,23 @@ Managing display name, bio, and preferences.
     *   `app/Modules/Identity/Models/UserProfile.php`: Model for profile details.
     *   `app/Modules/Community/Services/NotificationService.php`: Updates notification preferences from the profile dashboard.
 
+## 5. Player Notifications
+Players receive in-app notifications from tournament, wallet, KYC, and broadcast flows.
+
+*   **Action**: Player opens the notification bell in the dashboard topbar.
+*   **UI Component**: `app/Livewire/Notification/NotificationBell.php`
+*   **View**: `resources/views/livewire/notification/notification-bell.blade.php`
+*   **Layout Surface**: `resources/views/components/layouts/dashboard.blade.php`
+*   **Logic**:
+    *   Loads the latest 10 authenticated-user notifications.
+    *   Shows unread state and unread count.
+    *   Marks one notification or all notifications as read through the authenticated user's `notifications()` relationship.
+    *   Refreshes after frontend realtime events via `notification.received`.
+*   **Connected Files**:
+    *   `resources/js/app.js`: Boots Laravel Echo/Reverb and listens on `user.{uuid}` for `.notification.received`.
+    *   `app/Modules/Community/Models/Notification.php`: Factory-enabled model for in-app notification records.
+    *   `tests/Feature/Community/NotificationBellTest.php`: Covers list rendering, unread count, mark-as-read behavior, ownership guard, and realtime refresh dispatch.
+
 ## 🧪 Isolated Test Cases
 To ensure flow integrity, the following tests must be implemented and passing:
 

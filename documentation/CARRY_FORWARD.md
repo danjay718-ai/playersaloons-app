@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-19 | **Current version**: v1.35 | **Branch**: `main`
+**As of**: 2026-06-20 | **Current version**: v1.36 | **Branch**: `main`
 
 ---
 
@@ -12,7 +12,7 @@
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.35)
+## ✅ Natapos ngayong session (v1.30–v1.36)
 
 | Version | Item |
 |---|---|
@@ -22,6 +22,7 @@
 | v1.33 | Online presence tracking (Redis middleware + `User::isOnline()` + dot indicator sa UserAdmin) |
 | v1.34 | Fix: missing `last_login_at` migration |
 | v1.35 | Broadcast Notification Admin Panel (`/admin/notifications`) |
+| v1.36 | Player Notification Bell — DB-backed + realtime refresh |
 
 ---
 
@@ -31,13 +32,11 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 
 | Priority | Item | Effort |
 |---|---|---|
-| 🟡 | Broadcast delivery sa players (Option A: in-app via bell, Option B: banner) — depends on bell UI | Medium |
 | 🟢 | R2 storage migration | Medium — guide ready at `documentation/guides/r2-storage-migration.md` |
 | 🟢 | Referral system logic | Medium |
 | 🔵 | H2H production backend | Large |
 | 🔵 | 2FA | Large |
 | 🔵 | External payout integration | Large + business decision |
-| 🔵 | Player notification bell UI (bell icon exists, not yet wired to DB) | Medium |
 
 ---
 
