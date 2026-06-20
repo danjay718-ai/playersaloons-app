@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-20 | **Current version**: v1.36 | **Branch**: `main`
+**As of**: 2026-06-20 | **Current version**: v1.38 | **Branch**: `main`
 
 ---
 
@@ -7,12 +7,14 @@
 
 - Production deployed sa `https://app-testing.website` via Docker Compose + Coolify (Linode)
 - SSL active (HTTPS via Let's Encrypt), login working, Horizon active
-- PHPStan Level 5 clean sa lahat ng bagong files
+- PHPStan Level 5 was previously clean on recent feature work; latest v1.37 run exited with code 1 without diagnostics/output in this environment
 - `predis/predis` installed — local dev gumagamit ng `REDIS_CLIENT=predis`
+- Match confirmation flow now uses canonical `WAITING_FOR_CONFIRMATION`; `RESULT_SUBMITTED` remains legacy-compatible only
+- Welcome page header now shows logo image only, without adjacent `PLAYERSALOONS` text
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.36)
+## ✅ Natapos ngayong session (v1.30–v1.38)
 
 | Version | Item |
 |---|---|
@@ -23,6 +25,8 @@
 | v1.34 | Fix: missing `last_login_at` migration |
 | v1.35 | Broadcast Notification Admin Panel (`/admin/notifications`) |
 | v1.36 | Player Notification Bell — DB-backed + realtime refresh |
+| v1.37 | Match confirmation flow alignment — `WAITING_FOR_CONFIRMATION` canonical state |
+| v1.38 | Welcome logo text cleanup — removed visible header wordmark beside logo |
 
 ---
 
@@ -37,6 +41,17 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 | 🔵 | H2H production backend | Large |
 | 🔵 | 2FA | Large |
 | 🔵 | External payout integration | Large + business decision |
+| 🔵 | Compliance/blacklisting, contact inquiries, newsletter admin | Medium/Large |
+| 🔵 | CMS Blog/News + translation management | Medium |
+| 🟡 | Remaining testing debt | Tournament filters, pagination, elimination modal, N+1 checks |
+
+### Already Done / Do Not Re-open
+
+- `last_login_at` login update and migration — done v1.29/v1.34
+- `UserKycSubmitted` admin listener — done v1.31
+- Broadcast Messages admin UI — done v1.35
+- Player notification bell — done v1.36
+- Match confirmation state mismatch — fixed v1.37
 
 ---
 
