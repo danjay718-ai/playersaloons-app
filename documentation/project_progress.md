@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-20 (v1.37) | **Branch**: `main`
+**Last Updated**: 2026-06-20 (v1.38) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,14 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ Welcome Logo Text Cleanup (v1.38)
+
+- **`welcome.blade.php`**: Removed the visible `PLAYERSALOONS` wordmark text beside the header logo while keeping the logo image, page title, and image alt text intact.
+- **Tests**: Not run; Blade-only visual cleanup.
+- **PHPStan**: Not run; no PHP code changed.
 
 ---
 
