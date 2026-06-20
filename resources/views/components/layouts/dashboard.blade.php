@@ -189,7 +189,7 @@
                     </a>
 
                     <!-- Notifications Bell -->
-                    <livewire:notification-bell />
+                    <livewire:notification.notification-bell />
 
                     <!-- Profile Dropdown (Avatar) -->
                     <div class="relative" x-data="{ open: false }" @click.outside="open = false">

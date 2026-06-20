@@ -18,7 +18,7 @@
                 <!-- Welcome Header -->
                 <div class="bg-gradient-to-r from-zinc-900 to-zinc-950 border border-zinc-800 rounded-2xl p-8 flex items-center justify-between">
                     <div>
-                        <h2 class="text-2xl font-black text-white font-orbitron">Welcome back, {{ auth()->user()->username }}!</h2>
+                        <h2 class="text-2xl font-black text-white font-orbitron">WELCOME BACK, {{ auth()->user()->username }}!</h2>
                         <p class="text-zinc-400 text-sm mt-1">Ready for your next challenge?</p>
                     </div>
                     <div class="text-right">
