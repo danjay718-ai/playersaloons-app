@@ -5,24 +5,15 @@ RUN apk add --no-cache \
     bash \
     curl \
     nginx \
-    libpng-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    git \
-    icu-dev \
-    libzip-dev \
     nodejs \
     npm \
-    autoconf \
-    g++ \
-    make
+    git \
+    unzip
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql bcmath gd intl zip pcntl opcache exif
-
-# Install Redis extension
-RUN pecl install redis && docker-php-ext-enable redis
+# Install PHP extensions (pre-built binaries, much faster than compiling from source)
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN chmod +x /usr/local/bin/install-php-extensions \
+    && install-php-extensions pdo_mysql bcmath gd intl zip pcntl opcache exif redis
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
