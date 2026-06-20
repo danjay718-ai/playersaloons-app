@@ -33,6 +33,10 @@
                 <h3 class="text-sm font-black font-orbitron tracking-wider text-zinc-150 uppercase">INITIATE CHALLENGE</h3>
             </div>
 
+            <div class="rounded-xl border border-amber-500/20 bg-amber-950/10 p-3 text-[10px] font-medium text-amber-300">
+                Prototype only: challenges and match search are held in Livewire memory and are not persisted yet.
+            </div>
+
             <!-- Select Game -->
             <div class="space-y-2">
                 <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider font-orbitron">Select Title</label>

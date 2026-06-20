@@ -14,6 +14,81 @@
 ─────────────────────────────────── */
 [x-cloak] { display: none !important; }
 
+@layer components {
+    .player-tabs {
+        @apply flex gap-2 overflow-x-auto pb-2;
+        scrollbar-width: none;
+    }
+
+    .player-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .player-tab {
+        @apply shrink-0 rounded-xl bg-zinc-900 px-5 py-2.5 text-xs font-black uppercase tracking-widest text-zinc-400 transition-all hover:bg-zinc-800;
+    }
+
+    .player-tab-active {
+        @apply bg-indigo-600 text-white hover:bg-indigo-600;
+    }
+
+    .player-panel {
+        @apply rounded-2xl border border-zinc-800 bg-zinc-900/40;
+    }
+
+    .player-panel-title {
+        @apply mb-4 font-orbitron text-sm font-black uppercase text-zinc-300;
+    }
+
+    .player-welcome-panel {
+        @apply flex flex-col gap-4 rounded-2xl border border-zinc-800 bg-gradient-to-r from-zinc-900 to-zinc-950 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8;
+    }
+
+    .player-list-row {
+        @apply flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm;
+    }
+
+    .player-list-action {
+        @apply shrink-0 text-xs text-indigo-400 transition-colors hover:text-indigo-300;
+    }
+
+    .player-metric-card {
+        @apply relative overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-5 shadow-lg backdrop-blur-md;
+    }
+
+    .player-metric-card::after {
+        @apply absolute -bottom-10 -right-10 h-24 w-24 rounded-full bg-purple-500/10 blur-2xl transition-all content-[''];
+    }
+
+    .player-metric-card:hover::after {
+        @apply bg-purple-500/20;
+    }
+
+    .player-metric-label {
+        @apply text-[9px] font-black uppercase tracking-widest;
+    }
+
+    .player-tournament-card {
+        @apply relative flex flex-col justify-between overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-900/40 shadow-lg backdrop-blur-md transition-all duration-500 hover:-translate-y-2 hover:border-violet-500/50 hover:shadow-[0_20px_40px_-15px_rgba(124,77,255,0.25)];
+    }
+
+    .player-badge {
+        @apply rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-widest;
+    }
+
+    .player-card-action {
+        @apply relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-3.5 text-xs font-black uppercase tracking-widest text-zinc-400 transition-all duration-300 hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-white;
+    }
+
+    .player-empty-state {
+        @apply relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/40 p-10 text-center shadow-2xl backdrop-blur-md md:p-16;
+    }
+
+    .player-empty-icon {
+        @apply mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950 text-zinc-600;
+    }
+}
+
 /* ───────────────────────────────────
    CYBER SCROLLBAR
 ─────────────────────────────────── */

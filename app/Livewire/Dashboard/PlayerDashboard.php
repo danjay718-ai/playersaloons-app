@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Livewire\Dashboard;
 
-use App\Modules\CMS\Models\Game;
+use App\Modules\Community\Models\BroadcastMessage;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Models\Tournament;
-use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Shared\Enums\LedgerType;
-use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
@@ -17,8 +15,15 @@ use Livewire\Component;
 
 class PlayerDashboard extends Component
 {
-    // Bound to the 'tab' query parameter
-    public string $tab = 'overview';
+    private const PLAYER_NAV_ITEMS = [
+        ['label' => 'Overview', 'url' => '/dashboard', 'pattern' => 'dashboard'],
+        ['label' => 'My Tournaments', 'url' => '/my-tournaments', 'pattern' => 'my-tournaments'],
+        ['label' => 'Browse', 'url' => '/tournaments/browse', 'pattern' => 'tournaments/browse*'],
+        ['label' => 'H2H Duels', 'url' => '/head-to-head', 'pattern' => 'head-to-head'],
+        ['label' => 'Leaderboard', 'url' => '/leaderboards', 'pattern' => 'leaderboards'],
+        ['label' => 'Streams', 'url' => '/streams', 'pattern' => 'streams'],
+        ['label' => 'Chat', 'url' => '/chat', 'pattern' => 'chat'],
+    ];
 
     public function mount()
     {
@@ -28,11 +33,6 @@ class PlayerDashboard extends Component
             if ($user->hasAnyRole($adminRoles)) {
                 return redirect()->to('/admin');
             }
-        }
-        
-        $tabQuery = request()->query('tab', 'overview');
-        if (in_array($tabQuery, ['overview', 'tournaments', 'head-to-head', 'leaderboards', 'streams', 'chat'])) {
-            $this->tab = $tabQuery;
         }
     }
 
@@ -49,6 +49,9 @@ class PlayerDashboard extends Component
             ->whereHas('registrations', fn($q) => $q->where('user_id', $user->id))
             ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
             ->with('game.translations')
+            ->withCount(['registrations' => function ($q) {
+                $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
+            }])
             ->orderBy('start_at', 'asc')
             ->take(3)
             ->get();
@@ -63,13 +66,34 @@ class PlayerDashboard extends Component
             ->take(3)
             ->get();
 
-        $earnings = $user->wallet ? (float) $user->wallet->ledgerEntries()->where('type', LedgerType::PRIZE->value)->sum('amount') : 0.00;
+        $wallet = $user->wallet()
+            ->withSum(['ledgerEntries as prize_earnings' => function ($query) {
+                $query->where('type', LedgerType::PRIZE->value);
+            }], 'amount')
+            ->first();
+
+        $earnings = (float) ($wallet?->prize_earnings ?? 0.00);
+
+        $announcements = BroadcastMessage::query()
+            ->where(function ($query) {
+                $query->whereNull('starts_at')
+                    ->orWhere('starts_at', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('ends_at')
+                    ->orWhere('ends_at', '>=', now());
+            })
+            ->latest()
+            ->take(3)
+            ->get();
 
         return view('livewire.dashboard.player-dashboard', [
             'user' => $user,
             'activeTournaments' => $activeTournaments,
             'recentMatches' => $recentMatches,
             'earnings' => $earnings,
+            'announcements' => $announcements,
+            'navItems' => self::PLAYER_NAV_ITEMS,
         ])->layout('components.layouts.dashboard', [
             'title' => 'Gamer Terminal | PlayerSaloons',
             'dashboard_title' => 'DASHBOARD',

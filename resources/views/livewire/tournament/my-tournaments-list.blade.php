@@ -13,45 +13,10 @@
 
     <!-- Stats Banner -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Active -->
-        <div class="relative group overflow-hidden bg-zinc-900/40 backdrop-blur-md border border-zinc-800/80 rounded-2xl p-5 shadow-lg">
-            <div class="absolute -bottom-10 -right-10 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition-all"></div>
-            <div class="flex items-center space-x-3 text-cyan-400">
-                <i data-lucide="zap" class="w-5 h-5"></i>
-                <span class="text-[9px] font-black uppercase tracking-[0.2em]">Active</span>
-            </div>
-            <div class="text-3xl font-black font-orbitron text-white mt-2">{{ $activeCount }}</div>
-        </div>
-
-        <!-- History -->
-        <div class="relative group overflow-hidden bg-zinc-900/40 backdrop-blur-md border border-zinc-800/80 rounded-2xl p-5 shadow-lg">
-            <div class="absolute -bottom-10 -right-10 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all"></div>
-            <div class="flex items-center space-x-3 text-violet-400">
-                <i data-lucide="calendar" class="w-5 h-5"></i>
-                <span class="text-[9px] font-black uppercase tracking-[0.2em]">History</span>
-            </div>
-            <div class="text-3xl font-black font-orbitron text-white mt-2">{{ $historyCount }}</div>
-        </div>
-
-        <!-- Victories -->
-        <div class="relative group overflow-hidden bg-zinc-900/40 backdrop-blur-md border border-zinc-800/80 rounded-2xl p-5 shadow-lg">
-            <div class="absolute -bottom-10 -right-10 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
-            <div class="flex items-center space-x-3 text-emerald-400">
-                <i data-lucide="trophy" class="w-5 h-5"></i>
-                <span class="text-[9px] font-black uppercase tracking-[0.2em]">Victories</span>
-            </div>
-            <div class="text-3xl font-black font-orbitron text-white mt-2">{{ $matchWins }}</div>
-        </div>
-
-        <!-- Defeats -->
-        <div class="relative group overflow-hidden bg-zinc-900/40 backdrop-blur-md border border-zinc-800/80 rounded-2xl p-5 shadow-lg">
-            <div class="absolute -bottom-10 -right-10 w-24 h-24 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all"></div>
-            <div class="flex items-center space-x-3 text-rose-400">
-                <i data-lucide="skull" class="w-5 h-5"></i>
-                <span class="text-[9px] font-black uppercase tracking-[0.2em]">Defeats</span>
-            </div>
-            <div class="text-3xl font-black font-orbitron text-white mt-2">{{ $matchLosses }}</div>
-        </div>
+        <x-player.metric-card label="Active" :value="$activeCount" tone="text-cyan-400" icon="zap" />
+        <x-player.metric-card label="History" :value="$historyCount" tone="text-violet-400" icon="calendar" />
+        <x-player.metric-card label="Victories" :value="$matchWins" tone="text-emerald-400" icon="trophy" />
+        <x-player.metric-card label="Defeats" :value="$matchLosses" tone="text-rose-400" icon="skull" />
     </div>
 
     <!-- Tabs -->
@@ -71,100 +36,19 @@
         @if($tournaments->count() > 0)
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 @foreach($tournaments as $tournament)
-                    <!-- Tournament Card (Neon) -->
-                    <div class="group relative bg-zinc-900/40 backdrop-blur-md border border-zinc-800/80 rounded-3xl hover:border-violet-500/50 hover:shadow-[0_20px_40px_-15px_rgba(124,77,255,0.25)] transition-all duration-500 hover:-translate-y-2 flex flex-col justify-between overflow-hidden">
-                        <!-- Image Banner -->
-                        <div class="relative h-44 w-full overflow-hidden">
-                            <img src="{{ $tournament->banner_url ?? 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop' }}" 
-                                 alt="{{ $tournament->name }}" 
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
-                            <div class="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-transparent to-zinc-950/40"></div>
-                            
-                            <!-- Badges on top of image -->
-                            <div class="absolute top-4 left-4 right-4 flex items-center justify-between">
-                                <span class="text-[9px] font-black text-cyan-400 uppercase tracking-widest bg-zinc-950/85 border border-cyan-800/50 rounded-full px-3 py-1.5">
-                                    {{ $tournament->game->translations->where('locale', 'en')->first()?->name ?? $tournament->game->slug }}
-                                </span>
-                                @php
-                                    $statusColors = [
-                                        'REGISTRATION_OPEN' => 'text-emerald-400 border-emerald-900/50 bg-emerald-950/85 shadow-[0_0_15px_rgba(52,211,153,0.15)]',
-                                        'REGISTRATION_CLOSED' => 'text-amber-400 border-amber-900/50 bg-amber-950/85',
-                                        'CHECKIN_OPEN' => 'text-fuchsia-400 border-fuchsia-900/50 bg-fuchsia-950/85',
-                                        'CHECKIN_CLOSED' => 'text-rose-400 border-rose-900/50 bg-rose-950/85',
-                                        'BRACKET_GENERATED' => 'text-indigo-400 border-indigo-900/50 bg-indigo-950/85',
-                                        'ONGOING' => 'text-violet-400 border-violet-850/50 bg-violet-950/85 animate-pulse shadow-[0_0_20px_rgba(124,77,255,0.25)]',
-                                    ];
-                                    $statusVal = $tournament->status->value ?? $tournament->status;
-                                    $colorClass = $statusColors[$statusVal] ?? 'text-zinc-505 border-zinc-800 bg-zinc-950/85';
-                                @endphp
-                                <span class="text-[9px] font-black uppercase tracking-widest border rounded-full px-3 py-1.5 {{ $colorClass }}">
-                                    {{ str_replace('_', ' ', $statusVal) }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Content Area -->
-                        <div class="p-6 flex-grow flex flex-col justify-between space-y-5">
-                            <!-- Info Area -->
-                            <div class="space-y-3">
-                                <h3 class="text-xl font-black text-white group-hover:text-cyan-400 transition-colors duration-300 font-orbitron tracking-wide leading-tight line-clamp-2">
-                                    {{ $tournament->name }}
-                                </h3>
-                                <div class="flex items-center justify-between text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
-                                    <div class="flex items-center space-x-1.5">
-                                        <i data-lucide="calendar" class="w-3.5 h-3.5 text-violet-400"></i>
-                                        <span>{{ $tournament->start_at ? $tournament->start_at->format('M d, H:i') : 'TBD' }}</span>
-                                    </div>
-                                    <div class="flex items-center space-x-2">
-                                        <span>Entry Fee:</span>
-                                        <span class="text-xs font-black font-orbitron text-violet-400 tracking-wider">
-                                            {{ (float)$tournament->entry_fee > 0 ? '$'.number_format((float)$tournament->entry_fee, 2) : 'FREE ENTRY' }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Stats Block -->
-                            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-800/40">
-                                <div class="space-y-1">
-                                    <span class="block text-[9px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Prize Pool</span>
-                                    <div class="flex items-baseline space-x-1">
-                                        <span class="text-lg font-black text-fuchsia-500 font-orbitron leading-none">${{ number_format((float)$tournament->prize_pool, 2) }}</span>
-                                    </div>
-                                </div>
-                                <div class="space-y-1 text-right">
-                                    <span class="block text-[9px] font-bold text-zinc-650 uppercase tracking-[0.2em]">Slots Left</span>
-                                    <div class="flex items-baseline justify-end space-x-1 font-mono">
-                                        <span class="text-sm font-bold text-zinc-200">{{ $tournament->registrations_count }}</span>
-                                        <span class="text-[10px] text-zinc-650">/</span>
-                                        <span class="text-[10px] text-zinc-550">{{ $tournament->max_participants }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Footer Action -->
-                            <div class="pt-2">
-                                <a href="/tournaments/{{ $tournament->uuid }}/view" wire:navigate
-                                    class="w-full relative flex items-center justify-center space-x-2 py-3.5 px-6 rounded-2xl bg-zinc-950 border border-zinc-800 group-hover:border-cyan-500/50 text-xs font-black uppercase tracking-[0.2em] text-zinc-400 group-hover:text-white group-hover:bg-cyan-500/10 transition-all duration-300 overflow-hidden">
-                                    <div class="absolute inset-0 translate-x-[-100%] group-hover:translate-x-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent transition-transform duration-700 pointer-events-none"></div>
-                                    <span>Enter Tournament Hub</span>
-                                    <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-cyan-400 group-hover:translate-x-1 transition-transform duration-300"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    <x-player.tournament-card :tournament="$tournament" action-label="Enter Tournament Hub" />
                 @endforeach
             </div>
         @else
-            <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800 rounded-3xl p-16 text-center shadow-2xl relative overflow-hidden">
-                <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-zinc-950 border border-zinc-800 text-zinc-600 mb-6">
+            <div class="player-empty-state">
+                <div class="player-empty-icon">
                     <i data-lucide="ghost" class="w-10 h-10"></i>
                 </div>
                 <h3 class="text-xl font-black text-zinc-200 font-orbitron tracking-wider">NO ACTIVE TOURNAMENTS</h3>
                 <p class="mt-2 text-sm text-zinc-500 max-w-sm mx-auto font-medium">
                     You haven't joined any active tournaments yet. Head over to browse page to find one!
                 </p>
-                <a href="/tournaments" wire:navigate class="mt-6 inline-flex items-center space-x-2 px-6 py-3 bg-indigo-650 hover:bg-indigo-500 text-xs font-bold uppercase tracking-widest text-white rounded-xl transition-all shadow-lg">
+                <a href="/tournaments/browse" wire:navigate class="mt-6 inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold uppercase tracking-widest text-white rounded-xl transition-all shadow-lg">
                     <span>Browse Tournaments</span>
                     <i data-lucide="chevron-right" class="w-4 h-4"></i>
                 </a>
@@ -272,8 +156,8 @@
                 @endforeach
             </div>
         @else
-            <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800 rounded-3xl p-16 text-center shadow-2xl relative overflow-hidden">
-                <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-zinc-950 border border-zinc-800 text-zinc-600 mb-6">
+            <div class="player-empty-state">
+                <div class="player-empty-icon">
                     <i data-lucide="ghost" class="w-10 h-10"></i>
                 </div>
                 <h3 class="text-xl font-black text-zinc-200 font-orbitron tracking-wider">NO HISTORY FOUND</h3>

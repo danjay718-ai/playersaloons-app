@@ -6,6 +6,10 @@
             <h3 class="text-sm font-black font-orbitron tracking-wider text-zinc-150 uppercase">GLOBAL COMMUNICATIONS</h3>
         </div>
 
+        <div class="mb-4 rounded-xl border border-amber-500/20 bg-amber-950/10 p-3 text-[10px] font-medium text-amber-300">
+            Prototype only: messages are local to this Livewire session and are not saved.
+        </div>
+
         <div class="flex-grow overflow-y-auto space-y-4 pr-2 mb-4 scrollbar-thin scrollbar-thumb-purple-900 scrollbar-track-transparent">
             @foreach($messages as $msg)
                 <div class="flex items-start space-x-3">
