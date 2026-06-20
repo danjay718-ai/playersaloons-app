@@ -23,9 +23,6 @@
     <nav class="relative z-50 flex items-center justify-between px-6 py-6 max-w-7xl mx-auto">
         <a href="/" class="flex items-center space-x-3 group">
             <img src="/playersaloons_logo.webp" alt="PlayerSaloons Logo" class="h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-110">
-            <span class="text-2xl font-black font-orbitron tracking-tighter bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent filter drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]">
-                PLAYERSALOONS
-            </span>
         </a>
 
         <div class="flex items-center space-x-6">
