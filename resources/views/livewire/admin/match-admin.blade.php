@@ -180,6 +180,81 @@
     {{-- Pagination --}}
     <div>{{ $matches->links() }}</div>
 
+    {{-- ─── H2H Dispute Queue ───────────────────────────────────────────────── --}}
+    <div class="mt-8 bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div class="px-4 py-3 border-b border-slate-800 bg-[#0b0f19] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="swords" class="w-4 h-4 text-red-400"></i>
+                <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Head-to-Head Dispute Queue</h3>
+            </div>
+            <span class="text-[10px] font-bold text-slate-500">{{ $h2hDisputes->count() }} open</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
+                        <th class="p-4">Game / Stake</th>
+                        <th class="p-4">Creator</th>
+                        <th class="p-4">Opponent</th>
+                        <th class="p-4">Submitted Winner</th>
+                        <th class="p-4">Disputed By</th>
+                        <th class="p-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/50">
+                    @forelse($h2hDisputes as $h2h)
+                        @php
+                            $h2hGameName = $h2h->game->translations->first()?->name ?? $h2h->game->slug;
+                        @endphp
+                        <tr class="hover:bg-slate-900/40 transition-colors" wire:key="h2h-dispute-{{ $h2h->id }}">
+                            <td class="p-4">
+                                <span class="block font-semibold text-slate-200">{{ $h2hGameName }}</span>
+                                <span class="block text-[10px] text-emerald-400 mt-0.5">${{ number_format((float) $h2h->stake_amount, 2) }} each</span>
+                                @if($h2h->platform)
+                                    <span class="block text-[10px] text-slate-500 mt-0.5">{{ $h2h->platform->name }}</span>
+                                @endif
+                            </td>
+                            <td class="p-4 text-slate-300">
+                                <span class="font-semibold">{{ $h2h->creator?->username }}</span>
+                                <span class="block text-[10px] text-slate-500">{{ $h2h->creator_game_handle }}</span>
+                            </td>
+                            <td class="p-4 text-slate-300">
+                                <span class="font-semibold">{{ $h2h->opponent?->username }}</span>
+                                <span class="block text-[10px] text-slate-500">{{ $h2h->opponent_game_handle }}</span>
+                            </td>
+                            <td class="p-4 text-slate-300">
+                                <span class="font-semibold">{{ $h2h->winner?->username ?? '—' }}</span>
+                                @if($h2h->resultSubmitter)
+                                    <span class="block text-[10px] text-slate-500">by {{ $h2h->resultSubmitter->username }}</span>
+                                @endif
+                            </td>
+                            <td class="p-4 text-red-300">
+                                <span class="font-semibold">{{ $h2h->disputer?->username ?? '—' }}</span>
+                                @if($h2h->updated_at)
+                                    <span class="block text-[10px] text-slate-500">{{ $h2h->updated_at->diffForHumans() }}</span>
+                                @endif
+                            </td>
+                            <td class="p-4 text-right">
+                                <button wire:click="openH2HDisputeModal({{ $h2h->id }})"
+                                        class="inline-flex items-center gap-1.5 bg-red-600/90 hover:bg-red-500 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors">
+                                    <i data-lucide="gavel" class="w-3.5 h-3.5"></i>
+                                    Review
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-slate-600 italic">
+                                No open head-to-head disputes.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     {{-- ─── Detail Modal ─────────────────────────────────────────────────────── --}}
     @if($showDetailModal && $this->selectedMatch)
         @php $selectedMatch = $this->selectedMatch; @endphp
@@ -543,6 +618,130 @@
                             </button>
                         </div>
 
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ─── H2H Dispute Resolution Modal ────────────────────────────────────── --}}
+    @if($showH2HDisputeModal && $this->selectedH2HMatch)
+        @php $h2hMatch = $this->selectedH2HMatch; @endphp
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" wire:click="closeH2HDisputeModal"></div>
+            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl relative z-10 max-h-[90vh] flex flex-col"
+                 wire:key="h2h-dispute-modal-{{ $h2hMatch->id }}">
+
+                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center shrink-0">
+                    <div>
+                        <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider">Resolve H2H Dispute</h3>
+                        <p class="text-[10px] text-slate-500 mt-0.5">{{ $h2hMatch->uuid }}</p>
+                    </div>
+                    <button wire:click="closeH2HDisputeModal" class="text-slate-400 hover:text-white transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="overflow-y-auto flex-grow">
+                    <form wire:submit.prevent="resolveH2HDispute" class="p-6 space-y-5">
+                        <div class="grid grid-cols-3 items-center bg-[#0b0f19] border border-slate-800 rounded-xl p-4 text-center">
+                            <div>
+                                <span class="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Creator</span>
+                                <p class="text-sm font-bold text-slate-200 mt-1">{{ $h2hMatch->creator?->username }}</p>
+                                <p class="text-[10px] text-slate-500 mt-1">{{ $h2hMatch->creator_game_handle }}</p>
+                            </div>
+                            <div class="flex flex-col items-center gap-2">
+                                <span class="text-xs font-black text-slate-700 font-mono">VS</span>
+                                <span class="inline-block px-2 py-0.5 rounded border text-[9px] font-bold uppercase bg-red-500/10 text-red-400 border-red-500/20">
+                                    disputed
+                                </span>
+                                <span class="text-[10px] text-emerald-400 font-bold">${{ number_format((float) $h2hMatch->stake_amount, 2) }} each</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Opponent</span>
+                                <p class="text-sm font-bold text-slate-200 mt-1">{{ $h2hMatch->opponent?->username }}</p>
+                                <p class="text-[10px] text-slate-500 mt-1">{{ $h2hMatch->opponent_game_handle }}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-4 py-3">
+                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">Submitted Result</span>
+                                <p class="text-slate-300 text-xs">
+                                    Winner: <strong class="text-slate-100">{{ $h2hMatch->winner?->username ?? '—' }}</strong>
+                                </p>
+                                <p class="text-slate-500 text-[10px] mt-1">Submitted by {{ $h2hMatch->resultSubmitter?->username ?? '—' }}</p>
+                                @if($h2hMatch->result_notes)
+                                    <p class="text-slate-300 text-xs leading-relaxed mt-3">{{ $h2hMatch->result_notes }}</p>
+                                @endif
+                                @if($h2hMatch->result_proof_path)
+                                    <a href="/storage/{{ $h2hMatch->result_proof_path }}" target="_blank" class="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 text-[10px] font-bold mt-3">
+                                        <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                                        View result proof
+                                    </a>
+                                @endif
+                            </div>
+                            <div class="bg-red-500/5 border border-red-500/15 rounded-lg px-4 py-3">
+                                <span class="text-[10px] text-red-400 font-bold uppercase tracking-wider block mb-1.5">Dispute</span>
+                                <p class="text-slate-300 text-xs">
+                                    Filed by <strong class="text-slate-100">{{ $h2hMatch->disputer?->username ?? '—' }}</strong>
+                                </p>
+                                @if($h2hMatch->dispute_notes)
+                                    <p class="text-slate-300 text-xs leading-relaxed mt-3">{{ $h2hMatch->dispute_notes }}</p>
+                                @endif
+                                @if($h2hMatch->dispute_proof_path)
+                                    <a href="/storage/{{ $h2hMatch->dispute_proof_path }}" target="_blank" class="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 text-[10px] font-bold mt-3">
+                                        <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                                        View dispute proof
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
+                                <i data-lucide="gavel" class="w-3.5 h-3.5 inline mr-1 align-text-bottom text-red-400"></i>
+                                Admin Ruling
+                            </label>
+                            <div class="space-y-2">
+                                <label class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-3.5 cursor-pointer hover:border-emerald-600/50 hover:bg-emerald-900/10 transition-all has-[:checked]:border-emerald-500/50 has-[:checked]:bg-emerald-900/10">
+                                    <input type="radio" wire:model="h2hResolution" value="player_a" class="text-emerald-600 focus:ring-emerald-500 mr-3 shrink-0">
+                                    <div class="text-xs">
+                                        <span class="font-bold text-slate-100 block">Award Win to Creator</span>
+                                        <span class="text-slate-400">{{ $h2hMatch->creator?->username }}</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-3.5 cursor-pointer hover:border-emerald-600/50 hover:bg-emerald-900/10 transition-all has-[:checked]:border-emerald-500/50 has-[:checked]:bg-emerald-900/10">
+                                    <input type="radio" wire:model="h2hResolution" value="player_b" class="text-emerald-600 focus:ring-emerald-500 mr-3 shrink-0">
+                                    <div class="text-xs">
+                                        <span class="font-bold text-slate-100 block">Award Win to Opponent</span>
+                                        <span class="text-slate-400">{{ $h2hMatch->opponent?->username }}</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-3.5 cursor-pointer hover:border-amber-600/50 hover:bg-amber-900/10 transition-all has-[:checked]:border-amber-500/50 has-[:checked]:bg-amber-900/10">
+                                    <input type="radio" wire:model="h2hResolution" value="refund" class="text-amber-600 focus:ring-amber-500 mr-3 shrink-0">
+                                    <div class="text-xs">
+                                        <span class="font-bold text-slate-100 block">Void and Refund</span>
+                                        <span class="text-slate-400">Return each player's locked stake.</span>
+                                    </div>
+                                </label>
+                            </div>
+                            @error('h2hResolution') <span class="text-red-400 text-xs mt-2 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-800 flex justify-end gap-3">
+                            <button type="button" wire:click="closeH2HDisputeModal"
+                                    class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    wire:loading.attr="disabled" wire:target="resolveH2HDispute"
+                                    class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold text-xs uppercase px-5 py-2.5 rounded-lg transition-colors">
+                                <i data-lucide="gavel" class="w-3.5 h-3.5"></i>
+                                <span wire:loading.remove wire:target="resolveH2HDispute">Submit Ruling</span>
+                                <span wire:loading wire:target="resolveH2HDispute">Submitting…</span>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>

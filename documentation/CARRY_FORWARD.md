@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-20 | **Current version**: v1.39 | **Branch**: `main`
+**As of**: 2026-06-21 | **Current version**: v1.40 | **Branch**: `main`
 
 ---
 
@@ -7,15 +7,16 @@
 
 - Production deployed sa `https://app-testing.website` via Docker Compose + Coolify (Linode)
 - SSL active (HTTPS via Let's Encrypt), login working, Horizon active
-- PHPStan Level 5 was previously clean on recent feature work; latest v1.37 run exited with code 1 without diagnostics/output in this environment
+- PHPStan Level 5 was previously clean on recent feature work; latest v1.40 run exited with code 1 without diagnostics/output in this environment
 - `predis/predis` installed — local dev gumagamit ng `REDIS_CLIENT=predis`
 - Match confirmation flow now uses canonical `WAITING_FOR_CONFIRMATION`; `RESULT_SUBMITTED` remains legacy-compatible only
 - Welcome page header now shows logo image only, without adjacent `PLAYERSALOONS` text
 - H2H MVP is now DB-backed with challenge queue, stake lock, match acceptance, result submit/confirm, and winner payout
+- H2H result/dispute proof uploads and admin dispute resolution are implemented in `/admin/matches`
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.39)
+## ✅ Natapos ngayong session (v1.30–v1.40)
 
 | Version | Item |
 |---|---|
@@ -29,6 +30,7 @@
 | v1.37 | Match confirmation flow alignment — `WAITING_FOR_CONFIRMATION` canonical state |
 | v1.38 | Welcome logo text cleanup — removed visible header wordmark beside logo |
 | v1.39 | H2H Production MVP — persisted queue, stake lock/payout, submit/confirm result |
+| v1.40 | H2H proof upload + admin dispute review — award creator/opponent or void/refund |
 
 ---
 
@@ -38,7 +40,6 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 
 | Priority | Item | Effort |
 |---|---|---|
-| 🟢 | H2H proof upload + admin dispute review | Medium/Large — MVP dispute entry exists, admin resolution pending |
 | 🟢 | H2H timeout/auto-expiry policy | Medium — decide and implement fair handling for stale submitted/unresolved duels |
 | 🟡 | H2H ELO/skill matching | Optional for v1; matchmaker currently uses game/stake/platform/region |
 | 🟢 | Referral system logic | Medium |
@@ -57,11 +58,10 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - Player notification bell — done v1.36
 - Match confirmation state mismatch — fixed v1.37
 - H2H mock-only challenge queue — replaced with DB-backed MVP v1.39
+- H2H proof upload + admin dispute review — done v1.40
 
 ### H2H Follow-up Scope
 
-- Add proof uploads for H2H result submissions.
-- Add admin dispute review and resolution: player A wins, player B wins, refund/void.
 - Add timeout policy for stale `WAITING_FOR_CONFIRMATION` H2H matches without creating unfair auto-win behavior.
 - Add optional ELO/skill matching after enough player history exists.
 

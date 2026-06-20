@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Match\StateMachines\HeadToHeadMatchStateMachine;
 use App\Shared\Enums\HeadToHeadMatchStatus;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use LogicException;
@@ -16,9 +17,14 @@ class SubmitHeadToHeadResultAction
 {
     public function __construct(private readonly HeadToHeadMatchStateMachine $stateMachine) {}
 
-    public function execute(HeadToHeadMatch $match, User $submitter, int $winnerUserId, ?string $notes = null): void
-    {
-        DB::transaction(function () use ($match, $submitter, $winnerUserId, $notes): void {
+    public function execute(
+        HeadToHeadMatch $match,
+        User $submitter,
+        int $winnerUserId,
+        ?string $notes = null,
+        ?UploadedFile $proof = null
+    ): void {
+        DB::transaction(function () use ($match, $submitter, $winnerUserId, $notes, $proof): void {
             /** @var HeadToHeadMatch $lockedMatch */
             $lockedMatch = HeadToHeadMatch::query()
                 ->where('id', $match->getKey())
@@ -40,6 +46,7 @@ class SubmitHeadToHeadResultAction
             $lockedMatch->winner_user_id = $winnerUserId;
             $lockedMatch->result_submitted_by = $submitter->getKey();
             $lockedMatch->result_notes = $notes;
+            $lockedMatch->result_proof_path = $proof?->store('h2h-results', 'public');
             $lockedMatch->result_submitted_at = now();
             $lockedMatch->confirmation_due_at = now()->addMinutes(15);
             $lockedMatch->save();

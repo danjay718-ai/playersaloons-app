@@ -126,6 +126,8 @@
                                         <option value="{{ $match->opponent_user_id }}">{{ $match->opponent?->username }}</option>
                                     </select>
                                     <textarea wire:model="resultNotes" rows="2" placeholder="Optional notes / proof reference" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 placeholder-zinc-700"></textarea>
+                                    <input wire:model="resultProof" type="file" accept="image/*" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-[10px] text-zinc-400 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-[10px] file:font-bold file:text-zinc-200">
+                                    @error('resultProof') <p class="text-xs text-red-400">{{ $message }}</p> @enderror
                                     <button wire:click="submitResult({{ $match->id }})" class="w-full rounded-xl bg-emerald-700 px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-white hover:bg-emerald-600">
                                         Submit Result
                                     </button>
@@ -138,15 +140,48 @@
                                             {{ $match->winner_user_id === $match->creator_user_id ? $match->creator?->username : $match->opponent?->username }}
                                         </strong>
                                     </p>
+                                    @if($match->result_proof_path)
+                                        <a href="/storage/{{ $match->result_proof_path }}" target="_blank" class="inline-flex items-center gap-1 text-cyan-300 hover:text-cyan-200">
+                                            <i data-lucide="image" class="h-3 w-3"></i>
+                                            View submitted proof
+                                        </a>
+                                    @endif
                                     @if($match->result_submitted_by !== auth()->id())
                                         <button wire:click="confirmResult({{ $match->id }})" class="w-full rounded-xl bg-emerald-700 px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-white hover:bg-emerald-600">
                                             Confirm Result
                                         </button>
+                                        <textarea wire:model="disputeNotes" rows="2" placeholder="Optional dispute notes" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 placeholder-zinc-700"></textarea>
+                                        <input wire:model="disputeProof" type="file" accept="image/*" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-[10px] text-zinc-400 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-[10px] file:font-bold file:text-zinc-200">
+                                        @error('disputeProof') <p class="text-xs text-red-400">{{ $message }}</p> @enderror
                                         <button wire:click="disputeResult({{ $match->id }})" class="w-full rounded-xl border border-red-500/30 bg-red-950/40 px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-red-300 hover:bg-red-900">
                                             Dispute
                                         </button>
                                     @else
                                         <p>Waiting for opponent response.</p>
+                                    @endif
+                                </div>
+                            @elseif($match->status === \App\Shared\Enums\HeadToHeadMatchStatus::DISPUTED)
+                                <div class="min-w-56 space-y-2 text-xs text-zinc-400">
+                                    <p class="font-bold text-red-300">Under admin review</p>
+                                    @if($match->disputer)
+                                        <p>Disputed by {{ $match->disputer->username }}</p>
+                                    @endif
+                                    @if($match->dispute_proof_path)
+                                        <a href="/storage/{{ $match->dispute_proof_path }}" target="_blank" class="inline-flex items-center gap-1 text-cyan-300 hover:text-cyan-200">
+                                            <i data-lucide="image" class="h-3 w-3"></i>
+                                            View dispute proof
+                                        </a>
+                                    @endif
+                                </div>
+                            @elseif(in_array($match->status, [\App\Shared\Enums\HeadToHeadMatchStatus::COMPLETED, \App\Shared\Enums\HeadToHeadMatchStatus::CANCELLED], true))
+                                <div class="min-w-56 space-y-2 text-xs text-zinc-400">
+                                    @if($match->winner)
+                                        <p>Winner: <strong class="text-emerald-300">{{ $match->winner->username }}</strong></p>
+                                    @elseif($match->dispute_resolution?->value === 'refund')
+                                        <p class="text-amber-300">Voided and refunded</p>
+                                    @endif
+                                    @if($match->dispute_resolution)
+                                        <p>Resolution: {{ str_replace('_', ' ', $match->dispute_resolution->value) }}</p>
                                     @endif
                                 </div>
                             @endif

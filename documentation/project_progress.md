@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-20 (v1.39) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.40) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,17 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ H2H Proof Upload + Admin Dispute Review (v1.40)
+
+- **`head_to_head_matches`**: Added result proof, dispute notes/proof, disputed-by, admin resolution, resolver, and resolved-at fields.
+- **`HeadToHeadList`**: Result submitters can attach proof screenshots; opponents can attach dispute notes/proof before escalating to admin review.
+- **`ResolveHeadToHeadDisputeAction` / `MatchAdmin`**: Admins can review H2H disputes from `/admin/matches` and award creator, award opponent, or void/refund both stakes through ledger-backed wallet actions.
+- **Tests**: Added H2H proof/dispute storage, admin winner payout, admin void/refund, and `MatchAdmin` component coverage. `php artisan test tests/Feature/Match/HeadToHeadModuleTest.php` passes: 9 tests, 40 assertions.
+- **PHPStan**: `./vendor/bin/phpstan analyse` still exits with code 1 and no diagnostics/output in this environment, including raw and verbose modes. PHP syntax checks passed for changed PHP files.
+- **Full suite note**: `php artisan test` currently has unrelated existing failures: Redis unavailable for online presence in `UserAdmin`, API match dispute controller calling `OpenDisputeAction` with too few arguments, `match_disputes.reason` fixture missing, and an `ADMIN` role setup issue in one KYC test.
 
 ---
 

@@ -81,16 +81,18 @@ Player-created wager matches outside tournament brackets.
     *   `app/Modules/Match/Actions/CreateHeadToHeadChallengeAction.php`: Creates a waiting challenge and locks creator stake.
     *   `app/Modules/Match/Services/HeadToHeadMatchmakerService.php`: Finds compatible waiting challenges by game, stake, platform, and region.
     *   `app/Modules/Match/Actions/AcceptHeadToHeadChallengeAction.php`: Locks opponent stake and creates an in-progress H2H match.
-    *   `app/Modules/Match/Actions/SubmitHeadToHeadResultAction.php`: Records submitted winner and moves the H2H match to `WAITING_FOR_CONFIRMATION`.
+    *   `app/Modules/Match/Actions/SubmitHeadToHeadResultAction.php`: Records submitted winner, notes, optional proof screenshot, and moves the H2H match to `WAITING_FOR_CONFIRMATION`.
     *   `app/Modules/Match/Actions/ConfirmHeadToHeadResultAction.php`: Opponent confirms and releases both locked stakes to the winner.
-    *   `app/Modules/Match/Actions/DisputeHeadToHeadResultAction.php`: Marks the result disputed; admin review and proof upload are still pending follow-up work.
+    *   `app/Modules/Match/Actions/DisputeHeadToHeadResultAction.php`: Marks the result disputed and stores optional dispute notes/proof.
+    *   `app/Modules/Match/Actions/ResolveHeadToHeadDisputeAction.php`: Admin awards creator, awards opponent, or voids/refunds both stakes from `/admin/matches`.
 *   **Connected Files**:
     *   `app/Modules/Match/Models/HeadToHeadChallenge.php`
     *   `app/Modules/Match/Models/HeadToHeadMatch.php`
     *   `app/Modules/Match/StateMachines/HeadToHeadMatchStateMachine.php`
+    *   `app/Shared/Enums/HeadToHeadDisputeResolution.php`
     *   `app/Shared/Enums/HeadToHeadChallengeStatus.php`
     *   `app/Shared/Enums/HeadToHeadMatchStatus.php`
-*   **Fair-play rule**: H2H MVP does not auto-award wins from an unconfirmed claim. Confirmation releases payout; disputes keep stakes locked for admin review.
+*   **Fair-play rule**: H2H does not auto-award wins from an unconfirmed claim. Confirmation releases payout; disputes keep stakes locked until an admin awards a player or voids/refunds the duel.
 
 ## 🧪 Isolated Test Cases
 ### 1. Registration & Wallet

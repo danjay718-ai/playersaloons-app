@@ -52,9 +52,11 @@ Resolving conflicts and overriding results.
 *   **UI Component**: `app/Livewire/Admin/MatchAdmin.php`
 *   **Logic (Actions)**:
     *   `app/Modules/Match/Actions/ResolveDisputeAction.php`: Finalizes a dispute with a chosen outcome (e.g., PLAYER_A_WINS). Accepts `User $actor` and enforces `ADMIN | SUPER_ADMIN` role check.
+    *   `app/Modules/Match/Actions/ResolveHeadToHeadDisputeAction.php`: Resolves H2H disputes by awarding creator, awarding opponent, or voiding/refunding both locked stakes.
     *   `app/Modules/Match/Actions/ForfeitMatchAction.php`: Manually forfeits a match for a player.
 *   **Connected Files**:
     *   `app/Modules/Match/Models/MatchDispute.php`: Tracks dispute status.
+    *   `app/Modules/Match/Models/HeadToHeadMatch.php`: Stores H2H result proof, dispute notes/proof, and admin resolution metadata.
     *   `app/Modules/Match/Policies/MatchPolicy.php`: Grants admins override permissions.
     *   `app/Modules/Match/Listeners/AdvanceWinnerListener.php`: Re-triggered after dispute resolution to progress the bracket.
 

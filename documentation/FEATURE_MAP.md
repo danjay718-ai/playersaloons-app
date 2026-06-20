@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-20 (v1.39)
+**Last Updated**: 2026-06-21 (v1.40)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -40,7 +40,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /tournaments/browse` | `app/Livewire/Tournament/PlayerTournamentList.php` | Browse & filter all active tournaments |
 | `GET /tournaments/{uuid}/view` | `app/Livewire/Tournament/TournamentDetail.php` | Tournament detail, registration, check-in, bracket, matches |
 | `GET /matches/{uuid}` | `app/Livewire/Match/MatchDetail.php` | Match lobby: result submission, evidence, dispute |
-| `GET /head-to-head` | `app/Livewire/Match/HeadToHeadList.php` | DB-backed H2H challenge queue, stake lock, result submit/confirm flow |
+| `GET /head-to-head` | `app/Livewire/Match/HeadToHeadList.php` | DB-backed H2H challenge queue, stake lock, proof-backed result submit/confirm/dispute flow |
 | `GET /leaderboards` | `app/Livewire/Match/LeaderboardList.php` | Leaderboard (stub) |
 | `GET /streams` | `app/Livewire/Stream/StreamList.php` | Streams (stub) |
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` | Global chat (mock) |
@@ -59,7 +59,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/tournaments` | `app/Livewire/Admin/TournamentAdmin.php` | Tournament list + lifecycle state transitions |
 | `GET /admin/tournaments/create` | `app/Livewire/Admin/TournamentForm.php` | 4-step creation wizard |
 | `GET /admin/tournaments/{id}/edit` | `app/Livewire/Admin/TournamentForm.php` | Edit tournament (limited edit for published) |
-| `GET /admin/matches` | `app/Livewire/Admin/MatchAdmin.php` | Match list + result override + dispute resolution |
+| `GET /admin/matches` | `app/Livewire/Admin/MatchAdmin.php` | Match list + result override + tournament/H2H dispute resolution |
 | `GET /admin/kyc` | `app/Livewire/Admin/KycAdmin.php` | KYC queue: approve/reject submissions |
 | `GET /admin/withdrawals` | `app/Livewire/Admin/WithdrawalAdmin.php` | Withdrawal queue: review/approve/reject/process |
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
@@ -141,9 +141,10 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Create H2H challenge | `CreateHeadToHeadChallengeAction` + `LockHeadToHeadStakeAction` | — | — |
 | Matchmake / accept challenge | `HeadToHeadMatchmakerService` + `AcceptHeadToHeadChallengeAction` | — | — |
 | Cancel waiting challenge | `CancelHeadToHeadChallengeAction` + `RefundHeadToHeadStakeAction` | — | — |
-| Submit H2H result | `SubmitHeadToHeadResultAction` | — | — |
+| Submit H2H result | `SubmitHeadToHeadResultAction` | — | Optional proof upload stored on `head_to_head_matches.result_proof_path` |
 | Confirm H2H result | `ConfirmHeadToHeadResultAction` + `ResolveHeadToHeadStakeAction` | — | — |
-| Dispute H2H result | `DisputeHeadToHeadResultAction` | — | Admin review follow-up pending |
+| Dispute H2H result | `DisputeHeadToHeadResultAction` | — | Optional dispute proof/notes stored for admin review |
+| Resolve H2H dispute | `ResolveHeadToHeadDisputeAction` | — | Admin can award creator, award opponent, or void/refund both stakes from `/admin/matches` |
 
 ### Wallet & Finance
 | Feature | Action/Service | Event | Listener |
@@ -193,6 +194,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Tournament/TournamentModuleTest.php` | Registration, check-in, bracket generation, cancellation, refunds, prize distribution |
 | `Tournament/TournamentSecurityTest.php` | Join button role restriction, listing status filter, viewRestrictedDetails policy |
 | `Match/MatchModuleTest.php` | Result submission, confirmation flow, dispute, forfeit, bracket advancement |
+| `Match/HeadToHeadModuleTest.php` | H2H challenge queue, stake lock/refund/payout, proof upload, admin winner ruling, admin void/refund, MatchAdmin component resolution |
 | `Match/ConfirmResultFlowTest.php` | Full flow: confirmResult → MatchCompleted → AdvanceWinnerListener + AutoForfeitJob timeout |
 | `Team/TeamModuleTest.php` | All 11 team actions: create, invite, accept, decline, revoke, remove, transfer, disband |
 

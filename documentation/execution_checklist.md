@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-06-20 (v1.39)
+**Status**: Active Backlog | **Last Updated**: 2026-06-21 (v1.40)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -22,7 +22,7 @@
 - [x] Implement `MatchmakerService` for querying waiting challenges. *(done v1.39)*
 - [ ] Implement ELO/Skill Level matching (optional for v1).
 - [x] Implement stake validation (check balance/lock amount in wallet). *(done v1.39)*
-- [ ] Add H2H proof upload and admin dispute review flow.
+- [x] Add H2H proof upload and admin dispute review flow. *(done v1.40)*
 
 ### Tournament & Match Lifecycle Automation
 - [x] Implement `AutoStartMatchesListener` — transitions READY matches to IN_PROGRESS when tournament starts.

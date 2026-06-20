@@ -17,20 +17,36 @@ use App\Modules\Match\Models\HeadToHeadChallenge;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Match\Services\HeadToHeadMatchmakerService;
 use App\Shared\Enums\HeadToHeadChallengeStatus;
-use App\Shared\Enums\HeadToHeadMatchStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 class HeadToHeadList extends Component
 {
+    use WithFileUploads;
+
     public float $stakeAmount = 10.00;
+
     public string $gameId = '';
+
     public string $platformId = '';
+
     public string $gameHandle = '';
+
     public string $region = '';
+
     public string $matchTimerMinutes = '30';
+
     public ?int $resultWinnerUserId = null;
+
     public string $resultNotes = '';
+
+    public ?TemporaryUploadedFile $resultProof = null;
+
+    public string $disputeNotes = '';
+
+    public ?TemporaryUploadedFile $disputeProof = null;
 
     public function mount(): void
     {
@@ -68,6 +84,7 @@ class HeadToHeadList extends Component
         if (! $challenge) {
             $this->createChallenge(app(CreateHeadToHeadChallengeAction::class));
             session()->flash('h2h_status', 'No matching duel found. Your challenge is now waiting.');
+
             return;
         }
 
@@ -100,12 +117,13 @@ class HeadToHeadList extends Component
         $this->validate([
             'resultWinnerUserId' => ['required', 'integer'],
             'resultNotes' => ['nullable', 'string', 'max:1000'],
+            'resultProof' => ['nullable', 'image', 'max:4096'],
         ]);
 
         $match = HeadToHeadMatch::query()->findOrFail($matchId);
-        $action->execute($match, $this->user(), (int) $this->resultWinnerUserId, $this->resultNotes ?: null);
+        $action->execute($match, $this->user(), (int) $this->resultWinnerUserId, $this->resultNotes ?: null, $this->resultProof);
 
-        $this->reset('resultNotes');
+        $this->reset('resultNotes', 'resultProof');
         session()->flash('h2h_status', 'Result submitted. Waiting for opponent confirmation.');
     }
 
@@ -119,9 +137,15 @@ class HeadToHeadList extends Component
 
     public function disputeResult(int $matchId, DisputeHeadToHeadResultAction $action): void
     {
-        $match = HeadToHeadMatch::query()->findOrFail($matchId);
-        $action->execute($match, $this->user());
+        $this->validate([
+            'disputeNotes' => ['nullable', 'string', 'max:1000'],
+            'disputeProof' => ['nullable', 'image', 'max:4096'],
+        ]);
 
+        $match = HeadToHeadMatch::query()->findOrFail($matchId);
+        $action->execute($match, $this->user(), $this->disputeNotes ?: null, $this->disputeProof);
+
+        $this->reset('disputeNotes', 'disputeProof');
         session()->flash('h2h_status', 'Result disputed. Stake remains locked for admin review.');
     }
 
@@ -141,7 +165,7 @@ class HeadToHeadList extends Component
             ->get();
 
         $myMatches = HeadToHeadMatch::query()
-            ->with(['creator', 'opponent', 'game.translations', 'platform'])
+            ->with(['creator', 'opponent', 'winner', 'resultSubmitter', 'disputer', 'game.translations', 'platform'])
             ->where(function ($query) use ($user) {
                 $query->where('creator_user_id', $user->getKey())
                     ->orWhere('opponent_user_id', $user->getKey());

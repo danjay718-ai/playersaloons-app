@@ -6,12 +6,16 @@ namespace App\Livewire\Admin;
 
 use App\Modules\CMS\Models\Game;
 use App\Modules\Match\Actions\ResolveDisputeAction;
+use App\Modules\Match\Actions\ResolveHeadToHeadDisputeAction;
 use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Shared\Enums\DisputeResolution;
 use App\Shared\Enums\DisputeStatus;
+use App\Shared\Enums\HeadToHeadDisputeResolution;
+use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\MatchStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,23 +28,37 @@ class MatchAdmin extends AdminComponent
 
     // Filters
     public string $search = '';
+
     public string $statusFilter = '';
+
     public string $gameFilter = '';
+
     public bool $disputeFilter = false;
+
     public int $perPage = 15;
 
     // Modal state
     public bool $showDetailModal = false;
+
     public bool $showOverrideModal = false;
+
     public bool $showDisputeModal = false;
+
+    public bool $showH2HDisputeModal = false;
 
     // Selection
     public ?int $selectedMatchId = null;
+
     public ?int $selectedDisputeId = null;
+
+    public ?int $selectedH2HMatchId = null;
 
     // Forms
     public ?int $winnerRegistrationId = null;
+
     public string $resolution = '';
+
+    public string $h2hResolution = '';
 
     protected $paginationTheme = 'tailwind';
 
@@ -53,26 +71,45 @@ class MatchAdmin extends AdminComponent
 
     // ─── Reset page on filter changes ────────────────────────────────────────
 
-    public function updatingSearch(): void       { $this->resetPage(); }
-    public function updatingStatusFilter(): void { $this->resetPage(); }
-    public function updatingGameFilter(): void   { $this->resetPage(); }
-    public function updatingDisputeFilter(): void{ $this->resetPage(); }
-    public function updatingPerPage(): void      { $this->resetPage(); }
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingGameFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingDisputeFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPerPage(): void
+    {
+        $this->resetPage();
+    }
 
     // ─── Modal openers ────────────────────────────────────────────────────────
 
     public function selectMatch(int $id): void
     {
-        $this->selectedMatchId    = $id;
+        $this->selectedMatchId = $id;
         $this->winnerRegistrationId = null;
-        $this->showDetailModal    = true;
+        $this->showDetailModal = true;
     }
 
     public function closeDetailModal(): void
     {
-        $this->showDetailModal  = false;
+        $this->showDetailModal = false;
         $this->showOverrideModal = false;
-        $this->selectedMatchId  = null; // free the heavy query on next render
+        $this->selectedMatchId = null; // free the heavy query on next render
     }
 
     public function openOverrideModal(int $id): void
@@ -87,14 +124,27 @@ class MatchAdmin extends AdminComponent
     public function openDisputeModal(int $disputeId): void
     {
         $this->selectedDisputeId = $disputeId;
-        $this->resolution        = '';
-        $this->showDisputeModal  = true;
+        $this->resolution = '';
+        $this->showDisputeModal = true;
     }
 
     public function closeDisputeModal(): void
     {
-        $this->showDisputeModal  = false;
+        $this->showDisputeModal = false;
         $this->selectedDisputeId = null; // free the query on next render
+    }
+
+    public function openH2HDisputeModal(int $matchId): void
+    {
+        $this->selectedH2HMatchId = $matchId;
+        $this->h2hResolution = '';
+        $this->showH2HDisputeModal = true;
+    }
+
+    public function closeH2HDisputeModal(): void
+    {
+        $this->showH2HDisputeModal = false;
+        $this->selectedH2HMatchId = null;
     }
 
     // ─── Actions ─────────────────────────────────────────────────────────────
@@ -113,6 +163,7 @@ class MatchAdmin extends AdminComponent
         if ($this->winnerRegistrationId !== $match->player_a_registration_id
             && $this->winnerRegistrationId !== $match->player_b_registration_id) {
             session()->flash('error', 'Winner must be one of the match participants.');
+
             return;
         }
 
@@ -123,8 +174,8 @@ class MatchAdmin extends AdminComponent
                         ->where('status', DisputeStatus::OPEN)
                         ->first();
                     if ($dispute) {
-                        $dispute->status      = DisputeStatus::RESOLVED;
-                        $dispute->resolution  = $this->winnerRegistrationId === $match->player_a_registration_id
+                        $dispute->status = DisputeStatus::RESOLVED;
+                        $dispute->resolution = $this->winnerRegistrationId === $match->player_a_registration_id
                             ? DisputeResolution::PLAYER_A
                             : DisputeResolution::PLAYER_B;
                         $dispute->resolved_by = Auth::id();
@@ -136,12 +187,20 @@ class MatchAdmin extends AdminComponent
                 $match->winner_registration_id = $this->winnerRegistrationId;
                 $match->save();
 
-                if ($match->status === MatchStatus::PENDING)           { $stateMachine->transition($match, MatchStatus::READY); }
-                if ($match->status === MatchStatus::READY)             { $stateMachine->transition($match, MatchStatus::IN_PROGRESS); }
-                if ($match->status === MatchStatus::IN_PROGRESS)       { $stateMachine->transition($match, MatchStatus::WAITING_FOR_CONFIRMATION); }
+                if ($match->status === MatchStatus::PENDING) {
+                    $stateMachine->transition($match, MatchStatus::READY);
+                }
+                if ($match->status === MatchStatus::READY) {
+                    $stateMachine->transition($match, MatchStatus::IN_PROGRESS);
+                }
+                if ($match->status === MatchStatus::IN_PROGRESS) {
+                    $stateMachine->transition($match, MatchStatus::WAITING_FOR_CONFIRMATION);
+                }
                 if ($match->status === MatchStatus::WAITING_FOR_CONFIRMATION
                     || $match->status === MatchStatus::RESULT_SUBMITTED
-                    || $match->status === MatchStatus::DISPUTED)       { $stateMachine->transition($match, MatchStatus::COMPLETED); }
+                    || $match->status === MatchStatus::DISPUTED) {
+                    $stateMachine->transition($match, MatchStatus::COMPLETED);
+                }
 
                 MatchCompleted::dispatch($match->id, $match->tournament_id, $this->winnerRegistrationId);
             });
@@ -149,7 +208,7 @@ class MatchAdmin extends AdminComponent
             session()->flash('success', 'Match result overridden and advanced successfully.');
             $this->closeDetailModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Override failed: ' . $e->getMessage());
+            session()->flash('error', 'Override failed: '.$e->getMessage());
         }
     }
 
@@ -157,11 +216,13 @@ class MatchAdmin extends AdminComponent
     {
         $this->validate(['resolution' => 'required|string|in:player_a,player_b,rematch']);
 
-        if (! $this->selectedDisputeId) { return; }
+        if (! $this->selectedDisputeId) {
+            return;
+        }
 
-        $dispute       = MatchDispute::findOrFail($this->selectedDisputeId);
+        $dispute = MatchDispute::findOrFail($this->selectedDisputeId);
         $resolutionEnum = DisputeResolution::from($this->resolution);
-        $actor         = Auth::user();
+        $actor = Auth::user();
 
         if (! $actor) {
             return;
@@ -173,7 +234,31 @@ class MatchAdmin extends AdminComponent
             $this->closeDisputeModal();
             $this->closeDetailModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to resolve dispute: ' . $e->getMessage());
+            session()->flash('error', 'Failed to resolve dispute: '.$e->getMessage());
+        }
+    }
+
+    public function resolveH2HDispute(ResolveHeadToHeadDisputeAction $resolver): void
+    {
+        $this->validate(['h2hResolution' => 'required|string|in:player_a,player_b,refund']);
+
+        if (! $this->selectedH2HMatchId) {
+            return;
+        }
+
+        $match = HeadToHeadMatch::query()->findOrFail($this->selectedH2HMatchId);
+        $actor = Auth::user();
+
+        if (! $actor) {
+            return;
+        }
+
+        try {
+            $resolver->execute($match, $actor, HeadToHeadDisputeResolution::from($this->h2hResolution));
+            session()->flash('success', 'Head-to-head dispute resolved successfully.');
+            $this->closeH2HDisputeModal();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to resolve H2H dispute: '.$e->getMessage());
         }
     }
 
@@ -220,6 +305,25 @@ class MatchAdmin extends AdminComponent
         ])->find($this->selectedDisputeId);
     }
 
+    #[Computed]
+    public function selectedH2HMatch(): ?HeadToHeadMatch
+    {
+        if (! $this->showH2HDisputeModal || ! $this->selectedH2HMatchId) {
+            return null;
+        }
+
+        return HeadToHeadMatch::with([
+            'creator',
+            'opponent',
+            'winner',
+            'resultSubmitter',
+            'disputer',
+            'disputeResolver',
+            'game.translations',
+            'platform',
+        ])->find($this->selectedH2HMatchId);
+    }
+
     // ─── Render ───────────────────────────────────────────────────────────────
 
     public function render()
@@ -239,8 +343,8 @@ class MatchAdmin extends AdminComponent
             $search = $this->search;
             $query->where(function ($q) use ($search) {
                 $q->whereHas('tournament', fn ($tq) => $tq->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('playerARegistration.user', fn ($uq) => $uq->where('username', 'like', "%{$search}%"))
-                  ->orWhereHas('playerBRegistration.user', fn ($uq) => $uq->where('username', 'like', "%{$search}%"));
+                    ->orWhereHas('playerARegistration.user', fn ($uq) => $uq->where('username', 'like', "%{$search}%"))
+                    ->orWhereHas('playerBRegistration.user', fn ($uq) => $uq->where('username', 'like', "%{$search}%"));
             });
         }
 
@@ -255,11 +359,18 @@ class MatchAdmin extends AdminComponent
         }
 
         $matches = $query->paginate($this->perPage);
-        $games   = Game::with('translations')->orderBy('slug')->get();
+        $games = Game::with('translations')->orderBy('slug')->get();
+        $h2hDisputes = HeadToHeadMatch::query()
+            ->with(['creator', 'opponent', 'winner', 'resultSubmitter', 'disputer', 'game.translations', 'platform'])
+            ->where('status', HeadToHeadMatchStatus::DISPUTED)
+            ->latest('updated_at')
+            ->take(10)
+            ->get();
 
         return view('livewire.admin.match-admin', [
             'matches' => $matches,
-            'games'   => $games,
+            'games' => $games,
+            'h2hDisputes' => $h2hDisputes,
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Match & Dispute Control',
         ]);
