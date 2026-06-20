@@ -1,17 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Modules\Community\Models;
 
+use Database\Factories\NotificationFactory;
 use App\Modules\Identity\Models\User;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Notification extends Model
 {
+    /** @use HasFactory<NotificationFactory> */
+    use HasFactory;
+
+    protected static function newFactory(): NotificationFactory
+    {
+        return NotificationFactory::new();
+    }
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'uuid',
@@ -37,7 +48,7 @@ class Notification extends Model
     /**
      * Get the user who received this notification.
      *
-     * @return BelongsTo<User, Notification>
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

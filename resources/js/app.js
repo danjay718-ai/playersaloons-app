@@ -1,6 +1,20 @@
 /**
  * PlayerSaloons Global Scripts
  */
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+window.Pusher = Pusher;
+
+window.Echo = new Echo({
+    broadcaster: 'reverb',
+    key: import.meta.env.VITE_REVERB_APP_KEY,
+    wsHost: import.meta.env.VITE_REVERB_HOST,
+    wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+    wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+    enabledTransports: ['ws', 'wss'],
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide icons on first load
@@ -28,6 +42,19 @@ document.addEventListener('livewire:init', () => {
             window.lucide.createIcons();
         }
     });
+});
+
+/**
+ * REALTIME NOTIFICATIONS — subscribe after Livewire initialises so auth user uuid is available
+ */
+document.addEventListener('livewire:init', () => {
+    const userUuid = document.querySelector('meta[name="user-uuid"]')?.getAttribute('content');
+    if (!userUuid || !window.Echo) return;
+
+    window.Echo.private(`user.${userUuid}`)
+        .listen('.notification.received', () => {
+            Livewire.dispatch('notification.received');
+        });
 });
 
 /**
