@@ -68,17 +68,17 @@ class MatchStateMachineTest extends TestCase
     }
 
     #[Test]
-    public function in_progress_can_transition_to_result_submitted(): void
+    public function in_progress_can_transition_to_waiting_for_confirmation(): void
     {
         $m = $this->mockMatch(MatchStatus::IN_PROGRESS);
-        $this->machine->transition($m, MatchStatus::RESULT_SUBMITTED);
-        $this->assertEquals(MatchStatus::RESULT_SUBMITTED, $m->status);
+        $this->machine->transition($m, MatchStatus::WAITING_FOR_CONFIRMATION);
+        $this->assertEquals(MatchStatus::WAITING_FOR_CONFIRMATION, $m->status);
     }
 
     #[Test]
-    public function result_submitted_can_transition_to_completed(): void
+    public function waiting_for_confirmation_can_transition_to_completed(): void
     {
-        $m = $this->mockMatch(MatchStatus::RESULT_SUBMITTED);
+        $m = $this->mockMatch(MatchStatus::WAITING_FOR_CONFIRMATION);
         $this->machine->transition($m, MatchStatus::COMPLETED);
         $this->assertEquals(MatchStatus::COMPLETED, $m->status);
     }
@@ -86,7 +86,7 @@ class MatchStateMachineTest extends TestCase
     #[Test]
     public function completed_stamps_completed_at(): void
     {
-        $m = $this->mockMatch(MatchStatus::RESULT_SUBMITTED);
+        $m = $this->mockMatch(MatchStatus::WAITING_FOR_CONFIRMATION);
         $this->machine->transition($m, MatchStatus::COMPLETED);
         $this->assertNotNull($m->completed_at);
     }
@@ -104,11 +104,19 @@ class MatchStateMachineTest extends TestCase
     }
 
     #[Test]
-    public function result_submitted_can_transition_to_disputed(): void
+    public function waiting_for_confirmation_can_transition_to_disputed(): void
     {
-        $m = $this->mockMatch(MatchStatus::RESULT_SUBMITTED);
+        $m = $this->mockMatch(MatchStatus::WAITING_FOR_CONFIRMATION);
         $this->machine->transition($m, MatchStatus::DISPUTED);
         $this->assertEquals(MatchStatus::DISPUTED, $m->status);
+    }
+
+    #[Test]
+    public function legacy_result_submitted_can_transition_to_completed(): void
+    {
+        $m = $this->mockMatch(MatchStatus::RESULT_SUBMITTED);
+        $this->machine->transition($m, MatchStatus::COMPLETED);
+        $this->assertEquals(MatchStatus::COMPLETED, $m->status);
     }
 
     #[Test]

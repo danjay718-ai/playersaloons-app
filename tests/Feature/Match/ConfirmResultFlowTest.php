@@ -8,7 +8,6 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
-use App\Modules\Match\Actions\StartMatchAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Jobs\AutoForfeitJob;
 use App\Modules\Match\Models\GameMatch;
@@ -158,14 +157,7 @@ class ConfirmResultFlowTest extends TestCase
         $match1 = $round1Matches[0];
         $match2 = $round1Matches[1];
 
-        // Ensure both matches are READY and start them
-        $this->assertEquals(MatchStatus::READY, $match1->status);
-        $this->assertEquals(MatchStatus::READY, $match2->status);
-
-        $startMatchAction = app(StartMatchAction::class);
-        $startMatchAction->execute($match1);
-        $startMatchAction->execute($match2);
-
+        // AutoStartMatchesListener starts ready round-one matches when the tournament starts.
         $this->assertEquals(MatchStatus::IN_PROGRESS, $match1->fresh()->status);
         $this->assertEquals(MatchStatus::IN_PROGRESS, $match2->fresh()->status);
 
@@ -267,8 +259,8 @@ class ConfirmResultFlowTest extends TestCase
         $round1 = $bracket->rounds()->where('round_number', 1)->first();
         $match = GameMatch::where('round_id', $round1->id)->firstOrFail();
 
-        // Start match
-        app(StartMatchAction::class)->execute($match);
+        // AutoStartMatchesListener starts the first match when the tournament starts.
+        $this->assertEquals(MatchStatus::IN_PROGRESS, $match->fresh()->status);
 
         // Player A submits result claiming win
         app(SubmitMatchResultAction::class)->execute($match, $playerA->id, $regA->id, 'I won');

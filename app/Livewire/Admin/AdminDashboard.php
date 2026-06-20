@@ -39,6 +39,7 @@ class AdminDashboard extends AdminComponent
             'active_matches' => GameMatch::whereIn('status', [
                 MatchStatus::READY->value,
                 MatchStatus::IN_PROGRESS->value,
+                MatchStatus::WAITING_FOR_CONFIRMATION->value,
                 MatchStatus::RESULT_SUBMITTED->value,
             ])->count(),
             'completed_matches' => GameMatch::whereIn('status', [

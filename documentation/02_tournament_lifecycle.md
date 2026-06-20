@@ -58,6 +58,7 @@ Reporting the outcome of a match.
     *   `app/Modules/Match/Listeners/AdvanceWinnerListener.php`: Automates bracket progression on `MatchCompleted`.
     *   `app/Modules/Match/Events/MatchResultSubmitted.php`.
 *   **Timeout**: If the opponent does not confirm within the tournament's `waiting_result_time` window, `AutoForfeitJob` auto-resolves the match.
+*   **Legacy note**: `RESULT_SUBMITTED` exists only for older rows and compatibility. New submissions use `WAITING_FOR_CONFIRMATION`.
 
 ## 6. Open Dispute
 Resolving conflicts when players disagree on results.

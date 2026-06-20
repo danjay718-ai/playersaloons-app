@@ -15,9 +15,9 @@ class MatchStateMachine extends AbstractStateMachine
     /**
      * Valid state transitions.
      *
-     * Lifecycle: PENDING → READY → IN_PROGRESS → RESULT_SUBMITTED → COMPLETED
+     * Lifecycle: PENDING → READY → IN_PROGRESS → WAITING_FOR_CONFIRMATION → COMPLETED
      *
-     * Dispute path:   IN_PROGRESS / RESULT_SUBMITTED → DISPUTED → COMPLETED (admin resolves)
+     * Dispute path:   IN_PROGRESS / WAITING_FOR_CONFIRMATION → DISPUTED → COMPLETED (admin resolves)
      * Forfeit path:   IN_PROGRESS / READY → FORFEITED  (terminal)
      *
      * @return array<string, string[]>
@@ -33,10 +33,15 @@ class MatchStateMachine extends AbstractStateMachine
                 MatchStatus::FORFEITED->value,
             ],
             MatchStatus::IN_PROGRESS->value => [
-                MatchStatus::RESULT_SUBMITTED->value,
+                MatchStatus::WAITING_FOR_CONFIRMATION->value,
                 MatchStatus::DISPUTED->value,
                 MatchStatus::FORFEITED->value,
             ],
+            MatchStatus::WAITING_FOR_CONFIRMATION->value => [
+                MatchStatus::COMPLETED->value,
+                MatchStatus::DISPUTED->value,
+            ],
+            // Legacy status retained for older rows that predate WAITING_FOR_CONFIRMATION.
             MatchStatus::RESULT_SUBMITTED->value => [
                 MatchStatus::COMPLETED->value,
                 MatchStatus::DISPUTED->value,

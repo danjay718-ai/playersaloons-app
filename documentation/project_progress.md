@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-20 (v1.36) | **Branch**: `main`
+**Last Updated**: 2026-06-20 (v1.37) | **Branch**: `main`
 
 ---
 
@@ -508,7 +508,7 @@ Audited the full financial operations flow against `documentation/03_financial_o
 
 - **`ProcessWithdrawalAction`**: Removed erroneous `WalletService::debit()` call. Debit is handled by `CreateLedgerEntryListener` on `WithdrawalApproved` (async/queued). Added missing role guard (`FINANCE_OPERATOR / ADMIN / SUPER_ADMIN`). Added `processed_at` stamp.
 - **`CreateLedgerEntryListener`**: Fixed idempotency on `WithdrawalApproved`. Old guard (`status !== APPROVED`) was insufficient — on queue retry the status is still `APPROVED`, causing double debit. Now checks for existing `LedgerEntry` with matching `reference_type + reference_id` before debiting.
-- **`MatchStateMachine`**: Fixed `WAITING_FOR_CONFIRMATION` → `RESULT_SUBMITTED` mismatch. The enum and tests both use `RESULT_SUBMITTED`; the machine was the odd one out.
+- **`MatchStateMachine`**: Fixed a historical result-submission mismatch. This note was superseded in v1.37 when `WAITING_FOR_CONFIRMATION` became the canonical post-submission state and `RESULT_SUBMITTED` was retained only for legacy compatibility.
 - **`TournamentStateMachine`**: Added missing `COMPLETED → REFUNDED` and `CANCELLED → REFUNDED` transitions (`REFUNDED` existed in the enum but not in the transition table). Extracted `activity()` call into a `protected logTransition()` method so unit tests can override it without hitting the `activity_log` DB table.
 - **`Withdrawal` model**: Added `@property WithdrawalStatus $status` PHPDoc. Added `processed_at` to `$fillable` and `casts`. Fixed `$fillable` PHPDoc to `list<string>`. Fixed `BelongsTo` return type PHPDoc to `BelongsTo<T, $this>`.
 - **`Deposit` model**: Added `fee_amount` to `$fillable` and `casts`. Fixed `$fillable` PHPDoc. Fixed `BelongsTo` return type PHPDoc.
@@ -687,6 +687,15 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ Match Confirmation Flow Alignment (v1.37)
+
+- **`MatchStateMachine`**: Updated the canonical result flow to `IN_PROGRESS -> WAITING_FOR_CONFIRMATION -> COMPLETED/DISPUTED`. `RESULT_SUBMITTED` remains transition-compatible only for legacy rows.
+- **`MatchAdmin` / `AdminDashboard`**: Aligned admin override and active-match counting with `WAITING_FOR_CONFIRMATION`.
+- **Tests**: Updated match lifecycle tests to match auto-start behavior and the `ResolveDisputeAction` `User` actor contract. `MatchModuleTest`, `ConfirmResultFlowTest`, and `MatchStateMachineTest` pass: 24 tests, 75 assertions.
+- **PHPStan**: Attempted at Level 5, but the runner exited with code 1 without diagnostics/output in this environment. PHP syntax checks passed for changed PHP files.
 
 ---
 

@@ -1,6 +1,6 @@
 # PlayerSaloons — Architecture Baseline
 
-**Last Updated**: 2026-06-18 (v1.28) | **Original Baseline**: 2026-06-14
+**Last Updated**: 2026-06-20 (v1.37) | **Original Baseline**: 2026-06-14
 
 ## 🏗️ Architectural Overview
 
@@ -50,12 +50,20 @@ Changes here represent deviations or additions to the original baseline design. 
 **Baseline reference**: "State Machines govern match lifecycle" — originally assumed manual admin intervention for stale matches.
 
 **What changed**:
-- `MatchStateMachine` gained a `WAITING_FOR_CONFIRMATION` state between `RESULT_SUBMITTED` and `COMPLETED`.
+- `MatchStateMachine` gained a canonical `WAITING_FOR_CONFIRMATION` state between `IN_PROGRESS` and `COMPLETED`.
 - `ConfirmMatchResultAction` — opponent must explicitly confirm before a match completes.
 - `AutoForfeitJob` — scheduled job auto-resolves matches stuck in `WAITING_FOR_CONFIRMATION` past `tournament.waiting_result_time`.
 - `AutoStartMatchesListener` — READY matches auto-transition to IN_PROGRESS when a tournament starts or a player advances, removing the need for a manual `StartMatchAction`.
 
 **Why**: Prevents unilateral result manipulation; adds integrity to the match resolution flow. The baseline assumed simpler result submission without a two-party confirmation gate.
+
+### [v1.37] Match confirmation state alignment
+
+**Baseline reference**: State machines govern match lifecycle.
+
+**What changed**: `WAITING_FOR_CONFIRMATION` is now the canonical post-submission match state. `RESULT_SUBMITTED` remains in the enum and state machine only as a legacy-compatible transition source for older rows.
+
+**Why**: The action layer, auto-forfeit job, model timeout helper, and feature tests already treated `WAITING_FOR_CONFIRMATION` as the real confirmation gate. Aligning the state machine removes invalid transition failures while preserving compatibility with older persisted statuses.
 
 ---
 

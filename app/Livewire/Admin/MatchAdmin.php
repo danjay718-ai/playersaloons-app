@@ -138,8 +138,9 @@ class MatchAdmin extends AdminComponent
 
                 if ($match->status === MatchStatus::PENDING)           { $stateMachine->transition($match, MatchStatus::READY); }
                 if ($match->status === MatchStatus::READY)             { $stateMachine->transition($match, MatchStatus::IN_PROGRESS); }
-                if ($match->status === MatchStatus::IN_PROGRESS)       { $stateMachine->transition($match, MatchStatus::RESULT_SUBMITTED); }
-                if ($match->status === MatchStatus::RESULT_SUBMITTED
+                if ($match->status === MatchStatus::IN_PROGRESS)       { $stateMachine->transition($match, MatchStatus::WAITING_FOR_CONFIRMATION); }
+                if ($match->status === MatchStatus::WAITING_FOR_CONFIRMATION
+                    || $match->status === MatchStatus::RESULT_SUBMITTED
                     || $match->status === MatchStatus::DISPUTED)       { $stateMachine->transition($match, MatchStatus::COMPLETED); }
 
                 MatchCompleted::dispatch($match->id, $match->tournament_id, $this->winnerRegistrationId);

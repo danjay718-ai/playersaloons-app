@@ -164,7 +164,7 @@ class MatchModuleTest extends TestCase
     }
 
     /**
-     * Test the successful lifecycle from READY -> IN_PROGRESS -> RESULT_SUBMITTED -> COMPLETED.
+     * Test the successful lifecycle from READY -> IN_PROGRESS -> WAITING_FOR_CONFIRMATION -> COMPLETED.
      */
     public function test_match_lifecycle_flow(): void
     {
@@ -303,7 +303,7 @@ class MatchModuleTest extends TestCase
             ? DisputeResolution::PLAYER_A
             : DisputeResolution::PLAYER_B;
 
-        app(ResolveDisputeAction::class)->execute($dispute, $this->adminUser->id, $resolution);
+        app(ResolveDisputeAction::class)->execute($dispute, $this->adminUser, $resolution);
         $match->refresh();
         $dispute->refresh();
 
@@ -337,7 +337,7 @@ class MatchModuleTest extends TestCase
         $dispute = app(OpenDisputeAction::class)->execute($match, $this->playerB->id, 'I disagree with the result.');
 
         // Admin resolves dispute as a REMATCH
-        app(ResolveDisputeAction::class)->execute($dispute, $this->adminUser->id, DisputeResolution::REMATCH);
+        app(ResolveDisputeAction::class)->execute($dispute, $this->adminUser, DisputeResolution::REMATCH);
         $match->refresh();
         $dispute->refresh();
 
@@ -368,7 +368,7 @@ class MatchModuleTest extends TestCase
         app(SubmitMatchResultAction::class)->execute($match, $this->playerA->id, $this->regA->id);
         $dispute = app(OpenDisputeAction::class)->execute($match, $this->playerB->id, 'I disagree with the result.'); // Player B opened dispute
 
-        app(ResolveDisputeAction::class)->execute($dispute, $this->adminUser->id, DisputeResolution::REMATCH);
+        app(ResolveDisputeAction::class)->execute($dispute, $this->adminUser, DisputeResolution::REMATCH);
 
         // Find the rematch match
         $rematch = GameMatch::query()->where('id', '!=', $match->id)->firstOrFail();
