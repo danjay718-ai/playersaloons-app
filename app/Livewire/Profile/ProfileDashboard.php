@@ -12,10 +12,12 @@ use App\Modules\Identity\Events\EmailVerified;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Throwable;
 
 class ProfileDashboard extends Component
 {
@@ -42,8 +44,6 @@ class ProfileDashboard extends Component
     public string $newPassword = '';
 
     public string $newPasswordConfirmation = '';
-
-    public bool $showKycDrawer = false;
 
     // KYC Submission
     public string $documentType = 'id_card';
@@ -188,16 +188,6 @@ class ProfileDashboard extends Component
         session()->flash('message', 'Email verified successfully!');
     }
 
-    public function openKycDrawer(): void
-    {
-        $this->showKycDrawer = true;
-    }
-
-    public function closeKycDrawer(): void
-    {
-        $this->showKycDrawer = false;
-    }
-
     public function updateProfile(UpdateProfileAction $action): void
     {
         /** @var User|null $user */
@@ -244,7 +234,8 @@ class ProfileDashboard extends Component
             $action->execute($user, $this->documentType, [$this->kycFile]);
             session()->flash('message', 'KYC document submitted successfully! Our compliance team will review it.');
             $this->reset('kycFile');
-            $this->showKycDrawer = false;
+            $this->forgetProfileCaches((int) $user->id);
+            $this->dispatch('profile-kyc-submitted');
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
@@ -268,10 +259,22 @@ class ProfileDashboard extends Component
                 ]
             );
 
+            $this->forgetProfileCaches((int) $user->id);
             session()->flash('message', 'Notification preferences updated successfully!');
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
+    }
+
+    public function updateNotificationPreference(string $preference, bool $enabled): void
+    {
+        if (! in_array($preference, ['emailNotifications', 'inAppNotifications', 'realtimeNotifications'], true)) {
+            return;
+        }
+
+        $this->{$preference} = $enabled;
+        $this->updatePreferences();
+        $this->skipRender();
     }
 
     /**
@@ -287,20 +290,93 @@ class ProfileDashboard extends Component
             return view('livewire.profile.profile-dashboard', [
                 'user' => null,
                 'latestKyc' => null,
+                'timezoneOptions' => [],
             ]);
         }
 
-        $latestKyc = KycSubmission::query()
-            ->where('user_id', $user->id)
-            ->latest('id')
-            ->first();
+        $latestKyc = $this->latestKycFor((int) $user->id);
 
         return view('livewire.profile.profile-dashboard', [
             'user' => $user,
             'latestKyc' => $latestKyc,
+            'timezoneOptions' => $this->timezoneOptions(),
         ])->layout('components.layouts.dashboard', [
             'title' => 'My Profile | PlayerSaloons',
             'dashboard_title' => 'USER PROFILE',
         ]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function timezoneOptions(): array
+    {
+        /** @var list<string> $timezones */
+        $timezones = $this->rememberInRedis('profile:common-timezones', 86400, fn (): array => [
+            'UTC',
+            'Asia/Manila',
+            'Asia/Singapore',
+            'Asia/Tokyo',
+            'Asia/Seoul',
+            'Asia/Hong_Kong',
+            'Australia/Sydney',
+            'Europe/London',
+            'Europe/Paris',
+            'America/New_York',
+            'America/Chicago',
+            'America/Denver',
+            'America/Los_Angeles',
+        ]);
+
+        if ($this->timezone !== '' && ! in_array($this->timezone, $timezones, true)) {
+            $timezones[] = $this->timezone;
+        }
+
+        sort($timezones);
+
+        return array_values($timezones);
+    }
+
+    private function latestKycFor(int $userId): ?KycSubmission
+    {
+        /** @var int|null $latestKycId */
+        $latestKycId = $this->rememberInRedis(
+            "profile:{$userId}:latest-kyc-id",
+            30,
+            fn (): ?int => KycSubmission::query()
+                ->where('user_id', $userId)
+                ->latest('id')
+                ->value('id')
+        );
+
+        if (! $latestKycId) {
+            return null;
+        }
+
+        return KycSubmission::query()->find($latestKycId);
+    }
+
+    /**
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    private function rememberInRedis(string $key, int $seconds, callable $callback): mixed
+    {
+        try {
+            return Cache::store('redis')->remember($key, now()->addSeconds($seconds), $callback);
+        } catch (Throwable) {
+            return $callback();
+        }
+    }
+
+    private function forgetProfileCaches(int $userId): void
+    {
+        try {
+            Cache::store('redis')->forget("profile:{$userId}:latest-kyc-id");
+        } catch (Throwable) {
+            // Redis cache is an optimization only; database writes remain authoritative.
+        }
     }
 }
