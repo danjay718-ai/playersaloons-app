@@ -3,14 +3,23 @@
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div class="space-y-6 lg:col-span-8">
-            <section class="player-welcome-panel">
-                <div>
-                    <h2 class="font-orbitron text-2xl font-black text-white">WELCOME BACK, {{ $user->username }}!</h2>
-                    <p class="mt-1 text-sm text-zinc-400">Ready for your next challenge?</p>
-                </div>
-                <div class="text-left sm:text-right">
-                    <span class="text-xs font-bold uppercase text-zinc-500">Total Earnings</span>
-                    <div class="font-orbitron text-2xl font-black text-emerald-400">${{ number_format($earnings, 2) }}</div>
+            <section class="bg-gradient-to-r from-[#170e30] via-[#0e0a24] to-transparent border border-purple-500/20 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(168,85,247,0.05)] relative overflow-hidden">
+                <!-- Glowing sci-fi elements -->
+                <div class="absolute -top-20 -right-20 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute top-0 right-0 w-24 h-24 border-t-2 border-r-2 border-purple-500/20 rounded-tr-2xl pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 border-b-2 border-l-2 border-purple-500/20 rounded-bl-2xl pointer-events-none"></div>
+
+                <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                    <div>
+                        <h2 class="font-orbitron text-2xl md:text-3xl font-black text-white filter drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">WELCOME BACK, {{ strtoupper($user->username) }}!</h2>
+                        <p class="mt-2 text-xs md:text-sm text-zinc-400 font-bold uppercase tracking-widest">Ready for your next challenge?</p>
+                    </div>
+                    <div class="text-left sm:text-right">
+                        <span class="block text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-orbitron mb-1">AVAILABLE BALANCE</span>
+                        <div class="text-4xl md:text-5xl font-black font-orbitron tracking-wider text-emerald-450 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]">
+                            ${{ number_format((float)($user->wallet?->cached_balance ?? 0.00), 2) }}
+                        </div>
+                    </div>
                 </div>
             </section>
 
