@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.41) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.42) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,14 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ Wallet Deposit UI Refresh Fix (v1.42)
+
+- **`WalletDashboard`**: Reloads wallet data through a fresh relationship query during deposit/render so the updated balance and ledger feed appear immediately after a mock deposit.
+- **Tests**: Added `WalletDashboardTest` covering same-response balance refresh after deposit. `php artisan test tests/Feature/Wallet/WalletDashboardTest.php` passes: 1 test, 5 assertions.
+- **PHPStan**: Not rerun; previous attempts exited with code 1 and no diagnostics/output in this environment.
 
 ---
 
