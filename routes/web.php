@@ -46,7 +46,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
     Route::get('/my-tournaments', \App\Livewire\Tournament\MyTournamentsList::class)->name('my-tournaments');
-    Route::get('/tournaments/browse', \App\Livewire\Tournament\PlayerTournamentList::class, ['layout' => 'components.layouts.dashboard'])->name('tournaments.browse');
+    Route::get('/tournaments/browse', \App\Livewire\Tournament\PlayerTournamentList::class)->name('tournaments.browse');
     Route::get('/head-to-head', \App\Livewire\Match\HeadToHeadList::class)->name('head-to-head');
     Route::get('/leaderboards', \App\Livewire\Match\LeaderboardList::class)->name('leaderboards');
     Route::get('/streams', \App\Livewire\Stream\StreamList::class)->name('streams');
@@ -76,6 +76,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/tournaments/{id}/edit', TournamentForm::class)->name('admin.tournaments.edit');
         Route::get('/matches', MatchAdmin::class);
         Route::get('/kyc', KycAdmin::class);
+        Route::get('/kyc/document/{path}', function (string $path) {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            if (! $user || ! $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'KYC_REVIEWER'])) {
+                abort(403, 'Unauthorized access to KYC document.');
+            }
+
+            $disk = \Illuminate\Support\Facades\Storage::disk('local');
+            if (! $disk->exists($path)) {
+                abort(404, 'KYC document not found.');
+            }
+
+            return $disk->response($path);
+        })->where('path', '.*')->name('admin.kyc.document');
         Route::get('/withdrawals', WithdrawalAdmin::class);
         Route::get('/users', UserAdmin::class);
         Route::get('/audit-logs', AuditLogAdmin::class);

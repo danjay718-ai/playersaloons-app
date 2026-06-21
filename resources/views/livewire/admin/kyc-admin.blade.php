@@ -181,8 +181,8 @@
                                 <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">Document Front</span>
                                 @if($selectedSubmission->document_front_path)
                                     <div class="relative group bg-[#060810] border border-slate-800 rounded-lg h-48 flex items-center justify-center overflow-hidden">
-                                        <img src="/storage/{{ $selectedSubmission->document_front_path }}" class="max-h-full max-w-full object-contain" alt="Front ID">
-                                        <a href="/storage/{{ $selectedSubmission->document_front_path }}" target="_blank" class="absolute bottom-2 right-2 p-1.5 bg-slate-950/80 hover:bg-slate-900 text-indigo-400 rounded-lg border border-slate-800/40 opacity-0 group-hover:opacity-100 transition-opacity" title="Open Full Size">
+                                        <img src="/admin/kyc/document/{{ $selectedSubmission->document_front_path }}" class="max-h-full max-w-full object-contain" alt="Front ID">
+                                        <a href="/admin/kyc/document/{{ $selectedSubmission->document_front_path }}" target="_blank" class="absolute bottom-2 right-2 p-1.5 bg-slate-950/80 hover:bg-slate-900 text-indigo-400 rounded-lg border border-slate-800/40 opacity-0 group-hover:opacity-100 transition-opacity" title="Open Full Size">
                                             <i data-lucide="external-link" class="w-4 h-4"></i>
                                         </a>
                                     </div>
@@ -196,8 +196,8 @@
                                 <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">Document Back</span>
                                 @if($selectedSubmission->document_back_path)
                                     <div class="relative group bg-[#060810] border border-slate-800 rounded-lg h-48 flex items-center justify-center overflow-hidden">
-                                        <img src="/storage/{{ $selectedSubmission->document_back_path }}" class="max-h-full max-w-full object-contain" alt="Back ID">
-                                        <a href="/storage/{{ $selectedSubmission->document_back_path }}" target="_blank" class="absolute bottom-2 right-2 p-1.5 bg-slate-950/80 hover:bg-slate-900 text-indigo-400 rounded-lg border border-slate-800/40 opacity-0 group-hover:opacity-100 transition-opacity" title="Open Full Size">
+                                        <img src="/admin/kyc/document/{{ $selectedSubmission->document_back_path }}" class="max-h-full max-w-full object-contain" alt="Back ID">
+                                        <a href="/admin/kyc/document/{{ $selectedSubmission->document_back_path }}" target="_blank" class="absolute bottom-2 right-2 p-1.5 bg-slate-950/80 hover:bg-slate-900 text-indigo-400 rounded-lg border border-slate-800/40 opacity-0 group-hover:opacity-100 transition-opacity" title="Open Full Size">
                                             <i data-lucide="external-link" class="w-4 h-4"></i>
                                         </a>
                                     </div>
