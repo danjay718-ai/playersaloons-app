@@ -37,6 +37,7 @@ Identity verification is required for financial transactions (e.g., withdrawals)
     *   `app/Modules/Identity/Actions/SubmitKycAction.php`: Handles file uploads and state transitions. Accepted document types: `passport`, `id_card`, `drivers_license`.
 *   **Connected Files**:
     *   `app/Modules/Identity/Models/KycSubmission.php`: Model for storing KYC data.
+        *   KYC documents are persisted in `document_paths`; the model exposes `document_front_path` and `document_back_path` accessors so admin review screens can display uploaded files without duplicating storage columns.
     *   `app/Modules/Identity/StateMachines/KycStateMachine.php`: Governs the transition from `NOT_SUBMITTED` to `SUBMITTED`.
     *   `app/Modules/Identity/Events/UserKycSubmitted.php`: Dispatched after submission. Handled by `NotifyAdminsOfKycSubmissionListener` (notifies all ADMIN/SUPER_ADMIN users via in-app notification).
     *   `database/migrations/2026_06_07_100002_create_kyc_submissions_table.php`
@@ -89,6 +90,7 @@ To ensure flow integrity, the following tests must be implemented and passing:
 *   **Success**: `test_player_can_submit_kyc_documents`
     *   Assert `kyc_submissions` status is `SUBMITTED`.
     *   Assert files are stored on the `local` disk.
+    *   Assert `document_front_path` resolves to the first uploaded file for admin review display.
     *   Assert `UserKycSubmitted` event dispatched.
 *   **Unauthorized**: `test_player_cannot_submit_kyc_twice_while_pending`
 *   **State Machine**: `test_kyc_transition_from_rejected_to_submitted`

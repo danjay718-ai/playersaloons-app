@@ -52,6 +52,8 @@ class SubmitKycActionTest extends TestCase
         $this->assertIsArray($paths);
         $this->assertCount(1, $paths);
         $this->assertTrue(Storage::disk('local')->exists($paths[0]));
+        $this->assertSame($paths[0], $submission->document_front_path);
+        $this->assertNull($submission->document_back_path);
 
         $this->assertDatabaseHas('kyc_submissions', [
             'user_id' => $user->getKey(),
@@ -88,6 +90,7 @@ class SubmitKycActionTest extends TestCase
     public function test_kyc_transition_from_rejected_to_submitted(): void
     {
         Storage::fake('local');
+        Event::fake([UserKycSubmitted::class]);
 
         $user = $this->createUser();
 
