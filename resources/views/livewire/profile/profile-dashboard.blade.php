@@ -16,7 +16,11 @@
         : 'border-red-400/40 bg-red-500/10 text-red-300';
 @endphp
 
-<div class="space-y-6 min-w-0">
+<div
+    class="space-y-6 min-w-0"
+    x-data="{ activeTab: 'profile', showKycDrawer: false }"
+    @profile-kyc-submitted.window="showKycDrawer = false"
+>
     @if (session()->has('message'))
         <div class="rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-4 py-3 text-sm font-semibold text-emerald-250 flex items-center gap-2">
             <i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i>
@@ -62,21 +66,10 @@
                         </span>
                     </div>
 
-                    <form wire:submit="updateAvatar" class="mt-6 w-full space-y-3">
-                        <label for="avatarFile" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Profile Picture</label>
-                        <input
-                            id="avatarFile"
-                            type="file"
-                            wire:model="avatarFile"
-                            accept="image/png,image/jpeg,image/webp"
-                            class="w-full rounded-lg border border-zinc-800 bg-zinc-950 text-xs text-zinc-300 file:mr-3 file:border-0 file:bg-cyan-500/15 file:px-3 file:py-2.5 file:text-[10px] file:font-black file:uppercase file:tracking-wider file:text-cyan-250 hover:file:bg-cyan-500/25"
-                        >
-                        @error('avatarFile') <span class="block text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
-                        <button type="submit" wire:loading.attr="disabled" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-cyan-100 hover:bg-cyan-500/25 disabled:opacity-60 font-orbitron">
-                            <i data-lucide="image-up" class="w-4 h-4"></i>
-                            Upload Avatar
-                        </button>
-                    </form>
+                    <button type="button" @click="activeTab = 'profile'" class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-cyan-100 hover:bg-cyan-500/25 font-orbitron">
+                        <i data-lucide="image-up" class="w-4 h-4"></i>
+                        Edit Profile
+                    </button>
                 </div>
 
                 <div class="mt-6 grid grid-cols-2 gap-3">
@@ -105,7 +98,7 @@
                         </div>
                         <div class="mt-3 flex items-center justify-between gap-3">
                             <span class="rounded-md border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest font-orbitron {{ $kycBadgeClasses }}">{{ $kycBadge }}</span>
-                            <button type="button" wire:click="openKycDrawer" class="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-200 hover:bg-amber-500/20 font-orbitron">
+                            <button type="button" @click="showKycDrawer = true" class="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-200 hover:bg-amber-500/20 font-orbitron">
                                 <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
                                 {{ $kycVerified ? 'View' : 'Verify' }}
                             </button>
@@ -141,51 +134,87 @@
                     </div>
                 </div>
 
-                <div class="mt-6 grid grid-cols-1 gap-6 2xl:grid-cols-2">
-                    <form wire:submit="updateProfile" class="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
-                        <div class="flex items-center gap-2 border-b border-zinc-800 pb-3">
+                <div class="mt-6 rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                    <div class="grid grid-cols-2 gap-2 md:grid-cols-4">
+                        @foreach([
+                            ['key' => 'profile', 'label' => 'Profile', 'icon' => 'badge'],
+                            ['key' => 'account', 'label' => 'Account', 'icon' => 'id-card'],
+                            ['key' => 'security', 'label' => 'Security', 'icon' => 'key-round'],
+                            ['key' => 'comms', 'label' => 'Comms', 'icon' => 'bell'],
+                        ] as $tab)
+                            <button
+                                type="button"
+                                @click="activeTab = '{{ $tab['key'] }}'"
+                                class="inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-black uppercase tracking-widest transition-colors font-orbitron"
+                                :class="activeTab === '{{ $tab['key'] }}' ? 'border-cyan-400/40 bg-cyan-500/15 text-cyan-100' : 'border-transparent bg-zinc-950/50 text-zinc-500 hover:border-zinc-700 hover:text-zinc-250'"
+                            >
+                                <i data-lucide="{{ $tab['icon'] }}" class="w-4 h-4"></i>
+                                {{ $tab['label'] }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
+                    <div x-show="activeTab === 'profile'" x-cloak>
+                        <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
                             <i data-lucide="badge" class="w-4 h-4 text-cyan-300"></i>
                             <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Player Info</h3>
                         </div>
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
-                                <label for="displayName" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Display Name</label>
-                                <input id="displayName" type="text" wire:model="displayName" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none" placeholder="Gaming tag">
-                                @error('displayName') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
-                            </div>
-                            <div>
-                                <label for="countryCode" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Country Code</label>
-                                <input id="countryCode" type="text" wire:model="countryCode" maxlength="2" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold uppercase text-white focus:border-cyan-400 focus:outline-none" placeholder="PH">
-                                @error('countryCode') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-                        <div>
-                            <label for="timezone" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Timezone</label>
-                            <select id="timezone" wire:model="timezone" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none">
-                                <option value="">Select timezone</option>
-                                @foreach(timezone_identifiers_list() as $tz)
-                                    <option value="{{ $tz }}">{{ $tz }}</option>
-                                @endforeach
-                            </select>
-                            @error('timezone') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label for="bio" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Bio</label>
-                            <textarea id="bio" wire:model="bio" rows="4" class="mt-1.5 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none" placeholder="Short player intro"></textarea>
-                            @error('bio') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
-                        </div>
-                        <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-emerald-100 hover:bg-emerald-500/25 font-orbitron">
-                            <i data-lucide="save" class="w-4 h-4"></i>
-                            Save Info
-                        </button>
-                    </form>
 
-                    <div class="space-y-6">
-                        <form wire:submit="updateAccount" class="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
-                            <div class="flex items-center gap-2 border-b border-zinc-800 pb-3">
-                                <i data-lucide="id-card" class="w-4 h-4 text-fuchsia-300"></i>
-                                <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Account</h3>
+                        <form wire:submit="updateAvatar" class="mb-5 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
+                            <label for="avatarFile" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Profile Picture</label>
+                            <div class="mt-2 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
+                                <input id="avatarFile" type="file" wire:model="avatarFile" accept="image/png,image/jpeg,image/webp" class="w-full rounded-lg border border-zinc-800 bg-zinc-950 text-xs text-zinc-300 file:mr-3 file:border-0 file:bg-cyan-500/15 file:px-3 file:py-2.5 file:text-[10px] file:font-black file:uppercase file:tracking-wider file:text-cyan-250 hover:file:bg-cyan-500/25">
+                                <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-cyan-100 hover:bg-cyan-500/25 disabled:opacity-60 font-orbitron">
+                                    <i data-lucide="image-up" class="w-4 h-4"></i>
+                                    Upload
+                                </button>
                             </div>
+                            @error('avatarFile') <span class="block pt-2 text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                        </form>
+
+                        <form wire:submit="updateProfile" class="space-y-4">
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                    <label for="displayName" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Display Name</label>
+                                    <input id="displayName" type="text" wire:model="displayName" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none" placeholder="Gaming tag">
+                                    @error('displayName') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label for="countryCode" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Country Code</label>
+                                    <input id="countryCode" type="text" wire:model="countryCode" maxlength="2" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold uppercase text-white focus:border-cyan-400 focus:outline-none" placeholder="PH">
+                                    @error('countryCode') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                            <div>
+                                <label for="timezone" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Timezone</label>
+                                <select id="timezone" wire:model="timezone" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none">
+                                    <option value="">Select timezone</option>
+                                    @foreach($timezoneOptions as $tz)
+                                        <option value="{{ $tz }}">{{ $tz }}</option>
+                                    @endforeach
+                                </select>
+                                @error('timezone') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label for="bio" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Bio</label>
+                                <textarea id="bio" wire:model="bio" rows="4" class="mt-1.5 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none" placeholder="Short player intro"></textarea>
+                                @error('bio') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                            </div>
+                            <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-emerald-100 hover:bg-emerald-500/25 font-orbitron">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                Save Info
+                            </button>
+                        </form>
+                    </div>
+
+                    <div x-show="activeTab === 'account'" x-cloak>
+                        <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
+                            <i data-lucide="id-card" class="w-4 h-4 text-fuchsia-300"></i>
+                            <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Account</h3>
+                        </div>
+                        <form wire:submit="updateAccount" class="space-y-4">
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div>
                                     <label for="username" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Username</label>
@@ -203,12 +232,14 @@
                                 Save Account
                             </button>
                         </form>
+                    </div>
 
-                        <form wire:submit="updatePassword" class="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
-                            <div class="flex items-center gap-2 border-b border-zinc-800 pb-3">
-                                <i data-lucide="key-round" class="w-4 h-4 text-amber-300"></i>
-                                <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Password</h3>
-                            </div>
+                    <div x-show="activeTab === 'security'" x-cloak>
+                        <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
+                            <i data-lucide="key-round" class="w-4 h-4 text-amber-300"></i>
+                            <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Password</h3>
+                        </div>
+                        <form wire:submit="updatePassword" class="space-y-4">
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <div>
                                     <label for="currentPassword" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Current</label>
@@ -232,46 +263,45 @@
                             </button>
                         </form>
                     </div>
-                </div>
 
-                <div class="mt-6 rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
-                    <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
-                        <i data-lucide="bell" class="w-4 h-4 text-cyan-300"></i>
-                        <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Comms Loadout</h3>
-                    </div>
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        @foreach([
-                            ['model' => 'emailNotifications', 'title' => 'Email', 'text' => 'Match, wallet, and tournament alerts.'],
-                            ['model' => 'inAppNotifications', 'title' => 'In-App', 'text' => 'Notification bell updates.'],
-                            ['model' => 'realtimeNotifications', 'title' => 'Realtime', 'text' => 'Live match and broadcast pings.'],
-                        ] as $toggle)
-                            <label class="flex items-center justify-between gap-4 rounded-lg border border-zinc-800 bg-zinc-950/70 p-4">
-                                <span>
-                                    <span class="block text-xs font-black uppercase tracking-wider text-white font-orbitron">{{ $toggle['title'] }}</span>
-                                    <span class="mt-1 block text-[11px] font-semibold text-zinc-500">{{ $toggle['text'] }}</span>
-                                </span>
-                                <span class="relative inline-flex cursor-pointer items-center">
-                                    <input type="checkbox" wire:model="{{ $toggle['model'] }}" wire:change="updatePreferences" class="peer sr-only">
-                                    <span class="h-6 w-11 rounded-full border border-zinc-700 bg-zinc-900 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-zinc-500 after:transition-all peer-checked:border-cyan-400/50 peer-checked:bg-cyan-500/30 peer-checked:after:translate-x-5 peer-checked:after:bg-cyan-200"></span>
-                                </span>
-                            </label>
-                        @endforeach
+                    <div x-show="activeTab === 'comms'" x-cloak>
+                        <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
+                            <i data-lucide="bell" class="w-4 h-4 text-cyan-300"></i>
+                            <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Comms Loadout</h3>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            @foreach([
+                                ['model' => 'emailNotifications', 'enabled' => $emailNotifications, 'title' => 'Email', 'text' => 'Match, wallet, and tournament alerts.'],
+                                ['model' => 'inAppNotifications', 'enabled' => $inAppNotifications, 'title' => 'In-App', 'text' => 'Notification bell updates.'],
+                                ['model' => 'realtimeNotifications', 'enabled' => $realtimeNotifications, 'title' => 'Realtime', 'text' => 'Live match and broadcast pings.'],
+                            ] as $toggle)
+                                <label class="flex items-center justify-between gap-4 rounded-lg border border-zinc-800 bg-zinc-950/70 p-4">
+                                    <span>
+                                        <span class="block text-xs font-black uppercase tracking-wider text-white font-orbitron">{{ $toggle['title'] }}</span>
+                                        <span class="mt-1 block text-[11px] font-semibold text-zinc-500">{{ $toggle['text'] }}</span>
+                                    </span>
+                                    <span class="relative inline-flex cursor-pointer items-center">
+                                        <input type="checkbox" @checked($toggle['enabled']) wire:change="updateNotificationPreference('{{ $toggle['model'] }}', $event.target.checked)" class="peer sr-only">
+                                        <span class="h-6 w-11 rounded-full border border-zinc-700 bg-zinc-900 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-zinc-500 after:transition-all peer-checked:border-cyan-400/50 peer-checked:bg-cyan-500/30 peer-checked:after:translate-x-5 peer-checked:after:bg-cyan-200"></span>
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    @if($showKycDrawer)
-        <div class="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm" wire:click.self="closeKycDrawer">
-            <aside class="h-full w-full max-w-lg overflow-y-auto border-l border-zinc-800 bg-zinc-950 p-5 shadow-2xl sm:p-6">
+    <div x-show="showKycDrawer" x-cloak class="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm" @click.self="showKycDrawer = false">
+        <aside class="h-full w-full max-w-lg overflow-y-auto border-l border-zinc-800 bg-zinc-950 p-5 shadow-2xl sm:p-6">
                 <div class="flex items-start justify-between gap-4 border-b border-zinc-800 pb-4">
                     <div>
                         <p class="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300 font-orbitron">Identity Verification</p>
                         <h3 class="mt-2 text-xl font-black uppercase tracking-wide text-white font-orbitron">{{ $kycBadge }}</h3>
                         <p class="mt-1 text-sm font-semibold text-zinc-450">Verify identity to unlock withdrawals.</p>
                     </div>
-                    <button type="button" wire:click="closeKycDrawer" title="Close KYC drawer" class="grid h-10 w-10 place-items-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white">
+                    <button type="button" @click="showKycDrawer = false" title="Close KYC drawer" class="grid h-10 w-10 place-items-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -318,7 +348,6 @@
                         </button>
                     </form>
                 @endif
-            </aside>
-        </div>
-    @endif
+        </aside>
+    </div>
 </div>
