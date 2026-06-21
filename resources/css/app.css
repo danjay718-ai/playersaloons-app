@@ -407,27 +407,27 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0.625rem 0.25rem 0.5rem;
-    gap: 0.2rem;
+    padding: 0.875rem 0.25rem 0.625rem;
+    gap: 0.3rem;
     cursor: pointer;
     border: none;
     background: transparent;
     text-decoration: none;
     position: relative;
     transition: all 200ms ease;
-    min-height: 3.75rem; /* 60px tap target */
+    min-height: 4.5rem; /* 72px tap target */
 }
 
 .mobile-nav-item .mobile-nav-icon {
-    width: 1.375rem;
-    height: 1.375rem;
+    width: 1.625rem;
+    height: 1.625rem;
     flex-shrink: 0;
     transition: transform 200ms ease, color 200ms ease;
     color: #52525b; /* zinc-600 */
 }
 
 .mobile-nav-item .mobile-nav-label {
-    font-size: 0.5625rem; /* 9px */
+    font-size: 0.625rem; /* 10px */
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -480,7 +480,7 @@
 /* Main content padding on mobile to clear bottom nav */
 @media (max-width: 767px) {
     .player-main-content {
-        padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(7.25rem + env(safe-area-inset-bottom, 0px));
     }
 }
 
