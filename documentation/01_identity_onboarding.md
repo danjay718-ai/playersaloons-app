@@ -32,7 +32,7 @@ Identity verification is required for financial transactions (e.g., withdrawals)
 *   **Action**: Player uploads identity documents (ID, Passport, or Driver's License).
 *   **UI Component**: `app/Livewire/Profile/ProfileDashboard.php`
 *   **View**: `resources/views/livewire/profile/profile-dashboard.blade.php`
-*   **UX Surface**: The profile page shows only verified/not verified status and a hover info icon explaining that KYC is required for withdrawals. The upload form lives inside a drawer opened from the KYC status card.
+*   **UX Surface**: The profile page shows verified/not verified status and a hover info icon explaining that KYC is required for withdrawals. The upload form lives inside an Alpine-powered drawer opened from the KYC status card, avoiding a Livewire round trip just to open or close the drawer.
 *   **Logic (Actions)**:
     *   `app/Modules/Identity/Actions/SubmitKycAction.php`: Handles file uploads and state transitions. Accepted document types: `passport`, `id_card`, `drivers_license`.
 *   **Connected Files**:
@@ -46,7 +46,7 @@ Managing display name, bio, and preferences.
 
 *   **Action**: Player updates their public-facing profile information.
 *   **UI Component**: `app/Livewire/Profile/ProfileDashboard.php`
-*   **View**: Game-style player card with profile picture upload, profile fields, account fields, password change, verified email status, KYC drawer trigger, referral link, and notification toggles.
+*   **View**: Game-style player card with Alpine-powered profile, account, security, and comms tabs. Tab switching is client-side, profile picture upload lives in the Profile tab, and timezone selection uses a Redis-cached curated option list plus the player's existing timezone.
 *   **Logic (Actions)**:
     *   `app/Modules/Identity/Actions/UpdateProfileAction.php`: Updates bio, country, timezone, etc.
     *   `app/Modules/Identity/Actions/UploadAvatarAction.php`: Handles profile picture updates.
@@ -102,6 +102,7 @@ To ensure flow integrity, the following tests must be implemented and passing:
 *   **Verification**: Confirms profile email verification sets `email_verified_at` and dispatches `EmailVerified`.
 *   **Security**: Confirms password changes require the current password and persist through Laravel hashing.
 *   **KYC Drawer**: Confirms KYC verification UI opens only inside the drawer surface.
+*   **Comms**: Confirms Email, In-App, and Realtime preference toggles persist to `notification_preferences`.
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
