@@ -16,7 +16,7 @@
          x-transition:leave="transition ease-in duration-75"
          x-transition:leave-start="transform opacity-100 scale-100"
          x-transition:leave-end="transform opacity-0 scale-95"
-         class="absolute right-0 mt-3 w-80 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-2"
+         class="fixed sm:absolute top-[70px] sm:top-auto right-4 sm:right-0 left-4 sm:left-auto mt-0 sm:mt-3 sm:w-80 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-2 origin-top sm:origin-top-right"
          x-cloak>
 
         {{-- Header --}}

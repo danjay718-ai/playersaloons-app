@@ -311,7 +311,7 @@
 /* Main content padding on mobile to clear bottom nav */
 @media (max-width: 767px) {
     .player-main-content {
-        padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
     }
 }
 
