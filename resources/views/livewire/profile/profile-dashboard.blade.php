@@ -1,6 +1,6 @@
 @php
     $profile = $user?->profile;
-    $avatarUrl = $user?->getFirstMediaUrl('avatar') ?: $profile?->avatar_url;
+    $avatarUrl = $profile?->avatar_url;
     $playerName = $displayName ?: ($user?->username ?? 'Player');
     $initials = strtoupper(substr($playerName, 0, 2));
     $kycStatus = $latestKyc ? $latestKyc->status->value : 'not_submitted';
