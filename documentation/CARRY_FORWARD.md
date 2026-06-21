@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-21 | **Current version**: v1.55 | **Branch**: `main`
+**As of**: 2026-06-21 | **Current version**: v1.56 | **Branch**: `main`
 
 ---
 
@@ -15,6 +15,7 @@
 - H2H result/dispute proof uploads and admin dispute resolution are implemented in `/admin/matches`
 - H2H now shows friendly wallet/balance errors and existing users missing wallet rows were backfilled
 - H2H timeout policy is conservative: expired waiting challenges refund; stale active/submitted matches go to admin review, never auto-win
+- H2H page now has separate Initiate, Open Challenges, Active Duels, and History tabs filtered by selected game, with same-game duplicate waiting/active duel guards and a dashboard-wide duel/invite modal prompt
 - Player wallet deposits now use Stripe Checkout; signed Stripe webhooks credit the ledger-backed wallet after payment success
 - Player-facing flash responses now render through shared toasts, player Livewire submit buttons disable during submit, uncached player route changes show a game-like full-page loader, and admin KYC review can display uploaded KYC files through `KycSubmission` document path accessors
 - Player avatar/KYC uploads now show immediate selected-file feedback and upload progress before the Livewire request completes
@@ -25,7 +26,7 @@
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.54)
+## ✅ Natapos ngayong session (v1.30–v1.56)
 
 | Version | Item |
 |---|---|
@@ -55,6 +56,7 @@
 | v1.53 | Stripe Checkout wallet deposits — hosted Checkout redirect, signed webhook fulfillment, Coolify env docs |
 | v1.54 | Player toasts/loading states + KYC admin document display fix |
 | v1.55 | Player upload feedback, cached game-style navigation loader, PWA landing HTML cache fix, and restored mobile bottom nav sizing |
+| v1.56 | H2H game-filtered tabs, same-game duplicate duel guards, wrong-game accept rejection, and dashboard-wide duel prompt |
 
 ---
 
@@ -84,6 +86,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - H2H proof upload + admin dispute review — done v1.40
 - H2H raw missing-wallet exception on find duel — fixed v1.41
 - H2H timeout/auto-expiry policy — done v1.43
+- H2H mixed open/active/history view and missing same-game duplicate guards — fixed v1.56
 - Wallet mock deposit stale UI balance after success — fixed v1.42
 - Wallet mock-only deposit flow — replaced with Stripe Checkout + webhook fulfillment v1.53
 - Player inline flash alerts — replaced with shared toast surface v1.54

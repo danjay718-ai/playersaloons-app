@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-21 (v1.55)
+**Last Updated**: 2026-06-21 (v1.56)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -41,7 +41,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /tournaments/browse` | `app/Livewire/Tournament/PlayerTournamentList.php` | Browse & filter all active tournaments |
 | `GET /tournaments/{uuid}/view` | `app/Livewire/Tournament/TournamentDetail.php` | Tournament detail, registration, check-in, bracket, matches |
 | `GET /matches/{uuid}` | `app/Livewire/Match/MatchDetail.php` | Match lobby: result submission, evidence, dispute |
-| `GET /head-to-head` | `app/Livewire/Match/HeadToHeadList.php` | DB-backed H2H challenge queue, stake lock, proof-backed result submit/confirm/dispute flow |
+| `GET /head-to-head` | `app/Livewire/Match/HeadToHeadList.php` | DB-backed H2H tabs for initiate challenge, game-filtered open challenges, active duels, history, stake lock, proof-backed result submit/confirm/dispute flow |
 | `GET /leaderboards` | `app/Livewire/Match/LeaderboardList.php` | Leaderboard (stub) |
 | `GET /streams` | `app/Livewire/Stream/StreamList.php` | Streams (stub) |
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` | Global chat (mock) |
@@ -98,6 +98,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|---|
 | Player dashboard topbar | `app/Livewire/Notification/NotificationBell.php` | Shows latest 10 user notifications, unread count, single/all mark-as-read actions, and refreshes from realtime Reverb broadcasts |
 | Player toast notifications | `resources/views/components/ui/toasts.blade.php` | Shared toast surface for player-facing `session()->flash()` feedback (`message`, `success`, `info`, `error`, `h2h_status`, `h2h_error`) |
+| H2H duel prompt | `app/Livewire/Match/HeadToHeadDuelPrompt.php` | Dashboard-wide polling modal that alerts players when a duel is active or when an open duel invite is available |
 | Player loading states | `resources/js/app.js`, `resources/css/app.css`, `resources/views/components/layouts/dashboard.blade.php` | Disables Livewire submit buttons during submit and shows a game-style full-page loader for uncached player `wire:navigate` route changes; tab links are excluded and visited routes are cached in `sessionStorage` |
 | Player upload feedback | `resources/views/livewire/profile/profile-dashboard.blade.php` | Shows immediate selected-file feedback and Livewire upload progress for avatar and KYC document uploads |
 
@@ -154,8 +155,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 ### Head-to-Head Duels
 | Feature | Action/Service | Event | Listener/Job |
 |---|---|---|---|
-| Create H2H challenge | `CreateHeadToHeadChallengeAction` + `LockHeadToHeadStakeAction` | — | — |
-| Matchmake / accept challenge | `HeadToHeadMatchmakerService` + `AcceptHeadToHeadChallengeAction` | — | — |
+| Create H2H challenge | `CreateHeadToHeadChallengeAction` + `LockHeadToHeadStakeAction` | — | Prevents another same-game waiting challenge or active duel before locking stake |
+| Matchmake / accept challenge | `HeadToHeadMatchmakerService` + `AcceptHeadToHeadChallengeAction` | — | Accept requires the selected game to match and blocks another same-game waiting challenge or active duel |
 | Cancel waiting challenge | `CancelHeadToHeadChallengeAction` + `RefundHeadToHeadStakeAction` | — | — |
 | Submit H2H result | `SubmitHeadToHeadResultAction` | — | Optional proof upload stored on `head_to_head_matches.result_proof_path` |
 | Confirm H2H result | `ConfirmHeadToHeadResultAction` + `ResolveHeadToHeadStakeAction` | — | — |

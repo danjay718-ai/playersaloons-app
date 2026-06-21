@@ -1,6 +1,17 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.55) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.56) | **Branch**: `main`
+
+---
+
+## ✅ Head-to-Head Game Tabs, Guards, and Duel Prompt (v1.56)
+
+- **`HeadToHeadList` / `head-to-head-list.blade.php`**: Split the H2H player page into `Initiate Challenge`, `Open Challenges`, `Active Duels`, and `History` tabs. Open challenges, active duels, and history are filtered by the selected game.
+- **`CreateHeadToHeadChallengeAction`**: Prevents players from creating another same-game H2H challenge when they already have a waiting challenge or active duel for that game.
+- **`AcceptHeadToHeadChallengeAction`**: Prevents accepting a challenge for a different selected game, accepting while the player already has a same-game waiting challenge, or accepting while the player already has a same-game active duel.
+- **`HeadToHeadDuelPrompt`**: Added a dashboard-wide polling modal that alerts players when an H2H duel is active or when an open duel invite is available, with a direct link to `/head-to-head`.
+- **Tests**: `php artisan test tests/Feature/Match/HeadToHeadModuleTest.php` passes: 19 tests, 71 assertions. `npm run build`, PHP syntax checks for changed PHP files, and `git diff --check` pass.
+- **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ---
 

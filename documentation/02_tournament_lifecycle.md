@@ -77,10 +77,11 @@ Player-created wager matches outside tournament brackets.
 
 *   **Action**: Player creates or accepts an open H2H challenge from `/head-to-head`.
 *   **UI Component**: `app/Livewire/Match/HeadToHeadList.php`
+*   **UX Surface**: `/head-to-head` is split into `Initiate Challenge`, `Open Challenges`, `Active Duels`, and `History` tabs. The selected game filter scopes open challenges, active duels, and history so a player cannot accidentally accept or manage a duel for a different game context.
 *   **Logic (Actions/Services)**:
-    *   `app/Modules/Match/Actions/CreateHeadToHeadChallengeAction.php`: Creates a waiting challenge and locks creator stake.
+    *   `app/Modules/Match/Actions/CreateHeadToHeadChallengeAction.php`: Creates a waiting challenge and locks creator stake. It blocks another waiting challenge or active duel by the same player for the same game.
     *   `app/Modules/Match/Services/HeadToHeadMatchmakerService.php`: Finds compatible waiting challenges by game, stake, platform, and region.
-    *   `app/Modules/Match/Actions/AcceptHeadToHeadChallengeAction.php`: Locks opponent stake and creates an in-progress H2H match.
+    *   `app/Modules/Match/Actions/AcceptHeadToHeadChallengeAction.php`: Locks opponent stake and creates an in-progress H2H match. It rejects accepts for a different selected game and blocks accepting if the player already has a waiting challenge or active duel for that game.
     *   `app/Modules/Match/Actions/SubmitHeadToHeadResultAction.php`: Records submitted winner, notes, optional proof screenshot, and moves the H2H match to `WAITING_FOR_CONFIRMATION`.
     *   `app/Modules/Match/Actions/ConfirmHeadToHeadResultAction.php`: Opponent confirms and releases both locked stakes to the winner.
     *   `app/Modules/Match/Actions/DisputeHeadToHeadResultAction.php`: Marks the result disputed and stores optional dispute notes/proof.
@@ -89,11 +90,12 @@ Player-created wager matches outside tournament brackets.
 *   **Connected Files**:
     *   `app/Modules/Match/Models/HeadToHeadChallenge.php`
     *   `app/Modules/Match/Models/HeadToHeadMatch.php`
+    *   `app/Livewire/Match/HeadToHeadDuelPrompt.php`: Dashboard-wide polling modal for active duel and open-invite alerts.
     *   `app/Modules/Match/StateMachines/HeadToHeadMatchStateMachine.php`
     *   `app/Shared/Enums/HeadToHeadDisputeResolution.php`
     *   `app/Shared/Enums/HeadToHeadChallengeStatus.php`
     *   `app/Shared/Enums/HeadToHeadMatchStatus.php`
-*   **Fair-play rule**: H2H does not auto-award wins from an unconfirmed claim or stale timer. Confirmation releases payout; timeout/dispute cases keep stakes locked until an admin awards a player or voids/refunds the duel.
+*   **Fair-play rule**: H2H does not auto-award wins from an unconfirmed claim or stale timer. Confirmation releases payout; timeout/dispute cases keep stakes locked until an admin awards a player or voids/refunds the duel. Players can only have one waiting challenge or active duel per game at a time.
 *   **Timeout outcomes**:
     *   Waiting challenge past `expires_at`: `EXPIRED` and creator stake refunded.
     *   In-progress match past `match_timer_minutes + 15` minutes: `DISPUTED` with system timeout note.
