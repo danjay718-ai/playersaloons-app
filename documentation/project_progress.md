@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.44) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.46) | **Branch**: `main`
 
 ---
 
@@ -689,6 +689,22 @@ Items where schema or stub exists but logic is missing:
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
 
 ---
+
+## ✅ Player Profile Client-Side Interaction Optimization (v1.46)
+
+- **`profile-dashboard.blade.php`**: Converted tab switching and KYC drawer open/close from Livewire actions to Alpine state, eliminating server round trips for those interactions.
+- **`ProfileDashboard`**: Added Redis-backed caching for the curated timezone list and short-lived latest KYC lookup, with database fallback if Redis is unavailable.
+- **Comms Loadout**: Replaced `wire:model.live` + `wire:change` with one lightweight preference update action per toggle and skipped full re-render after persistence.
+- **Tests**: `php artisan test tests/Feature/Identity/ProfileDashboardTest.php` passed.
+- **PHPStan**: Not rerun for this optimization pass.
+
+## ✅ Player Profile Tabs + Render Optimization (v1.45)
+
+- **`ProfileDashboard`**: Added server-side tab state and replaced the full `timezone_identifiers_list()` render with a curated timezone list that also preserves the player's existing saved timezone.
+- **`profile-dashboard.blade.php`**: Moved profile/account/security/comms editors behind tabs so the initial page does not render every editable section at once. Profile picture upload now lives in the Profile tab.
+- **Comms Loadout**: Switched preference toggles to live model updates and verified backend persistence through `notification_preferences`.
+- **Tests**: `php artisan test tests/Feature/Identity/ProfileDashboardTest.php` passed with 7 tests / 22 assertions.
+- **PHPStan**: Not rerun for this optimization pass.
 
 ## ✅ Player Profile Redesign + KYC Drawer (v1.44)
 

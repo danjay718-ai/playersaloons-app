@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-21 (v1.44)
+**Last Updated**: 2026-06-21 (v1.46)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -45,7 +45,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /streams` | `app/Livewire/Stream/StreamList.php` | Streams (stub) |
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` | Global chat (mock) |
 | `GET /wallet` | `app/Livewire/Wallet/WalletDashboard.php` | Wallet balance + transaction history |
-| `GET /profile` | `app/Livewire/Profile/ProfileDashboard.php` | Game-style player profile: avatar, account/profile/password updates, email verification, KYC status drawer, notification prefs |
+| `GET /profile` | `app/Livewire/Profile/ProfileDashboard.php` | Game-style player profile with Alpine tabs/drawer, avatar, account/profile/password updates, email verification, KYC status, Redis-cached support data, notification prefs |
 | `GET /teams` | `app/Livewire/Team/TeamDashboard.php` | Team management: create, invite, roster, captaincy |
 | `GET /verify-email` | `app/Livewire/Auth/EmailVerification.php` | Email verification notice |
 | `POST /logout` | inline route closure | Invalidates session and redirects to `/` |
@@ -184,7 +184,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|
 | `Identity/RegisterUserActionTest.php` | Registration success, wallet creation, event dispatch, validation failures |
 | `Identity/SubmitKycActionTest.php` | KYC submission, resubmission from rejected, event dispatch |
-| `Identity/ProfileDashboardTest.php` | Player profile render, profile/account updates, email verification, password change, KYC drawer visibility |
+| `Identity/ProfileDashboardTest.php` | Player profile render, profile/account updates, email verification, password change, KYC drawer visibility, comms preference persistence |
 | `Identity/OnlinePresenceTest.php` | Middleware sets Redis key for auth user, skips guest, `isOnline()` true/false |
 | `Identity/NotifyAdminsOfKycSubmissionListenerTest.php` | Admin notification on KYC submit, non-admins not notified, all admin roles notified |
 | `Authorization/PolicyTest.php` | All 8 policies across Tournament, Match, Wallet, Withdrawal, KYC, Team, User, Dispute |
