@@ -14,10 +14,6 @@
                         <h2 class="font-orbitron text-2xl md:text-3xl font-black text-white filter drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">WELCOME BACK, {{ strtoupper($user->username) }}!</h2>
                         <div class="flex items-center gap-4 mt-4">
                             <p class="text-xs md:text-sm text-zinc-400 font-bold uppercase tracking-widest">Ready for your next challenge?</p>
-                            <button class="pwa-install-btn hidden items-center space-x-2 bg-fuchsia-600/20 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 text-fuchsia-300 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all disabled:cursor-not-allowed disabled:opacity-50" data-pwa-install-dashboard type="button" disabled>
-                                <i data-lucide="download" class="w-3 h-3"></i>
-                                <span>Install App</span>
-                            </button>
                         </div>
                     </div>
                     <div class="text-left sm:text-right">

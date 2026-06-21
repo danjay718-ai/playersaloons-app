@@ -357,9 +357,8 @@ function initPublicPwaInstall() {
         installBtns.forEach(button => {
             const isDesktopButton = button.hasAttribute('data-pwa-install-desktop');
             const isMobileButton = button.hasAttribute('data-pwa-install-mobile');
-            const isDashboardButton = button.hasAttribute('data-pwa-install-dashboard');
 
-            if ((desktop && isDesktopButton) || (!desktop && isMobileButton) || isDashboardButton) {
+            if ((desktop && isDesktopButton) || (!desktop && isMobileButton)) {
                 showButton(button);
                 return;
             }
