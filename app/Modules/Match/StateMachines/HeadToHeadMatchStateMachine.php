@@ -16,6 +16,7 @@ class HeadToHeadMatchStateMachine extends AbstractStateMachine
         return [
             HeadToHeadMatchStatus::IN_PROGRESS->value => [
                 HeadToHeadMatchStatus::WAITING_FOR_CONFIRMATION->value,
+                HeadToHeadMatchStatus::DISPUTED->value,
                 HeadToHeadMatchStatus::CANCELLED->value,
                 HeadToHeadMatchStatus::EXPIRED->value,
             ],
