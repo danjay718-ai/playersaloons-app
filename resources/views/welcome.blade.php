@@ -4,6 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PlayerSaloons | Play. Win. Cash.</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0a0718">
+    <link rel="apple-touch-icon" href="/playersaloons_logo.webp">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Tailwind CSS & Fonts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -19,23 +28,7 @@
         <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
     </div>
 
-    <!-- Top Navigation -->
-    <nav class="relative z-50 flex items-center justify-between px-6 py-6 max-w-7xl mx-auto">
-        <a href="/" class="flex items-center space-x-3 group">
-            <img src="/playersaloons_logo.webp" alt="PlayerSaloons Logo" class="h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-110">
-        </a>
-
-        <div class="flex items-center space-x-6">
-            @auth
-                <a href="/dashboard" class="text-sm font-black uppercase tracking-widest text-zinc-400 hover:text-cyan-400 transition-colors">Dashboard</a>
-            @else
-                <a href="/login" class="text-sm font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">Sign In</a>
-                <a href="/register" class="bg-white text-black px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest hover:bg-cyan-400 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(34,211,238,0.4)]">
-                    Join Now
-                </a>
-            @endauth
-        </div>
-    </nav>
+    @include('components.layouts.partials.public-navigation')
 
     <!-- Hero Section -->
     <main class="relative z-10 flex flex-col items-center justify-center pt-20 pb-32 px-6 text-center max-w-5xl mx-auto">
@@ -53,7 +46,7 @@
             The ultimate battleground for competitive gamers. Join high-stakes tournaments, dominate the bracket, and secure instant payouts.
         </p>
 
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-6 w-full sm:w-auto">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-6 w-full sm:w-auto mt-8">
             <a href="/tournaments" class="w-full sm:w-64 flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-black py-5 rounded-2xl transition-all duration-300 shadow-[0_15px_35px_-10px_rgba(124,77,255,0.5)] uppercase tracking-[0.2em] text-xs transform hover:scale-105 active:scale-95">
                 <i data-lucide="trophy" class="w-5 h-5"></i>
                 <span>Explore Tournaments</span>
@@ -84,7 +77,6 @@
         </div>
     </main>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    @include('components.layouts.partials.public-footer')
 </body>
 </html>
