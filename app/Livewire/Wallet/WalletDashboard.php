@@ -42,7 +42,7 @@ class WalletDashboard extends Component
             'depositAmount' => ['required', 'numeric', 'min:1', 'max:10000'],
         ]);
 
-        $wallet = $user->wallet;
+        $wallet = $user->wallet()->first();
         if (! $wallet) {
             session()->flash('error', 'Wallet not found.');
 
@@ -93,7 +93,7 @@ class WalletDashboard extends Component
             return redirect()->to('/login');
         }
 
-        $wallet = $user->wallet;
+        $wallet = $user->wallet()->first();
         $ledgerEntries = collect();
 
         if ($wallet) {
