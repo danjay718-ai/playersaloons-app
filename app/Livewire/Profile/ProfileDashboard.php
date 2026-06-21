@@ -7,9 +7,13 @@ namespace App\Livewire\Profile;
 use App\Modules\Community\Models\NotificationPreference;
 use App\Modules\Identity\Actions\SubmitKycAction;
 use App\Modules\Identity\Actions\UpdateProfileAction;
+use App\Modules\Identity\Actions\UploadAvatarAction;
+use App\Modules\Identity\Events\EmailVerified;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -25,6 +29,21 @@ class ProfileDashboard extends Component
     public string $countryCode = '';
 
     public string $timezone = '';
+
+    public string $username = '';
+
+    public string $email = '';
+
+    /** @var mixed */
+    public $avatarFile = null;
+
+    public string $currentPassword = '';
+
+    public string $newPassword = '';
+
+    public string $newPasswordConfirmation = '';
+
+    public bool $showKycDrawer = false;
 
     // KYC Submission
     public string $documentType = 'id_card';
@@ -71,12 +90,112 @@ class ProfileDashboard extends Component
             $this->timezone = $profile->timezone ?? '';
         }
 
+        $this->username = (string) $user->username;
+        $this->email = (string) $user->email;
+
         $pref = NotificationPreference::query()->where('user_id', $user->id)->first();
         if ($pref) {
             $this->emailNotifications = (bool) $pref->email_enabled;
             $this->inAppNotifications = (bool) $pref->in_app_enabled;
             $this->realtimeNotifications = (bool) $pref->realtime_enabled;
         }
+    }
+
+    public function updateAccount(): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (! $user) {
+            return;
+        }
+
+        $this->validate([
+            'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->id)],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+        ]);
+
+        $emailChanged = $this->email !== $user->email;
+
+        $user->fill([
+            'username' => $this->username,
+            'email' => $this->email,
+            'email_verified_at' => $emailChanged ? null : $user->email_verified_at,
+        ]);
+        $user->save();
+
+        session()->flash('message', $emailChanged
+            ? 'Account updated. Please verify your new email address.'
+            : 'Account updated successfully!');
+    }
+
+    public function updateAvatar(UploadAvatarAction $action): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (! $user) {
+            return;
+        }
+
+        $this->validate([
+            'avatarFile' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        $action->execute($user, $this->avatarFile);
+        $this->reset('avatarFile');
+
+        session()->flash('message', 'Profile picture updated successfully!');
+    }
+
+    public function updatePassword(): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (! $user) {
+            return;
+        }
+
+        $this->validate([
+            'currentPassword' => ['required', 'string'],
+            'newPassword' => ['required', 'string', 'min:8', 'same:newPasswordConfirmation'],
+            'newPasswordConfirmation' => ['required', 'string'],
+        ]);
+
+        if (! Hash::check($this->currentPassword, $user->password)) {
+            $this->addError('currentPassword', 'The current password is incorrect.');
+
+            return;
+        }
+
+        $user->forceFill([
+            'password' => $this->newPassword,
+        ])->save();
+
+        $this->reset('currentPassword', 'newPassword', 'newPasswordConfirmation');
+        session()->flash('message', 'Password changed successfully!');
+    }
+
+    public function verifyEmail(): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (! $user || $user->email_verified_at !== null) {
+            return;
+        }
+
+        $user->forceFill(['email_verified_at' => now()])->save();
+        EmailVerified::dispatch((int) $user->getKey());
+
+        session()->flash('message', 'Email verified successfully!');
+    }
+
+    public function openKycDrawer(): void
+    {
+        $this->showKycDrawer = true;
+    }
+
+    public function closeKycDrawer(): void
+    {
+        $this->showKycDrawer = false;
     }
 
     public function updateProfile(UpdateProfileAction $action): void
@@ -125,6 +244,7 @@ class ProfileDashboard extends Component
             $action->execute($user, $this->documentType, [$this->kycFile]);
             session()->flash('message', 'KYC document submitted successfully! Our compliance team will review it.');
             $this->reset('kycFile');
+            $this->showKycDrawer = false;
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
