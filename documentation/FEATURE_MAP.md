@@ -58,10 +58,11 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/profile` | `app/Livewire/Admin/AdminProfile.php` | Staff profile |
 | `GET /admin/tournaments` | `app/Livewire/Admin/TournamentAdmin.php` | Tournament list + lifecycle state transitions |
 | `GET /admin/tournaments/create` | `app/Livewire/Admin/TournamentForm.php` | 4-step creation wizard |
-| `GET /admin/tournaments/{id}/edit` | `app/Livewire/Admin/TournamentForm.php` | Edit tournament (limited edit for published) |
-| `GET /admin/matches` | `app/Livewire/Admin/MatchAdmin.php` | Match list + result override + tournament/H2H dispute resolution |
-| `GET /admin/kyc` | `app/Livewire/Admin/KycAdmin.php` | KYC queue: approve/reject submissions |
-| `GET /admin/withdrawals` | `app/Livewire/Admin/WithdrawalAdmin.php` | Withdrawal queue: review/approve/reject/process |
+| `GET /admin/tournaments/{id}/edit` | `app/Livewire/Admin/TournamentForm.php` | Edit existing tournament |
+| `GET /admin/matches` | `app/Livewire/Admin/MatchAdmin.php` | Dispute queue + Match monitoring |
+| `GET /admin/kyc` | `app/Livewire/Admin/KycAdmin.php` | Review KYC submissions (approve/reject) |
+| `GET /admin/kyc/document/{path}` | inline route closure | Secure file stream for viewing private KYC ID images |
+| `GET /admin/withdrawals` | `app/Livewire/Admin/WithdrawalAdmin.php` | Review withdrawals + Four-eyes approval process |
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
 | `GET /admin/audit-logs` | `app/Livewire/Admin/AuditLogAdmin.php` | Spatie activity log viewer with filters |
 | `GET /admin/cms` | `app/Livewire/Admin/CmsAdmin.php` | Games, Platforms, CMS Pages management |

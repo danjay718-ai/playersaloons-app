@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.48) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.49) | **Branch**: `main`
 
 ---
 
@@ -689,6 +689,17 @@ Items where schema or stub exists but logic is missing:
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
 
 ---
+
+## ✅ UI Harmonization & Secure KYC Storage (v1.49)
+- **KYC Identity Module**: Reverted `SubmitKycAction.php` back to storing KYC IDs on the `local` private disk instead of `public` to secure sensitive identity documents from direct public access.
+- **Admin Panel**: Added a secure protected route (`/admin/kyc/document/{path}`) to stream KYC files. Access requires ADMIN or KYC_REVIEWER roles. Updated `kyc-admin.blade.php` to use this secure endpoint.
+- **UI/UX Fixes**:
+  - Re-styled the `player-welcome-panel` in the Player Dashboard to perfectly match the sci-fi aesthetics of the Wallet Dashboard card. Replaced "Total Earnings" with "Available Balance" for exact consistency.
+  - Fixed horizontal overflow on mobile for the notification bell dropdown by implementing responsive `fixed` positioning, creating a clean full-width floating panel below the header on small screens.
+  - Fixed bottom spacing issue for mobile pages by increasing `padding-bottom` in `.player-main-content` to `6.5rem`, ensuring no content hides behind the new fixed bottom navbar.
+- **Configuration**: Updated `APP_URL` in `.env` to `http://127.0.0.1:8000` so `Storage::url()` generates correct absolute URLs locally for avatars.
+- **Tests**: 4 new tests for `KycDocumentRouteTest` to ensure role-based document streaming security.
+- **PHPStan**: 0 errors at Level 5. Fixed `Route::get` redundant parameter error in `routes/web.php`.
 
 ## ✅ S3 Avatar Upload Support (v1.48)
 - **Identity Module**: Added missing `league/flysystem-aws-s3-v3` package.
