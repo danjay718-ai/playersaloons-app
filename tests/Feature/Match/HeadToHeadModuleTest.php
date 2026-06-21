@@ -14,10 +14,13 @@ use App\Modules\Match\Actions\CancelHeadToHeadChallengeAction;
 use App\Modules\Match\Actions\ConfirmHeadToHeadResultAction;
 use App\Modules\Match\Actions\CreateHeadToHeadChallengeAction;
 use App\Modules\Match\Actions\DisputeHeadToHeadResultAction;
+use App\Modules\Match\Actions\RefundHeadToHeadStakeAction;
 use App\Modules\Match\Actions\ResolveHeadToHeadDisputeAction;
 use App\Modules\Match\Actions\SubmitHeadToHeadResultAction;
+use App\Modules\Match\Jobs\ExpireHeadToHeadMatchesJob;
 use App\Modules\Match\Models\HeadToHeadChallenge;
 use App\Modules\Match\Models\HeadToHeadMatch;
+use App\Modules\Match\StateMachines\HeadToHeadMatchStateMachine;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\HeadToHeadChallengeStatus;
 use App\Shared\Enums\HeadToHeadDisputeResolution;
@@ -134,6 +137,29 @@ class HeadToHeadModuleTest extends TestCase
         $this->assertEquals('100.00', (string) $this->playerA->wallet->fresh()->cached_balance);
     }
 
+    public function test_expired_waiting_h2h_challenge_is_refunded_by_timeout_job(): void
+    {
+        $challenge = $this->createChallenge();
+        $challenge->update(['expires_at' => now()->subMinute()]);
+
+        app(ExpireHeadToHeadMatchesJob::class)->handle(
+            app(RefundHeadToHeadStakeAction::class),
+            app(HeadToHeadMatchStateMachine::class)
+        );
+
+        $challenge->refresh();
+
+        $this->assertEquals(HeadToHeadChallengeStatus::EXPIRED, $challenge->status);
+        $this->assertEquals('100.00', (string) $this->playerA->wallet->fresh()->cached_balance);
+        $this->assertDatabaseHas('ledger_entries', [
+            'wallet_id' => $this->playerA->wallet->id,
+            'reference_type' => HeadToHeadChallenge::class,
+            'reference_id' => $challenge->id,
+            'type' => LedgerType::REFUND->value,
+            'amount' => '10.00',
+        ]);
+    }
+
     public function test_opponent_can_accept_challenge_and_lock_second_stake(): void
     {
         $challenge = $this->createChallenge();
@@ -145,6 +171,31 @@ class HeadToHeadModuleTest extends TestCase
         $this->assertEquals(HeadToHeadMatchStatus::IN_PROGRESS, $match->status);
         $this->assertEquals('90.00', (string) $this->playerA->wallet->fresh()->cached_balance);
         $this->assertEquals('90.00', (string) $this->playerB->wallet->fresh()->cached_balance);
+    }
+
+    public function test_stale_in_progress_h2h_match_escalates_to_admin_review_without_payout(): void
+    {
+        $challenge = $this->createChallenge();
+        $match = app(AcceptHeadToHeadChallengeAction::class)->execute($challenge, $this->playerB, 'PlayerB#222');
+        $match->update(['started_at' => now()->subMinutes(46)]);
+
+        app(ExpireHeadToHeadMatchesJob::class)->handle(
+            app(RefundHeadToHeadStakeAction::class),
+            app(HeadToHeadMatchStateMachine::class)
+        );
+
+        $match->refresh();
+
+        $this->assertEquals(HeadToHeadMatchStatus::DISPUTED, $match->status);
+        $this->assertNull($match->winner_user_id);
+        $this->assertStringContainsString('System timeout', (string) $match->dispute_notes);
+        $this->assertEquals('90.00', (string) $this->playerA->wallet->fresh()->cached_balance);
+        $this->assertEquals('90.00', (string) $this->playerB->wallet->fresh()->cached_balance);
+        $this->assertDatabaseMissing('ledger_entries', [
+            'reference_type' => HeadToHeadMatch::class,
+            'reference_id' => $match->id,
+            'type' => LedgerType::H2H_PAYOUT->value,
+        ]);
     }
 
     public function test_submitted_result_can_be_confirmed_and_paid_out(): void
@@ -170,6 +221,34 @@ class HeadToHeadModuleTest extends TestCase
             'reference_id' => $match->id,
             'type' => LedgerType::H2H_PAYOUT->value,
             'amount' => '20.00',
+        ]);
+    }
+
+    public function test_stale_submitted_h2h_result_escalates_to_admin_review_without_auto_confirming(): void
+    {
+        $challenge = $this->createChallenge();
+        $match = app(AcceptHeadToHeadChallengeAction::class)->execute($challenge, $this->playerB, 'PlayerB#222');
+
+        app(SubmitHeadToHeadResultAction::class)->execute($match, $this->playerA, $this->playerA->id, 'A won 13-8.');
+        $match->refresh();
+        $match->update(['confirmation_due_at' => now()->subMinute()]);
+
+        app(ExpireHeadToHeadMatchesJob::class)->handle(
+            app(RefundHeadToHeadStakeAction::class),
+            app(HeadToHeadMatchStateMachine::class)
+        );
+
+        $match->refresh();
+
+        $this->assertEquals(HeadToHeadMatchStatus::DISPUTED, $match->status);
+        $this->assertEquals($this->playerA->id, $match->winner_user_id);
+        $this->assertStringContainsString('System timeout', (string) $match->dispute_notes);
+        $this->assertEquals('90.00', (string) $this->playerA->wallet->fresh()->cached_balance);
+        $this->assertEquals('90.00', (string) $this->playerB->wallet->fresh()->cached_balance);
+        $this->assertDatabaseMissing('ledger_entries', [
+            'reference_type' => HeadToHeadMatch::class,
+            'reference_id' => $match->id,
+            'type' => LedgerType::H2H_PAYOUT->value,
         ]);
     }
 
