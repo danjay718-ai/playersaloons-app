@@ -16,11 +16,13 @@ use App\Modules\Match\Actions\SubmitHeadToHeadResultAction;
 use App\Modules\Match\Models\HeadToHeadChallenge;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Match\Services\HeadToHeadMatchmakerService;
+use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Shared\Enums\HeadToHeadChallengeStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use Throwable;
 
 class HeadToHeadList extends Component
 {
@@ -57,39 +59,39 @@ class HeadToHeadList extends Component
     {
         $this->validateChallengeInput();
 
-        $action->execute($this->user(), [
-            'game_id' => (int) $this->gameId,
-            'platform_id' => $this->platformId !== '' ? (int) $this->platformId : null,
-            'stake_amount' => $this->stakeAmount,
-            'creator_game_handle' => $this->gameHandle,
-            'region' => $this->region !== '' ? $this->region : null,
-            'match_timer_minutes' => $this->matchTimerMinutes !== '' ? (int) $this->matchTimerMinutes : null,
-        ]);
-
-        session()->flash('h2h_status', 'Challenge posted and stake locked.');
+        try {
+            $action->execute($this->user(), $this->challengePayload());
+            session()->flash('h2h_status', 'Challenge posted and stake locked.');
+        } catch (Throwable $e) {
+            $this->flashH2HError($e);
+        }
     }
 
     public function findDuel(HeadToHeadMatchmakerService $matchmaker, AcceptHeadToHeadChallengeAction $accept): void
     {
         $this->validateChallengeInput();
 
-        $challenge = $matchmaker->findOpponentChallenge(
-            (int) $this->user()->getKey(),
-            (int) $this->gameId,
-            $this->stakeAmount,
-            $this->platformId !== '' ? (int) $this->platformId : null,
-            $this->region !== '' ? $this->region : null
-        );
+        try {
+            $challenge = $matchmaker->findOpponentChallenge(
+                (int) $this->user()->getKey(),
+                (int) $this->gameId,
+                $this->stakeAmount,
+                $this->platformId !== '' ? (int) $this->platformId : null,
+                $this->region !== '' ? $this->region : null
+            );
 
-        if (! $challenge) {
-            $this->createChallenge(app(CreateHeadToHeadChallengeAction::class));
-            session()->flash('h2h_status', 'No matching duel found. Your challenge is now waiting.');
+            if (! $challenge) {
+                app(CreateHeadToHeadChallengeAction::class)->execute($this->user(), $this->challengePayload());
+                session()->flash('h2h_status', 'No matching duel found. Your challenge is now waiting.');
 
-            return;
+                return;
+            }
+
+            $accept->execute($challenge, $this->user(), $this->gameHandle);
+            session()->flash('h2h_status', 'Duel matched. Game handles are now visible.');
+        } catch (Throwable $e) {
+            $this->flashH2HError($e);
         }
-
-        $accept->execute($challenge, $this->user(), $this->gameHandle);
-        session()->flash('h2h_status', 'Duel matched. Game handles are now visible.');
     }
 
     public function acceptChallenge(int $challengeId, AcceptHeadToHeadChallengeAction $action): void
@@ -98,18 +100,24 @@ class HeadToHeadList extends Component
             'gameHandle' => ['required', 'string', 'max:100'],
         ]);
 
-        $challenge = HeadToHeadChallenge::query()->findOrFail($challengeId);
-        $action->execute($challenge, $this->user(), $this->gameHandle);
-
-        session()->flash('h2h_status', 'Challenge accepted and stake locked.');
+        try {
+            $challenge = HeadToHeadChallenge::query()->findOrFail($challengeId);
+            $action->execute($challenge, $this->user(), $this->gameHandle);
+            session()->flash('h2h_status', 'Challenge accepted and stake locked.');
+        } catch (Throwable $e) {
+            $this->flashH2HError($e);
+        }
     }
 
     public function cancelChallenge(int $challengeId, CancelHeadToHeadChallengeAction $action): void
     {
-        $challenge = HeadToHeadChallenge::query()->findOrFail($challengeId);
-        $action->execute($challenge, $this->user());
-
-        session()->flash('h2h_status', 'Challenge cancelled and stake refunded.');
+        try {
+            $challenge = HeadToHeadChallenge::query()->findOrFail($challengeId);
+            $action->execute($challenge, $this->user());
+            session()->flash('h2h_status', 'Challenge cancelled and stake refunded.');
+        } catch (Throwable $e) {
+            $this->flashH2HError($e);
+        }
     }
 
     public function submitResult(int $matchId, SubmitHeadToHeadResultAction $action): void
@@ -120,19 +128,26 @@ class HeadToHeadList extends Component
             'resultProof' => ['nullable', 'image', 'max:4096'],
         ]);
 
-        $match = HeadToHeadMatch::query()->findOrFail($matchId);
-        $action->execute($match, $this->user(), (int) $this->resultWinnerUserId, $this->resultNotes ?: null, $this->resultProof);
+        try {
+            $match = HeadToHeadMatch::query()->findOrFail($matchId);
+            $action->execute($match, $this->user(), (int) $this->resultWinnerUserId, $this->resultNotes ?: null, $this->resultProof);
 
-        $this->reset('resultNotes', 'resultProof');
-        session()->flash('h2h_status', 'Result submitted. Waiting for opponent confirmation.');
+            $this->reset('resultNotes', 'resultProof');
+            session()->flash('h2h_status', 'Result submitted. Waiting for opponent confirmation.');
+        } catch (Throwable $e) {
+            $this->flashH2HError($e);
+        }
     }
 
     public function confirmResult(int $matchId, ConfirmHeadToHeadResultAction $action): void
     {
-        $match = HeadToHeadMatch::query()->findOrFail($matchId);
-        $action->execute($match, $this->user());
-
-        session()->flash('h2h_status', 'Result confirmed. Winner payout released.');
+        try {
+            $match = HeadToHeadMatch::query()->findOrFail($matchId);
+            $action->execute($match, $this->user());
+            session()->flash('h2h_status', 'Result confirmed. Winner payout released.');
+        } catch (Throwable $e) {
+            $this->flashH2HError($e);
+        }
     }
 
     public function disputeResult(int $matchId, DisputeHeadToHeadResultAction $action): void
@@ -142,11 +157,15 @@ class HeadToHeadList extends Component
             'disputeProof' => ['nullable', 'image', 'max:4096'],
         ]);
 
-        $match = HeadToHeadMatch::query()->findOrFail($matchId);
-        $action->execute($match, $this->user(), $this->disputeNotes ?: null, $this->disputeProof);
+        try {
+            $match = HeadToHeadMatch::query()->findOrFail($matchId);
+            $action->execute($match, $this->user(), $this->disputeNotes ?: null, $this->disputeProof);
 
-        $this->reset('disputeNotes', 'disputeProof');
-        session()->flash('h2h_status', 'Result disputed. Stake remains locked for admin review.');
+            $this->reset('disputeNotes', 'disputeProof');
+            session()->flash('h2h_status', 'Result disputed. Stake remains locked for admin review.');
+        } catch (Throwable $e) {
+            $this->flashH2HError($e);
+        }
     }
 
     public function render()
@@ -195,6 +214,32 @@ class HeadToHeadList extends Component
             'region' => ['nullable', 'string', 'max:50'],
             'matchTimerMinutes' => ['nullable', 'integer', 'in:15,30,60'],
         ]);
+    }
+
+    /**
+     * @return array{game_id:int, platform_id:int|null, stake_amount:float, creator_game_handle:string, region:string|null, match_timer_minutes:int|null}
+     */
+    private function challengePayload(): array
+    {
+        return [
+            'game_id' => (int) $this->gameId,
+            'platform_id' => $this->platformId !== '' ? (int) $this->platformId : null,
+            'stake_amount' => $this->stakeAmount,
+            'creator_game_handle' => $this->gameHandle,
+            'region' => $this->region !== '' ? $this->region : null,
+            'match_timer_minutes' => $this->matchTimerMinutes !== '' ? (int) $this->matchTimerMinutes : null,
+        ];
+    }
+
+    private function flashH2HError(Throwable $e): void
+    {
+        $message = match (true) {
+            $e instanceof InsufficientBalanceException => 'Insufficient wallet balance for this stake.',
+            str_contains($e->getMessage(), 'does not have a wallet') => 'Wallet not found. Please open your Wallet page or contact support before joining H2H duels.',
+            default => $e->getMessage(),
+        };
+
+        session()->flash('h2h_error', $message);
     }
 
     private function user(): User

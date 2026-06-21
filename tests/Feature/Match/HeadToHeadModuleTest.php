@@ -89,6 +89,40 @@ class HeadToHeadModuleTest extends TestCase
             ->assertSee('Valorant');
     }
 
+    public function test_find_duel_shows_friendly_error_when_player_has_no_wallet(): void
+    {
+        $this->playerA->wallet()->delete();
+
+        Livewire::actingAs($this->playerA)
+            ->test(HeadToHeadList::class)
+            ->set('gameId', (string) $this->game->id)
+            ->set('stakeAmount', 10.00)
+            ->set('gameHandle', 'PlayerA#111')
+            ->call('findDuel')
+            ->assertSee('Wallet not found. Please open your Wallet page or contact support before joining H2H duels.');
+
+        $this->assertDatabaseMissing('head_to_head_challenges', [
+            'creator_user_id' => $this->playerA->id,
+        ]);
+    }
+
+    public function test_find_duel_shows_friendly_error_when_balance_is_insufficient(): void
+    {
+        $this->playerA->wallet()->update(['cached_balance' => 5.00]);
+
+        Livewire::actingAs($this->playerA)
+            ->test(HeadToHeadList::class)
+            ->set('gameId', (string) $this->game->id)
+            ->set('stakeAmount', 10.00)
+            ->set('gameHandle', 'PlayerA#111')
+            ->call('findDuel')
+            ->assertSee('Insufficient wallet balance for this stake.');
+
+        $this->assertDatabaseMissing('head_to_head_challenges', [
+            'creator_user_id' => $this->playerA->id,
+        ]);
+    }
+
     public function test_creator_can_cancel_waiting_challenge_and_refund_stake(): void
     {
         $challenge = $this->createChallenge();

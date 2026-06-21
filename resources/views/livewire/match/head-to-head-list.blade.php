@@ -11,6 +11,12 @@
             </div>
         @endif
 
+        @if(session('h2h_error'))
+            <div class="mb-5 rounded-xl border border-red-500/20 bg-red-950/20 p-3 text-xs font-medium text-red-300">
+                {{ session('h2h_error') }}
+            </div>
+        @endif
+
         <form wire:submit="createChallenge" class="space-y-5">
             <div class="space-y-2">
                 <label for="gameId" class="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Game</label>
