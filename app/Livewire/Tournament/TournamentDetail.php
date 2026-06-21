@@ -44,14 +44,7 @@ class TournamentDetail extends Component
             return Tournament::query();
         }
 
-        return Tournament::query()->whereIn('status', [
-            TournamentStatus::REGISTRATION_OPEN->value,
-            TournamentStatus::REGISTRATION_CLOSED->value,
-            TournamentStatus::CHECKIN_OPEN->value,
-            TournamentStatus::CHECKIN_CLOSED->value,
-            TournamentStatus::BRACKET_GENERATED->value,
-            TournamentStatus::ONGOING->value,
-        ]);
+        return Tournament::query()->where('status', '!=', TournamentStatus::DRAFT->value);
     }
 
     public function register(RegisterForTournamentAction $action)
