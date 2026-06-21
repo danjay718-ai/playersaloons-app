@@ -21,9 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) {
         window.lucide.createIcons();
     }
-    
-    // Initialize Dashboard Sidebar
-    initSidebar();
+
+    // Initialize Mobile Bottom Nav "More" Panel
+    initMobileMorePanel();
 });
 
 document.addEventListener('livewire:navigated', () => {
@@ -31,9 +31,9 @@ document.addEventListener('livewire:navigated', () => {
     if (window.lucide) {
         window.lucide.createIcons();
     }
-    
-    // Re-initialize sidebar logic if elements exist
-    initSidebar();
+
+    // Re-initialize mobile more panel after navigation
+    initMobileMorePanel();
 });
 
 document.addEventListener('livewire:init', () => {
@@ -58,51 +58,66 @@ document.addEventListener('livewire:init', () => {
 });
 
 /**
- * MOBILE SIDEBAR — open / close / swipe-to-close
+ * MOBILE BOTTOM NAV — "More" Panel open / close
+ *
+ * A slide-up sheet appears when the "More" button is tapped,
+ * presenting secondary navigation items in a 3-column grid.
+ * Closing happens via backdrop tap, the close handle, Escape key,
+ * or when any nav link inside the panel is activated.
  */
-function initSidebar() {
-    const menuBtn       = document.getElementById('mobile-menu-btn');
-    const backdrop      = document.getElementById('mobile-backdrop');
-    const mobileSidebar = document.getElementById('mobile-sidebar');
+function initMobileMorePanel() {
+    const moreBtn    = document.getElementById('mobile-more-btn');
+    const backdrop   = document.getElementById('mobile-more-backdrop');
+    const panel      = document.getElementById('mobile-more-panel');
 
-    if (!menuBtn || !mobileSidebar) return;
+    // Guard: elements may not exist on pages that don't use this layout
+    if (!moreBtn || !panel) return;
 
-    function openDrawer() {
-        mobileSidebar.classList.add('open');
-        backdrop.classList.add('open');
+    // Avoid binding duplicate event listeners on re-init (livewire:navigated)
+    if (moreBtn._moreInitialised) return;
+    moreBtn._moreInitialised = true;
+
+    function openMore() {
+        panel.classList.add('open');
+        if (backdrop) backdrop.classList.add('open');
         document.body.style.overflow = 'hidden';
-        menuBtn.classList.add('burger-open');
-        menuBtn.setAttribute('aria-expanded', 'true');
+        moreBtn.setAttribute('aria-expanded', 'true');
+        moreBtn.classList.add('active');
     }
 
-    function closeDrawer() {
-        mobileSidebar.classList.remove('open');
-        backdrop.classList.remove('open');
+    function closeMore() {
+        panel.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('open');
         document.body.style.overflow = '';
-        menuBtn.classList.remove('burger-open');
-        menuBtn.setAttribute('aria-expanded', 'false');
+        moreBtn.setAttribute('aria-expanded', 'false');
+        moreBtn.classList.remove('active');
     }
 
-    // Toggle drawer
-    menuBtn.onclick = () => {
-        const isOpen = mobileSidebar.classList.contains('open');
-        isOpen ? closeDrawer() : openDrawer();
-    };
+    // Toggle panel on "More" button click
+    moreBtn.addEventListener('click', () => {
+        const isOpen = panel.classList.contains('open');
+        isOpen ? closeMore() : openMore();
+    });
 
-    // Close by tapping the backdrop overlay
+    // Close via backdrop tap
     if (backdrop) {
-        backdrop.onclick = closeDrawer;
+        backdrop.addEventListener('click', closeMore);
     }
 
     // Close on Escape key
-    document.onkeydown = (e) => {
-        if (e.key === 'Escape' && mobileSidebar.classList.contains('open')) {
-            closeDrawer();
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && panel.classList.contains('open')) {
+            closeMore();
         }
-    };
+    });
 
-    // Close drawer when a nav link is clicked (wire:navigate)
-    mobileSidebar.querySelectorAll('a[wire\\:navigate]').forEach(link => {
-        link.onclick = closeDrawer;
+    // Close panel when a nav link inside it is activated
+    panel.querySelectorAll('a[wire\\:navigate]').forEach(link => {
+        link.addEventListener('click', closeMore);
+    });
+
+    // Close panel when any form in the panel is submitted (logout)
+    panel.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', closeMore);
     });
 }
