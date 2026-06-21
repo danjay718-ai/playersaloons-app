@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-21 (v1.46)
+**Last Updated**: 2026-06-21 (v1.52)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -96,6 +96,15 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Surface | Component | Description |
 |---|---|---|
 | Player dashboard topbar | `app/Livewire/Notification/NotificationBell.php` | Shows latest 10 user notifications, unread count, single/all mark-as-read actions, and refreshes from realtime Reverb broadcasts |
+
+### Shared Public Layout Components
+
+| Surface | Component/File | Description |
+|---|---|---|
+| Public navbar | `resources/views/components/layouts/partials/public-navigation.blade.php` | Shared welcome/public/guest navbar. Desktop centers public links and keeps auth/PWA actions right; mobile keeps `Sign In`, `Join Now`, and burger in the topbar. |
+| Public footer | `resources/views/components/layouts/partials/public-footer.blade.php` | Shared public footer for welcome and public/guest Livewire pages. |
+| Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, native PWA install prompt, service worker registration, and lazy authenticated Echo setup. |
+| PWA manifest/service worker | `public/manifest.json`, `public/sw.js`, `public/icon-192.png`, `public/icon-512.png` | Installable app metadata, square PWA icons, and service worker cache bootstrap. |
 
 ---
 

@@ -44,6 +44,7 @@ Default seeded credentials (from `DatabaseSeeder`):
 | Framework | Laravel 11+ |
 | Frontend | Livewire 3 + Alpine.js |
 | Realtime | Laravel Reverb (WebSockets) |
+| PWA | Web manifest + service worker + native install prompt |
 | CSS | Tailwind CSS v4 + Lucide Icons |
 | Auth | Laravel session + Sanctum (API) |
 | RBAC | Spatie Laravel Permission |
@@ -78,6 +79,9 @@ app/Modules/Identity/
 - **State transitions go through StateMachines** — never mutate status directly on a model.
 - **Finance is ledger-based** — `WalletService` for all debits/credits; `ledger_entries` is the source of truth.
 - **Immutable models** (`LedgerEntry`, `MatchEvidence`, `Refund`, etc.) throw `LogicException` on update/delete.
+- **Public shell is shared** — welcome and guest/public Livewire pages use `resources/views/components/layouts/partials/public-navigation.blade.php` and `public-footer.blade.php`. Keep public navigation/footer changes there.
+- **No page-local PWA scripts** — PWA install prompt, public burger menu behavior, service worker registration, and lazy Echo setup live in `resources/js/app.js`.
+- **Echo/Reverb is authenticated-only on the frontend** — do not eagerly create `window.Echo` on guest/public pages; initialize it only when `meta[name="user-uuid"]` and Reverb env config exist.
 
 ---
 

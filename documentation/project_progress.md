@@ -1,8 +1,33 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.49) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.52) | **Branch**: `main`
 
 ---
+
+## ✅ PWA / Reverb Console Cleanup (v1.52)
+
+- **PWA meta tags**: Added `mobile-web-app-capable=yes` beside the existing Apple mobile web app meta tag in public, app, and dashboard layouts to satisfy current browser installability expectations.
+- **`resources/js/app.js`**: Changed Laravel Echo/Reverb initialization from eager page-load setup to authenticated lazy setup. Guest/public pages no longer attempt WebSocket connections unless a `meta[name="user-uuid"]` exists and Reverb env vars are present.
+- **Tests**: `npm run build` passed; `welcome` Blade render check passed.
+- **PHPStan**: Not run; frontend/layout-only fix.
+
+## ✅ Shared Public Shell + Mobile Burger Navigation (v1.51)
+
+- **`components.layouts.partials.public-navigation`**: Added one shared public navbar for welcome and guest/public Livewire layouts. Desktop layout keeps logo left, public links centered, and auth/PWA actions right.
+- **Mobile nav**: Mobile topbar keeps logo, `Sign In`, `Join Now`, and burger only. PWA install appears inside the collapsible burger menu on mobile to avoid duplicate install CTAs.
+- **`components.layouts.partials.public-footer`**: Added a shared public footer so welcome and public/guest pages stay visually synchronized.
+- **`components.layouts.app` / `welcome.blade.php`**: Replaced duplicated nav/footer markup with shared includes.
+- **Tests**: `npm run build` passed; `welcome` Blade render check passed.
+- **PHPStan**: Not run; Blade/JS layout refactor.
+
+## ✅ PWA Install Support (v1.50)
+
+- **PWA assets**: Added `public/manifest.json`, `public/sw.js`, and square install icons (`icon-192.png`, `icon-512.png`).
+- **Service worker**: Registers app shell assets and cleans old caches on activation.
+- **PWA install flow**: Added native `beforeinstallprompt` handling in `resources/js/app.js`. The install button uses the browser's direct install prompt; no tutorial/manual modal is shown.
+- **Layouts**: Added manifest/theme/apple icon meta tags to public, app, and dashboard layouts.
+- **Tests**: `npm run build` passed; manifest JSON and service worker syntax were validated during implementation.
+- **PHPStan**: Not run; static asset/frontend change.
 
 ## ✅ Phase 1 — Migrations & Seeders
 

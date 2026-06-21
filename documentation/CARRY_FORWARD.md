@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-21 | **Current version**: v1.43 | **Branch**: `main`
+**As of**: 2026-06-21 | **Current version**: v1.52 | **Branch**: `main`
 
 ---
 
@@ -16,10 +16,13 @@
 - H2H now shows friendly wallet/balance errors and existing users missing wallet rows were backfilled
 - H2H timeout policy is conservative: expired waiting challenges refund; stale active/submitted matches go to admin review, never auto-win
 - Player wallet mock deposit now refreshes balance/ledger immediately in the UI
+- Public/guest pages now share one navbar/footer shell with welcome (`public-navigation`, `public-footer`)
+- PWA install support is present through manifest/service worker/icons and native browser install prompt handling
+- Echo/Reverb frontend setup is lazy-loaded only for authenticated pages with `meta[name="user-uuid"]`, preventing guest-page WebSocket console errors
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.43)
+## ✅ Natapos ngayong session (v1.30–v1.52)
 
 | Version | Item |
 |---|---|
@@ -37,6 +40,15 @@
 | v1.41 | H2H wallet error handling + wallet backfill for existing users |
 | v1.42 | Wallet deposit UI refresh — balance/ledger updates without browser refresh |
 | v1.43 | H2H timeout policy — waiting challenge refund, stale duels escalate to admin review |
+| v1.44 | Player profile redesign + KYC drawer |
+| v1.45 | Player profile tabs + render optimization |
+| v1.46 | Player profile client-side interaction optimization |
+| v1.47 | Mobile player dashboard navigation redesign |
+| v1.48 | S3 avatar upload support |
+| v1.49 | UI harmonization + secure KYC storage follow-ups |
+| v1.50 | PWA install support — manifest, service worker, icons, native install prompt |
+| v1.51 | Shared public shell — welcome and guest/public pages use common navbar/footer |
+| v1.52 | PWA/Reverb console cleanup — mobile-web-app meta + lazy authenticated Echo setup |
 
 ---
 
@@ -67,6 +79,9 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - H2H raw missing-wallet exception on find duel — fixed v1.41
 - H2H timeout/auto-expiry policy — done v1.43
 - Wallet mock deposit stale UI balance after success — fixed v1.42
+- Public/guest nav/footer mismatch with welcome — fixed v1.51
+- PWA install CTA placement and mobile duplication — fixed v1.50/v1.51
+- Guest-page Reverb WebSocket console spam — fixed v1.52
 
 ### H2H Follow-up Scope
 
