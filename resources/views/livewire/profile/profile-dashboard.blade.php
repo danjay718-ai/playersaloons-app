@@ -1,300 +1,324 @@
-<div class="space-y-8 min-w-0">
-    <!-- Profile Page Header Banner -->
-    <div class="bg-gradient-to-r from-[#170e30] via-[#0e0a24] to-transparent border border-purple-500/20 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(168,85,247,0.05)] relative overflow-hidden">
-        <!-- Glowing sci-fi elements -->
-        <div class="absolute -top-20 -right-20 w-60 h-60 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute top-0 right-0 w-24 h-24 border-t-2 border-r-2 border-purple-500/20 rounded-tr-2xl pointer-events-none"></div>
-        <div class="absolute bottom-0 left-0 w-24 h-24 border-b-2 border-l-2 border-purple-500/20 rounded-bl-2xl pointer-events-none"></div>
-        
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-            <div class="flex items-center space-x-4">
-                <div class="bg-[#120a26] p-4 rounded-2xl border border-purple-500/35 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.25)]">
-                    <i data-lucide="user" class="w-8 h-8"></i>
-                </div>
-                <div>
-                    <h2 class="text-xl md:text-3xl font-black font-orbitron tracking-wider text-white uppercase filter drop-shadow-[0_0_6px_rgba(168,85,247,0.3)]">
-                        {{ $displayName ?: $user->username }}
-                    </h2>
-                    <p class="text-xs text-zinc-400 mt-1.5 font-medium">
-                        Configure your identity protocols, verify status, and manage referral links.
-                    </p>
-                </div>
-            </div>
+@php
+    $profile = $user?->profile;
+    $avatarUrl = $user?->getFirstMediaUrl('avatar') ?: $profile?->avatar_url;
+    $playerName = $displayName ?: ($user?->username ?? 'Player');
+    $initials = strtoupper(substr($playerName, 0, 2));
+    $kycStatus = $latestKyc ? $latestKyc->status->value : 'not_submitted';
+    $kycVerified = $kycStatus === 'approved';
+    $emailVerified = $user?->email_verified_at !== null;
+    $canSubmitKyc = in_array($kycStatus, ['not_submitted', 'rejected'], true);
+    $kycBadge = $kycVerified ? 'VERIFIED' : 'NOT VERIFIED';
+    $kycBadgeClasses = $kycVerified
+        ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300'
+        : 'border-amber-400/40 bg-amber-500/10 text-amber-300';
+    $emailBadgeClasses = $emailVerified
+        ? 'border-cyan-400/40 bg-cyan-500/10 text-cyan-250'
+        : 'border-red-400/40 bg-red-500/10 text-red-300';
+@endphp
 
-            <!-- Referral Link Card -->
-            <div class="bg-zinc-950/80 border border-purple-500/15 rounded-xl p-4 max-w-sm w-full shadow-[0_0_15px_rgba(0,0,0,0.4)]" x-data="{ copied: false }">
-                <span class="block text-[9px] font-bold text-purple-450 uppercase tracking-widest font-orbitron mb-2">YOUR REFERRAL LINK</span>
-                <div class="flex items-center space-x-2">
-                    <input 
-                        type="text" 
-                        readonly 
-                        value="{{ url('/register?ref=' . $user->id) }}" 
-                        class="bg-zinc-900/40 border border-purple-500/20 focus:outline-none rounded-lg px-3 py-2 text-[10px] font-orbitron tracking-wide text-purple-300 w-full"
-                        id="referral-link"
-                    >
-                    <button 
-                        type="button" 
-                        @click="
-                            navigator.clipboard.writeText('{{ url('/register?ref=' . $user->id) }}');
-                            copied = true;
-                            setTimeout(() => copied = false, 2000);
-                        "
-                        class="bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 border border-fuchsia-400/20 text-white p-2 rounded-lg transition-colors flex items-center justify-center shrink-0 cursor-pointer shadow-[0_0_10px_rgba(217,70,239,0.3)]"
-                        title="Copy Link"
-                    >
-                        <i x-show="!copied" data-lucide="copy" class="w-4 h-4"></i>
-                        <i x-show="copied" data-lucide="check" class="w-4 h-4 text-emerald-300" x-cloak></i>
-                    </button>
-                </div>
-                <p x-show="copied" x-transition class="text-[9px] text-emerald-400 font-bold mt-1.5 uppercase font-orbitron tracking-wider" x-cloak>
-                    Link Copied to Clipboard!
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Feedback Alerts -->
+<div class="space-y-6 min-w-0">
     @if (session()->has('message'))
-        <div class="bg-emerald-950/20 border border-emerald-900/40 text-emerald-400 rounded-xl p-4 text-xs flex items-center space-x-2 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-            <i data-lucide="check-circle" class="w-4.5 h-4.5 text-emerald-450 shrink-0"></i>
-            <span class="font-medium">{{ session('message') }}</span>
+        <div class="rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-4 py-3 text-sm font-semibold text-emerald-250 flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i>
+            <span>{{ session('message') }}</span>
         </div>
     @endif
 
     @if (session()->has('error'))
-        <div class="bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl p-4 text-xs flex items-center space-x-2 shadow-[0_0_10px_rgba(244,63,94,0.1)]">
-            <i data-lucide="alert-triangle" class="w-4.5 h-4.5 text-red-450 shrink-0"></i>
-            <span class="font-medium">{{ session('error') }}</span>
+        <div class="rounded-lg border border-red-500/30 bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-250 flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i>
+            <span>{{ session('error') }}</span>
         </div>
     @endif
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Profile Settings Form -->
-        <div class="lg:col-span-2 space-y-6">
-            <div class="bg-[#0c081d] border border-purple-500/15 rounded-2xl p-5 md:p-6 shadow-xl space-y-6">
-                <div class="border-b border-purple-500/10 pb-3 flex items-center space-x-2">
-                    <i data-lucide="user-cog" class="w-4.5 h-4.5 text-purple-400"></i>
-                    <h3 class="text-sm font-black font-orbitron tracking-wider text-zinc-150 uppercase">
-                        PROFILE CONFIGURATION
-                    </h3>
-                </div>
-
-                <form wire:submit="updateProfile" class="space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Display Name -->
-                        <div class="space-y-1.5">
-                            <label for="displayName" class="block text-[9px] font-bold text-zinc-500 uppercase tracking-wider font-orbitron">Display Name</label>
-                            <input 
-                                type="text" 
-                                id="displayName" 
-                                wire:model="displayName" 
-                                class="bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl px-4 py-2.5 text-xs font-semibold text-purple-300 w-full"
-                                placeholder="Your gaming tag"
-                            >
-                            @error('displayName') <span class="text-[10px] text-red-400 font-bold font-mono">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Country Code -->
-                        <div class="space-y-1.5">
-                            <label for="countryCode" class="block text-[9px] font-bold text-zinc-500 uppercase tracking-wider font-orbitron">Country Code (e.g. PH, US)</label>
-                            <input 
-                                type="text" 
-                                id="countryCode" 
-                                wire:model="countryCode" 
-                                maxlength="2"
-                                class="bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl px-4 py-2.5 text-xs font-semibold text-purple-300 w-full uppercase"
-                                placeholder="PH"
-                            >
-                            @error('countryCode') <span class="text-[10px] text-red-400 font-bold font-mono">{{ $message }}</span> @enderror
-                        </div>
+    <section class="relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-cyan-400 to-fuchsia-500"></div>
+        <div class="grid grid-cols-1 xl:grid-cols-[360px_1fr]">
+            <aside class="border-b border-zinc-800 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_32%),linear-gradient(135deg,#111827,#09090b_68%)] p-5 sm:p-6 xl:border-b-0 xl:border-r">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-300 font-orbitron">Player Card</p>
+                        <h2 class="mt-2 text-2xl font-black uppercase tracking-wide text-white font-orbitron break-words">{{ $playerName }}</h2>
+                        <p class="mt-1 text-xs font-semibold text-zinc-450">{{ '@'.$user->username }}</p>
                     </div>
-
-                    <!-- Timezone -->
-                    <div class="space-y-1.5">
-                        <label for="timezone" class="block text-[9px] font-bold text-zinc-500 uppercase tracking-wider font-orbitron">Timezone Protocol</label>
-                        <select 
-                            id="timezone" 
-                            wire:model="timezone" 
-                            class="bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl px-4 py-2.5 text-xs font-semibold text-purple-300 w-full"
-                        >
-                            <option value="">SELECT TIMEZONE ZONE</option>
-                            @foreach(timezone_identifiers_list() as $tz)
-                                <option value="{{ $tz }}">{{ $tz }}</option>
-                            @endforeach
-                        </select>
-                        @error('timezone') <span class="text-[10px] text-red-400 font-bold font-mono">{{ $message }}</span> @enderror
-                    </div>
-
-                    <!-- Bio -->
-                    <div class="space-y-1.5">
-                        <label for="bio" class="block text-[9px] font-bold text-zinc-500 uppercase tracking-wider font-orbitron">Player Bio / Intel</label>
-                        <textarea 
-                            id="bio" 
-                            wire:model="bio" 
-                            rows="4"
-                            class="bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl px-4 py-2.5 text-xs font-semibold text-purple-300 w-full resize-none"
-                            placeholder="Tell other saloons soldiers about yourself..."
-                        ></textarea>
-                        @error('bio') <span class="text-[10px] text-red-400 font-bold font-mono">{{ $message }}</span> @enderror
-                    </div>
-
-                    <button 
-                        type="submit" 
-                        class="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-bold py-2.5 px-6 rounded-xl border border-fuchsia-400/20 text-xs uppercase tracking-widest font-orbitron cursor-pointer shadow-[0_0_15px_rgba(217,70,239,0.35)] transition-all"
-                    >
-                        Save Configuration
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Right Column: KYC & Notifications -->
-        <div class="space-y-6">
-            <!-- Identity verification (KYC) -->
-            <div class="bg-[#0c081d] border border-purple-500/15 rounded-2xl p-5 md:p-6 shadow-xl space-y-6">
-                <div class="border-b border-purple-500/10 pb-3 flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <i data-lucide="shield-check" class="w-4.5 h-4.5 text-purple-400"></i>
-                        <h3 class="text-sm font-black font-orbitron tracking-wider text-zinc-150 uppercase">
-                            IDENTITY SEAL
-                        </h3>
-                    </div>
-
-                    @php
-                        $kycStatus = $latestKyc ? $latestKyc->status->value : 'not_submitted';
-                        $badgeColors = [
-                            'not_submitted' => 'bg-zinc-950/60 text-zinc-500 border-purple-500/5 shadow-none',
-                            'submitted' => 'bg-purple-950/40 text-purple-400 border-purple-900/60 shadow-[0_0_8px_rgba(168,85,247,0.15)]',
-                            'under_review' => 'bg-amber-950/40 text-amber-400 border-amber-900/60 shadow-[0_0_8px_rgba(245,158,11,0.15)]',
-                            'approved' => 'bg-emerald-950/40 text-emerald-400 border-emerald-900/60 shadow-[0_0_8px_rgba(16,185,129,0.15)]',
-                            'rejected' => 'bg-red-950/40 text-red-400 border-red-900/60 shadow-[0_0_8px_rgba(244,63,94,0.15)]',
-                        ];
-                        $statusBadgeColor = $badgeColors[$kycStatus] ?? $badgeColors['not_submitted'];
-                    @endphp
-
-                    <span class="text-[8px] font-bold uppercase tracking-widest border rounded-md px-2.5 py-1 font-orbitron {{ $statusBadgeColor }}">
-                        {{ str_replace('_', ' ', $kycStatus) }}
+                    <span class="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-250 font-orbitron">
+                        Lv. 01
                     </span>
                 </div>
 
-                @if($kycStatus === 'approved')
-                    <div class="bg-emerald-950/20 border border-emerald-900/40 text-emerald-400/90 rounded-xl p-4 text-xs space-y-2">
-                        <p class="font-bold font-orbitron flex items-center gap-1.5 uppercase text-[10px] tracking-wider text-emerald-400">
-                            <i data-lucide="check" class="w-4 h-4"></i> Identity Verified
-                        </p>
-                        <p class="leading-relaxed text-[11px]">Your identity has been fully verified. You can now withdraw funds from your wallet and participate in real-money tournaments.</p>
-                    </div>
-                @elseif($kycStatus === 'submitted' || $kycStatus === 'under_review')
-                    <div class="bg-purple-950/20 border border-purple-900/40 text-purple-300 rounded-xl p-4 text-xs space-y-2">
-                        <p class="font-bold font-orbitron flex items-center gap-1.5 uppercase text-[10px] tracking-wider text-purple-300">
-                            <i data-lucide="clock" class="w-4 h-4 text-fuchsia-400"></i> Under Review
-                        </p>
-                        <p class="leading-relaxed text-[11px]">We are reviewing your submission. This typically takes 24-48 hours. Withdrawal actions will be enabled once approved.</p>
-                    </div>
-                @else
-                    <!-- KYC Submit Form -->
-                    @if($kycStatus === 'rejected')
-                        <div class="bg-red-950/20 border border-red-900/40 text-red-400/90 rounded-xl p-4 text-xs space-y-2">
-                            <p class="font-bold font-orbitron flex items-center gap-1.5 uppercase text-[10px] tracking-wider text-red-400">
-                                <i data-lucide="x" class="w-4 h-4"></i> KYC Rejected
-                            </p>
-                            @if($latestKyc && $latestKyc->review_notes)
-                                <p class="italic text-[11px]">Notes: "{{ $latestKyc->review_notes }}"</p>
+                <div class="mt-6 flex flex-col items-center">
+                    <div class="relative h-40 w-40 rounded-xl border border-zinc-700 bg-zinc-900 p-2 shadow-[0_0_32px_rgba(34,211,238,0.16)]">
+                        <div class="h-full w-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 flex items-center justify-center">
+                            @if($avatarFile)
+                                <img src="{{ $avatarFile->temporaryUrl() }}" alt="{{ $playerName }}" class="h-full w-full object-cover">
+                            @elseif($avatarUrl)
+                                <img src="{{ $avatarUrl }}" alt="{{ $playerName }}" class="h-full w-full object-cover">
+                            @else
+                                <span class="text-4xl font-black text-cyan-300 font-orbitron">{{ $initials }}</span>
                             @endif
-                            <p class="leading-relaxed text-[11px]">Please review your information and submit a new document.</p>
                         </div>
-                    @endif
+                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-md border border-emerald-400/40 bg-zinc-950 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-300 font-orbitron">
+                            Active
+                        </span>
+                    </div>
 
-                    <form wire:submit="submitKyc" class="space-y-4">
-                        <div class="space-y-1.5">
-                            <label for="documentType" class="block text-[9px] font-bold text-zinc-500 uppercase tracking-wider font-orbitron">Document Protocol</label>
-                            <select 
-                                id="documentType" 
-                                wire:model="documentType" 
-                                class="bg-zinc-950 border border-purple-500/20 hover:border-purple-500/40 focus:border-purple-500 focus:outline-none rounded-xl px-4 py-2.5 text-xs font-semibold text-purple-300 w-full"
-                            >
-                                <option value="id_card">ID CARD / NATIONAL ID</option>
-                                <option value="passport">PASSPORT</option>
-                                <option value="drivers_license">DRIVER'S LICENSE</option>
-                            </select>
-                            @error('documentType') <span class="text-[10px] text-red-400 font-bold font-mono">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="space-y-1.5">
-                            <label for="kycFile" class="block text-[9px] font-bold text-zinc-500 uppercase tracking-wider font-orbitron">Upload File</label>
-                            <input 
-                                type="file" 
-                                id="kycFile" 
-                                wire:model="kycFile" 
-                                class="bg-zinc-950 border border-purple-500/20 rounded-xl text-xs text-purple-400 w-full focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-xl file:border-0 file:text-[9px] file:font-bold file:uppercase file:bg-purple-950 file:text-purple-300 hover:file:bg-purple-900 file:cursor-pointer"
-                            >
-                            <div class="text-[9px] text-zinc-650 font-mono mt-1">SUPPORTED: PNG, JPG, JPEG, PDF (MAX 10MB)</div>
-                            @error('kycFile') <span class="text-[10px] text-red-400 font-bold font-mono">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Progress indicator -->
-                        <div wire:loading wire:target="kycFile" class="text-[9px] text-purple-450 italic font-orbitron tracking-widest animate-pulse">
-                            UPLOADING PROTOCOL ENVELOPE...
-                        </div>
-
-                        <button 
-                            type="submit" 
-                            wire:loading.attr="disabled"
-                            class="w-full bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:from-fuchsia-500 hover:to-violet-500 text-white font-bold py-2.5 rounded-xl border border-fuchsia-400/20 text-xs uppercase tracking-widest font-orbitron cursor-pointer shadow-[0_0_15px_rgba(217,70,239,0.35)] transition-all"
+                    <form wire:submit="updateAvatar" class="mt-6 w-full space-y-3">
+                        <label for="avatarFile" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Profile Picture</label>
+                        <input
+                            id="avatarFile"
+                            type="file"
+                            wire:model="avatarFile"
+                            accept="image/png,image/jpeg,image/webp"
+                            class="w-full rounded-lg border border-zinc-800 bg-zinc-950 text-xs text-zinc-300 file:mr-3 file:border-0 file:bg-cyan-500/15 file:px-3 file:py-2.5 file:text-[10px] file:font-black file:uppercase file:tracking-wider file:text-cyan-250 hover:file:bg-cyan-500/25"
                         >
+                        @error('avatarFile') <span class="block text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                        <button type="submit" wire:loading.attr="disabled" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-cyan-100 hover:bg-cyan-500/25 disabled:opacity-60 font-orbitron">
+                            <i data-lucide="image-up" class="w-4 h-4"></i>
+                            Upload Avatar
+                        </button>
+                    </form>
+                </div>
+
+                <div class="mt-6 grid grid-cols-2 gap-3">
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-950/70 p-3">
+                        <p class="text-[9px] font-black uppercase tracking-widest text-zinc-550 font-orbitron">Region</p>
+                        <p class="mt-1 text-sm font-black text-white">{{ $countryCode ?: 'N/A' }}</p>
+                    </div>
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-950/70 p-3">
+                        <p class="text-[9px] font-black uppercase tracking-widest text-zinc-550 font-orbitron">Zone</p>
+                        <p class="mt-1 truncate text-sm font-black text-white">{{ $timezone ?: 'UTC' }}</p>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="p-5 sm:p-6">
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">KYC Status</p>
+                            <div class="group relative">
+                                <i data-lucide="info" class="w-4 h-4 text-amber-300"></i>
+                                <div class="pointer-events-none absolute right-0 top-6 z-20 hidden w-64 rounded-lg border border-zinc-700 bg-zinc-950 p-3 text-[11px] font-semibold leading-relaxed text-zinc-300 shadow-xl group-hover:block">
+                                    Identity verification is required before a player can withdraw wallet funds.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between gap-3">
+                            <span class="rounded-md border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest font-orbitron {{ $kycBadgeClasses }}">{{ $kycBadge }}</span>
+                            <button type="button" wire:click="openKycDrawer" class="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-200 hover:bg-amber-500/20 font-orbitron">
+                                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                                {{ $kycVerified ? 'View' : 'Verify' }}
+                            </button>
+                        </div>
+                        <p class="mt-2 text-[11px] font-semibold text-zinc-500">Current review state: {{ str_replace('_', ' ', $kycStatus) }}</p>
+                    </div>
+
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Verified Email</p>
+                        <div class="mt-3 flex items-center justify-between gap-3">
+                            <span class="rounded-md border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest font-orbitron {{ $emailBadgeClasses }}">
+                                {{ $emailVerified ? 'VERIFIED' : 'NEEDS VERIFY' }}
+                            </span>
+                            @unless($emailVerified)
+                                <button type="button" wire:click="verifyEmail" class="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-cyan-200 hover:bg-cyan-500/20 font-orbitron">
+                                    <i data-lucide="mail-check" class="w-3.5 h-3.5"></i>
+                                    Verify
+                                </button>
+                            @endunless
+                        </div>
+                        <p class="mt-2 truncate text-[11px] font-semibold text-zinc-500">{{ $user->email }}</p>
+                    </div>
+
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4" x-data="{ copied: false }">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Invite Code</p>
+                        <div class="mt-3 flex items-center gap-2">
+                            <input type="text" readonly value="{{ url('/register?ref=' . $user->id) }}" class="min-w-0 flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-[11px] font-semibold text-zinc-300">
+                            <button type="button" title="Copy referral link" @click="navigator.clipboard.writeText('{{ url('/register?ref=' . $user->id) }}'); copied = true; setTimeout(() => copied = false, 1600)" class="grid h-9 w-9 place-items-center rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/20">
+                                <i x-show="!copied" data-lucide="copy" class="w-4 h-4"></i>
+                                <i x-show="copied" data-lucide="check" class="w-4 h-4 text-emerald-300" x-cloak></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-1 gap-6 2xl:grid-cols-2">
+                    <form wire:submit="updateProfile" class="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
+                        <div class="flex items-center gap-2 border-b border-zinc-800 pb-3">
+                            <i data-lucide="badge" class="w-4 h-4 text-cyan-300"></i>
+                            <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Player Info</h3>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div>
+                                <label for="displayName" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Display Name</label>
+                                <input id="displayName" type="text" wire:model="displayName" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none" placeholder="Gaming tag">
+                                @error('displayName') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label for="countryCode" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Country Code</label>
+                                <input id="countryCode" type="text" wire:model="countryCode" maxlength="2" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold uppercase text-white focus:border-cyan-400 focus:outline-none" placeholder="PH">
+                                @error('countryCode') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div>
+                            <label for="timezone" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Timezone</label>
+                            <select id="timezone" wire:model="timezone" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none">
+                                <option value="">Select timezone</option>
+                                @foreach(timezone_identifiers_list() as $tz)
+                                    <option value="{{ $tz }}">{{ $tz }}</option>
+                                @endforeach
+                            </select>
+                            @error('timezone') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label for="bio" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Bio</label>
+                            <textarea id="bio" wire:model="bio" rows="4" class="mt-1.5 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none" placeholder="Short player intro"></textarea>
+                            @error('bio') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                        </div>
+                        <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-emerald-100 hover:bg-emerald-500/25 font-orbitron">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            Save Info
+                        </button>
+                    </form>
+
+                    <div class="space-y-6">
+                        <form wire:submit="updateAccount" class="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
+                            <div class="flex items-center gap-2 border-b border-zinc-800 pb-3">
+                                <i data-lucide="id-card" class="w-4 h-4 text-fuchsia-300"></i>
+                                <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Account</h3>
+                            </div>
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                    <label for="username" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Username</label>
+                                    <input id="username" type="text" wire:model="username" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-fuchsia-400 focus:outline-none">
+                                    @error('username') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label for="email" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Email</label>
+                                    <input id="email" type="email" wire:model="email" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-fuchsia-400 focus:outline-none">
+                                    @error('email') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                            <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-fuchsia-100 hover:bg-fuchsia-500/25 font-orbitron">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                Save Account
+                            </button>
+                        </form>
+
+                        <form wire:submit="updatePassword" class="rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
+                            <div class="flex items-center gap-2 border-b border-zinc-800 pb-3">
+                                <i data-lucide="key-round" class="w-4 h-4 text-amber-300"></i>
+                                <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Password</h3>
+                            </div>
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div>
+                                    <label for="currentPassword" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Current</label>
+                                    <input id="currentPassword" type="password" wire:model="currentPassword" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-amber-400 focus:outline-none">
+                                    @error('currentPassword') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label for="newPassword" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">New</label>
+                                    <input id="newPassword" type="password" wire:model="newPassword" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-amber-400 focus:outline-none">
+                                    @error('newPassword') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label for="newPasswordConfirmation" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Confirm</label>
+                                    <input id="newPasswordConfirmation" type="password" wire:model="newPasswordConfirmation" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-amber-400 focus:outline-none">
+                                    @error('newPasswordConfirmation') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                            <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-amber-100 hover:bg-amber-500/25 font-orbitron">
+                                <i data-lucide="lock-keyhole" class="w-4 h-4"></i>
+                                Change Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="mt-6 rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
+                    <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
+                        <i data-lucide="bell" class="w-4 h-4 text-cyan-300"></i>
+                        <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Comms Loadout</h3>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        @foreach([
+                            ['model' => 'emailNotifications', 'title' => 'Email', 'text' => 'Match, wallet, and tournament alerts.'],
+                            ['model' => 'inAppNotifications', 'title' => 'In-App', 'text' => 'Notification bell updates.'],
+                            ['model' => 'realtimeNotifications', 'title' => 'Realtime', 'text' => 'Live match and broadcast pings.'],
+                        ] as $toggle)
+                            <label class="flex items-center justify-between gap-4 rounded-lg border border-zinc-800 bg-zinc-950/70 p-4">
+                                <span>
+                                    <span class="block text-xs font-black uppercase tracking-wider text-white font-orbitron">{{ $toggle['title'] }}</span>
+                                    <span class="mt-1 block text-[11px] font-semibold text-zinc-500">{{ $toggle['text'] }}</span>
+                                </span>
+                                <span class="relative inline-flex cursor-pointer items-center">
+                                    <input type="checkbox" wire:model="{{ $toggle['model'] }}" wire:change="updatePreferences" class="peer sr-only">
+                                    <span class="h-6 w-11 rounded-full border border-zinc-700 bg-zinc-900 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-zinc-500 after:transition-all peer-checked:border-cyan-400/50 peer-checked:bg-cyan-500/30 peer-checked:after:translate-x-5 peer-checked:after:bg-cyan-200"></span>
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @if($showKycDrawer)
+        <div class="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm" wire:click.self="closeKycDrawer">
+            <aside class="h-full w-full max-w-lg overflow-y-auto border-l border-zinc-800 bg-zinc-950 p-5 shadow-2xl sm:p-6">
+                <div class="flex items-start justify-between gap-4 border-b border-zinc-800 pb-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300 font-orbitron">Identity Verification</p>
+                        <h3 class="mt-2 text-xl font-black uppercase tracking-wide text-white font-orbitron">{{ $kycBadge }}</h3>
+                        <p class="mt-1 text-sm font-semibold text-zinc-450">Verify identity to unlock withdrawals.</p>
+                    </div>
+                    <button type="button" wire:click="closeKycDrawer" title="Close KYC drawer" class="grid h-10 w-10 place-items-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="mt-5 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-xs font-black uppercase tracking-widest text-zinc-500 font-orbitron">Review State</span>
+                        <span class="rounded-md border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest font-orbitron {{ $kycBadgeClasses }}">{{ str_replace('_', ' ', $kycStatus) }}</span>
+                    </div>
+                    @if($latestKyc && $latestKyc->review_notes)
+                        <p class="mt-3 rounded-lg border border-red-500/25 bg-red-950/20 p-3 text-xs font-semibold leading-relaxed text-red-250">{{ $latestKyc->review_notes }}</p>
+                    @endif
+                </div>
+
+                @if($kycVerified)
+                    <div class="mt-5 rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm font-semibold text-emerald-250">
+                        Your identity is verified. Withdrawal access is enabled for this account.
+                    </div>
+                @elseif(in_array($kycStatus, ['submitted', 'under_review'], true))
+                    <div class="mt-5 rounded-lg border border-amber-400/30 bg-amber-500/10 p-4 text-sm font-semibold text-amber-250">
+                        Your documents are under review. You can withdraw after compliance approval.
+                    </div>
+                @elseif($canSubmitKyc)
+                    <form wire:submit="submitKyc" class="mt-5 space-y-4">
+                        <div>
+                            <label for="documentType" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Document Type</label>
+                            <select id="documentType" wire:model="documentType" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-amber-400 focus:outline-none">
+                                <option value="id_card">ID Card / National ID</option>
+                                <option value="passport">Passport</option>
+                                <option value="drivers_license">Driver's License</option>
+                            </select>
+                            @error('documentType') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label for="kycFile" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Document File</label>
+                            <input id="kycFile" type="file" wire:model="kycFile" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 text-xs text-zinc-300 file:mr-3 file:border-0 file:bg-amber-500/15 file:px-3 file:py-2.5 file:text-[10px] file:font-black file:uppercase file:tracking-wider file:text-amber-200 hover:file:bg-amber-500/25">
+                            <p class="mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">PNG, JPG, JPEG, or PDF. Max 10MB.</p>
+                            @error('kycFile') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
+                        </div>
+                        <div wire:loading wire:target="kycFile" class="text-[10px] font-black uppercase tracking-widest text-amber-300 font-orbitron">Uploading document...</div>
+                        <button type="submit" wire:loading.attr="disabled" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/30 bg-amber-500/15 px-4 py-3 text-xs font-black uppercase tracking-widest text-amber-100 hover:bg-amber-500/25 disabled:opacity-60 font-orbitron">
+                            <i data-lucide="shield-check" class="w-4 h-4"></i>
                             Submit Verification
                         </button>
                     </form>
                 @endif
-            </div>
-
-            <!-- Notification preferences -->
-            <div class="bg-[#0c081d] border border-purple-500/15 rounded-2xl p-5 md:p-6 shadow-xl space-y-6">
-                <div class="border-b border-purple-500/10 pb-3 flex items-center space-x-2">
-                    <i data-lucide="bell" class="w-4.5 h-4.5 text-purple-400"></i>
-                    <h3 class="text-sm font-black font-orbitron tracking-wider text-zinc-150 uppercase">
-                        COMMS SETTINGS
-                    </h3>
-                </div>
-
-                <div class="space-y-4">
-                    <!-- Email Comms -->
-                    <div class="flex items-center justify-between">
-                        <div class="space-y-0.5">
-                            <span class="block text-xs font-bold text-zinc-200 uppercase font-orbitron">Email Protocols</span>
-                            <span class="block text-[10px] text-zinc-500 font-medium">Get match scores and ledger alerts.</span>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" wire:model="emailNotifications" wire:change="updatePreferences" class="sr-only peer">
-                            <div class="w-10 h-5 bg-zinc-950 border border-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2.5px] after:left-[2px] after:bg-zinc-650 after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-purple-600 peer-checked:after:bg-white"></div>
-                        </label>
-                    </div>
-
-                    <!-- In-App Comms -->
-                    <div class="flex items-center justify-between">
-                        <div class="space-y-0.5">
-                            <span class="block text-xs font-bold text-zinc-200 uppercase font-orbitron">In-App Comms</span>
-                            <span class="block text-[10px] text-zinc-550 font-medium">Log notification lists inside topbar.</span>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" wire:model="inAppNotifications" wire:change="updatePreferences" class="sr-only peer">
-                            <div class="w-10 h-5 bg-zinc-950 border border-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2.5px] after:left-[2px] after:bg-zinc-650 after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-purple-600 peer-checked:after:bg-white"></div>
-                        </label>
-                    </div>
-
-                    <!-- Realtime Comms -->
-                    <div class="flex items-center justify-between">
-                        <div class="space-y-0.5">
-                            <span class="block text-xs font-bold text-zinc-200 uppercase font-orbitron">Realtime Broadcast</span>
-                            <span class="block text-[10px] text-zinc-550 font-medium">Enable active duel ping triggers.</span>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" wire:model="realtimeNotifications" wire:change="updatePreferences" class="sr-only peer">
-                            <div class="w-10 h-5 bg-zinc-950 border border-purple-500/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2.5px] after:left-[2px] after:bg-zinc-650 after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-purple-600 peer-checked:after:bg-white"></div>
-                        </label>
-                    </div>
-                </div>
-            </div>
+            </aside>
         </div>
-    </div>
+    @endif
 </div>
