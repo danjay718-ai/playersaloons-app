@@ -1,6 +1,5 @@
-const CACHE_NAME = 'playersaloons-v2';
-const urlsToCache = [
-  '/',
+const CACHE_NAME = 'playersaloons-v3';
+const STATIC_ASSETS = [
   '/playersaloons_logo.webp',
   '/icon-192.png',
   '/icon-512.png',
@@ -10,7 +9,7 @@ const urlsToCache = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+      .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
@@ -29,7 +28,22 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  if (event.request.url.includes('/livewire/') || event.request.url.includes('/api/')) return;
+
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) return;
+  if (requestUrl.pathname.startsWith('/livewire/') || requestUrl.pathname.startsWith('/api/')) return;
+
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  const isCacheableStaticAsset = STATIC_ASSETS.includes(requestUrl.pathname)
+    || requestUrl.pathname.startsWith('/build/')
+    || requestUrl.pathname.startsWith('/storage/')
+    || /\.(?:css|js|woff2?|png|jpg|jpeg|webp|svg|ico)$/.test(requestUrl.pathname);
+
+  if (!isCacheableStaticAsset) return;
 
   event.respondWith(
     caches.match(event.request)
@@ -38,7 +52,16 @@ self.addEventListener('fetch', event => {
           return response;
         }
 
-        return fetch(event.request);
+        return fetch(event.request).then(networkResponse => {
+          if (!networkResponse || networkResponse.status !== 200) {
+            return networkResponse;
+          }
+
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
+
+          return networkResponse;
+        });
       })
   );
 });

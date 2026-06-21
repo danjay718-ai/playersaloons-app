@@ -304,8 +304,22 @@ function initPublicMobileMenu() {
 function initPublicPwaInstall() {
     if ('serviceWorker' in navigator && !window.__playerSaloonsServiceWorkerRegistered) {
         window.__playerSaloonsServiceWorkerRegistered = true;
+        const serviceWorkerCacheVersion = 'playersaloons-v3';
+
+        let refreshingForServiceWorker = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshingForServiceWorker) return;
+            if (sessionStorage.getItem('playerSaloonsSwRefreshed') === serviceWorkerCacheVersion) return;
+
+            refreshingForServiceWorker = true;
+            sessionStorage.setItem('playerSaloonsSwRefreshed', serviceWorkerCacheVersion);
+            window.location.reload();
+        });
+
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW registration failed:', err));
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => registration.update())
+                .catch(err => console.error('SW registration failed:', err));
         });
     }
 
