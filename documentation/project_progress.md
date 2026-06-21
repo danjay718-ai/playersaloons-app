@@ -1,6 +1,18 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.54) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.55) | **Branch**: `main`
+
+---
+
+## ✅ Player Navigation, Upload Feedback, and PWA Landing Cache Fixes (v1.55)
+
+- **`resources/views/livewire/profile/profile-dashboard.blade.php`**: Added immediate Alpine-side selected-file feedback and upload progress indicators for avatar and KYC document uploads so players see the upload UI as soon as a file is selected.
+- **`resources/js/app.js` / `resources/css/app.css`**: Removed automatic button spinners. Livewire submit buttons are now disabled during submit, while player `wire:navigate` links use a game-style full-page loader only for uncached page transitions. Player tab links are excluded, and visited player routes are cached in `sessionStorage` to avoid repeated loader flashes.
+- **`resources/views/components/layouts/dashboard.blade.php`**: Replaced the generic player skeleton overlay with a game-like page loader and route-specific skeleton shapes for wallet, profile, tournament/match, leaderboard, and default dashboard pages.
+- **`public/sw.js` / `resources/js/app.js`**: Updated the service worker to stop cache-first serving HTML/navigation requests, removed `/` from the precache list, bumped the cache to `playersaloons-v3`, and added a one-time controller-update reload so stale landing-page HTML is cleared for existing users.
+- **Mobile player nav**: Restored a larger mobile bottom navigation tap target, icon size, and label size after the loader work made the nav feel too small.
+- **Tests**: `npm run build` passes; `php artisan test tests/Feature/Identity/ProfileDashboardTest.php tests/Feature/Identity/SubmitKycActionTest.php tests/Feature/Wallet/WalletDashboardTest.php` passes where relevant; `git diff --check` passes.
+- **PHPStan**: Skipped per request for this documentation/update pass.
 
 ---
 

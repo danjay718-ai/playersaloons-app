@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-21 (v1.54)
+**Last Updated**: 2026-06-21 (v1.55)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -98,7 +98,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|---|
 | Player dashboard topbar | `app/Livewire/Notification/NotificationBell.php` | Shows latest 10 user notifications, unread count, single/all mark-as-read actions, and refreshes from realtime Reverb broadcasts |
 | Player toast notifications | `resources/views/components/ui/toasts.blade.php` | Shared toast surface for player-facing `session()->flash()` feedback (`message`, `success`, `info`, `error`, `h2h_status`, `h2h_error`) |
-| Player loading states | `resources/js/app.js`, `resources/css/app.css`, `resources/views/components/layouts/dashboard.blade.php` | Adds automatic button preloaders for Livewire action buttons and a dashboard-page skeleton overlay during `wire:navigate` transitions |
+| Player loading states | `resources/js/app.js`, `resources/css/app.css`, `resources/views/components/layouts/dashboard.blade.php` | Disables Livewire submit buttons during submit and shows a game-style full-page loader for uncached player `wire:navigate` route changes; tab links are excluded and visited routes are cached in `sessionStorage` |
+| Player upload feedback | `resources/views/livewire/profile/profile-dashboard.blade.php` | Shows immediate selected-file feedback and Livewire upload progress for avatar and KYC document uploads |
 
 ### Shared Public Layout Components
 
@@ -107,7 +108,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Public navbar | `resources/views/components/layouts/partials/public-navigation.blade.php` | Shared welcome/public/guest navbar. Desktop centers public links and keeps auth/PWA actions right; mobile keeps `Sign In`, `Join Now`, and burger in the topbar. |
 | Public footer | `resources/views/components/layouts/partials/public-footer.blade.php` | Shared public footer for welcome and public/guest Livewire pages. |
 | Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, native PWA install prompt, service worker registration, and lazy authenticated Echo setup. |
-| PWA manifest/service worker | `public/manifest.json`, `public/sw.js`, `public/icon-192.png`, `public/icon-512.png` | Installable app metadata, square PWA icons, and service worker cache bootstrap. |
+| PWA manifest/service worker | `public/manifest.json`, `public/sw.js`, `public/icon-192.png`, `public/icon-512.png` | Installable app metadata, square PWA icons, static asset caching, and network-only HTML navigation so stale landing pages are not served after logout. |
 
 ---
 

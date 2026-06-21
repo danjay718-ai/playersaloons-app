@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-21 | **Current version**: v1.54 | **Branch**: `main`
+**As of**: 2026-06-21 | **Current version**: v1.55 | **Branch**: `main`
 
 ---
 
@@ -16,7 +16,9 @@
 - H2H now shows friendly wallet/balance errors and existing users missing wallet rows were backfilled
 - H2H timeout policy is conservative: expired waiting challenges refund; stale active/submitted matches go to admin review, never auto-win
 - Player wallet deposits now use Stripe Checkout; signed Stripe webhooks credit the ledger-backed wallet after payment success
-- Player-facing flash responses now render through shared toasts, player Livewire buttons show preloaders, dashboard navigation has a skeleton overlay, and admin KYC review can display uploaded KYC files through `KycSubmission` document path accessors
+- Player-facing flash responses now render through shared toasts, player Livewire submit buttons disable during submit, uncached player route changes show a game-like full-page loader, and admin KYC review can display uploaded KYC files through `KycSubmission` document path accessors
+- Player avatar/KYC uploads now show immediate selected-file feedback and upload progress before the Livewire request completes
+- The PWA service worker no longer cache-first serves HTML/navigation requests, preventing stale unstyled landing-page HTML after logout/logo navigation
 - Public/guest pages now share one navbar/footer shell with welcome (`public-navigation`, `public-footer`)
 - PWA install support is present through manifest/service worker/icons and native browser install prompt handling
 - Echo/Reverb frontend setup is lazy-loaded only for authenticated pages with `meta[name="user-uuid"]`, preventing guest-page WebSocket console errors
@@ -52,6 +54,7 @@
 | v1.52 | PWA/Reverb console cleanup — mobile-web-app meta + lazy authenticated Echo setup |
 | v1.53 | Stripe Checkout wallet deposits — hosted Checkout redirect, signed webhook fulfillment, Coolify env docs |
 | v1.54 | Player toasts/loading states + KYC admin document display fix |
+| v1.55 | Player upload feedback, cached game-style navigation loader, PWA landing HTML cache fix, and restored mobile bottom nav sizing |
 
 ---
 
@@ -85,6 +88,9 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - Wallet mock-only deposit flow — replaced with Stripe Checkout + webhook fulfillment v1.53
 - Player inline flash alerts — replaced with shared toast surface v1.54
 - KYC admin missing uploaded document display — fixed with `document_front_path` / `document_back_path` accessors v1.54
+- Generic player button preloaders — replaced with submit-button disable-only behavior and cached full-page navigation loader v1.55
+- Landing page stale/unstyled after logout/logo click — fixed by removing HTML from service worker cache-first handling v1.55
+- Mobile bottom navigation felt too small — restored larger tap target/icon/label sizing v1.55
 - Public/guest nav/footer mismatch with welcome — fixed v1.51
 - PWA install CTA placement and mobile duplication — fixed v1.50/v1.51
 - Guest-page Reverb WebSocket console spam — fixed v1.52

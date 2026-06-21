@@ -32,7 +32,7 @@ Identity verification is required for financial transactions (e.g., withdrawals)
 *   **Action**: Player uploads identity documents (ID, Passport, or Driver's License).
 *   **UI Component**: `app/Livewire/Profile/ProfileDashboard.php`
 *   **View**: `resources/views/livewire/profile/profile-dashboard.blade.php`
-*   **UX Surface**: The profile page shows verified/not verified status and a hover info icon explaining that KYC is required for withdrawals. The upload form lives inside an Alpine-powered drawer opened from the KYC status card, avoiding a Livewire round trip just to open or close the drawer.
+*   **UX Surface**: The profile page shows verified/not verified status and a hover info icon explaining that KYC is required for withdrawals. The upload form lives inside an Alpine-powered drawer opened from the KYC status card, avoiding a Livewire round trip just to open or close the drawer. File selection is echoed immediately with the selected document name and Livewire upload progress so players are not waiting on a delayed upload UI.
 *   **Logic (Actions)**:
     *   `app/Modules/Identity/Actions/SubmitKycAction.php`: Handles file uploads and state transitions. Accepted document types: `passport`, `id_card`, `drivers_license`.
 *   **Connected Files**:
@@ -47,7 +47,7 @@ Managing display name, bio, and preferences.
 
 *   **Action**: Player updates their public-facing profile information.
 *   **UI Component**: `app/Livewire/Profile/ProfileDashboard.php`
-*   **View**: Game-style player card with Alpine-powered profile, account, security, and comms tabs. Tab switching is client-side, profile picture upload lives in the Profile tab, and timezone selection uses a Redis-cached curated option list plus the player's existing timezone.
+*   **View**: Game-style player card with Alpine-powered profile, account, security, and comms tabs. Tab switching is client-side, profile picture upload lives in the Profile tab with immediate selected-file/progress feedback, and timezone selection uses a Redis-cached curated option list plus the player's existing timezone.
 *   **Logic (Actions)**:
     *   `app/Modules/Identity/Actions/UpdateProfileAction.php`: Updates bio, country, timezone, etc.
     *   `app/Modules/Identity/Actions/UploadAvatarAction.php`: Handles profile picture updates.
