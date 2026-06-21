@@ -44,12 +44,17 @@ document.addEventListener('livewire:init', () => {
 });
 
 document.addEventListener('livewire:navigate', () => {
-    showPlayerPageSkeleton();
+    if (window.__playerShowNavigateLoader) {
+        showPlayerPageLoader(window.__playerPendingNavigateUrl || null);
+    }
 });
 
 document.addEventListener('livewire:navigated', () => {
-    hidePlayerPageSkeleton();
-    clearPlayerLoadingButtons();
+    window.__playerShowNavigateLoader = false;
+    window.__playerPendingNavigateUrl = null;
+    rememberPlayerPage();
+    hidePlayerPageLoader();
+    clearPlayerDisabledButtons();
 });
 
 /**
@@ -153,71 +158,120 @@ function initPublicShell() {
 }
 
 function initPlayerShell() {
-    initPlayerLoadingButtons();
-    hidePlayerPageSkeleton();
+    rememberPlayerPage();
+    initPlayerSubmitButtons();
+    initPlayerNavigationLoader();
+    hidePlayerPageLoader();
 }
 
-function initPlayerLoadingButtons() {
-    document.querySelectorAll('.player-main-content button').forEach(button => {
-        const hasWireClick = button.hasAttribute('wire:click');
-        const isSubmitInWireForm = button.type === 'submit' && button.closest('form[wire\\:submit], form[wire\\:submit\\.prevent]');
-
-        if (!hasWireClick && !isSubmitInWireForm) return;
-
-        if (!button.querySelector(':scope > .ps-button-loader')) {
-            button.classList.add('relative');
-            const loader = document.createElement('span');
-            loader.className = 'ps-button-loader';
-            loader.setAttribute('aria-hidden', 'true');
-            button.appendChild(loader);
-        }
-
-        if (button.dataset.playerLoadingInitialised) return;
-        button.dataset.playerLoadingInitialised = 'true';
-
-        button.addEventListener('click', () => {
-            setPlayerButtonLoading(button);
-        });
-    });
-
+function initPlayerSubmitButtons() {
     document.querySelectorAll('.player-main-content form[wire\\:submit], .player-main-content form[wire\\:submit\\.prevent]').forEach(form => {
-        if (form.dataset.playerLoadingInitialised) return;
-        form.dataset.playerLoadingInitialised = 'true';
+        if (form.dataset.playerSubmitInitialised) return;
+        form.dataset.playerSubmitInitialised = 'true';
 
         form.addEventListener('submit', () => {
             const submitButton = form.querySelector('button[type="submit"]');
             if (submitButton) {
-                setPlayerButtonLoading(submitButton);
+                disablePlayerButton(submitButton);
             }
         });
     });
 }
 
-function setPlayerButtonLoading(button) {
-    button.classList.add('ps-button-is-loading');
+function disablePlayerButton(button) {
+    button.classList.add('ps-button-is-disabled');
     button.setAttribute('aria-busy', 'true');
     button.disabled = true;
 }
 
-function clearPlayerLoadingButtons() {
-    document.querySelectorAll('.ps-button-is-loading').forEach(button => {
-        button.classList.remove('ps-button-is-loading');
+function clearPlayerDisabledButtons() {
+    document.querySelectorAll('.ps-button-is-disabled').forEach(button => {
+        button.classList.remove('ps-button-is-disabled');
         button.removeAttribute('aria-busy');
         button.disabled = false;
     });
 }
 
-function showPlayerPageSkeleton() {
-    const skeleton = document.getElementById('player-page-skeleton');
-    if (skeleton) {
-        skeleton.classList.add('active');
+function initPlayerNavigationLoader() {
+    document.querySelectorAll('a[wire\\:navigate]').forEach(link => {
+        if (link.dataset.playerNavigateInitialised) return;
+        link.dataset.playerNavigateInitialised = 'true';
+
+        link.addEventListener('click', event => {
+            if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (link.closest('.player-tabs') || link.classList.contains('player-tab')) return;
+            if (link.target && link.target !== '_self') return;
+            if (link.hasAttribute('download')) return;
+
+            const targetUrl = normalisePlayerUrl(link.href);
+            if (!targetUrl || targetUrl === normalisePlayerUrl(window.location.href)) return;
+            if (isPlayerPageCached(targetUrl)) return;
+
+            window.__playerShowNavigateLoader = true;
+            window.__playerPendingNavigateUrl = targetUrl;
+            showPlayerPageLoader(targetUrl);
+        });
+    });
+}
+
+function normalisePlayerUrl(url) {
+    try {
+        const parsed = new URL(url, window.location.origin);
+        if (parsed.origin !== window.location.origin) return null;
+        return `${parsed.pathname}${parsed.search}`;
+    } catch {
+        return null;
     }
 }
 
-function hidePlayerPageSkeleton() {
-    const skeleton = document.getElementById('player-page-skeleton');
-    if (skeleton) {
-        skeleton.classList.remove('active');
+function playerPageCache() {
+    try {
+        return new Set(JSON.parse(sessionStorage.getItem('playerSaloonsVisitedPages') || '[]'));
+    } catch {
+        return new Set();
+    }
+}
+
+function rememberPlayerPage() {
+    const currentUrl = normalisePlayerUrl(window.location.href);
+    if (!currentUrl) return;
+
+    const cache = playerPageCache();
+    cache.add(currentUrl);
+    sessionStorage.setItem('playerSaloonsVisitedPages', JSON.stringify([...cache].slice(-40)));
+}
+
+function isPlayerPageCached(url) {
+    return playerPageCache().has(url);
+}
+
+function pageLoaderType(url) {
+    const path = url ? url.split('?')[0] : window.location.pathname;
+
+    if (path === '/dashboard') return 'dashboard';
+    if (path.startsWith('/wallet')) return 'wallet';
+    if (path.startsWith('/profile')) return 'profile';
+    if (path.startsWith('/head-to-head') || path.startsWith('/matches')) return 'match';
+    if (path.startsWith('/tournaments') || path.startsWith('/my-tournaments')) return 'tournament';
+    if (path.startsWith('/leaderboards')) return 'leaderboard';
+
+    return 'default';
+}
+
+function showPlayerPageLoader(url = null) {
+    const loader = document.getElementById('player-page-loader');
+    if (!loader) return;
+
+    loader.dataset.pageType = pageLoaderType(url);
+    loader.classList.add('active');
+    loader.setAttribute('aria-hidden', 'false');
+}
+
+function hidePlayerPageLoader() {
+    const loader = document.getElementById('player-page-loader');
+    if (loader) {
+        loader.classList.remove('active');
+        loader.setAttribute('aria-hidden', 'true');
     }
 }
 

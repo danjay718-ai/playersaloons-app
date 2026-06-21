@@ -304,18 +304,37 @@
 
             <!-- Main Scrollable Pane -->
             <main class="flex-grow p-4 sm:p-6 md:p-8 flex flex-col relative player-main-content">
-                <div id="player-page-skeleton" class="player-page-skeleton" aria-hidden="true">
-                    <div class="player-page-skeleton-panel">
-                        <div class="player-skeleton-line h-5 w-36"></div>
-                        <div class="player-skeleton-line mt-5 h-12 w-2/3"></div>
-                        <div class="mt-6 grid gap-4 md:grid-cols-3">
-                            <div class="player-skeleton-card"></div>
-                            <div class="player-skeleton-card"></div>
-                            <div class="player-skeleton-card"></div>
+                <div id="player-page-loader" class="player-page-loader" aria-hidden="true" data-page-type="default">
+                    <div class="player-page-loader-shell">
+                        <div class="player-loader-hud">
+                            <div>
+                                <p class="player-loader-kicker">Loading arena</p>
+                                <p class="player-loader-title">Syncing player terminal</p>
+                            </div>
+                            <div class="player-loader-ring" aria-hidden="true"></div>
                         </div>
-                        <div class="mt-6 grid gap-4 lg:grid-cols-2">
-                            <div class="player-skeleton-block"></div>
-                            <div class="player-skeleton-block"></div>
+
+                        <div class="player-loader-stage" aria-hidden="true">
+                            <div class="player-loader-scan"></div>
+                            <div class="player-loader-grid">
+                                <span></span><span></span><span></span><span></span>
+                                <span></span><span></span><span></span><span></span>
+                                <span></span><span></span><span></span><span></span>
+                            </div>
+                        </div>
+
+                        <div class="player-page-skeleton" aria-hidden="true">
+                            <div class="player-skeleton-line player-skeleton-title"></div>
+                            <div class="player-skeleton-line player-skeleton-hero"></div>
+                            <div class="player-skeleton-metrics">
+                                <div class="player-skeleton-card"></div>
+                                <div class="player-skeleton-card"></div>
+                                <div class="player-skeleton-card"></div>
+                            </div>
+                            <div class="player-skeleton-content">
+                                <div class="player-skeleton-block"></div>
+                                <div class="player-skeleton-block"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
