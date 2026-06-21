@@ -21,6 +21,7 @@ Ensures the player's email is valid and owned by them.
 
 *   **Action**: Player clicks the link sent to their email.
 *   **UI Component**: `app/Livewire/Auth/EmailVerification.php`
+*   **Profile Surface**: `app/Livewire/Profile/ProfileDashboard.php` also shows a verified email field and verify button, backed by `users.email_verified_at`.
 *   **Connected Files**:
     *   `app/Modules/Identity/Events/EmailVerified.php`: Dispatched upon successful verification.
     *   `app/Shared/Events/DomainEvent.php`: Base event class.
@@ -31,6 +32,7 @@ Identity verification is required for financial transactions (e.g., withdrawals)
 *   **Action**: Player uploads identity documents (ID, Passport, or Driver's License).
 *   **UI Component**: `app/Livewire/Profile/ProfileDashboard.php`
 *   **View**: `resources/views/livewire/profile/profile-dashboard.blade.php`
+*   **UX Surface**: The profile page shows only verified/not verified status and a hover info icon explaining that KYC is required for withdrawals. The upload form lives inside a drawer opened from the KYC status card.
 *   **Logic (Actions)**:
     *   `app/Modules/Identity/Actions/SubmitKycAction.php`: Handles file uploads and state transitions. Accepted document types: `passport`, `id_card`, `drivers_license`.
 *   **Connected Files**:
@@ -44,6 +46,7 @@ Managing display name, bio, and preferences.
 
 *   **Action**: Player updates their public-facing profile information.
 *   **UI Component**: `app/Livewire/Profile/ProfileDashboard.php`
+*   **View**: Game-style player card with profile picture upload, profile fields, account fields, password change, verified email status, KYC drawer trigger, referral link, and notification toggles.
 *   **Logic (Actions)**:
     *   `app/Modules/Identity/Actions/UpdateProfileAction.php`: Updates bio, country, timezone, etc.
     *   `app/Modules/Identity/Actions/UploadAvatarAction.php`: Handles profile picture updates.
@@ -91,6 +94,14 @@ To ensure flow integrity, the following tests must be implemented and passing:
 *   **State Machine**: `test_kyc_transition_from_rejected_to_submitted`
     *   Assert resubmission reuses the same `kyc_submissions` row (no duplicate created).
     *   Assert `review_notes` is cleared on resubmission.
+
+### 3. Profile Dashboard Tests — `tests/Feature/Identity/ProfileDashboardTest.php`
+*   **Render**: Confirms the game-style player profile renders with KYC status and without the inline KYC upload form.
+*   **Profile**: Confirms public profile fields persist to `user_profiles`.
+*   **Account**: Confirms username/email changes persist and email changes clear `email_verified_at`.
+*   **Verification**: Confirms profile email verification sets `email_verified_at` and dispatches `EmailVerified`.
+*   **Security**: Confirms password changes require the current password and persist through Laravel hashing.
+*   **KYC Drawer**: Confirms KYC verification UI opens only inside the drawer surface.
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:

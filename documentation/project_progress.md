@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.43) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.44) | **Branch**: `main`
 
 ---
 
@@ -250,9 +250,9 @@ Designed and implemented premium dark neon frontend pages using Tailwind CSS and
   - **Global Chat**: Interactive mock chat system with auto-replies to simulate platform activity.
   - **Tournaments**: Compact views for browsing and managing current registrations.
 - **Profile Dashboard (`app/Livewire/Profile/ProfileDashboard.php` & `resources/views/livewire/profile/profile-dashboard.blade.php`)**:
-  - Tabular settings for changing display name, bio, country, and timezone.
-  - Custom referral URL field displaying the raw database primary key integer ID (`?ref=123`).
-  - Document upload form supporting ID cards, passports, and driver's licenses with live KYC status badge.
+  - Game-style player card for avatar, display name, region, timezone, KYC status, verified email status, and referral link.
+  - Profile, account, and password forms for changing public info, username/email, and password.
+  - KYC upload form moved into a drawer opened from the KYC status card; the page shows only verified/not verified status and withdrawal requirement info.
   - Direct DB update toggles for Email, In-App, and Real-Time notification preferences.
 - **Team Dashboard (`app/Livewire/Team/TeamDashboard.php` & `resources/views/livewire/team/team-dashboard.blade.php`)**:
   - Handles incoming invites and team creation.
@@ -689,6 +689,15 @@ Items where schema or stub exists but logic is missing:
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
 
 ---
+
+## ✅ Player Profile Redesign + KYC Drawer (v1.44)
+
+- **`ProfileDashboard`**: Added database-backed account editing, profile picture upload, password change, profile email verification, and drawer state for KYC submission.
+- **`profile-dashboard.blade.php`**: Rebuilt the player profile as a game-style player card with verified/not verified KYC status, hover info explaining withdrawal requirements, verified email field/button, referral copy control, profile/account/password panels, notification toggles, and KYC upload moved out of the main UI into a drawer.
+- **`ProfileDashboardTest`**: Added 6 feature tests covering render behavior, profile/account persistence, email verification, password change, and KYC drawer visibility.
+- **Docs**: Updated `FEATURE_MAP.md` and `01_identity_onboarding.md`.
+- **Tests**: `php artisan test tests/Feature/Identity/ProfileDashboardTest.php` passed.
+- **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ## ✅ H2H Timeout / Auto-Expiry Policy (v1.43)
 
