@@ -37,6 +37,8 @@
         <div class="absolute inset-0 scanlines opacity-[0.15] mix-blend-overlay"></div>
     </div>
 
+    <livewire:match.head-to-head-duel-prompt />
+
     <!-- ─────────────────────────────────────
          MOBILE BOTTOM NAV — "More" Backdrop
     ───────────────────────────────────────── -->

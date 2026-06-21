@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Match;
 
 use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Match\HeadToHeadDuelPrompt;
 use App\Livewire\Match\HeadToHeadList;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
@@ -31,6 +32,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use LogicException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -39,6 +41,8 @@ class HeadToHeadModuleTest extends TestCase
     use RefreshDatabase;
 
     private Game $game;
+
+    private Game $otherGame;
 
     private User $playerA;
 
@@ -62,6 +66,18 @@ class HeadToHeadModuleTest extends TestCase
             'game_id' => $this->game->id,
             'locale' => 'en',
             'name' => 'Valorant',
+        ]);
+
+        $this->otherGame = Game::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'slug' => 'tekken-8',
+            'is_active' => true,
+        ]);
+
+        GameTranslation::query()->create([
+            'game_id' => $this->otherGame->id,
+            'locale' => 'en',
+            'name' => 'Tekken 8',
         ]);
 
         $this->playerA = $this->createPlayer('player-a@example.com', 'playerA');
@@ -90,6 +106,39 @@ class HeadToHeadModuleTest extends TestCase
             ->test(HeadToHeadList::class)
             ->assertSee('Initiate Challenge')
             ->assertSee('Valorant');
+    }
+
+    public function test_open_challenges_are_filtered_by_selected_game(): void
+    {
+        $this->createChallenge();
+        $playerC = $this->createPlayer('player-c@example.com', 'playerC');
+
+        app(CreateHeadToHeadChallengeAction::class)->execute($this->playerB, [
+            'game_id' => $this->otherGame->id,
+            'stake_amount' => 10,
+            'creator_game_handle' => 'PlayerB#222',
+            'match_timer_minutes' => 30,
+        ]);
+
+        Livewire::actingAs($playerC)
+            ->test(HeadToHeadList::class)
+            ->set('activeTab', 'open')
+            ->set('gameId', (string) $this->game->id)
+            ->assertSee('playerA')
+            ->assertDontSee('playerB')
+            ->set('gameId', (string) $this->otherGame->id)
+            ->assertSee('playerB')
+            ->assertDontSee('playerA');
+    }
+
+    public function test_player_cannot_create_second_open_challenge_for_same_game(): void
+    {
+        $this->createChallenge();
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('You already have an open challenge for this game.');
+
+        $this->createChallenge();
     }
 
     public function test_find_duel_shows_friendly_error_when_player_has_no_wallet(): void
@@ -171,6 +220,46 @@ class HeadToHeadModuleTest extends TestCase
         $this->assertEquals(HeadToHeadMatchStatus::IN_PROGRESS, $match->status);
         $this->assertEquals('90.00', (string) $this->playerA->wallet->fresh()->cached_balance);
         $this->assertEquals('90.00', (string) $this->playerB->wallet->fresh()->cached_balance);
+    }
+
+    public function test_player_cannot_accept_challenge_for_different_selected_game(): void
+    {
+        $challenge = $this->createChallenge();
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('This challenge belongs to a different game.');
+
+        app(AcceptHeadToHeadChallengeAction::class)->execute($challenge, $this->playerB, 'PlayerB#222', $this->otherGame->id);
+    }
+
+    public function test_player_cannot_accept_second_active_duel_for_same_game(): void
+    {
+        $challenge = $this->createChallenge();
+        app(AcceptHeadToHeadChallengeAction::class)->execute($challenge, $this->playerB, 'PlayerB#222');
+
+        $playerC = $this->createPlayer('player-c@example.com', 'playerC');
+        $secondChallenge = app(CreateHeadToHeadChallengeAction::class)->execute($playerC, [
+            'game_id' => $this->game->id,
+            'stake_amount' => 10,
+            'creator_game_handle' => 'PlayerC#333',
+            'match_timer_minutes' => 30,
+        ]);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('You already have an active duel for this game.');
+
+        app(AcceptHeadToHeadChallengeAction::class)->execute($secondChallenge, $this->playerB, 'PlayerB#222');
+    }
+
+    public function test_cross_page_h2h_prompt_shows_when_duel_is_active(): void
+    {
+        $challenge = $this->createChallenge();
+        app(AcceptHeadToHeadChallengeAction::class)->execute($challenge, $this->playerB, 'PlayerB#222');
+
+        Livewire::actingAs($this->playerA)
+            ->test(HeadToHeadDuelPrompt::class)
+            ->assertSee('Your duel was accepted')
+            ->assertSee('Open H2H');
     }
 
     public function test_stale_in_progress_h2h_match_escalates_to_admin_review_without_payout(): void

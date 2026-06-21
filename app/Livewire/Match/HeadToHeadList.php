@@ -18,6 +18,7 @@ use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Match\Services\HeadToHeadMatchmakerService;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Shared\Enums\HeadToHeadChallengeStatus;
+use App\Shared\Enums\HeadToHeadMatchStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -39,6 +40,8 @@ class HeadToHeadList extends Component
     public string $region = '';
 
     public string $matchTimerMinutes = '30';
+
+    public string $activeTab = 'open';
 
     public ?int $resultWinnerUserId = null;
 
@@ -87,7 +90,7 @@ class HeadToHeadList extends Component
                 return;
             }
 
-            $accept->execute($challenge, $this->user(), $this->gameHandle);
+            $accept->execute($challenge, $this->user(), $this->gameHandle, (int) $this->gameId);
             session()->flash('h2h_status', 'Duel matched. Game handles are now visible.');
         } catch (Throwable $e) {
             $this->flashH2HError($e);
@@ -102,7 +105,7 @@ class HeadToHeadList extends Component
 
         try {
             $challenge = HeadToHeadChallenge::query()->findOrFail($challengeId);
-            $action->execute($challenge, $this->user(), $this->gameHandle);
+            $action->execute($challenge, $this->user(), $this->gameHandle, (int) $this->gameId);
             session()->flash('h2h_status', 'Challenge accepted and stake locked.');
         } catch (Throwable $e) {
             $this->flashH2HError($e);
@@ -175,29 +178,49 @@ class HeadToHeadList extends Component
         $waitingChallenges = HeadToHeadChallenge::query()
             ->with(['creator', 'game.translations', 'platform'])
             ->where('status', HeadToHeadChallengeStatus::WAITING->value)
+            ->where('game_id', (int) $this->gameId)
             ->where(function ($query) {
                 $query->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());
             })
             ->latest()
-            ->take(12)
+            ->take(24)
             ->get();
 
-        $myMatches = HeadToHeadMatch::query()
+        $matchQuery = HeadToHeadMatch::query()
             ->with(['creator', 'opponent', 'winner', 'resultSubmitter', 'disputer', 'game.translations', 'platform'])
+            ->where('game_id', (int) $this->gameId)
             ->where(function ($query) use ($user) {
                 $query->where('creator_user_id', $user->getKey())
                     ->orWhere('opponent_user_id', $user->getKey());
-            })
+            });
+
+        $activeMatches = (clone $matchQuery)
+            ->whereIn('status', [
+                HeadToHeadMatchStatus::IN_PROGRESS,
+                HeadToHeadMatchStatus::WAITING_FOR_CONFIRMATION,
+                HeadToHeadMatchStatus::DISPUTED,
+            ])
             ->latest()
-            ->take(8)
+            ->take(12)
+            ->get();
+
+        $historyMatches = (clone $matchQuery)
+            ->whereIn('status', [
+                HeadToHeadMatchStatus::COMPLETED,
+                HeadToHeadMatchStatus::CANCELLED,
+                HeadToHeadMatchStatus::EXPIRED,
+            ])
+            ->latest()
+            ->take(12)
             ->get();
 
         return view('livewire.match.head-to-head-list', [
             'games' => Game::query()->with('translations')->where('is_active', true)->get(),
             'platforms' => Platform::query()->where('is_active', true)->get(),
             'waitingChallenges' => $waitingChallenges,
-            'myMatches' => $myMatches,
+            'activeMatches' => $activeMatches,
+            'historyMatches' => $historyMatches,
         ])->layout('components.layouts.dashboard', [
             'title' => 'Head-to-Head | PlayerSaloons',
             'dashboard_title' => 'HEAD-TO-HEAD DUELS',

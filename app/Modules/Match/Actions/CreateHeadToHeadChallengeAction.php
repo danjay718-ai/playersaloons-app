@@ -8,10 +8,13 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\HeadToHeadChallenge;
+use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Shared\Enums\HeadToHeadChallengeStatus;
+use App\Shared\Enums\HeadToHeadMatchStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use LogicException;
 
 class CreateHeadToHeadChallengeAction
 {
@@ -41,6 +44,8 @@ class CreateHeadToHeadChallengeAction
         }
 
         return DB::transaction(function () use ($creator, $data, $stakeAmount, $game, $platformId, $gameHandle): HeadToHeadChallenge {
+            $this->ensurePlayerCanStartGameDuel((int) $creator->getKey(), (int) $game->getKey());
+
             $challenge = HeadToHeadChallenge::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'creator_user_id' => $creator->getKey(),
@@ -63,5 +68,39 @@ class CreateHeadToHeadChallengeAction
 
             return $challenge;
         });
+    }
+
+    private function ensurePlayerCanStartGameDuel(int $userId, int $gameId): void
+    {
+        $hasWaitingChallenge = HeadToHeadChallenge::query()
+            ->where('creator_user_id', $userId)
+            ->where('game_id', $gameId)
+            ->where('status', HeadToHeadChallengeStatus::WAITING)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->exists();
+
+        if ($hasWaitingChallenge) {
+            throw new LogicException('You already have an open challenge for this game. Cancel it before creating another duel.');
+        }
+
+        $hasActiveDuel = HeadToHeadMatch::query()
+            ->where('game_id', $gameId)
+            ->whereIn('status', [
+                HeadToHeadMatchStatus::IN_PROGRESS,
+                HeadToHeadMatchStatus::WAITING_FOR_CONFIRMATION,
+                HeadToHeadMatchStatus::DISPUTED,
+            ])
+            ->where(function ($query) use ($userId) {
+                $query->where('creator_user_id', $userId)
+                    ->orWhere('opponent_user_id', $userId);
+            })
+            ->exists();
+
+        if ($hasActiveDuel) {
+            throw new LogicException('You already have an active duel for this game. Finish it before creating another duel.');
+        }
     }
 }

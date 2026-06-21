@@ -18,7 +18,7 @@ class AcceptHeadToHeadChallengeAction
 {
     public function __construct(private readonly LockHeadToHeadStakeAction $lockStake) {}
 
-    public function execute(HeadToHeadChallenge $challenge, User $opponent, string $opponentGameHandle): HeadToHeadMatch
+    public function execute(HeadToHeadChallenge $challenge, User $opponent, string $opponentGameHandle, ?int $expectedGameId = null): HeadToHeadMatch
     {
         $opponentGameHandle = trim($opponentGameHandle);
 
@@ -26,7 +26,7 @@ class AcceptHeadToHeadChallengeAction
             throw new InvalidArgumentException('Opponent game handle is required.');
         }
 
-        return DB::transaction(function () use ($challenge, $opponent, $opponentGameHandle): HeadToHeadMatch {
+        return DB::transaction(function () use ($challenge, $opponent, $opponentGameHandle, $expectedGameId): HeadToHeadMatch {
             /** @var HeadToHeadChallenge $lockedChallenge */
             $lockedChallenge = HeadToHeadChallenge::query()
                 ->where('id', $challenge->getKey())
@@ -35,6 +35,10 @@ class AcceptHeadToHeadChallengeAction
 
             if ($lockedChallenge->creator_user_id === $opponent->getKey()) {
                 throw new LogicException('You cannot accept your own challenge.');
+            }
+
+            if ($expectedGameId !== null && $lockedChallenge->game_id !== $expectedGameId) {
+                throw new LogicException('This challenge belongs to a different game. Switch to that game before accepting it.');
             }
 
             if ($lockedChallenge->status !== HeadToHeadChallengeStatus::WAITING) {
@@ -47,6 +51,8 @@ class AcceptHeadToHeadChallengeAction
 
                 throw new LogicException('Challenge has expired.');
             }
+
+            $this->ensurePlayerCanAcceptGameDuel((int) $opponent->getKey(), (int) $lockedChallenge->game_id);
 
             $match = HeadToHeadMatch::query()->create([
                 'uuid' => Str::uuid()->toString(),
@@ -77,5 +83,39 @@ class AcceptHeadToHeadChallengeAction
 
             return $match;
         });
+    }
+
+    private function ensurePlayerCanAcceptGameDuel(int $userId, int $gameId): void
+    {
+        $hasWaitingChallenge = HeadToHeadChallenge::query()
+            ->where('creator_user_id', $userId)
+            ->where('game_id', $gameId)
+            ->where('status', HeadToHeadChallengeStatus::WAITING)
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->exists();
+
+        if ($hasWaitingChallenge) {
+            throw new LogicException('You already have an open challenge for this game. Cancel it before accepting another duel.');
+        }
+
+        $hasActiveDuel = HeadToHeadMatch::query()
+            ->where('game_id', $gameId)
+            ->whereIn('status', [
+                HeadToHeadMatchStatus::IN_PROGRESS,
+                HeadToHeadMatchStatus::WAITING_FOR_CONFIRMATION,
+                HeadToHeadMatchStatus::DISPUTED,
+            ])
+            ->where(function ($query) use ($userId) {
+                $query->where('creator_user_id', $userId)
+                    ->orWhere('opponent_user_id', $userId);
+            })
+            ->exists();
+
+        if ($hasActiveDuel) {
+            throw new LogicException('You already have an active duel for this game. Finish it before accepting another duel.');
+        }
     }
 }
