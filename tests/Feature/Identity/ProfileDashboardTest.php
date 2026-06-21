@@ -42,7 +42,10 @@ class ProfileDashboardTest extends TestCase
             ->assertSee('Player Card')
             ->assertSee('NOT VERIFIED')
             ->assertSee('Verify')
-            ->assertDontSee('Document Type');
+            ->assertSee('Profile')
+            ->assertSee('Account')
+            ->assertSee('Security')
+            ->assertSee('Comms');
     }
 
     public function test_player_can_update_public_profile_info(): void
@@ -108,15 +111,21 @@ class ProfileDashboardTest extends TestCase
         $this->assertTrue(Hash::check('new-password', (string) $this->user->fresh()->password));
     }
 
-    public function test_kyc_drawer_can_be_opened_and_closed(): void
+    public function test_comms_loadout_preferences_are_persisted(): void
     {
         Livewire::actingAs($this->user)
             ->test(ProfileDashboard::class)
-            ->assertSet('showKycDrawer', false)
-            ->call('openKycDrawer')
-            ->assertSet('showKycDrawer', true)
-            ->assertSee('Document Type')
-            ->call('closeKycDrawer')
-            ->assertSet('showKycDrawer', false);
+            ->assertSee('Comms Loadout')
+            ->call('updateNotificationPreference', 'emailNotifications', false)
+            ->call('updateNotificationPreference', 'inAppNotifications', false)
+            ->call('updateNotificationPreference', 'realtimeNotifications', true)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('notification_preferences', [
+            'user_id' => $this->user->id,
+            'email_enabled' => false,
+            'in_app_enabled' => false,
+            'realtime_enabled' => true,
+        ]);
     }
 }
