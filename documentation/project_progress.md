@@ -1,12 +1,12 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.40) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.41) | **Branch**: `main`
 
 ---
 
 ## ✅ Phase 1 — Migrations & Seeders
 
-**45 migration files** across all domains. All pass `migrate` and `migrate:rollback` cleanly.
+**57 migration files** across all domains. All pass `migrate` and `migrate:rollback` cleanly.
 
 | Domain | Tables |
 |---|---|
@@ -34,9 +34,9 @@
 
 ## ✅ Phase 3 — Laravel Enums
 
-**14 backed PHP enums** under `app/Shared/Enums/`:
+**17 backed PHP enums** under `app/Shared/Enums/`:
 
-`TournamentStatus` · `MatchStatus` · `WithdrawalStatus` · `KycStatus` · `TeamInvitationStatus` · `SeatReservationStatus` · `RegistrationStatus` · `PaymentStatus` · `LedgerType` · `DisputeStatus` · `DisputeResolution` · `UserStatus` · `WalletStatus` · `CheckinStatus`
+`TournamentStatus` · `MatchStatus` · `HeadToHeadChallengeStatus` · `HeadToHeadMatchStatus` · `HeadToHeadDisputeResolution` · `WithdrawalStatus` · `KycStatus` · `TeamInvitationStatus` · `SeatReservationStatus` · `RegistrationStatus` · `PaymentStatus` · `LedgerType` · `DisputeStatus` · `DisputeResolution` · `UserStatus` · `WalletStatus` · `CheckinStatus`
 
 ---
 
@@ -687,6 +687,16 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ H2H Wallet Error Handling + Backfill (v1.41)
+
+- **`HeadToHeadList`**: Catches expected H2H domain failures from create/find/accept/cancel/result actions and displays player-readable errors instead of raw exception pages.
+- **Wallet backfill migration**: Added an idempotent migration that creates active zero-balance wallets for existing users missing wallet rows. Rollback is intentionally no-op to avoid deleting financial records.
+- **Local repair**: Applied the migration locally; users without wallets went from 51 to 0.
+- **Tests**: Added missing-wallet and insufficient-balance `findDuel` regressions. `php artisan test tests/Feature/Match/HeadToHeadModuleTest.php` passes: 11 tests, 44 assertions.
+- **PHPStan**: Not rerun; previous v1.40 PHPStan attempts exited with code 1 and no diagnostics/output in this environment.
 
 ---
 

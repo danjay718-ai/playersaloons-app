@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-21 | **Current version**: v1.40 | **Branch**: `main`
+**As of**: 2026-06-21 | **Current version**: v1.41 | **Branch**: `main`
 
 ---
 
@@ -13,10 +13,11 @@
 - Welcome page header now shows logo image only, without adjacent `PLAYERSALOONS` text
 - H2H MVP is now DB-backed with challenge queue, stake lock, match acceptance, result submit/confirm, and winner payout
 - H2H result/dispute proof uploads and admin dispute resolution are implemented in `/admin/matches`
+- H2H now shows friendly wallet/balance errors and existing users missing wallet rows were backfilled
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.40)
+## ✅ Natapos ngayong session (v1.30–v1.41)
 
 | Version | Item |
 |---|---|
@@ -31,6 +32,7 @@
 | v1.38 | Welcome logo text cleanup — removed visible header wordmark beside logo |
 | v1.39 | H2H Production MVP — persisted queue, stake lock/payout, submit/confirm result |
 | v1.40 | H2H proof upload + admin dispute review — award creator/opponent or void/refund |
+| v1.41 | H2H wallet error handling + wallet backfill for existing users |
 
 ---
 
@@ -59,6 +61,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - Match confirmation state mismatch — fixed v1.37
 - H2H mock-only challenge queue — replaced with DB-backed MVP v1.39
 - H2H proof upload + admin dispute review — done v1.40
+- H2H raw missing-wallet exception on find duel — fixed v1.41
 
 ### H2H Follow-up Scope
 
