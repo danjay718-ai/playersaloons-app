@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.lucide.createIcons();
     }
 
+    initPublicShell();
+
     // Initialize Mobile Bottom Nav "More" Panel
     initMobileMorePanel();
 });
@@ -32,6 +34,8 @@ document.addEventListener('livewire:navigated', () => {
         window.lucide.createIcons();
     }
 
+    initPublicShell();
+
     // Re-initialize mobile more panel after navigation
     initMobileMorePanel();
 });
@@ -41,6 +45,8 @@ document.addEventListener('livewire:init', () => {
         if (window.lucide) {
             window.lucide.createIcons();
         }
+
+        initPublicShell();
     });
 });
 
@@ -120,4 +126,126 @@ function initMobileMorePanel() {
     panel.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', closeMore);
     });
+}
+
+function initPublicShell() {
+    initPublicMobileMenu();
+    initPublicPwaInstall();
+
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+}
+
+function initPublicMobileMenu() {
+    document.querySelectorAll('[data-public-menu-button]').forEach(button => {
+        if (button._publicMenuInitialised) return;
+        button._publicMenuInitialised = true;
+
+        const header = button.closest('header');
+        const menu = header ? header.querySelector('[data-public-mobile-menu]') : null;
+        const openIcon = button.querySelector('[data-menu-icon-open]');
+        const closeIcon = button.querySelector('[data-menu-icon-close]');
+
+        button.addEventListener('click', () => {
+            if (!menu) return;
+
+            const isOpen = !menu.classList.contains('hidden');
+            menu.classList.toggle('hidden', isOpen);
+            button.setAttribute('aria-expanded', String(!isOpen));
+            openIcon?.classList.toggle('hidden', !isOpen);
+            closeIcon?.classList.toggle('hidden', isOpen);
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        });
+    });
+}
+
+function initPublicPwaInstall() {
+    if ('serviceWorker' in navigator && !window.__playerSaloonsServiceWorkerRegistered) {
+        window.__playerSaloonsServiceWorkerRegistered = true;
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW registration failed:', err));
+        });
+    }
+
+    const installBtns = document.querySelectorAll('.pwa-install-btn');
+    if (!installBtns.length) return;
+
+    const isStandalone = () => {
+        return window.navigator.standalone === true
+            || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    };
+
+    const isDesktop = () => {
+        return window.matchMedia && window.matchMedia('(min-width: 768px)').matches;
+    };
+
+    const hideButton = button => {
+        button.classList.add('hidden');
+        button.classList.remove('inline-flex');
+        button.disabled = true;
+    };
+
+    const showButton = button => {
+        button.classList.remove('hidden');
+        button.classList.add('inline-flex');
+        button.disabled = !window.__playerSaloonsPwaPrompt;
+    };
+
+    const syncInstallButtons = () => {
+        if (isStandalone()) {
+            installBtns.forEach(hideButton);
+            return;
+        }
+
+        const desktop = isDesktop();
+        installBtns.forEach(button => {
+            const isDesktopButton = button.hasAttribute('data-pwa-install-desktop');
+            const isMobileButton = button.hasAttribute('data-pwa-install-mobile');
+            const isDashboardButton = button.hasAttribute('data-pwa-install-dashboard');
+
+            if ((desktop && isDesktopButton) || (!desktop && isMobileButton) || isDashboardButton) {
+                showButton(button);
+                return;
+            }
+
+            hideButton(button);
+        });
+    };
+
+    if (!window.__playerSaloonsPwaListenerAttached) {
+        window.__playerSaloonsPwaListenerAttached = true;
+
+        window.addEventListener('beforeinstallprompt', event => {
+            event.preventDefault();
+            window.__playerSaloonsPwaPrompt = event;
+            syncInstallButtons();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            window.__playerSaloonsPwaPrompt = null;
+            installBtns.forEach(hideButton);
+        });
+
+        window.addEventListener('resize', syncInstallButtons);
+    }
+
+    installBtns.forEach(button => {
+        if (button._pwaInstallInitialised) return;
+        button._pwaInstallInitialised = true;
+
+        button.addEventListener('click', async () => {
+            if (!window.__playerSaloonsPwaPrompt) return;
+
+            window.__playerSaloonsPwaPrompt.prompt();
+            await window.__playerSaloonsPwaPrompt.userChoice;
+            window.__playerSaloonsPwaPrompt = null;
+            installBtns.forEach(hideButton);
+        });
+    });
+
+    syncInstallButtons();
 }
