@@ -1,6 +1,18 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.53) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.54) | **Branch**: `main`
+
+---
+
+## ✅ Player Toasts, Loading States, and KYC Document Display Fix (v1.54)
+
+- **`resources/views/components/ui/toasts.blade.php`**: Added reusable player-facing toast component for existing flash keys (`message`, `success`, `info`, `error`, `h2h_status`, `h2h_error`).
+- **Player Livewire views**: Removed duplicated inline flash alert blocks from wallet, profile, team, match detail, H2H, and tournament detail player surfaces in favor of the shared toast component.
+- **`resources/js/app.js` / `resources/css/app.css`**: Added automatic Livewire button preloaders for player action buttons and a skeleton overlay during `wire:navigate` dashboard transitions.
+- **`dashboard.blade.php`**: Added a reusable player-page skeleton overlay inside the dashboard content pane.
+- **`KycSubmission`**: Added `document_front_path` and `document_back_path` accessors backed by `document_paths`, fixing admin KYC review screens that showed “No document uploaded” even when the player upload succeeded.
+- **Tests**: `php artisan test tests/Feature/Identity/SubmitKycActionTest.php tests/Feature/Identity/ProfileDashboardTest.php tests/Feature/Wallet/WalletDashboardTest.php` passes: 10 tests, 41 assertions. `npm run build` and `git diff --check` pass.
+- **PHPStan**: Not run in this pass; prior environment runs exited code 1 without diagnostics.
 
 ---
 

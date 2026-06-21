@@ -1,4 +1,6 @@
 <div class="space-y-8">
+    <x-ui.toasts />
+
     <!-- Team Dashboard Header -->
     <div class="bg-gradient-to-r from-zinc-900 via-zinc-900 to-fuchsia-950/10 border border-zinc-850 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
         <div class="absolute -top-20 -right-20 w-60 h-60 bg-fuchsia-600/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -36,21 +38,6 @@
             @endif
         </div>
     </div>
-
-    <!-- Alerts -->
-    @if (session()->has('message'))
-        <div class="bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 rounded-xl p-4 text-sm flex items-center space-x-2">
-            <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0"></i>
-            <span>{{ session('message') }}</span>
-        </div>
-    @endif
-
-    @if (session()->has('error'))
-        <div class="bg-red-950/40 border border-red-800/60 text-red-300 rounded-xl p-4 text-sm flex items-center space-x-2">
-            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400 shrink-0"></i>
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
 
     @if(!$team)
         <!-- NO TEAM STATE -->

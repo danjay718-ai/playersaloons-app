@@ -1,17 +1,5 @@
 <div class="space-y-8">
-    <!-- Messages / Error Flash -->
-    @if(session()->has('message'))
-        <div class="bg-emerald-950/30 border border-emerald-900/50 text-emerald-400 rounded-xl p-4 flex items-center space-x-3 shadow-md shadow-emerald-950/10">
-            <i data-lucide="circle-check" class="w-5 h-5 flex-shrink-0"></i>
-            <span class="text-sm font-medium">{{ session('message') }}</span>
-        </div>
-    @endif
-    @if(session()->has('error'))
-        <div class="bg-red-950/30 border border-red-900/50 text-red-400 rounded-xl p-4 flex items-center space-x-3 shadow-md shadow-red-950/10">
-            <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
-            <span class="text-sm font-medium">{{ session('error') }}</span>
-        </div>
-    @endif
+    <x-ui.toasts />
 
     <!-- Match Header Card -->
     <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">

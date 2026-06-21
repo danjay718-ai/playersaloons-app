@@ -21,19 +21,7 @@
     x-data="{ activeTab: 'profile', showKycDrawer: false }"
     @profile-kyc-submitted.window="showKycDrawer = false"
 >
-    @if (session()->has('message'))
-        <div class="rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-4 py-3 text-sm font-semibold text-emerald-250 flex items-center gap-2">
-            <i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i>
-            <span>{{ session('message') }}</span>
-        </div>
-    @endif
-
-    @if (session()->has('error'))
-        <div class="rounded-lg border border-red-500/30 bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-250 flex items-center gap-2">
-            <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i>
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
+    <x-ui.toasts />
 
     <section class="relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
         <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-cyan-400 to-fuchsia-500"></div>

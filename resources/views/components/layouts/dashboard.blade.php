@@ -27,7 +27,6 @@
     @livewireStyles
 </head>
 <body class="bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-violet-600 selection:text-white relative cyber-grid">
-
     <!-- Global Background FX -->
     <div class="fixed inset-0 pointer-events-none z-0">
         <!-- Neon Orbs -->
@@ -305,6 +304,21 @@
 
             <!-- Main Scrollable Pane -->
             <main class="flex-grow p-4 sm:p-6 md:p-8 flex flex-col relative player-main-content">
+                <div id="player-page-skeleton" class="player-page-skeleton" aria-hidden="true">
+                    <div class="player-page-skeleton-panel">
+                        <div class="player-skeleton-line h-5 w-36"></div>
+                        <div class="player-skeleton-line mt-5 h-12 w-2/3"></div>
+                        <div class="mt-6 grid gap-4 md:grid-cols-3">
+                            <div class="player-skeleton-card"></div>
+                            <div class="player-skeleton-card"></div>
+                            <div class="player-skeleton-card"></div>
+                        </div>
+                        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+                            <div class="player-skeleton-block"></div>
+                            <div class="player-skeleton-block"></div>
+                        </div>
+                    </div>
+                </div>
                 {{ $slot }}
             </main>
 

@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-21 (v1.53)
+**Last Updated**: 2026-06-21 (v1.54)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -97,6 +97,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Surface | Component | Description |
 |---|---|---|
 | Player dashboard topbar | `app/Livewire/Notification/NotificationBell.php` | Shows latest 10 user notifications, unread count, single/all mark-as-read actions, and refreshes from realtime Reverb broadcasts |
+| Player toast notifications | `resources/views/components/ui/toasts.blade.php` | Shared toast surface for player-facing `session()->flash()` feedback (`message`, `success`, `info`, `error`, `h2h_status`, `h2h_error`) |
+| Player loading states | `resources/js/app.js`, `resources/css/app.css`, `resources/views/components/layouts/dashboard.blade.php` | Adds automatic button preloaders for Livewire action buttons and a dashboard-page skeleton overlay during `wire:navigate` transitions |
 
 ### Shared Public Layout Components
 
@@ -123,6 +125,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Update Profile | `UpdateProfileAction` | — | — |
 | Upload Avatar | `UploadAvatarAction` | — | — |
 | Verify Email from Profile | `ProfileDashboard::verifyEmail()` | `EmailVerified` | — |
+| KYC admin document compatibility | `KycSubmission::document_front_path`, `KycSubmission::document_back_path` accessors | — | — |
 
 ### Tournament Lifecycle
 | Feature | Action/Service | Event | Listener/Job |
@@ -195,7 +198,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Test File | What It Covers |
 |---|---|
 | `Identity/RegisterUserActionTest.php` | Registration success, wallet creation, event dispatch, validation failures |
-| `Identity/SubmitKycActionTest.php` | KYC submission, resubmission from rejected, event dispatch |
+| `Identity/SubmitKycActionTest.php` | KYC submission, admin-facing document path compatibility, resubmission from rejected, event dispatch |
 | `Identity/ProfileDashboardTest.php` | Player profile render, profile/account updates, email verification, password change, KYC drawer visibility, comms preference persistence |
 | `Identity/OnlinePresenceTest.php` | Middleware sets Redis key for auth user, skips guest, `isOnline()` true/false |
 | `Identity/NotifyAdminsOfKycSubmissionListenerTest.php` | Admin notification on KYC submit, non-admins not notified, all admin roles notified |

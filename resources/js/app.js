@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initPublicShell();
+    initPlayerShell();
 
     // Initialize Mobile Bottom Nav "More" Panel
     initMobileMorePanel();
@@ -25,6 +26,7 @@ document.addEventListener('livewire:navigated', () => {
     }
 
     initPublicShell();
+    initPlayerShell();
 
     // Re-initialize mobile more panel after navigation
     initMobileMorePanel();
@@ -37,7 +39,17 @@ document.addEventListener('livewire:init', () => {
         }
 
         initPublicShell();
+        initPlayerShell();
     });
+});
+
+document.addEventListener('livewire:navigate', () => {
+    showPlayerPageSkeleton();
+});
+
+document.addEventListener('livewire:navigated', () => {
+    hidePlayerPageSkeleton();
+    clearPlayerLoadingButtons();
 });
 
 /**
@@ -137,6 +149,75 @@ function initPublicShell() {
 
     if (window.lucide) {
         window.lucide.createIcons();
+    }
+}
+
+function initPlayerShell() {
+    initPlayerLoadingButtons();
+    hidePlayerPageSkeleton();
+}
+
+function initPlayerLoadingButtons() {
+    document.querySelectorAll('.player-main-content button').forEach(button => {
+        const hasWireClick = button.hasAttribute('wire:click');
+        const isSubmitInWireForm = button.type === 'submit' && button.closest('form[wire\\:submit], form[wire\\:submit\\.prevent]');
+
+        if (!hasWireClick && !isSubmitInWireForm) return;
+
+        if (!button.querySelector(':scope > .ps-button-loader')) {
+            button.classList.add('relative');
+            const loader = document.createElement('span');
+            loader.className = 'ps-button-loader';
+            loader.setAttribute('aria-hidden', 'true');
+            button.appendChild(loader);
+        }
+
+        if (button.dataset.playerLoadingInitialised) return;
+        button.dataset.playerLoadingInitialised = 'true';
+
+        button.addEventListener('click', () => {
+            setPlayerButtonLoading(button);
+        });
+    });
+
+    document.querySelectorAll('.player-main-content form[wire\\:submit], .player-main-content form[wire\\:submit\\.prevent]').forEach(form => {
+        if (form.dataset.playerLoadingInitialised) return;
+        form.dataset.playerLoadingInitialised = 'true';
+
+        form.addEventListener('submit', () => {
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                setPlayerButtonLoading(submitButton);
+            }
+        });
+    });
+}
+
+function setPlayerButtonLoading(button) {
+    button.classList.add('ps-button-is-loading');
+    button.setAttribute('aria-busy', 'true');
+    button.disabled = true;
+}
+
+function clearPlayerLoadingButtons() {
+    document.querySelectorAll('.ps-button-is-loading').forEach(button => {
+        button.classList.remove('ps-button-is-loading');
+        button.removeAttribute('aria-busy');
+        button.disabled = false;
+    });
+}
+
+function showPlayerPageSkeleton() {
+    const skeleton = document.getElementById('player-page-skeleton');
+    if (skeleton) {
+        skeleton.classList.add('active');
+    }
+}
+
+function hidePlayerPageSkeleton() {
+    const skeleton = document.getElementById('player-page-skeleton');
+    if (skeleton) {
+        skeleton.classList.remove('active');
     }
 }
 

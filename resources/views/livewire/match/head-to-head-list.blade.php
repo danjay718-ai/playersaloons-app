@@ -1,21 +1,11 @@
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+    <x-ui.toasts />
+
     <x-player.panel class="lg:col-span-1">
         <div class="mb-5 flex items-center gap-2 border-b border-purple-500/10 pb-3">
             <i data-lucide="zap" class="h-5 w-5 text-fuchsia-400"></i>
             <h3 class="font-orbitron text-sm font-black uppercase tracking-wider text-zinc-200">Initiate Challenge</h3>
         </div>
-
-        @if(session('h2h_status'))
-            <div class="mb-5 rounded-xl border border-emerald-500/20 bg-emerald-950/10 p-3 text-xs font-medium text-emerald-300">
-                {{ session('h2h_status') }}
-            </div>
-        @endif
-
-        @if(session('h2h_error'))
-            <div class="mb-5 rounded-xl border border-red-500/20 bg-red-950/20 p-3 text-xs font-medium text-red-300">
-                {{ session('h2h_error') }}
-            </div>
-        @endif
 
         <form wire:submit="createChallenge" class="space-y-5">
             <div class="space-y-2">

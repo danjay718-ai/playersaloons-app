@@ -87,6 +87,87 @@
     .player-empty-icon {
         @apply mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950 text-zinc-600;
     }
+
+    .player-toast {
+        @apply rounded-xl border bg-zinc-950/95 p-4 shadow-2xl backdrop-blur-xl;
+    }
+
+    .player-toast-success {
+        @apply border-emerald-500/35 shadow-emerald-950/30;
+    }
+
+    .player-toast-info {
+        @apply border-cyan-500/35 shadow-cyan-950/30;
+    }
+
+    .player-toast-error {
+        @apply border-red-500/35 shadow-red-950/30;
+    }
+
+    .player-toast-icon {
+        @apply grid h-8 w-8 shrink-0 place-items-center rounded-lg border bg-white/5;
+    }
+
+    .player-toast-success .player-toast-icon {
+        @apply border-emerald-500/30 text-emerald-300;
+    }
+
+    .player-toast-info .player-toast-icon {
+        @apply border-cyan-500/30 text-cyan-300;
+    }
+
+    .player-toast-error .player-toast-icon {
+        @apply border-red-500/30 text-red-300;
+    }
+
+    .player-page-skeleton {
+        @apply pointer-events-none absolute inset-0 z-30 hidden bg-[#05030c]/80 p-4 backdrop-blur-sm sm:p-6 md:p-8;
+    }
+
+    .player-page-skeleton.active {
+        @apply block;
+    }
+
+    .player-page-skeleton-panel {
+        @apply rounded-2xl border border-zinc-800 bg-zinc-950/95 p-5 shadow-2xl md:p-6;
+    }
+
+    .player-skeleton-line,
+    .player-skeleton-card,
+    .player-skeleton-block {
+        @apply animate-pulse rounded-lg bg-zinc-800/80;
+    }
+
+    .player-skeleton-card {
+        @apply h-24;
+    }
+
+    .player-skeleton-block {
+        @apply h-48;
+    }
+
+    .ps-button-loader {
+        @apply pointer-events-none absolute left-1/2 top-1/2 hidden h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-current border-t-transparent opacity-90;
+        animation: ps-spin 0.7s linear infinite;
+    }
+
+    .ps-button-is-loading {
+        @apply pointer-events-none cursor-wait opacity-80;
+    }
+
+    .ps-button-is-loading > :not(.ps-button-loader) {
+        opacity: 0.25;
+    }
+
+    .ps-button-is-loading .ps-button-loader {
+        @apply block;
+    }
+}
+
+@keyframes ps-spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }
 
 /* ───────────────────────────────────

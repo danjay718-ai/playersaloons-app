@@ -1,21 +1,5 @@
 <div class="space-y-6 min-w-0" x-data="{ walletAction: 'deposit' }">
-    @if(session()->has('message'))
-        <div class="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-emerald-300 shadow-[0_0_18px_rgba(16,185,129,0.10)]">
-            <div class="flex items-center gap-3">
-                <i data-lucide="circle-check" class="h-5 w-5 shrink-0"></i>
-                <span class="font-orbitron text-xs font-bold uppercase tracking-widest">{{ session('message') }}</span>
-            </div>
-        </div>
-    @endif
-
-    @if(session()->has('error'))
-        <div class="rounded-xl border border-red-500/25 bg-red-500/10 p-4 text-red-300 shadow-[0_0_18px_rgba(244,63,94,0.10)]">
-            <div class="flex items-center gap-3">
-                <i data-lucide="alert-circle" class="h-5 w-5 shrink-0"></i>
-                <span class="font-orbitron text-xs font-bold uppercase tracking-widest">{{ session('error') }}</span>
-            </div>
-        </div>
-    @endif
+    <x-ui.toasts />
 
     <section class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
         <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">

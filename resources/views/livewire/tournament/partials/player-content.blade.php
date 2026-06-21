@@ -21,29 +21,13 @@
              } 
          })
      ">
+    <x-ui.toasts />
+
     <!-- Return Button -->
     <button onclick="history.back()" class="flex items-center space-x-2 text-zinc-500 hover:text-white transition-colors text-xs font-bold font-orbitron uppercase tracking-widest mb-6 group">
         <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i>
         <span>Return</span>
     </button>
-
-    <!-- Messages / Error Flash -->
-    @if(session()->has('message'))
-        <div class="fixed top-24 right-6 z-[60] animate-bounce-in">
-            <div class="bg-emerald-500/10 backdrop-blur-md border border-emerald-500/50 text-emerald-400 rounded-2xl p-4 flex items-center space-x-3 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                <i data-lucide="shield-check" class="w-6 h-6"></i>
-                <span class="text-sm font-bold uppercase tracking-wider">{{ session('message') }}</span>
-            </div>
-        </div>
-    @endif
-    @if(session()->has('error'))
-        <div class="fixed top-24 right-6 z-[60] animate-bounce-in">
-            <div class="bg-red-500/10 backdrop-blur-md border border-red-500/50 text-red-400 rounded-2xl p-4 flex items-center space-x-3 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
-                <i data-lucide="alert-octagon" class="w-6 h-6"></i>
-                <span class="text-sm font-bold uppercase tracking-wider">{{ session('error') }}</span>
-            </div>
-        </div>
-    @endif
 
     <!-- Tournament Header Banner (Ultra Neon) -->
     <div class="relative group bg-zinc-900/60 backdrop-blur-2xl border border-zinc-800/80 rounded-[2.5rem] p-8 md:p-12 shadow-2xl overflow-hidden">
@@ -516,4 +500,3 @@
         </div>
     </div>
 </div>
-
