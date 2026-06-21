@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-21 (v1.52)
+**Last Updated**: 2026-06-21 (v1.53)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -30,6 +30,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /login` | `app/Livewire/Auth/Login.php` | Login (guest only) |
 | `GET /register` | `app/Livewire/Auth/Register.php` | Registration (guest only) |
 | `GET /reset-password` | `app/Livewire/Auth/PasswordReset.php` | Password reset (guest only) |
+| `POST /stripe/webhook` | `app/Http/Controllers/StripeWebhookController.php` | Stripe webhook receiver for sandbox/staging deposit fulfillment |
 
 ### Player Routes (auth required)
 
@@ -44,7 +45,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /leaderboards` | `app/Livewire/Match/LeaderboardList.php` | Leaderboard (stub) |
 | `GET /streams` | `app/Livewire/Stream/StreamList.php` | Streams (stub) |
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` | Global chat (mock) |
-| `GET /wallet` | `app/Livewire/Wallet/WalletDashboard.php` | Wallet balance + transaction history |
+| `GET /wallet` | `app/Livewire/Wallet/WalletDashboard.php` | Wallet balance, Stripe Checkout deposits, withdrawal requests, and transaction history |
 | `GET /profile` | `app/Livewire/Profile/ProfileDashboard.php` | Game-style player profile with Alpine tabs/drawer, avatar, account/profile/password updates, email verification, KYC status, Redis-cached support data, notification prefs |
 | `GET /teams` | `app/Livewire/Team/TeamDashboard.php` | Team management: create, invite, roster, captaincy |
 | `GET /verify-email` | `app/Livewire/Auth/EmailVerification.php` | Email verification notice |
@@ -161,7 +162,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 ### Wallet & Finance
 | Feature | Action/Service | Event | Listener |
 |---|---|---|---|
-| Deposit | `ProcessDepositAction` | `WalletCredited` | `SendDepositNotificationListener` |
+| Stripe deposit checkout | `StripeCheckoutService` | — | — |
+| Deposit fulfillment | `StripeWebhookController` → `ProcessDepositAction` | `WalletCredited` | `SendDepositNotificationListener` |
 | Request withdrawal | `RequestWithdrawalAction` | `WithdrawalRequested` | — |
 | Approve withdrawal | `ApproveWithdrawalAction` | `WithdrawalApproved` | `CreateLedgerEntryListener` (debit) |
 | Process withdrawal | `ProcessWithdrawalAction` | — | — |
@@ -204,6 +206,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Admin/AdminPanelTest.php` | Admin access guards, KYC approve/reject, match override, tournament create (TournamentForm), staff activity |
 | `Admin/BroadcastNotificationAdminTest.php` | Access guards, create/edit/expire/delete broadcasts, SUPER_ADMIN delete restriction, search filter |
 | `Wallet/WalletFeatureTest.php` | Deposit idempotency, withdrawal lifecycle, ledger sum = cached balance, listener idempotency |
+| `Wallet/WalletDashboardTest.php` | Wallet page Stripe Checkout redirect for deposits |
+| `Wallet/StripeWebhookTest.php` | Signed Stripe webhook deposit crediting, idempotency, invalid signature rejection |
 | `Tournament/TournamentModuleTest.php` | Registration, check-in, bracket generation, cancellation, refunds, prize distribution |
 | `Tournament/TournamentSecurityTest.php` | Join button role restriction, listing status filter, viewRestrictedDetails policy |
 | `Match/MatchModuleTest.php` | Result submission, confirmation flow, dispute, forfeit, bracket advancement |
@@ -241,6 +245,7 @@ See `PlayerSaloons_Execution_Checklist_v1.md` → Testing Debt section for the f
 | RBAC | Spatie Laravel Permission |
 | Audit Logging | Spatie Laravel Activity Log |
 | Queue/Jobs | Laravel Horizon (Redis) |
+| Payments | Stripe Checkout + Stripe webhooks for wallet deposits |
 | Database | MySQL 8 (production) / SQLite (local dev) |
 | Cache/Session | Redis |
 | File Storage | Local `public` disk (dev/staging) → R2/S3 (production, pending) |

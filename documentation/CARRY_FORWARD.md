@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-21 | **Current version**: v1.52 | **Branch**: `main`
+**As of**: 2026-06-21 | **Current version**: v1.53 | **Branch**: `main`
 
 ---
 
@@ -15,14 +15,14 @@
 - H2H result/dispute proof uploads and admin dispute resolution are implemented in `/admin/matches`
 - H2H now shows friendly wallet/balance errors and existing users missing wallet rows were backfilled
 - H2H timeout policy is conservative: expired waiting challenges refund; stale active/submitted matches go to admin review, never auto-win
-- Player wallet mock deposit now refreshes balance/ledger immediately in the UI
+- Player wallet deposits now use Stripe Checkout; signed Stripe webhooks credit the ledger-backed wallet after payment success
 - Public/guest pages now share one navbar/footer shell with welcome (`public-navigation`, `public-footer`)
 - PWA install support is present through manifest/service worker/icons and native browser install prompt handling
 - Echo/Reverb frontend setup is lazy-loaded only for authenticated pages with `meta[name="user-uuid"]`, preventing guest-page WebSocket console errors
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.52)
+## ✅ Natapos ngayong session (v1.30–v1.53)
 
 | Version | Item |
 |---|---|
@@ -49,6 +49,7 @@
 | v1.50 | PWA install support — manifest, service worker, icons, native install prompt |
 | v1.51 | Shared public shell — welcome and guest/public pages use common navbar/footer |
 | v1.52 | PWA/Reverb console cleanup — mobile-web-app meta + lazy authenticated Echo setup |
+| v1.53 | Stripe Checkout wallet deposits — hosted Checkout redirect, signed webhook fulfillment, Coolify env docs |
 
 ---
 
@@ -79,6 +80,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - H2H raw missing-wallet exception on find duel — fixed v1.41
 - H2H timeout/auto-expiry policy — done v1.43
 - Wallet mock deposit stale UI balance after success — fixed v1.42
+- Wallet mock-only deposit flow — replaced with Stripe Checkout + webhook fulfillment v1.53
 - Public/guest nav/footer mismatch with welcome — fixed v1.51
 - PWA install CTA placement and mobile duplication — fixed v1.50/v1.51
 - Guest-page Reverb WebSocket console spam — fixed v1.52

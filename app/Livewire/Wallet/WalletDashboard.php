@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Wallet;
 
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
-use App\Modules\Wallet\Models\Wallet;
-use App\Modules\Wallet\Services\WalletService;
-use App\Shared\Enums\LedgerType;
+use App\Modules\Wallet\Services\StripeCheckoutService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -31,7 +29,7 @@ class WalletDashboard extends Component
         }
     }
 
-    public function deposit(WalletService $walletService)
+    public function deposit(StripeCheckoutService $stripeCheckout)
     {
         $user = Auth::user();
         if (! $user) {
@@ -50,17 +48,13 @@ class WalletDashboard extends Component
         }
 
         try {
-            $walletService->credit(
+            $checkoutUrl = $stripeCheckout->createDepositSession(
+                $user,
                 $wallet,
-                (float) $this->depositAmount,
-                LedgerType::DEPOSIT,
-                Wallet::class,
-                (string) $wallet->id,
-                'Mock Deposit via Web Dashboard'
+                (float) $this->depositAmount
             );
 
-            session()->flash('message', 'Successfully deposited $'.number_format((float) $this->depositAmount, 2).' to your wallet!');
-            $this->reset('depositAmount');
+            return redirect()->away($checkoutUrl);
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }

@@ -5,15 +5,55 @@ This document details the ledger-based financial workflows for players.
 ## 1. Deposit
 Adding funds to the player's wallet.
 
-*   **Action**: Player initiates a deposit via the chosen payment provider.
-*   **UI Component**: Dashboard topbar or dedicated Deposit modal.
+*   **Action**: Player enters an amount on `/wallet`, is redirected to Stripe Checkout, and completes a sandbox/test card payment.
+*   **UI Component**: `app/Livewire/Wallet/WalletDashboard.php` with `resources/views/livewire/wallet/wallet-dashboard.blade.php`.
 *   **Logic (Actions)**:
+    *   `app/Modules/Wallet/Services/StripeCheckoutService.php`: Creates the Stripe Checkout Session with wallet/user metadata and success/cancel URLs.
+    *   `app/Http/Controllers/StripeWebhookController.php`: Verifies Stripe webhook signatures and handles `checkout.session.completed`.
     *   `app/Modules/Wallet/Actions/ProcessDepositAction.php`: Atomically updates the wallet and creates a ledger entry.
 *   **Connected Files**:
     *   `app/Modules/Wallet/Models/Deposit.php`: Tracks deposit status and external reference IDs.
     *   `app/Modules/Wallet/Services/WalletService.php`: Central service for credit/debit logic.
     *   `app/Modules/Wallet/Models/LedgerEntry.php`: The immutable source of truth for all transactions.
     *   `app/Modules/Wallet/Events/WalletCredited.php`.
+*   **Webhook Route**: `POST /stripe/webhook` is CSRF-exempt and protected by Stripe signature verification (`STRIPE_WEBHOOK_SECRET`).
+*   **Idempotency**: Stripe Checkout Session ID is stored as `deposits.provider_reference`; duplicate webhooks return the existing deposit and do not double-credit the wallet.
+
+### Stripe Local Testing
+
+Local Stripe webhooks use the Stripe CLI, not the Stripe Dashboard webhook endpoint:
+
+```bash
+stripe login
+stripe listen --events checkout.session.completed,payment_intent.succeeded,payment_intent.payment_failed --forward-to localhost:8088/stripe/webhook
+```
+
+The CLI prints a local signing secret:
+
+```env
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+Use Stripe test cards only, for example `4242 4242 4242 4242`.
+
+### Stripe Staging / Coolify
+
+Staging does not run `stripe listen`. Create a Stripe Dashboard webhook endpoint in test mode:
+
+```text
+https://<staging-domain>/stripe/webhook
+```
+
+Set these Coolify environment variables:
+
+```env
+APP_URL=https://<staging-domain>
+STRIPE_PUBLIC_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_from_staging_dashboard_endpoint
+```
+
+`STRIPE_KEY` / `STRIPE_SECRET` are also supported, but `STRIPE_PUBLIC_KEY` / `STRIPE_SECRET_KEY` match the current local environment.
 
 ## 2. Withdrawal Request
 Cashing out funds from the platform.
@@ -50,6 +90,10 @@ Real-time monitoring of wallet funds and history.
 ### 2. Deposit
 *   **Happy path**: `test_process_deposit_action` — creates `Deposit` record, credits wallet, dispatches `WalletCredited`.
 *   **Idempotency**: `test_process_deposit_is_idempotent` — duplicate `provider_reference` returns same deposit, no double credit, `WalletCredited` fired only once.
+*   **Stripe Checkout Redirect**: `WalletDashboardTest::test_deposit_redirects_to_stripe_checkout` — wallet UI creates a checkout session and does not credit balance synchronously.
+*   **Stripe Webhook Credit**: `StripeWebhookTest::test_checkout_session_completed_credits_wallet` — signed `checkout.session.completed` event credits the wallet through `ProcessDepositAction`.
+*   **Stripe Webhook Idempotency**: `StripeWebhookTest::test_checkout_session_webhook_is_idempotent` — duplicate checkout event does not double-credit.
+*   **Stripe Signature Guard**: `StripeWebhookTest::test_invalid_signature_is_rejected` — invalid webhook signatures return `400`.
 
 ### 3. Withdrawal Security
 *   **KYC Guard**: `test_request_withdrawal_blocked_if_kyc_not_approved`

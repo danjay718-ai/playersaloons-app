@@ -1,6 +1,19 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.52) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.53) | **Branch**: `main`
+
+---
+
+## ✅ Stripe Checkout Wallet Deposits (v1.53)
+
+- **`WalletDashboard`**: Replaced the mock deposit flow with Stripe Checkout Session creation and hosted Checkout redirect. Wallet balance is no longer credited synchronously from the UI.
+- **`StripeCheckoutService`**: Added Stripe Checkout session creation with wallet/user metadata, test-mode key support via `STRIPE_SECRET_KEY`/`STRIPE_PUBLIC_KEY` or `STRIPE_SECRET`/`STRIPE_KEY`, and wallet success/cancel URLs.
+- **`StripeWebhookController`**: Added signed webhook handling at `POST /stripe/webhook`; `checkout.session.completed` events with `payment_status=paid` credit wallets through `ProcessDepositAction`.
+- **`ProcessDepositAction` reuse**: Stripe Checkout Session IDs are used as provider references, preserving deposit idempotency and preventing duplicate webhook double-crediting.
+- **Wallet UI**: Redesigned `/wallet` with Deposit/Withdraw tabs, Stripe sandbox payment information, and a cleaner transaction ledger layout.
+- **Deployment**: Added Stripe env placeholders to `.env.example` and Coolify guidance for staging webhook secrets.
+- **Tests**: Added `StripeWebhookTest`; updated `WalletDashboardTest`. `php artisan test tests/Feature/Wallet/WalletDashboardTest.php tests/Feature/Wallet/StripeWebhookTest.php` passes: 4 tests, 14 assertions.
+- **PHPStan**: Not yet run for this change; run `./vendor/bin/phpstan analyse` before production promotion.
 
 ---
 
@@ -698,6 +711,36 @@ Items where schema or stub exists but logic is missing:
 ✅ php artisan config:cache runs on deploy (handled in start.sh)
 ✅ php artisan migrate --force runs on deploy (handled in start.sh)
 ```
+
+### Stripe Checkout Deposits (Coolify / Staging)
+
+Use Stripe Dashboard webhooks for staging/production. Do not run `stripe listen` outside local development.
+
+Required Coolify environment variables:
+
+```env
+APP_URL=https://app-testing.website
+STRIPE_PUBLIC_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_from_dashboard_webhook_endpoint
+```
+
+Alternative variable names are also supported:
+
+```env
+STRIPE_KEY=pk_test_...
+STRIPE_SECRET=sk_test_...
+```
+
+Stripe Dashboard setup:
+
+1. Ensure the Dashboard is in test/sandbox mode while using `pk_test_` / `sk_test_` keys.
+2. Create a webhook endpoint:
+   `https://app-testing.website/stripe/webhook`
+3. Subscribe at minimum to:
+   `checkout.session.completed`
+4. Copy that endpoint's signing secret (`whsec_...`) into Coolify as `STRIPE_WEBHOOK_SECRET`.
+5. Redeploy or restart the app so config is rebuilt from the new env values.
 
 ### SSL Setup (Coolify — Let's Encrypt)
 1. In Coolify dashboard → your application → **Domains** section

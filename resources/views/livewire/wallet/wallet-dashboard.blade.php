@@ -1,190 +1,258 @@
-<div class="space-y-8 min-w-0" x-data="{ walletAction: 'deposit' }">
-    <!-- Messages / Error Flash -->
+<div class="space-y-6 min-w-0" x-data="{ walletAction: 'deposit' }">
     @if(session()->has('message'))
-        <div class="bg-emerald-950/20 border border-emerald-900/40 text-emerald-400 rounded-xl p-4 flex items-center space-x-3 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-            <i data-lucide="circle-check" class="w-5 h-5 flex-shrink-0 text-emerald-450"></i>
-            <span class="text-xs font-semibold uppercase font-orbitron tracking-wider">{{ session('message') }}</span>
+        <div class="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-emerald-300 shadow-[0_0_18px_rgba(16,185,129,0.10)]">
+            <div class="flex items-center gap-3">
+                <i data-lucide="circle-check" class="h-5 w-5 shrink-0"></i>
+                <span class="font-orbitron text-xs font-bold uppercase tracking-widest">{{ session('message') }}</span>
+            </div>
         </div>
     @endif
+
     @if(session()->has('error'))
-        <div class="bg-red-950/20 border border-red-900/40 text-red-400 rounded-xl p-4 flex items-center space-x-3 shadow-[0_0_10px_rgba(244,63,94,0.1)]">
-            <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0 text-red-450"></i>
-            <span class="text-xs font-semibold uppercase font-orbitron tracking-wider">{{ session('error') }}</span>
+        <div class="rounded-xl border border-red-500/25 bg-red-500/10 p-4 text-red-300 shadow-[0_0_18px_rgba(244,63,94,0.10)]">
+            <div class="flex items-center gap-3">
+                <i data-lucide="alert-circle" class="h-5 w-5 shrink-0"></i>
+                <span class="font-orbitron text-xs font-bold uppercase tracking-widest">{{ session('error') }}</span>
+            </div>
         </div>
     @endif
 
-    <!-- Wallet Balance Header Card -->
-    <div class="bg-gradient-to-r from-[#170e30] via-[#0e0a24] to-transparent border border-purple-500/20 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(168,85,247,0.05)] relative overflow-hidden">
-        <!-- Glowing sci-fi elements -->
-        <div class="absolute -top-20 -right-20 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute top-0 right-0 w-24 h-24 border-t-2 border-r-2 border-purple-500/20 rounded-tr-2xl pointer-events-none"></div>
-        <div class="absolute bottom-0 left-0 w-24 h-24 border-b-2 border-l-2 border-purple-500/20 rounded-bl-2xl pointer-events-none"></div>
+    <section class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
+        <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 font-orbitron text-[9px] font-black uppercase tracking-widest text-emerald-300">
+                        {{ $wallet?->status ?? 'ACTIVE' }}
+                    </span>
+                    <span class="rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-300">
+                        Stripe Sandbox
+                    </span>
+                </div>
 
-        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div class="space-y-2">
-                <span class="block text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-orbitron">AVAILABLE BALANCE</span>
-                <h1 class="text-4xl md:text-6xl font-black font-orbitron tracking-wider text-emerald-450 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]">
-                    ${{ number_format((float)($wallet?->cached_balance ?? 0.00), 2) }}
-                </h1>
-                <div class="flex items-center space-x-2 text-[10px] text-zinc-400 font-bold font-orbitron">
-                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
-                    <span class="uppercase tracking-widest text-emerald-400">{{ $wallet?->status ?? 'ACTIVE' }}</span>
+                <div class="mt-5 grid gap-5 sm:grid-cols-3">
+                    <div class="sm:col-span-2">
+                        <p class="font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Available Balance</p>
+                        <div class="mt-2 font-orbitron text-4xl font-black tracking-wide text-white md:text-5xl">
+                            ${{ number_format((float)($wallet?->cached_balance ?? 0.00), 2) }}
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+                        <p class="font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Payment Mode</p>
+                        <div class="mt-3 flex items-center gap-2 text-sm font-bold text-zinc-200">
+                            <i data-lucide="flask-conical" class="h-4 w-4 text-sky-300"></i>
+                            Test only
+                        </div>
+                        <p class="mt-2 text-xs leading-relaxed text-zinc-500">
+                            No real cards or live funds are used on this wallet screen.
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Deposit / Withdraw Quick Tabs -->
-            <div class="flex items-center bg-zinc-950/80 border border-purple-500/20 p-1.5 rounded-xl self-start sm:self-center shadow-lg">
-                <button @click="walletAction = 'deposit'" :class="walletAction === 'deposit' ? 'bg-purple-650 text-white shadow-[0_0_8px_rgba(168,85,247,0.4)]' : 'text-zinc-500 hover:text-zinc-350'" class="px-5 py-2 rounded-lg text-xs font-bold font-orbitron uppercase tracking-widest transition-all cursor-pointer">
+            <div class="grid grid-cols-2 gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-1.5">
+                <button type="button"
+                    @click="walletAction = 'deposit'"
+                    :class="walletAction === 'deposit' ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200' : 'border-transparent text-zinc-500 hover:text-zinc-200'"
+                    class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-4 font-orbitron text-[10px] font-black uppercase tracking-widest transition-colors">
+                    <i data-lucide="arrow-down-to-line" class="h-4 w-4"></i>
                     Deposit
                 </button>
-                <button @click="walletAction = 'withdraw'" :class="walletAction === 'withdraw' ? 'bg-purple-650 text-white shadow-[0_0_8px_rgba(168,85,247,0.4)]' : 'text-zinc-500 hover:text-zinc-350'" class="px-5 py-2 rounded-lg text-xs font-bold font-orbitron uppercase tracking-widest transition-all cursor-pointer">
+                <button type="button"
+                    @click="walletAction = 'withdraw'"
+                    :class="walletAction === 'withdraw' ? 'border-fuchsia-400/40 bg-fuchsia-500/15 text-fuchsia-200' : 'border-transparent text-zinc-500 hover:text-zinc-200'"
+                    class="inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-4 font-orbitron text-[10px] font-black uppercase tracking-widest transition-colors">
+                    <i data-lucide="arrow-up-from-line" class="h-4 w-4"></i>
                     Withdraw
                 </button>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Main Content Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- Left: Action Forms (Deposit or Withdraw) -->
-        <div class="lg:col-span-1 space-y-6">
-            
-            <!-- Deposit Panel -->
-            <div x-show="walletAction === 'deposit'" class="bg-[#0c081d] border border-purple-500/15 rounded-2xl p-5 md:p-6 space-y-6 shadow-xl relative overflow-hidden">
-                <div class="absolute -top-20 -right-20 w-40 h-40 bg-emerald-600/5 rounded-full blur-2xl pointer-events-none"></div>
-                
-                <div>
-                    <h3 class="text-sm font-black font-orbitron tracking-wider text-zinc-150 uppercase">
-                        MOCK DEPOSIT
-                    </h3>
-                    <p class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed">
-                        Instantly credits test funds into your wallet to facilitate entry fee verification.
-                    </p>
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <section class="space-y-6">
+            <div x-show="walletAction === 'deposit'" x-cloak class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-white">Deposit</h2>
+                        <p class="mt-1 text-xs leading-relaxed text-zinc-500">
+                            Enter an amount, then use the test card details below while Stripe Checkout is being wired.
+                        </p>
+                    </div>
+                    <div class="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-2 text-emerald-300">
+                        <i data-lucide="credit-card" class="h-5 w-5"></i>
+                    </div>
                 </div>
 
-                <form wire:submit.prevent="deposit" class="space-y-4">
+                <form wire:submit.prevent="deposit" class="mt-6 space-y-4">
                     @csrf
                     <div>
-                        <label for="depositAmount" class="block text-[9px] font-bold text-zinc-500 uppercase tracking-wider font-orbitron mb-2">Deposit Amount ($)</label>
+                        <label for="depositAmount" class="mb-2 block font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Amount</label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-purple-400 font-orbitron text-xs font-bold">
-                                $
-                            </span>
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-emerald-300">$</span>
                             <input wire:model="depositAmount" id="depositAmount" type="number" step="0.01" min="1" required
-                                class="block w-full pl-8 pr-3 py-2.5 bg-zinc-950 border border-purple-500/20 rounded-xl text-xs font-semibold text-purple-300 placeholder-zinc-700 focus:outline-none focus:border-purple-500 transition-all"
+                                class="h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900/70 pl-9 pr-4 font-orbitron text-sm font-bold text-white outline-none transition-colors placeholder:text-zinc-700 focus:border-emerald-400/60"
                                 placeholder="0.00">
                         </div>
-                        @error('depositAmount') <span class="text-[10px] text-red-500 mt-1 block font-bold font-mono">{{ $message }}</span> @enderror
+                        @error('depositAmount') <span class="mt-2 block text-xs font-bold text-red-400">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Suggestion Buttons -->
                     <div class="grid grid-cols-4 gap-2">
-                        @foreach([10, 25, 50, 100] as $sug)
-                            <button type="button" @click="$wire.set('depositAmount', '{{ $sug }}')"
-                                class="py-2 bg-zinc-950 border border-purple-500/10 hover:border-purple-500/25 text-purple-300 hover:text-white text-[10px] font-bold font-orbitron rounded-lg transition-colors cursor-pointer">
-                                +${{ $sug }}
+                        @foreach([10, 25, 50, 100] as $suggestedAmount)
+                            <button type="button" @click="$wire.set('depositAmount', '{{ $suggestedAmount }}')"
+                                class="h-10 rounded-lg border border-zinc-800 bg-zinc-900/70 font-orbitron text-[10px] font-black text-zinc-300 transition-colors hover:border-emerald-400/40 hover:text-emerald-200">
+                                ${{ $suggestedAmount }}
                             </button>
                         @endforeach
                     </div>
 
-                    <button type="submit" 
-                        class="w-full flex justify-center py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-500 border border-emerald-450/20 text-xs font-black font-orbitron uppercase tracking-widest text-white rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.35)] transition-all cursor-pointer mt-2">
-                        DEPOSIT FUNDS
+                    <button type="submit"
+                        class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500 px-4 font-orbitron text-xs font-black uppercase tracking-widest text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.22)] transition-colors hover:bg-emerald-400">
+                        <i data-lucide="plus-circle" class="h-4 w-4"></i>
+                        Deposit Test Funds
                     </button>
                 </form>
             </div>
 
-            <!-- Withdrawal Panel -->
-            <div x-show="walletAction === 'withdraw'" class="bg-[#0c081d] border border-purple-500/15 rounded-2xl p-5 md:p-6 space-y-6 shadow-xl relative overflow-hidden">
-                <div class="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/5 rounded-full blur-2xl pointer-events-none"></div>
-
-                <div>
-                    <h3 class="text-sm font-black font-orbitron tracking-wider text-zinc-150 uppercase">
-                        WITHDRAW FUNDS
-                    </h3>
-                    <p class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed">
-                        Request withdrawal of ledger funds. Enforces approved identification check status.
-                    </p>
+            <div x-show="walletAction === 'withdraw'" x-cloak class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-white">Withdraw</h2>
+                        <p class="mt-1 text-xs leading-relaxed text-zinc-500">
+                            Submit a withdrawal request for review. Stripe Connect payout wiring can be added next.
+                        </p>
+                    </div>
+                    <div class="rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/10 p-2 text-fuchsia-300">
+                        <i data-lucide="landmark" class="h-5 w-5"></i>
+                    </div>
                 </div>
 
-                <form wire:submit.prevent="withdraw" class="space-y-4">
+                <form wire:submit.prevent="withdraw" class="mt-6 space-y-4">
                     @csrf
                     <div>
-                        <label for="amount" class="block text-[9px] font-bold text-zinc-500 uppercase tracking-wider font-orbitron mb-2">Withdrawal Amount ($)</label>
+                        <label for="amount" class="mb-2 block font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Withdrawal Amount</label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-purple-400 font-orbitron text-xs font-bold">
-                                $
-                            </span>
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-fuchsia-300">$</span>
                             <input wire:model="amount" id="amount" type="number" step="0.01" min="1" required
-                                class="block w-full pl-8 pr-3 py-2.5 bg-zinc-950 border border-purple-500/20 rounded-xl text-xs font-semibold text-purple-300 placeholder-zinc-700 focus:outline-none focus:border-purple-500 transition-all"
+                                class="h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900/70 pl-9 pr-4 font-orbitron text-sm font-bold text-white outline-none transition-colors placeholder:text-zinc-700 focus:border-fuchsia-400/60"
                                 placeholder="0.00">
                         </div>
-                        @error('amount') <span class="text-[10px] text-red-500 mt-1 block font-bold font-mono">{{ $message }}</span> @enderror
+                        @error('amount') <span class="mt-2 block text-xs font-bold text-red-400">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="bg-zinc-950 border border-purple-500/10 rounded-xl p-3 text-[9px] text-zinc-500 flex items-start space-x-2 leading-relaxed">
-                        <i data-lucide="info" class="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5 animate-pulse"></i>
-                        <span>Withdrawals require an approved KYC submission. Requests take 24-48 hours to process.</span>
+                    <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-200">
+                        <div class="flex gap-3">
+                            <i data-lucide="shield-check" class="mt-0.5 h-4 w-4 shrink-0"></i>
+                            <span>Withdrawals require approved identity verification and finance review before processing.</span>
+                        </div>
                     </div>
 
-                    <button type="submit" 
-                        class="w-full flex justify-center py-2.5 px-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 border border-fuchsia-450/20 text-xs font-black font-orbitron uppercase tracking-widest text-white rounded-xl shadow-[0_0_15px_rgba(217,70,239,0.35)] transition-all cursor-pointer mt-2">
-                        REQUEST WITHDRAWAL
+                    <button type="submit"
+                        class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500 px-4 font-orbitron text-xs font-black uppercase tracking-widest text-white shadow-[0_0_20px_rgba(217,70,239,0.22)] transition-colors hover:bg-fuchsia-400">
+                        <i data-lucide="send" class="h-4 w-4"></i>
+                        Request Withdrawal
                     </button>
                 </form>
             </div>
-        </div>
 
-        <!-- Right: Transaction History Ledger -->
-        <div class="lg:col-span-2 bg-[#0c081d] border border-purple-500/15 rounded-2xl p-5 md:p-6 space-y-4 shadow-xl">
-            <h3 class="text-sm font-black font-orbitron tracking-wider text-zinc-150 uppercase border-b border-purple-500/10 pb-3">
-                LEDGER TRANSACTION FEED
-            </h3>
+            <div class="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-5 shadow-xl md:p-6">
+                <div class="flex items-start gap-3">
+                    <div class="rounded-xl border border-sky-400/25 bg-sky-400/10 p-2 text-sky-200">
+                        <i data-lucide="badge-info" class="h-5 w-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-orbitron text-xs font-black uppercase tracking-widest text-sky-100">Stripe Test Payment Information</h3>
+                        <p class="mt-2 text-xs leading-relaxed text-sky-100/70">
+                            Use these values when the deposit button is connected to Stripe Checkout.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-5 space-y-3">
+                    <div class="rounded-xl border border-sky-400/20 bg-zinc-950/70 p-4">
+                        <label class="font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-200/70">Card Number</label>
+                        <div class="mt-2 flex items-center justify-between gap-3">
+                            <code class="text-sm font-black tracking-wider text-white">4242 4242 4242 4242</code>
+                            <i data-lucide="copy" class="h-4 w-4 text-sky-300"></i>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-xl border border-sky-400/20 bg-zinc-950/70 p-4">
+                            <label class="font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-200/70">Expiry</label>
+                            <div class="mt-2 text-sm font-black text-white">12 / 34</div>
+                        </div>
+                        <div class="rounded-xl border border-sky-400/20 bg-zinc-950/70 p-4">
+                            <label class="font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-200/70">CVC</label>
+                            <div class="mt-2 text-sm font-black text-white">123</div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border border-sky-400/20 bg-zinc-950/70 p-4">
+                        <label class="font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-200/70">ZIP / Postal Code</label>
+                        <div class="mt-2 text-sm font-black text-white">Any valid ZIP, e.g. 10001</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
+            <div class="flex flex-col gap-3 border-b border-zinc-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-white">Transaction History</h2>
+                    <p class="mt-1 text-xs text-zinc-500">Deposits, withdrawals, prizes, and wallet adjustments.</p>
+                </div>
+                <div class="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/70 px-3 py-1.5 text-xs font-bold text-zinc-400">
+                    <i data-lucide="receipt-text" class="h-4 w-4"></i>
+                    Ledger Feed
+                </div>
+            </div>
 
             @if($ledgerEntries->count() > 0)
-                <div class="space-y-3">
+                <div class="mt-5 space-y-3">
                     @foreach($ledgerEntries as $entry)
                         @php
-                            $isCredit = (float)$entry->amount >= 0;
+                            $isCredit = (float) $entry->amount >= 0;
+                            $entryType = $entry->type->value ?? $entry->type;
                         @endphp
-                        <div class="bg-zinc-950/60 border border-purple-500/10 hover:border-purple-500/20 rounded-xl p-4 flex items-center justify-between gap-4 transition-all duration-200">
-                            <div class="truncate">
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded font-orbitron border {{ $isCredit ? 'bg-emerald-950/40 text-emerald-450 border-emerald-900/40 shadow-[0_0_6px_rgba(16,185,129,0.1)]' : 'bg-red-950/40 text-red-450 border-red-900/40 shadow-[0_0_6px_rgba(244,63,94,0.1)]' }}">
-                                        {{ str_replace('_', ' ', $entry->type->value ?? $entry->type) }}
+                        <div class="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900/45 p-4 transition-colors hover:border-zinc-700 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-md border px-2 py-1 font-orbitron text-[9px] font-black uppercase tracking-widest {{ $isCredit ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' : 'border-red-500/25 bg-red-500/10 text-red-300' }}">
+                                        {{ str_replace('_', ' ', (string) $entryType) }}
                                     </span>
-                                    <span class="text-[9px] text-zinc-600 font-bold font-mono">
+                                    <span class="font-mono text-[10px] font-bold text-zinc-600">
                                         {{ $entry->created_at?->format('M d, Y h:i A') }}
                                     </span>
                                 </div>
-                                <span class="block text-xs font-bold text-zinc-400 mt-2 truncate w-72 md:w-96">
+                                <p class="mt-2 truncate text-sm font-semibold text-zinc-300">
                                     {{ $entry->description }}
-                                </span>
+                                </p>
                             </div>
 
-                            <div class="text-right">
-                                <span class="text-sm font-black font-orbitron block {{ $isCredit ? 'text-emerald-450' : 'text-red-450' }}">
-                                    {{ $isCredit ? '+' : '' }}${{ number_format(abs((float)$entry->amount), 2) }}
-                                </span>
-                                <span class="text-[9px] text-zinc-650 font-bold font-orbitron block mt-0.5">
-                                    BAL: ${{ number_format((float)$entry->running_balance, 2) }}
-                                </span>
+                            <div class="text-left sm:text-right">
+                                <div class="font-orbitron text-base font-black {{ $isCredit ? 'text-emerald-300' : 'text-red-300' }}">
+                                    {{ $isCredit ? '+' : '-' }}${{ number_format(abs((float)$entry->amount), 2) }}
+                                </div>
+                                <div class="mt-1 font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-600">
+                                    Bal ${{ number_format((float)$entry->running_balance, 2) }}
+                                </div>
                             </div>
                         </div>
                     @endforeach
 
-                    <!-- Pagination wrapper with styled pagination links -->
-                    <div class="pt-4 font-orbitron">
+                    <div class="pt-3">
                         {{ $ledgerEntries->links() }}
                     </div>
                 </div>
             @else
-                <div class="text-center py-16 text-zinc-550 border border-dashed border-purple-500/10 rounded-xl bg-zinc-950/20">
-                    <i data-lucide="receipt" class="w-8 h-8 mx-auto text-zinc-750 mb-3 animate-pulse"></i>
-                    <p class="text-xs font-bold font-orbitron uppercase tracking-widest text-zinc-500">No transactions logged yet.</p>
+                <div class="mt-5 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/25 px-6 py-14 text-center">
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950 text-zinc-600">
+                        <i data-lucide="receipt" class="h-7 w-7"></i>
+                    </div>
+                    <p class="mt-4 font-orbitron text-xs font-black uppercase tracking-widest text-zinc-400">No transactions yet</p>
+                    <p class="mt-2 text-sm text-zinc-600">Your wallet activity will appear here after a deposit or withdrawal request.</p>
                 </div>
             @endif
-        </div>
+        </section>
     </div>
 </div>

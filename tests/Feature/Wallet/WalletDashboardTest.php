@@ -7,6 +7,7 @@ namespace Tests\Feature\Wallet;
 use App\Livewire\Wallet\WalletDashboard;
 use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Models\Wallet;
+use App\Modules\Wallet\Services\StripeCheckoutService;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -26,20 +27,26 @@ class WalletDashboardTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
     }
 
-    public function test_deposit_updates_rendered_balance_without_page_refresh(): void
+    public function test_deposit_redirects_to_stripe_checkout(): void
     {
         $user = $this->createPlayerWithWallet('25.00');
+
+        $this->mock(StripeCheckoutService::class)
+            ->shouldReceive('createDepositSession')
+            ->once()
+            ->withArgs(fn (User $checkoutUser, Wallet $wallet, float $amount): bool => $checkoutUser->is($user)
+                && (int) $wallet->getAttribute('user_id') === (int) $user->getKey()
+                && $amount === 50.0)
+            ->andReturn('https://checkout.stripe.test/session');
 
         Livewire::actingAs($user)
             ->test(WalletDashboard::class)
             ->assertSee('$25.00')
             ->set('depositAmount', '50')
             ->call('deposit')
-            ->assertSee('Successfully deposited $50.00 to your wallet!')
-            ->assertSee('$75.00')
-            ->assertSee('Mock Deposit via Web Dashboard');
+            ->assertRedirect('https://checkout.stripe.test/session');
 
-        $this->assertSame('75.00', $user->wallet()->first()?->cached_balance);
+        $this->assertSame('25.00', $user->wallet()->first()?->cached_balance);
     }
 
     private function createPlayerWithWallet(string $balance): User

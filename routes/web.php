@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\StripeWebhookController;
 use App\Livewire\Admin\AdminDashboard;
 use App\Livewire\Admin\AdminProfile;
 use App\Livewire\Admin\AuditLogAdmin;
@@ -18,22 +19,31 @@ use App\Livewire\Auth\EmailVerification;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\PasswordReset;
 use App\Livewire\Auth\Register;
+use App\Livewire\Community\GlobalChat;
 use App\Livewire\Dashboard\PlayerDashboard;
+use App\Livewire\Match\HeadToHeadList;
+use App\Livewire\Match\LeaderboardList;
 use App\Livewire\Match\MatchDetail;
 use App\Livewire\Profile\ProfileDashboard;
+use App\Livewire\Stream\StreamList;
 use App\Livewire\Team\TeamDashboard;
+use App\Livewire\Tournament\MyTournamentsList;
+use App\Livewire\Tournament\PlayerTournamentList;
+use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
-use App\Livewire\Tournament\TournamentList;
 use App\Livewire\Wallet\WalletDashboard;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 // Public routes
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/tournaments', \App\Livewire\Tournament\PublicTournamentList::class);
+Route::get('/tournaments', PublicTournamentList::class);
+
+Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
 
 // Guest only routes
 Route::middleware('guest')->group(function () {
@@ -45,16 +55,16 @@ Route::middleware('guest')->group(function () {
 // Authenticated only routes
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
-    Route::get('/my-tournaments', \App\Livewire\Tournament\MyTournamentsList::class)->name('my-tournaments');
-    Route::get('/tournaments/browse', \App\Livewire\Tournament\PlayerTournamentList::class)->name('tournaments.browse');
-    Route::get('/head-to-head', \App\Livewire\Match\HeadToHeadList::class)->name('head-to-head');
-    Route::get('/leaderboards', \App\Livewire\Match\LeaderboardList::class)->name('leaderboards');
-    Route::get('/streams', \App\Livewire\Stream\StreamList::class)->name('streams');
-    Route::get('/chat', \App\Livewire\Community\GlobalChat::class)->name('chat');
-    Route::get('/tournaments/{uuid}/view', \App\Livewire\Tournament\TournamentDetail::class)->name('tournaments.view');
+    Route::get('/my-tournaments', MyTournamentsList::class)->name('my-tournaments');
+    Route::get('/tournaments/browse', PlayerTournamentList::class)->name('tournaments.browse');
+    Route::get('/head-to-head', HeadToHeadList::class)->name('head-to-head');
+    Route::get('/leaderboards', LeaderboardList::class)->name('leaderboards');
+    Route::get('/streams', StreamList::class)->name('streams');
+    Route::get('/chat', GlobalChat::class)->name('chat');
+    Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
     Route::get('/matches/{uuid}', MatchDetail::class);
 
-    Route::get('/wallet', WalletDashboard::class);
+    Route::get('/wallet', WalletDashboard::class)->name('wallet');
     Route::get('/profile', ProfileDashboard::class);
     Route::get('/teams', TeamDashboard::class);
     Route::get('/verify-email', EmailVerification::class)->name('verification.notice');
@@ -77,12 +87,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/matches', MatchAdmin::class);
         Route::get('/kyc', KycAdmin::class);
         Route::get('/kyc/document/{path}', function (string $path) {
-            $user = \Illuminate\Support\Facades\Auth::user();
+            $user = Auth::user();
             if (! $user || ! $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'KYC_REVIEWER'])) {
                 abort(403, 'Unauthorized access to KYC document.');
             }
 
-            $disk = \Illuminate\Support\Facades\Storage::disk('local');
+            $disk = Storage::disk('local');
             if (! $disk->exists($path)) {
                 abort(404, 'KYC document not found.');
             }
