@@ -175,45 +175,55 @@ class HeadToHeadList extends Component
     {
         $user = $this->user();
 
-        $waitingChallenges = HeadToHeadChallenge::query()
-            ->with(['creator', 'game.translations', 'platform'])
-            ->where('status', HeadToHeadChallengeStatus::WAITING->value)
-            ->where('game_id', (int) $this->gameId)
-            ->where(function ($query) {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
-            })
-            ->latest()
-            ->take(24)
-            ->get();
+        $waitingChallenges = collect();
+        $historyMatches = collect();
 
-        $matchQuery = HeadToHeadMatch::query()
+        // ALWAYS load active matches to show the global badge across all games
+        $activeMatches = HeadToHeadMatch::query()
             ->with(['creator', 'opponent', 'winner', 'resultSubmitter', 'disputer', 'game.translations', 'platform'])
-            ->where('game_id', (int) $this->gameId)
             ->where(function ($query) use ($user) {
                 $query->where('creator_user_id', $user->getKey())
                     ->orWhere('opponent_user_id', $user->getKey());
-            });
-
-        $activeMatches = (clone $matchQuery)
+            })
             ->whereIn('status', [
                 HeadToHeadMatchStatus::IN_PROGRESS,
                 HeadToHeadMatchStatus::WAITING_FOR_CONFIRMATION,
                 HeadToHeadMatchStatus::DISPUTED,
             ])
             ->latest()
-            ->take(12)
             ->get();
 
-        $historyMatches = (clone $matchQuery)
-            ->whereIn('status', [
-                HeadToHeadMatchStatus::COMPLETED,
-                HeadToHeadMatchStatus::CANCELLED,
-                HeadToHeadMatchStatus::EXPIRED,
-            ])
-            ->latest()
-            ->take(12)
-            ->get();
+        if ($this->activeTab === 'open') {
+            $waitingChallenges = HeadToHeadChallenge::query()
+                ->with(['creator', 'game.translations', 'platform'])
+                ->where('status', HeadToHeadChallengeStatus::WAITING->value)
+                ->where('game_id', (int) $this->gameId)
+                ->where(function ($query) {
+                    $query->whereNull('expires_at')
+                        ->orWhere('expires_at', '>', now());
+                })
+                ->latest()
+                ->take(24)
+                ->get();
+        }
+
+        if ($this->activeTab === 'history') {
+            $historyMatches = HeadToHeadMatch::query()
+                ->with(['creator', 'opponent', 'winner', 'resultSubmitter', 'disputer', 'game.translations', 'platform'])
+                ->where('game_id', (int) $this->gameId)
+                ->where(function ($query) use ($user) {
+                    $query->where('creator_user_id', $user->getKey())
+                        ->orWhere('opponent_user_id', $user->getKey());
+                })
+                ->whereIn('status', [
+                    HeadToHeadMatchStatus::COMPLETED,
+                    HeadToHeadMatchStatus::CANCELLED,
+                    HeadToHeadMatchStatus::EXPIRED,
+                ])
+                ->latest()
+                ->take(12)
+                ->get();
+        }
 
         return view('livewire.match.head-to-head-list', [
             'games' => Game::query()->with('translations')->where('is_active', true)->get(),

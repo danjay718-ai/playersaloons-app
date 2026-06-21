@@ -1,6 +1,25 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.56) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.58) | **Branch**: `main`
+
+---
+
+## ✅ Head-to-Head UX Enhancements & Global Active Badge (v1.58)
+
+- **Initiate Challenge Drawer**: Removed the "Initiate Challenge" tab and replaced it with a sleek, Alpine.js-powered sliding drawer (`showInitiateDrawer`), accessible via a prominent button placed directly next to the Game Filter.
+- **Highlighted Game Filter**: Redesigned the Game Filter top panel with neon gradients, glowing borders, and drop shadows to ensure it is highly noticeable and acts as the page's primary control center.
+- **Global Active Duels**: Modified the `HeadToHeadList` backend logic to fetch `activeMatches` globally across all games instead of filtering by the active game. Added a glowing red notification badge to the "Active Duels" tab to instantly alert players if they have ongoing duels anywhere on the platform.
+- **Bug Fix**: Removed `Cache::remember` for the `games` and `platforms` Eloquent Collections to fix a `__PHP_Incomplete_Class` Redis serialization error that occurred on some environments.
+
+---
+
+## ✅ Head-to-Head UI/UX Redesign & Performance Optimization (v1.57)
+
+- **`HeadToHeadList` Component**: Optimized database queries to prevent slow load times per tab. `activeMatches`, `waitingChallenges`, and `historyMatches` are now conditionally fetched based on the active tab state rather than unconditionally queried on every render.
+- **Predis Caching**: Implemented `Cache::remember` with Predis for `games` and `platforms` lookups in `HeadToHeadList::render()` to eliminate repetitive global database hits.
+- **`head-to-head-list.blade.php`**: Redesigned player tabs with a polished game-menu look featuring gradients and glowing effects. Added `wire:loading` overlay with a spinner to provide immediate feedback during tab transitions and data fetching.
+- **`_head-to-head-match-card.blade.php`**: Completely overhauled the match card to look like a game-style "VS" screen. Added neon accents, glassmorphism (`backdrop-blur-md`), pulsing glow on the VS badge, and more intuitive layout grouping for better user experience.
+- **Testing**: Confirmed Redis/Predis connection is working.
 
 ---
 
