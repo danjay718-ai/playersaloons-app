@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.46) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.48) | **Branch**: `main`
 
 ---
 
@@ -689,6 +689,18 @@ Items where schema or stub exists but logic is missing:
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
 
 ---
+
+## ✅ S3 Avatar Upload Support (v1.48)
+- **Identity Module**: Added missing `league/flysystem-aws-s3-v3` package.
+- Restored `UploadAvatarAction.php` to use `spatie/laravel-medialibrary` instead of local public disk.
+- Enables safe persistent avatar uploads using S3-compatible endpoints (MinIO/R2) in stateless Docker/Coolify containers without relying on volume mappings.
+- **Views**: Restored `$user->getFirstMediaUrl('avatar')` usage in `profile-dashboard.blade.php`.
+
+## ✅ Mobile Layout Navigation UI Redesign (v1.47)
+- **UI/UX**: Replaced the traditional mobile sidebar/burger drawer with a modern fixed-bottom navigation bar.
+- Uses dynamic `env(safe-area-inset-bottom)` for mobile notch support.
+- Added a slide-up "More" panel (`#mobile-more-panel`) with spring-curve animations for secondary navigation items (Wallet, Profile, Teams, Admin).
+- Completely pure CSS and vanilla JS; zero server roundtrips required for toggle actions.
 
 ## ✅ Player Profile Client-Side Interaction Optimization (v1.46)
 
