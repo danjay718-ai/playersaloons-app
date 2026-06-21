@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-21 | **Current version**: v1.42 | **Branch**: `main`
+**As of**: 2026-06-21 | **Current version**: v1.43 | **Branch**: `main`
 
 ---
 
@@ -14,11 +14,12 @@
 - H2H MVP is now DB-backed with challenge queue, stake lock, match acceptance, result submit/confirm, and winner payout
 - H2H result/dispute proof uploads and admin dispute resolution are implemented in `/admin/matches`
 - H2H now shows friendly wallet/balance errors and existing users missing wallet rows were backfilled
+- H2H timeout policy is conservative: expired waiting challenges refund; stale active/submitted matches go to admin review, never auto-win
 - Player wallet mock deposit now refreshes balance/ledger immediately in the UI
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.42)
+## ✅ Natapos ngayong session (v1.30–v1.43)
 
 | Version | Item |
 |---|---|
@@ -35,6 +36,7 @@
 | v1.40 | H2H proof upload + admin dispute review — award creator/opponent or void/refund |
 | v1.41 | H2H wallet error handling + wallet backfill for existing users |
 | v1.42 | Wallet deposit UI refresh — balance/ledger updates without browser refresh |
+| v1.43 | H2H timeout policy — waiting challenge refund, stale duels escalate to admin review |
 
 ---
 
@@ -44,7 +46,6 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 
 | Priority | Item | Effort |
 |---|---|---|
-| 🟢 | H2H timeout/auto-expiry policy | Medium — decide and implement fair handling for stale submitted/unresolved duels |
 | 🟡 | H2H ELO/skill matching | Optional for v1; matchmaker currently uses game/stake/platform/region |
 | 🟢 | Referral system logic | Medium |
 | 🔵 | 2FA | Large |
@@ -64,11 +65,11 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - H2H mock-only challenge queue — replaced with DB-backed MVP v1.39
 - H2H proof upload + admin dispute review — done v1.40
 - H2H raw missing-wallet exception on find duel — fixed v1.41
+- H2H timeout/auto-expiry policy — done v1.43
 - Wallet mock deposit stale UI balance after success — fixed v1.42
 
 ### H2H Follow-up Scope
 
-- Add timeout policy for stale `WAITING_FOR_CONFIRMATION` H2H matches without creating unfair auto-win behavior.
 - Add optional ELO/skill matching after enough player history exists.
 
 ---

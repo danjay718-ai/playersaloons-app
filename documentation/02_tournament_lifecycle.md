@@ -85,6 +85,7 @@ Player-created wager matches outside tournament brackets.
     *   `app/Modules/Match/Actions/ConfirmHeadToHeadResultAction.php`: Opponent confirms and releases both locked stakes to the winner.
     *   `app/Modules/Match/Actions/DisputeHeadToHeadResultAction.php`: Marks the result disputed and stores optional dispute notes/proof.
     *   `app/Modules/Match/Actions/ResolveHeadToHeadDisputeAction.php`: Admin awards creator, awards opponent, or voids/refunds both stakes from `/admin/matches`.
+    *   `app/Modules/Match/Jobs/ExpireHeadToHeadMatchesJob.php`: Runs every minute. Expired waiting challenges refund the creator; stale `IN_PROGRESS` or `WAITING_FOR_CONFIRMATION` matches escalate to `DISPUTED` for admin review.
 *   **Connected Files**:
     *   `app/Modules/Match/Models/HeadToHeadChallenge.php`
     *   `app/Modules/Match/Models/HeadToHeadMatch.php`
@@ -92,7 +93,11 @@ Player-created wager matches outside tournament brackets.
     *   `app/Shared/Enums/HeadToHeadDisputeResolution.php`
     *   `app/Shared/Enums/HeadToHeadChallengeStatus.php`
     *   `app/Shared/Enums/HeadToHeadMatchStatus.php`
-*   **Fair-play rule**: H2H does not auto-award wins from an unconfirmed claim. Confirmation releases payout; disputes keep stakes locked until an admin awards a player or voids/refunds the duel.
+*   **Fair-play rule**: H2H does not auto-award wins from an unconfirmed claim or stale timer. Confirmation releases payout; timeout/dispute cases keep stakes locked until an admin awards a player or voids/refunds the duel.
+*   **Timeout outcomes**:
+    *   Waiting challenge past `expires_at`: `EXPIRED` and creator stake refunded.
+    *   In-progress match past `match_timer_minutes + 15` minutes: `DISPUTED` with system timeout note.
+    *   Submitted result past `confirmation_due_at`: `DISPUTED` with system timeout note.
 
 ## 🧪 Isolated Test Cases
 ### 1. Registration & Wallet

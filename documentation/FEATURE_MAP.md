@@ -145,6 +145,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Confirm H2H result | `ConfirmHeadToHeadResultAction` + `ResolveHeadToHeadStakeAction` | — | — |
 | Dispute H2H result | `DisputeHeadToHeadResultAction` | — | Optional dispute proof/notes stored for admin review |
 | Resolve H2H dispute | `ResolveHeadToHeadDisputeAction` | — | Admin can award creator, award opponent, or void/refund both stakes from `/admin/matches` |
+| H2H timeout/expiry | — | — | `ExpireHeadToHeadMatchesJob` every minute; expired waiting challenges refund, stale active/submitted matches escalate to admin review |
 
 ### Wallet & Finance
 | Feature | Action/Service | Event | Listener |
@@ -194,7 +195,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Tournament/TournamentModuleTest.php` | Registration, check-in, bracket generation, cancellation, refunds, prize distribution |
 | `Tournament/TournamentSecurityTest.php` | Join button role restriction, listing status filter, viewRestrictedDetails policy |
 | `Match/MatchModuleTest.php` | Result submission, confirmation flow, dispute, forfeit, bracket advancement |
-| `Match/HeadToHeadModuleTest.php` | H2H challenge queue, stake lock/refund/payout, proof upload, admin winner ruling, admin void/refund, MatchAdmin component resolution |
+| `Match/HeadToHeadModuleTest.php` | H2H challenge queue, stake lock/refund/payout, proof upload, admin winner ruling, admin void/refund, timeout escalation, MatchAdmin component resolution |
 | `Match/ConfirmResultFlowTest.php` | Full flow: confirmResult → MatchCompleted → AdvanceWinnerListener + AutoForfeitJob timeout |
 | `Team/TeamModuleTest.php` | All 11 team actions: create, invite, accept, decline, revoke, remove, transfer, disband |
 

@@ -23,6 +23,7 @@
 - [ ] Implement ELO/Skill Level matching (optional for v1).
 - [x] Implement stake validation (check balance/lock amount in wallet). *(done v1.39)*
 - [x] Add H2H proof upload and admin dispute review flow. *(done v1.40)*
+- [x] Add H2H timeout/auto-expiry policy. *(done v1.43)*
 
 ### Tournament & Match Lifecycle Automation
 - [x] Implement `AutoStartMatchesListener` — transitions READY matches to IN_PROGRESS when tournament starts.

@@ -1,6 +1,6 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.42) | **Branch**: `main`
+**Last Updated**: 2026-06-21 (v1.43) | **Branch**: `main`
 
 ---
 
@@ -687,6 +687,16 @@ Items where schema or stub exists but logic is missing:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+
+---
+
+## ✅ H2H Timeout / Auto-Expiry Policy (v1.43)
+
+- **`ExpireHeadToHeadMatchesJob`**: New scheduled job for conservative H2H timeout handling. Waiting challenges past `expires_at` become `EXPIRED` and refund the creator stake. Stale `IN_PROGRESS` and `WAITING_FOR_CONFIRMATION` matches move to `DISPUTED` with a system timeout note for admin review.
+- **`HeadToHeadMatchStateMachine`**: Allows `IN_PROGRESS -> DISPUTED` so stale duels can escalate without auto-awarding a winner.
+- **Scheduler**: Registered the H2H timeout job to run every minute in `routes/console.php`.
+- **Tests**: Added coverage for expired challenge refund, stale in-progress escalation, and stale submitted-result escalation without payout. `php artisan test tests/Feature/Match/HeadToHeadModuleTest.php` passes: 14 tests, 59 assertions.
+- **PHPStan**: Not rerun; previous attempts exited with code 1 and no diagnostics/output in this environment.
 
 ---
 
