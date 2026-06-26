@@ -152,6 +152,7 @@ function initPublicShell() {
     initPublicMobileMenu();
     initPublicPwaInstall();
     initPublicNav();
+    initHeroVideoFallback();
 
     if (window.lucide) {
         window.lucide.createIcons();
@@ -212,6 +213,28 @@ function initPublicNav() {
     window.addEventListener('scroll', updateNav, { passive: true });
 }
 
+/**
+ * LANDING HERO VIDEO — Fallback loop listener
+ * 
+ * Some browsers (especially on mobile iOS or when using SPA navigation)
+ * will occasionally ignore the native HTML `loop` attribute. This guarantees
+ * the hero video will always replay when it finishes.
+ */
+function initHeroVideoFallback() {
+    const video = document.getElementById('hero-video');
+    if (!video) return;
+
+    // Avoid attaching multiple listeners
+    if (video._loopInitialised) return;
+    video._loopInitialised = true;
+
+    video.addEventListener('ended', () => {
+        video.currentTime = 0;
+        video.play().catch(() => {
+            // Ignore auto-play errors (e.g. if user hasn't interacted)
+        });
+    });
+}
 
 
 function initPlayerSubmitButtons() {

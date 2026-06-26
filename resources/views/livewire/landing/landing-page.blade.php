@@ -18,10 +18,13 @@
 
         {{-- Video Background --}}
         @if($hero?->media_path)
-            <video class="absolute inset-0 h-full w-full object-cover scale-105" autoplay muted loop playsinline preload="metadata">
+            <video id="hero-video"
+                class="absolute inset-0 h-full w-full object-cover scale-105"
+                autoplay muted loop playsinline preload="auto">
                 <source src="{{ $hero->media_path }}" type="video/mp4">
             </video>
         @endif
+
 
         {{-- Overlay layers --}}
         <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-[#050311]"></div>
