@@ -139,6 +139,27 @@ class TournamentSecurityTest extends TestCase
     }
 
     /**
+     * Completed tournaments are hidden from browse, but players can still open
+     * their history detail pages. Draft tournaments remain unavailable.
+     */
+    public function test_player_can_view_completed_tournament_detail_from_history(): void
+    {
+        $completedTournament = $this->makeTournament(TournamentStatus::COMPLETED);
+        $completedTournament->update(['name' => 'Completed History Cup']);
+
+        $draftTournament = $this->makeTournament(TournamentStatus::DRAFT);
+        $draftTournament->update(['name' => 'Draft Hidden Cup']);
+
+        Livewire::actingAs($this->player)
+            ->test(TournamentDetail::class, ['uuid' => $completedTournament->uuid])
+            ->assertSee('Completed History Cup');
+
+        $this->actingAs($this->player)
+            ->get('/tournaments/'.$draftTournament->uuid.'/view')
+            ->assertNotFound();
+    }
+
+    /**
      * Matches, Players, and Activity tabs are disabled for non-participants.
      * A registered player can see them; a non-registered player cannot.
      */
