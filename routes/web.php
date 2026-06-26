@@ -21,6 +21,7 @@ use App\Livewire\Auth\PasswordReset;
 use App\Livewire\Auth\Register;
 use App\Livewire\Community\GlobalChat;
 use App\Livewire\Dashboard\PlayerDashboard;
+use App\Livewire\Landing\LandingPage;
 use App\Livewire\Match\HeadToHeadList;
 use App\Livewire\Match\LeaderboardList;
 use App\Livewire\Match\MatchDetail;
@@ -37,9 +38,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
 // Public routes
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', LandingPage::class);
 
 Route::get('/tournaments', PublicTournamentList::class);
 

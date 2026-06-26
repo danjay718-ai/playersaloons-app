@@ -22,6 +22,13 @@
                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-800' }}">
             Platforms
         </button>
+        <button wire:click="setTab('landing')"
+                class="px-5 py-3 border-b-2 text-sm font-semibold tracking-wider uppercase transition-colors
+                {{ $tab === 'landing'
+                   ? 'border-indigo-500 text-indigo-400 font-bold'
+                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-800' }}">
+            Landing Page
+        </button>
     </div>
 
     <!-- Feedback Alerts -->
@@ -225,6 +232,141 @@
         </div>
     @endif
 
+    <!-- Landing Page Tab Content -->
+    @if($tab === 'landing')
+        <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <aside class="space-y-2">
+                @foreach($landingSections as $section)
+                    <button type="button"
+                            wire:click="selectLandingSection({{ $section->id }})"
+                            class="w-full rounded-lg border px-4 py-3 text-left transition-colors {{ $selectedLandingSectionId === $section->id ? 'border-indigo-500 bg-indigo-500/10 text-indigo-200' : 'border-slate-800 bg-[#0f172a] text-slate-400 hover:text-slate-200' }}">
+                        <span class="block text-[10px] font-black uppercase tracking-widest">{{ $section->key }}</span>
+                        <span class="mt-1 block truncate text-sm font-bold">{{ $section->title ?: 'Untitled section' }}</span>
+                    </button>
+                @endforeach
+            </aside>
+
+            @if($selectedLandingSectionId)
+                @php($selectedLandingSection = $landingSections->firstWhere('id', $selectedLandingSectionId))
+                <div class="space-y-6">
+                    <form wire:submit.prevent="saveLandingSection" class="rounded-xl border border-slate-800 bg-[#0f172a] p-6">
+                        <div class="mb-5 flex items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                            <div>
+                                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-200">Section Content</h3>
+                                <p class="mt-1 text-xs text-slate-500">Key: <span class="font-mono">{{ $selectedLandingSection?->key }}</span></p>
+                            </div>
+                            <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                                <input type="checkbox" wire:model="landingSectionIsActive" class="rounded border-slate-700 bg-slate-900 text-indigo-500">
+                                Active
+                            </label>
+                        </div>
+
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Title</label>
+                                <input type="text" wire:model="landingSectionTitle" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+                                @error('landingSectionTitle') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Subtitle</label>
+                                <input type="text" wire:model="landingSectionSubtitle" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+                                @error('landingSectionSubtitle') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Body</label>
+                                <textarea wire:model="landingSectionBody" rows="4" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"></textarea>
+                                @error('landingSectionBody') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Media Path</label>
+                                <input type="text" wire:model="landingSectionMediaPath" placeholder="/compressed_v1.mp4" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+                                @error('landingSectionMediaPath') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Sort Order</label>
+                                <input type="number" wire:model="landingSectionSortOrder" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+                                @error('landingSectionSortOrder') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">CTA Label</label>
+                                <input type="text" wire:model="landingSectionCtaLabel" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+                                @error('landingSectionCtaLabel') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">CTA URL</label>
+                                <input type="text" wire:model="landingSectionCtaUrl" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+                                @error('landingSectionCtaUrl') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <div class="mt-5 flex justify-end">
+                            <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500">
+                                Save Section
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="rounded-xl border border-slate-800 bg-[#0f172a]">
+                        <div class="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+                            <div>
+                                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-200">Section Items</h3>
+                                <p class="mt-1 text-xs text-slate-500">Cards, steps, stat labels, review entries, or footer links.</p>
+                            </div>
+                            <button type="button" wire:click="openCreateLandingItemModal({{ $selectedLandingSectionId }})" class="rounded-lg bg-indigo-600 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500">
+                                Add Item
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-[10px] font-bold uppercase text-slate-400">
+                                        <th class="p-4">Item</th>
+                                        <th class="p-4">Label / URL</th>
+                                        <th class="p-4">Order</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/50">
+                                    @forelse($selectedLandingSection?->items ?? [] as $item)
+                                        <tr wire:key="landing-item-{{ $item->id }}">
+                                            <td class="p-4">
+                                                <span class="block font-semibold text-slate-200">{{ $item->title ?: $item->item_key }}</span>
+                                                <span class="mt-1 block max-w-md truncate text-slate-500">{{ $item->body }}</span>
+                                            </td>
+                                            <td class="p-4 text-slate-400">
+                                                <span class="block">{{ $item->label ?: '-' }}</span>
+                                                <span class="block font-mono text-[10px] text-slate-600">{{ $item->url ?: '-' }}</span>
+                                            </td>
+                                            <td class="p-4 text-slate-400">{{ $item->sort_order }}</td>
+                                            <td class="p-4">
+                                                <button type="button" wire:click="toggleLandingItemActive({{ $item->id }})" class="rounded border px-2 py-0.5 text-[9px] font-bold uppercase {{ $item->is_active ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400' : 'border-red-500/20 bg-red-500/10 text-red-400' }}">
+                                                    {{ $item->is_active ? 'Active' : 'Disabled' }}
+                                                </button>
+                                            </td>
+                                            <td class="p-4 text-right space-x-2">
+                                                <button type="button" wire:click="openEditLandingItemModal({{ $item->id }})" class="rounded-lg border border-indigo-900/50 bg-indigo-950/40 p-1.5 text-indigo-400 hover:text-white" title="Edit">
+                                                    <i data-lucide="edit" class="h-4 w-4"></i>
+                                                </button>
+                                                <button type="button" wire:click="deleteLandingItem({{ $item->id }})" class="rounded-lg border border-red-900/50 bg-red-950/40 p-1.5 text-red-400 hover:text-white" title="Delete">
+                                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="p-8 text-center text-slate-500 italic">No editable items for this section yet.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
+
     <!-- Game Translation Modal -->
     @if($showGameModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -369,6 +511,85 @@
                         <button type="submit" 
                                 class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
                             Save Platform
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- Create/Edit Landing Item Modal -->
+    @if($showLandingItemModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showLandingItemModal', false)"></div>
+            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl relative z-10">
+                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">
+                        {{ $selectedLandingItemId ? 'Edit Landing Item' : 'Create Landing Item' }}
+                    </h3>
+                    <button wire:click="$set('showLandingItemModal', false)" class="text-slate-400 hover:text-white">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="saveLandingItem" class="p-6 space-y-4 text-xs">
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Item Key</label>
+                            <input type="text" wire:model="landingItemKey" placeholder="matches_played / review-1" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('landingItemKey') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Sort Order</label>
+                            <input type="number" wire:model="landingItemSortOrder" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('landingItemSortOrder') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Title</label>
+                            <input type="text" wire:model="landingItemTitle" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('landingItemTitle') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Subtitle</label>
+                            <input type="text" wire:model="landingItemSubtitle" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('landingItemSubtitle') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Label</label>
+                            <input type="text" wire:model="landingItemLabel" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('landingItemLabel') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">URL</label>
+                            <input type="text" wire:model="landingItemUrl" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('landingItemUrl') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Lucide Icon</label>
+                            <input type="text" wire:model="landingItemIcon" placeholder="trophy" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('landingItemIcon') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="flex items-end">
+                            <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                                <input type="checkbox" wire:model="landingItemIsActive" class="rounded border-slate-700 bg-slate-900 text-indigo-500">
+                                Active
+                            </label>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Body</label>
+                            <textarea wire:model="landingItemBody" rows="5" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
+                            @error('landingItemBody') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                        <button type="button" wire:click="$set('showLandingItemModal', false)"
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                            Save Item
                         </button>
                     </div>
                 </form>

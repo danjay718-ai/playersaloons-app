@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             PlatformSystemUserSeeder::class,
             AdminUserSeeder::class,
             GamesTableSeeder::class,
+            LandingPageSeeder::class,
             SystemSettingsSeeder::class,
             TournamentsTableSeeder::class,
             PlayerAccountSeeder::class,
