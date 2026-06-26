@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property string $uuid
  * @property string $slug
+ * @property string|null $banner_path
  * @property bool $is_active
  */
 class Game extends Model
@@ -21,6 +22,7 @@ class Game extends Model
     protected $fillable = [
         'uuid',
         'slug',
+        'banner_path',
         'is_active',
     ];
 

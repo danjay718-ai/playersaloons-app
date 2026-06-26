@@ -11,6 +11,7 @@ use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Models\LandingSectionItem;
 use App\Modules\CMS\Models\Platform;
+use App\Modules\CMS\Models\PublicNavigationItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -20,7 +21,7 @@ class CmsAdmin extends AdminComponent
 {
     use WithPagination;
 
-    public string $tab = 'games'; // games | pages | platforms | landing
+    public string $tab = 'games'; // games | pages | platforms | landing | navigation
 
     // Game modals / forms
     public bool $showGameModal = false;
@@ -30,6 +31,8 @@ class CmsAdmin extends AdminComponent
     public string $gameName = '';
 
     public string $gameDescription = '';
+
+    public string $gameBannerPath = '';
 
     public string $gameLocale = 'en';
 
@@ -104,6 +107,27 @@ class CmsAdmin extends AdminComponent
     public int $landingItemSortOrder = 0;
 
     public bool $landingItemIsActive = true;
+
+    // Public navigation forms
+    public bool $showNavigationItemModal = false;
+
+    public ?int $selectedNavigationItemId = null;
+
+    public string $navigationLabel = '';
+
+    public string $navigationUrl = '';
+
+    public string $navigationIcon = '';
+
+    public string $navigationMatchPattern = '';
+
+    public string $navigationVisibility = 'public';
+
+    public int $navigationSortOrder = 0;
+
+    public bool $navigationIsActive = true;
+
+    public bool $navigationOpensNewTab = false;
 
     protected $paginationTheme = 'tailwind';
 
@@ -232,6 +256,7 @@ class CmsAdmin extends AdminComponent
 
         $this->gameName = $translation !== null ? $translation->name : '';
         $this->gameDescription = $translation !== null ? $translation->description : '';
+        $this->gameBannerPath = (string) $game->banner_path;
         $this->showGameModal = true;
     }
 
@@ -240,6 +265,7 @@ class CmsAdmin extends AdminComponent
         $this->validate([
             'gameName' => 'required|string|max:255',
             'gameDescription' => 'nullable|string',
+            'gameBannerPath' => 'nullable|string|max:255',
         ]);
 
         if (! $this->selectedGameId) {
@@ -247,6 +273,10 @@ class CmsAdmin extends AdminComponent
         }
 
         DB::transaction(function (): void {
+            Game::findOrFail($this->selectedGameId)->update([
+                'banner_path' => $this->gameBannerPath !== '' ? $this->gameBannerPath : null,
+            ]);
+
             GameTranslation::updateOrCreate([
                 'game_id' => $this->selectedGameId,
                 'locale' => $this->gameLocale,
@@ -478,6 +508,87 @@ class CmsAdmin extends AdminComponent
         session()->flash('success', 'Landing item deleted.');
     }
 
+    public function openCreateNavigationItemModal(): void
+    {
+        $this->selectedNavigationItemId = null;
+        $this->navigationLabel = '';
+        $this->navigationUrl = '';
+        $this->navigationIcon = '';
+        $this->navigationMatchPattern = '';
+        $this->navigationVisibility = 'public';
+        $this->navigationSortOrder = 0;
+        $this->navigationIsActive = true;
+        $this->navigationOpensNewTab = false;
+        $this->showNavigationItemModal = true;
+    }
+
+    public function openEditNavigationItemModal(int $itemId): void
+    {
+        $item = PublicNavigationItem::findOrFail($itemId);
+
+        $this->selectedNavigationItemId = (int) $item->id;
+        $this->navigationLabel = $item->label;
+        $this->navigationUrl = $item->url;
+        $this->navigationIcon = (string) $item->icon;
+        $this->navigationMatchPattern = (string) $item->match_pattern;
+        $this->navigationVisibility = $item->visibility;
+        $this->navigationSortOrder = (int) $item->sort_order;
+        $this->navigationIsActive = (bool) $item->is_active;
+        $this->navigationOpensNewTab = (bool) $item->opens_new_tab;
+        $this->showNavigationItemModal = true;
+    }
+
+    public function saveNavigationItem(): void
+    {
+        $this->validate([
+            'navigationLabel' => 'required|string|max:100',
+            'navigationUrl' => 'required|string|max:255',
+            'navigationIcon' => 'nullable|string|max:100',
+            'navigationMatchPattern' => 'nullable|string|max:100',
+            'navigationVisibility' => 'required|string|in:public,guest,auth,player,staff,guest_or_player',
+            'navigationSortOrder' => 'integer|min:0|max:65535',
+            'navigationIsActive' => 'boolean',
+            'navigationOpensNewTab' => 'boolean',
+        ]);
+
+        $payload = [
+            'label' => $this->navigationLabel,
+            'url' => $this->navigationUrl,
+            'icon' => $this->navigationIcon !== '' ? $this->navigationIcon : null,
+            'match_pattern' => $this->navigationMatchPattern !== '' ? $this->navigationMatchPattern : null,
+            'visibility' => $this->navigationVisibility,
+            'sort_order' => $this->navigationSortOrder,
+            'is_active' => $this->navigationIsActive,
+            'opens_new_tab' => $this->navigationOpensNewTab,
+        ];
+
+        if ($this->selectedNavigationItemId) {
+            PublicNavigationItem::findOrFail($this->selectedNavigationItemId)->update($payload);
+        } else {
+            PublicNavigationItem::create(array_merge($payload, [
+                'uuid' => Str::uuid()->toString(),
+            ]));
+        }
+
+        $this->showNavigationItemModal = false;
+        session()->flash('success', 'Navigation item saved successfully.');
+    }
+
+    public function toggleNavigationItemActive(int $itemId): void
+    {
+        $item = PublicNavigationItem::findOrFail($itemId);
+        $item->update(['is_active' => ! $item->is_active]);
+
+        session()->flash('success', 'Navigation item status updated.');
+    }
+
+    public function deleteNavigationItem(int $itemId): void
+    {
+        PublicNavigationItem::findOrFail($itemId)->delete();
+
+        session()->flash('success', 'Navigation item deleted.');
+    }
+
     public function render()
     {
         $games = Game::with('translations')->paginate(10, ['*'], 'games_page');
@@ -487,12 +598,16 @@ class CmsAdmin extends AdminComponent
             ->with('items')
             ->orderBy('sort_order')
             ->get();
+        $publicNavigationItems = PublicNavigationItem::query()
+            ->orderBy('sort_order')
+            ->get();
 
         return view('livewire.admin.cms-admin', [
             'games' => $games,
             'pages' => $pages,
             'platforms' => $platforms,
             'landingSections' => $landingSections,
+            'publicNavigationItems' => $publicNavigationItems,
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Games & Content Management System (CMS)',
         ]);

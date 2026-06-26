@@ -29,6 +29,13 @@
                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-800' }}">
             Landing Page
         </button>
+        <button wire:click="setTab('navigation')"
+                class="px-5 py-3 border-b-2 text-sm font-semibold tracking-wider uppercase transition-colors
+                {{ $tab === 'navigation'
+                   ? 'border-indigo-500 text-indigo-400 font-bold'
+                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-800' }}">
+            Navigation
+        </button>
     </div>
 
     <!-- Feedback Alerts -->
@@ -47,6 +54,7 @@
                     <thead>
                         <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
                             <th class="p-4">Game Slug</th>
+                            <th class="p-4">Banner</th>
                             <th class="p-4">Name (EN)</th>
                             <th class="p-4">Description</th>
                             <th class="p-4">Catalog status</th>
@@ -59,6 +67,15 @@
                                 <td class="p-4 font-semibold text-slate-200 font-mono">
                                     {{ $game->slug }}
                                     <span class="block text-[9px] text-slate-500 font-normal mt-0.5">{{ $game->uuid }}</span>
+                                </td>
+                                <td class="p-4">
+                                    @if($game->banner_path)
+                                        <div class="h-12 w-24 overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
+                                            <img src="{{ $game->banner_path }}" alt="{{ $game->slug }} banner" class="h-full w-full object-cover">
+                                        </div>
+                                    @else
+                                        <span class="text-[10px] text-slate-600">No banner</span>
+                                    @endif
                                 </td>
                                 <td class="p-4 text-slate-200 font-semibold">
                                     {{ $game->translations->where('locale', 'en')->first()?->name ?? 'N/A' }}
@@ -83,7 +100,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="p-8 text-center text-slate-500 italic">No games seeded in database.</td>
+                                <td colspan="6" class="p-8 text-center text-slate-500 italic">No games seeded in database.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -367,6 +384,78 @@
         </div>
     @endif
 
+    <!-- Public Navigation Tab Content -->
+    @if($tab === 'navigation')
+        <div class="flex justify-end mb-4">
+            <button wire:click="openCreateNavigationItemModal"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs uppercase tracking-wider px-3.5 py-2.5 rounded-lg flex items-center shadow-md transition-colors">
+                <i data-lucide="plus" class="w-4 h-4 mr-1.5"></i>
+                <span>Add Nav Item</span>
+            </button>
+        </div>
+
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
+                            <th class="p-4">Label</th>
+                            <th class="p-4">URL</th>
+                            <th class="p-4">Visibility</th>
+                            <th class="p-4">Order</th>
+                            <th class="p-4">Status</th>
+                            <th class="p-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        @forelse($publicNavigationItems as $item)
+                            <tr class="hover:bg-slate-900/40" wire:key="nav-item-{{ $item->id }}">
+                                <td class="p-4 font-semibold text-slate-200">
+                                    <span class="inline-flex items-center gap-2">
+                                        @if($item->icon)
+                                            <i data-lucide="{{ $item->icon }}" class="h-4 w-4 text-indigo-400"></i>
+                                        @endif
+                                        {{ $item->label }}
+                                    </span>
+                                    <span class="block text-[9px] text-slate-500 mt-0.5">Pattern: {{ $item->match_pattern ?: '-' }}</span>
+                                </td>
+                                <td class="p-4 font-mono text-slate-400">
+                                    {{ $item->url }}
+                                    @if($item->opens_new_tab)
+                                        <span class="ml-2 rounded border border-slate-700 px-1.5 py-0.5 text-[9px] uppercase text-slate-500">New tab</span>
+                                    @endif
+                                </td>
+                                <td class="p-4 text-slate-400">{{ str_replace('_', ' ', $item->visibility) }}</td>
+                                <td class="p-4 text-slate-400">{{ $item->sort_order }}</td>
+                                <td class="p-4">
+                                    <button wire:click="toggleNavigationItemActive({{ $item->id }})"
+                                            class="inline-flex items-center px-2 py-0.5 rounded border text-[9px] font-bold uppercase transition-colors
+                                            {{ $item->is_active
+                                               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                                               : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' }}">
+                                        {{ $item->is_active ? 'Active' : 'Disabled' }}
+                                    </button>
+                                </td>
+                                <td class="p-4 text-right space-x-2">
+                                    <button wire:click="openEditNavigationItemModal({{ $item->id }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit Navigation Item">
+                                        <i data-lucide="edit" class="w-4 h-4"></i>
+                                    </button>
+                                    <button wire:click="deleteNavigationItem({{ $item->id }})" class="p-1.5 text-red-400 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete Navigation Item">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="p-8 text-center text-slate-500 italic">No public navigation items created yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
     <!-- Game Translation Modal -->
     @if($showGameModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -399,6 +488,13 @@
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Description</label>
                         <textarea wire:model="gameDescription" rows="4" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
                         @error('gameDescription') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Landing Banner Path</label>
+                        <input type="text" wire:model="gameBannerPath" placeholder="/storage/games/valorant.webp" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        <p class="mt-1 text-[10px] text-slate-500">Used by the landing page game carousel. Leave blank to show the generated pattern fallback.</p>
+                        @error('gameBannerPath') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
@@ -590,6 +686,86 @@
                         <button type="submit"
                                 class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
                             Save Item
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- Create/Edit Navigation Item Modal -->
+    @if($showNavigationItemModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showNavigationItemModal', false)"></div>
+            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl relative z-10">
+                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">
+                        {{ $selectedNavigationItemId ? 'Edit Navigation Item' : 'Create Navigation Item' }}
+                    </h3>
+                    <button wire:click="$set('showNavigationItemModal', false)" class="text-slate-400 hover:text-white">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="saveNavigationItem" class="p-6 space-y-4 text-xs">
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Label</label>
+                            <input type="text" wire:model="navigationLabel" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('navigationLabel') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">URL</label>
+                            <input type="text" wire:model="navigationUrl" placeholder="/tournaments" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('navigationUrl') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Lucide Icon</label>
+                            <input type="text" wire:model="navigationIcon" placeholder="trophy" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('navigationIcon') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Active Pattern</label>
+                            <input type="text" wire:model="navigationMatchPattern" placeholder="tournaments*" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('navigationMatchPattern') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Visibility</label>
+                            <select wire:model="navigationVisibility" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-350 focus:outline-none focus:border-indigo-500">
+                                <option value="public">Everyone</option>
+                                <option value="guest">Guests only</option>
+                                <option value="auth">Signed-in users</option>
+                                <option value="player">Players only</option>
+                                <option value="staff">Staff only</option>
+                                <option value="guest_or_player">Guests and players</option>
+                            </select>
+                            @error('navigationVisibility') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Sort Order</label>
+                            <input type="number" wire:model="navigationSortOrder" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('navigationSortOrder') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                                <input type="checkbox" wire:model="navigationIsActive" class="rounded border-slate-700 bg-slate-900 text-indigo-500">
+                                Active
+                            </label>
+                            <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                                <input type="checkbox" wire:model="navigationOpensNewTab" class="rounded border-slate-700 bg-slate-900 text-indigo-500">
+                                New tab
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                        <button type="button" wire:click="$set('showNavigationItemModal', false)"
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                            Save Navigation
                         </button>
                     </div>
                 </form>
