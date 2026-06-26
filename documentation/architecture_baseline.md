@@ -182,6 +182,21 @@ Changes here represent deviations or additions to the original baseline design. 
 
 ---
 
+### [v1.60] Table-backed Dynamic Landing Page
+
+**Baseline reference**: Public pages and CMS — the homepage was a static Blade file while `/admin/cms` only managed games, platforms, and generic CMS pages.
+
+**What changed**:
+- `/` now renders through `LandingPage`, backed by `LandingPageContentService`.
+- New `landing_sections` and `landing_section_items` tables hold editable homepage section copy, video path, CTAs, cards, reviews, stat labels, and footer links.
+- Games are still sourced from the existing `games` and `game_translations` catalog.
+- Stats are computed live from matches, H2H matches, ledger payouts, active users, and active games; admins can edit labels/icons/order but not override the numeric values.
+- `/admin/cms` now has a Landing Page tab for editing sections and items.
+
+**Why**: Landing content needs long-term admin ownership without deploys. Tables were chosen over one JSON setting so sections and cards can be managed independently, ordered, toggled, and extended as the marketing surface grows.
+
+---
+
 ## 🛠️ Pending Implementation (Post-MVP Checklist)
 
 *Refer to [PlayerSaloons_Execution_Checklist_v1.md] for detailed implementation tasks.*

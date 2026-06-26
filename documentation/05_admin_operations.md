@@ -101,6 +101,29 @@ Monitoring admin actions across the platform.
     *   Per-staff action count breakdown (e.g., "kyc_approved ×5, withdrawal_approved ×2").
     *   Top-10 actions summary across all staff in the period.
 
+## 8. CMS & Landing Page Management
+Managing public content, game catalog labels, and the editable landing page.
+
+*   **Route**: `/admin/cms`
+*   **UI Component**: `app/Livewire/Admin/CmsAdmin.php`
+*   **Landing Tables**:
+    *   `landing_sections`: Stores section-level content such as hero title/body/video, section headings, CTA, sort order, and visibility.
+    *   `landing_section_items`: Stores cards/steps/stat labels/features/reviews/footer links for each section.
+*   **Landing Public Component**: `app/Livewire/Landing/LandingPage.php`
+*   **Data Service**: `app/Modules/CMS/Services/LandingPageContentService.php`
+*   **Editable Landing Areas**:
+    *   Hero copy, CTA, and video path (`/compressed_v1.mp4` by default).
+    *   How-it-works steps.
+    *   Stat card labels/icons/order; values are computed live, not manually entered.
+    *   Feature cards.
+    *   Review cards.
+    *   Footer copy and links.
+*   **Database-driven Areas**:
+    *   Games list comes from active rows in `games` and `game_translations`.
+    *   Live stats are computed from matches, H2H matches, prize/H2H payout ledger entries, active users, and active games.
+    *   Top players of the week are computed from completed tournament matches and weekly prize activity.
+*   **Defaults**: `database/seeders/LandingPageSeeder.php` creates the standard landing sections/items for fresh installs.
+
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
 *   **Role Protection**: `test_non_admin_cannot_access_admin_dashboard` / `test_player_cannot_access_staff_activity_dashboard`
@@ -119,6 +142,10 @@ Monitoring admin actions across the platform.
     *   Uses `TournamentForm` component (not `TournamentAdmin`).
     *   Assert `tournaments` row with `status = DRAFT`.
 *   **Staff Activity**: `test_admin_can_access_staff_activity_dashboard`, `test_staff_activity_dashboard_shows_staff_members`, `test_staff_activity_dashboard_filters_by_date`, `test_staff_activity_dashboard_filters_by_staff_name`
+*   **Landing CMS**: `test_admin_can_update_landing_section_and_create_item`
+    *   Assert admin can update section content and add landing cards/items.
+*   **Dynamic Landing Render**: `test_landing_page_renders_seeded_content_video_and_games`
+    *   Assert `/` renders seeded content, the video path, game catalog cards, and dynamic sections.
 
 ### 📋 Pending Tests (Testing Debt)
 *   `test_admin_tournament_filter_persistence`: Ensure search/status filters remain set after page refresh.
@@ -128,7 +155,7 @@ Monitoring admin actions across the platform.
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
-    *   **Mass Notifications**: UI for sending broadcast messages to all users (schema for `broadcast_messages` exists).
+    *   None currently tracked in this document.
 *   **Unused Schema Columns**:
     *   `system_settings.category`: Settings are currently a flat list; no categorization UI.
     *   `job_execution_logs.performance_metrics`: JSON field for tracking job speed/memory usage currently empty.

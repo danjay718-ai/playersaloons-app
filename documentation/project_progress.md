@@ -1,6 +1,25 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-21 (v1.58) | **Branch**: `main`
+**Last Updated**: 2026-06-25 (v1.60) | **Branch**: `main`
+
+---
+
+## ✅ Dynamic Landing Page CMS (v1.60)
+
+- **`LandingPage` / `landing-page.blade.php`**: Replaced the static homepage route with a DB-backed Livewire landing page, including `/compressed_v1.mp4` video hero, active game cards, how-it-works steps, live stats, weekly top players, feature cards, reviews, and editable footer content.
+- **`landing_sections` / `landing_section_items`**: Added long-term landing content tables plus `LandingSection` and `LandingSectionItem` models.
+- **`LandingPageContentService`**: Centralized landing data loading, active game lookup, live stats, and weekly top-player calculation.
+- **`CmsAdmin`**: Added a Landing Page tab for editing section content and adding/editing/toggling/deleting section items.
+- **Tests**: Added `LandingPageTest` for dynamic landing rendering and admin landing edits.
+- **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
+
+---
+
+## ✅ Tournament History Detail Access Fix (v1.59)
+
+- **`TournamentDetail`**: Player-facing tournament detail lookup now allows all non-draft tournaments instead of only active/joinable statuses. This keeps completed, cancelled, and refunded tournaments accessible from player history while preserving the draft visibility guard.
+- **Tests**: Added regression coverage in `TournamentSecurityTest` confirming completed history tournament details render for players and draft tournament details still return 404.
+- **PHPStan**: Not run for this documentation/test follow-up.
 
 ---
 

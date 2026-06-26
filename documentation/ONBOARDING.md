@@ -80,6 +80,7 @@ app/Modules/Identity/
 - **Finance is ledger-based** — `WalletService` for all debits/credits; `ledger_entries` is the source of truth.
 - **Immutable models** (`LedgerEntry`, `MatchEvidence`, `Refund`, etc.) throw `LogicException` on update/delete.
 - **Public shell is shared** — welcome and guest/public Livewire pages use `resources/views/components/layouts/partials/public-navigation.blade.php` and `public-footer.blade.php`. Keep public navigation/footer changes there.
+- **Landing page content is table-backed** — `/` renders through `app/Livewire/Landing/LandingPage.php`; editable content lives in `landing_sections` and `landing_section_items`, with admin controls in `/admin/cms`.
 - **No page-local PWA scripts** — PWA install prompt, public burger menu behavior, service worker registration, and lazy Echo setup live in `resources/js/app.js`.
 - **Echo/Reverb is authenticated-only on the frontend** — do not eagerly create `window.Echo` on guest/public pages; initialize it only when `meta[name="user-uuid"]` and Reverb env config exist.
 
@@ -176,6 +177,7 @@ If information exists in two places, the more specific file wins (e.g., module d
 | Cache | Redis | `CACHE_STORE=redis` |
 | Queue jobs | Redis + Horizon | `QUEUE_CONNECTION=redis` |
 | User uploaded files | Local `public` disk (dev) | `storage/app/public/` — **not** persisted across deploys without a volume |
+| Landing page content | `landing_sections`, `landing_section_items` | Hero copy/video path, section headings, editable cards, reviews, stat labels, and footer links |
 | Public file access | `public/storage` symlink | Created by `php artisan storage:link` |
 | Audit logs | `activity_log` DB table | Spatie Activity Log |
 | App configuration | `.env` (never commit) | Use `.env.production.example` as template |

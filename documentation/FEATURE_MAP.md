@@ -25,7 +25,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 
 | Route | Component | Description |
 |---|---|---|
-| `GET /` | `resources/views/welcome.blade.php` | Landing page |
+| `GET /` | `app/Livewire/Landing/LandingPage.php` | Dynamic landing page backed by editable landing sections/items, active games, live stats, and weekly top players |
 | `GET /tournaments` | `app/Livewire/Tournament/PublicTournamentList.php` | Public tournament listing |
 | `GET /login` | `app/Livewire/Auth/Login.php` | Login (guest only) |
 | `GET /register` | `app/Livewire/Auth/Register.php` | Registration (guest only) |
@@ -66,7 +66,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/withdrawals` | `app/Livewire/Admin/WithdrawalAdmin.php` | Review withdrawals + Four-eyes approval process |
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
 | `GET /admin/audit-logs` | `app/Livewire/Admin/AuditLogAdmin.php` | Spatie activity log viewer with filters |
-| `GET /admin/cms` | `app/Livewire/Admin/CmsAdmin.php` | Games, Platforms, CMS Pages management |
+| `GET /admin/cms` | `app/Livewire/Admin/CmsAdmin.php` | Games, Platforms, CMS Pages, and Landing Page content management |
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
 
@@ -108,6 +108,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|---|
 | Public navbar | `resources/views/components/layouts/partials/public-navigation.blade.php` | Shared welcome/public/guest navbar. Desktop centers public links and keeps auth/PWA actions right; mobile keeps `Sign In`, `Join Now`, and burger in the topbar. |
 | Public footer | `resources/views/components/layouts/partials/public-footer.blade.php` | Shared public footer for welcome and public/guest Livewire pages. |
+| Landing shell | `resources/views/components/layouts/landing.blade.php` | Full-bleed landing shell for the dynamic homepage with shared public navigation and landing-managed footer content. |
 | Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, native PWA install prompt, service worker registration, and lazy authenticated Echo setup. |
 | PWA manifest/service worker | `public/manifest.json`, `public/sw.js`, `public/icon-192.png`, `public/icon-512.png` | Installable app metadata, square PWA icons, static asset caching, and network-only HTML navigation so stale landing pages are not served after logout. |
 
@@ -128,6 +129,15 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Upload Avatar | `UploadAvatarAction` | — | — |
 | Verify Email from Profile | `ProfileDashboard::verifyEmail()` | `EmailVerified` | — |
 | KYC admin document compatibility | `KycSubmission::document_front_path`, `KycSubmission::document_back_path` accessors | — | — |
+
+### CMS & Public Landing
+| Feature | Action/Service | Event | Listener |
+|---|---|---|---|
+| Dynamic landing page content | `LandingPageContentService` | — | — |
+| Landing section/card editing | `CmsAdmin::saveLandingSection()`, `CmsAdmin::saveLandingItem()` | — | — |
+| Landing defaults | `LandingPageSeeder` | — | — |
+| Active games on landing | `Game` + `GameTranslation` query | — | — |
+| Live landing stats | `GameMatch`, `HeadToHeadMatch`, `LedgerEntry`, `User`, `Game` aggregate queries | — | — |
 
 ### Tournament Lifecycle
 | Feature | Action/Service | Event | Listener/Job |
