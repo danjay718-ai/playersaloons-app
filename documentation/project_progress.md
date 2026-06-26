@@ -1,6 +1,13 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-26 (v1.64) | **Branch**: `main`
+**Last Updated**: 2026-06-26 (v1.65) | **Branch**: `main`
+
+---
+
+## ✅ Landing Hero Video Loop Reliability Fix (v1.65)
+
+- **`landing-page.blade.php`**: Added `id="hero-video"` to the hero background video and changed `preload="metadata"` to `preload="auto"` to ensure the video buffers fully, which aids native loop reliability.
+- **`app.js`**: Added `initHeroVideoFallback()` function to forcefully reset and replay the video when the `ended` event fires. This acts as a belt-and-suspenders guarantee for browsers (especially on mobile/iOS) that occasionally ignore the native HTML `loop` attribute when SPA navigation occurs or buffering stutters.
 
 ---
 
