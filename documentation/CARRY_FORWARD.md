@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-25 | **Current version**: v1.60 | **Branch**: `main`
+**As of**: 2026-06-26 | **Current version**: v1.63 | **Branch**: `main`
 
 ---
 
@@ -24,12 +24,15 @@
 - The PWA service worker no longer cache-first serves HTML/navigation requests, preventing stale unstyled landing-page HTML after logout/logo navigation
 - Public/guest pages now share one navbar/footer shell with welcome (`public-navigation`, `public-footer`)
 - Landing page is now DB-backed through `landing_sections` and `landing_section_items`, with admin editing in `/admin/cms`, a `/compressed_v1.mp4` video hero, active game cards, editable cards/reviews/footer, live computed stats, and weekly top-player spotlight
+- Landing games now render as a horizontal snap-scroll carousel; `games.banner_path` stores optional per-game card banners, and the landing background uses lightweight CSS-only game patterns
+- Landing page has a mobile responsiveness pass for player-heavy mobile traffic: tighter hero/CTA spacing, smaller carousel cards, touch-friendly sections, wrapped footer text, and a compact public mobile nav
+- Public navbar items are now editable through `/admin/cms` → Navigation, backed by `public_navigation_items`; mobile burger contains nav items and install action while the mobile topbar stays focused on auth actions
 - PWA install support is present through manifest/service worker/icons and native browser install prompt handling
 - Echo/Reverb frontend setup is lazy-loaded only for authenticated pages with `meta[name="user-uuid"]`, preventing guest-page WebSocket console errors
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.60)
+## ✅ Natapos ngayong session (v1.30–v1.63)
 
 | Version | Item |
 |---|---|
@@ -64,6 +67,9 @@
 | v1.58 | H2H initiate drawer, highlighted game filter, global active duels badge, and Redis collection cache fix |
 | v1.59 | Tournament history detail access fix for completed/cancelled/refunded tournaments |
 | v1.60 | Dynamic DB-backed landing page and `/admin/cms` landing editor |
+| v1.61 | Landing game carousel, lightweight background patterns, and editable game banners |
+| v1.62 | Landing mobile responsiveness pass and compact mobile public nav |
+| v1.63 | DB-backed public navigation items and `/admin/cms` navigation editor |
 
 ---
 
@@ -106,6 +112,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - Mobile bottom navigation felt too small — restored larger tap target/icon/label sizing v1.55
 - Public/guest nav/footer mismatch with welcome — fixed v1.51
 - Static landing page requiring code edits for content changes — replaced with DB-backed landing CMS v1.60
+- Landing games grid without visual game banners — improved with horizontal carousel and `games.banner_path` v1.61
 - PWA install CTA placement and mobile duplication — fixed v1.50/v1.51
 - Guest-page Reverb WebSocket console spam — fixed v1.52
 

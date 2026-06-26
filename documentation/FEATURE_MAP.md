@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-21 (v1.56)
+**Last Updated**: 2026-06-26 (v1.64)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -25,7 +25,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 
 | Route | Component | Description |
 |---|---|---|
-| `GET /` | `app/Livewire/Landing/LandingPage.php` | Dynamic landing page backed by editable landing sections/items, active games, live stats, and weekly top players |
+| `GET /` | `app/Livewire/Landing/LandingPage.php` | Dynamic landing page backed by editable landing sections/items, horizontal active-game carousel with optional `games.banner_path` banners, live stats, and weekly top players |
 | `GET /tournaments` | `app/Livewire/Tournament/PublicTournamentList.php` | Public tournament listing |
 | `GET /login` | `app/Livewire/Auth/Login.php` | Login (guest only) |
 | `GET /register` | `app/Livewire/Auth/Register.php` | Registration (guest only) |
@@ -66,7 +66,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/withdrawals` | `app/Livewire/Admin/WithdrawalAdmin.php` | Review withdrawals + Four-eyes approval process |
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
 | `GET /admin/audit-logs` | `app/Livewire/Admin/AuditLogAdmin.php` | Spatie activity log viewer with filters |
-| `GET /admin/cms` | `app/Livewire/Admin/CmsAdmin.php` | Games, Platforms, CMS Pages, and Landing Page content management |
+| `GET /admin/cms` | `app/Livewire/Admin/CmsAdmin.php` | Games, game banner/description editing, Platforms, CMS Pages, Landing Page content, and public Navigation management |
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
 
@@ -106,11 +106,15 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 
 | Surface | Component/File | Description |
 |---|---|---|
-| Public navbar | `resources/views/components/layouts/partials/public-navigation.blade.php` | Shared welcome/public/guest navbar. Desktop centers public links and keeps auth/PWA actions right; mobile keeps `Sign In`, `Join Now`, and burger in the topbar. |
+| Public navbar | `resources/views/components/layouts/partials/public-navigation.blade.php` | Fixed-position navbar backed by `public_navigation_items`. Transparent over the hero video, transitions to solid dark background on scroll (`initPublicNav()` in `app.js`, `.nav-transparent` / `.nav-solid` CSS classes). Desktop shows nav links; mobile topbar shows only logo + auth actions (Sign In / Join Now or Dashboard shortcut); all other items move into the burger dropdown. |
 | Public footer | `resources/views/components/layouts/partials/public-footer.blade.php` | Shared public footer for welcome and public/guest Livewire pages. |
-| Landing shell | `resources/views/components/layouts/landing.blade.php` | Full-bleed landing shell for the dynamic homepage with shared public navigation and landing-managed footer content. |
-| Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, native PWA install prompt, service worker registration, and lazy authenticated Echo setup. |
+| Landing shell | `resources/views/components/layouts/landing.blade.php` | Full-bleed landing shell for the dynamic homepage. Preloads Orbitron + Inter from Google Fonts. Uses fixed (not sticky) nav so the hero video is visible beneath it on load. |
+| Landing page | `resources/views/livewire/landing/landing-page.blade.php` | Esports-themed dynamic landing: full-viewport video hero, CMS-editable sections, horizontal snap-scroll game carousel (`.landing-games-scroll`), glassmorphism cards, animated fade-in content, gradient CTA banner, and managed footer. |
+| Landing CSS design system | `resources/css/app.css` (`.landing-*` classes) | All landing styles are prefixed `landing-`. Key classes: `.landing-page-root` (outer overflow clip), `.landing-hero`, `.landing-main-pattern`, `.landing-section-overflow-clip` (sections with decorative orbs), `.landing-games-scroll` (the only permitted horizontal scroll), `.landing-gradient-text`, `.landing-section-title`, `.landing-section-kicker`, `.landing-card`, `.landing-stat-card`, `.landing-cta-primary`, `.landing-fade-in` (+ delay variants), `.landing-top-glow`. |
+| Scroll-aware nav JS | `resources/js/app.js` — `initPublicNav()` | Detects `.landing-hero` presence. If found: registers a passive scroll listener and toggles `.nav-transparent` / `.nav-solid` on `#public-nav` at a 60 px threshold. If not found (non-landing pages): always applies `.nav-solid`. Cleans up previous scroll listeners on Livewire SPA navigation to avoid memory leaks. |
+| Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, scroll-aware nav, native PWA install prompt, service worker registration, and lazy authenticated Echo setup. |
 | PWA manifest/service worker | `public/manifest.json`, `public/sw.js`, `public/icon-192.png`, `public/icon-512.png` | Installable app metadata, square PWA icons, static asset caching, and network-only HTML navigation so stale landing pages are not served after logout. |
+| Horizontal scroll containment | `html, body { overflow-x: hidden }` in `app.css` | Global guard. Decorative sections use `overflow-x: clip`. The only intentional horizontal scroll is `.landing-games-scroll`. |
 
 ---
 
@@ -136,7 +140,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Dynamic landing page content | `LandingPageContentService` | — | — |
 | Landing section/card editing | `CmsAdmin::saveLandingSection()`, `CmsAdmin::saveLandingItem()` | — | — |
 | Landing defaults | `LandingPageSeeder` | — | — |
-| Active games on landing | `Game` + `GameTranslation` query | — | — |
+| Public navigation defaults | `PublicNavigationSeeder` | — | — |
+| Active games on landing | `Game` + `GameTranslation` query, optional `games.banner_path` | — | — |
 | Live landing stats | `GameMatch`, `HeadToHeadMatch`, `LedgerEntry`, `User`, `Game` aggregate queries | — | — |
 
 ### Tournament Lifecycle

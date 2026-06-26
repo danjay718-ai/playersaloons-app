@@ -1,6 +1,6 @@
 # PlayerSaloons — Architecture Baseline
 
-**Last Updated**: 2026-06-20 (v1.37) | **Original Baseline**: 2026-06-14
+**Last Updated**: 2026-06-26 (v1.64) | **Original Baseline**: 2026-06-14
 
 ## 🏗️ Architectural Overview
 
@@ -42,6 +42,35 @@ PlayerSaloons is a modular monolithic Laravel application structured by domain-d
 ## 📐 Post-v1.14 Architectural Changes
 
 Changes here represent deviations or additions to the original baseline design. Each entry explains what changed, why it was changed, and which part of the baseline it relates to.
+
+---
+
+### [v1.64] Scroll-Aware Fixed Public Navigation
+
+**Baseline reference**: Public navbar was `sticky` with a constant semi-opaque background, which obscured the hero video on first load.
+
+**What changed**:
+- `#public-nav` changed from `sticky` to `fixed` positioning.
+- Added two CSS state classes: `.nav-transparent` (no background, no backdrop-filter) and `.nav-solid` (dark blur background matching the esports theme).
+- `initPublicNav()` in `app.js` — called from `initPublicShell()` on every `DOMContentLoaded` and `livewire:navigated` — detects whether a `.landing-hero` section is present on the current page. If yes: applies `.nav-transparent` initially and registers a passive `scroll` listener toggling to `.nav-solid` at 60 px. If no: immediately applies `.nav-solid` (all non-landing authenticated pages). Stores the handler on `nav._navScrollHandler` and removes it before re-binding, preventing listener accumulation across Livewire SPA navigation.
+
+**Why**: Provides cinema-quality first impression on the landing page (hero video fully visible through the nav on load) while maintaining a readable, legible navigation bar once content scrolls up. Non-landing pages always get a solid nav since they have no video hero.
+
+---
+
+### [v1.64] Landing Page Horizontal Overflow Containment Strategy
+
+**Baseline reference**: No previous policy — decorative absolute-positioned elements (gradient orbs, glow lines) were free to render outside viewport bounds.
+
+**What changed**:
+- `html, body { overflow-x: hidden; max-width: 100% }` — global guard in `app.css`. Applied to every page.
+- Outer landing wrapper uses `.landing-page-root` (`overflow-x: clip`).
+- `<main>` uses `.landing-main-pattern` (`overflow-x: clip`).
+- Sections with negative-offset decorative orbs (How It Works, Top Players, Reviews) use `.landing-section-overflow-clip` (`overflow-x: clip`).
+- The `w-[600px]` decorative glow line was replaced with `.landing-top-glow` using `width: min(600px, 100%)` so it is always viewport-bounded.
+- `.landing-games-scroll` is **explicitly exempted** — it retains `overflow-x: auto` and `-webkit-overflow-scrolling: touch` for the swipeable horizontal game carousel.
+
+**Why**: `overflow-x: hidden` on `body` alone is insufficient when `position: fixed` or `position: absolute` elements exist, because `overflow: hidden` on an ancestor of a fixed element does not clip it. Using `overflow-x: clip` (which does not create a new stacking/scroll context) on the page root and individual sections provides containment without breaking fixed positioning or `backdrop-filter`. The global `body` guard handles everything else.
 
 ---
 

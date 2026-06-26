@@ -106,6 +106,8 @@ Managing public content, game catalog labels, and the editable landing page.
 
 *   **Route**: `/admin/cms`
 *   **UI Component**: `app/Livewire/Admin/CmsAdmin.php`
+*   **Navigation Tables**:
+    *   `public_navigation_items`: Stores editable public navbar links, visibility rules, icons, active match patterns, sort order, and status.
 *   **Landing Tables**:
     *   `landing_sections`: Stores section-level content such as hero title/body/video, section headings, CTA, sort order, and visibility.
     *   `landing_section_items`: Stores cards/steps/stat labels/features/reviews/footer links for each section.
@@ -118,8 +120,15 @@ Managing public content, game catalog labels, and the editable landing page.
     *   Feature cards.
     *   Review cards.
     *   Footer copy and links.
+*   **Game Catalog Landing Fields**:
+    *   `games.banner_path`: Optional image path used by the landing game carousel.
+    *   `game_translations.description`: Editable game description shown on landing game cards.
+*   **Public Navigation Areas**:
+    *   Desktop nav links come from active `public_navigation_items`.
+    *   Mobile burger menu shows the same nav items plus the install action; guest Sign In / Join Now remain visible in the mobile topbar.
+    *   Visibility supports everyone, guests only, signed-in users, players, staff, and guests-or-players.
 *   **Database-driven Areas**:
-    *   Games list comes from active rows in `games` and `game_translations`.
+    *   Games list comes from active rows in `games` and `game_translations`, displayed as a horizontal carousel.
     *   Live stats are computed from matches, H2H matches, prize/H2H payout ledger entries, active users, and active games.
     *   Top players of the week are computed from completed tournament matches and weekly prize activity.
 *   **Defaults**: `database/seeders/LandingPageSeeder.php` creates the standard landing sections/items for fresh installs.
@@ -144,6 +153,8 @@ Managing public content, game catalog labels, and the editable landing page.
 *   **Staff Activity**: `test_admin_can_access_staff_activity_dashboard`, `test_staff_activity_dashboard_shows_staff_members`, `test_staff_activity_dashboard_filters_by_date`, `test_staff_activity_dashboard_filters_by_staff_name`
 *   **Landing CMS**: `test_admin_can_update_landing_section_and_create_item`
     *   Assert admin can update section content and add landing cards/items.
+*   **Navigation CMS**: `test_admin_can_manage_public_navigation_items`
+    *   Assert admin can create and toggle public navbar items.
 *   **Dynamic Landing Render**: `test_landing_page_renders_seeded_content_video_and_games`
     *   Assert `/` renders seeded content, the video path, game catalog cards, and dynamic sections.
 

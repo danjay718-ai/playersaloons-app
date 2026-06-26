@@ -1,6 +1,53 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-25 (v1.60) | **Branch**: `main`
+**Last Updated**: 2026-06-26 (v1.64) | **Branch**: `main`
+
+---
+
+## ✅ Esports Landing Redesign, Scroll-Aware Nav & Mobile Overflow Fix (v1.64)
+
+- **`landing-page.blade.php`**: Full esports visual redesign. Full-viewport video hero with Ken Burns scale animation, layered radial-gradient overlays, and animated cyber-grid overlay. Staggered `landing-fade-in` animations on badge, heading, body, and CTAs. Gradient CTA button with glow bloom (`landing-cta-primary`). Scroll-hint indicator below CTAs. All sections use glassmorphism cards with ambient orb accents, hover lift, and inner-border shimmer. Added a full-width gradient CTA banner section before the footer. In-page footer retained from CMS data.
+- **`public-navigation.blade.php`**: Converted from `sticky` to `fixed` positioning. Starts fully transparent (`nav-transparent`) over the hero video. On scroll past 60 px transitions to solid dark blur (`nav-solid`). Mobile topbar stripped to logo + Sign In + Join Now (guests) or Dashboard shortcut (authed). All other items (nav links, profile, PWA install, logout) moved into the burger dropdown at `[data-public-mobile-menu]`. Added `overflow-x: clip` + `max-width: 100vw` guard on `#public-nav`.
+- **`landing.blade.php`**: Updated to preload Orbitron + Inter via Google Fonts. Deepened background to `#050311`. Added SEO meta description.
+- **`app.js` — `initPublicNav()`**: New function called from `initPublicShell()` (and on every `livewire:navigated`). Detects `.landing-hero`; if present, registers a passive scroll listener toggling `.nav-transparent` / `.nav-solid`; if absent (non-landing page), always applies `.nav-solid`. Stores handler reference on `nav._navScrollHandler` and removes it before re-binding to prevent listener accumulation across SPA navigation.
+- **`app.css` — Landing CSS design system**: Added ~250 lines of landing-specific CSS prefixed `landing-`. Includes nav transparent/solid states, hero video Ken Burns keyframes, cyber-grid overlay, gradient text, scroll-arrow pulse, `landing-fade-up` animation with delay variants, `landing-section-title` / `landing-section-kicker` typography, glassmorphism card shimmer via `::before` pseudo-element, CTA button bloom via `::after`, and full mobile responsive overrides.
+- **Horizontal scroll fix**: Added `html, body { overflow-x: hidden }` as a global guard. Sections with decorative negative-offset orbs use `.landing-section-overflow-clip` (`overflow-x: clip`). The `w-[600px]` decorative glow line replaced with `.landing-top-glow` (`width: min(600px, 100%)`). `.landing-games-scroll` is explicitly exempted and retains `overflow-x: auto` for the swipeable game carousel.
+- **Tests**: No new tests — purely UI/CSS/JS changes. Existing `LandingPageTest` coverage remains valid for CMS data rendering.
+- **PHPStan**: Not applicable — no PHP changes.
+
+---
+
+
+---
+
+## ✅ Dynamic Public Navigation CMS (v1.63)
+
+- **`public_navigation_items`**: Added table-backed public navigation items with label, URL, Lucide icon, active pattern, visibility, sort order, active state, and new-tab behavior.
+- **Public navbar**: Replaced hardcoded public nav links with DB-backed items. Mobile topbar now keeps only the essential guest auth actions visible, while navigation links and install action live inside the burger menu.
+- **`CmsAdmin`**: Added a Navigation tab for adding, editing, toggling, and deleting public navbar items.
+- **Defaults**: Added `PublicNavigationSeeder` for Tournaments, Teams, and Dashboard defaults.
+- **Tests**: Added coverage for public navigation rendering and admin management.
+- **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
+
+---
+
+## ✅ Landing Mobile Responsiveness Pass (v1.62)
+
+- **Landing page**: Tightened mobile hero spacing, headline sizing, CTA button tracking, section padding, carousel card widths, stat number wrapping, empty states, CTA banner spacing, and footer wrapping for phone-first usage.
+- **Public navigation**: Reduced mobile topbar footprint, kept primary join action visible, and added guest Sign In / Join Now entries inside the mobile menu.
+- **CSS**: Added mobile-only overrides for lower-density background patterns, hidden carousel scrollbars, and disabled hover lift transforms on touch-sized screens.
+- **Tests**: Existing landing CMS tests remain the targeted coverage for landing rendering.
+- **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
+
+---
+
+## ✅ Landing Game Carousel and Banners (v1.61)
+
+- **Landing background**: Added a static CSS-only game-pattern treatment to the landing content background and game-card fallback banners. The pattern uses gradients only, with no animated canvas or heavy assets.
+- **Games carousel**: Changed the landing games section from a fixed grid to a horizontal snap-scroll carousel.
+- **`games.banner_path`**: Added a nullable banner path column for game catalog cards and surfaced it in the CMS games table/edit modal.
+- **Tests**: Updated `LandingPageTest` to cover game banner rendering and admin editing of game banner/description.
+- **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ---
 

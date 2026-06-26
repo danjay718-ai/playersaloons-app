@@ -45,7 +45,8 @@ Default seeded credentials (from `DatabaseSeeder`):
 | Frontend | Livewire 3 + Alpine.js |
 | Realtime | Laravel Reverb (WebSockets) |
 | PWA | Web manifest + service worker + native install prompt |
-| CSS | Tailwind CSS v4 + Lucide Icons |
+| CSS | Tailwind CSS v4 + Lucide Icons + custom esports design system |
+| Fonts | Orbitron (headings/numbers) + Inter (body) — Google Fonts, preloaded in landing layout |
 | Auth | Laravel session + Sanctum (API) |
 | RBAC | Spatie Laravel Permission |
 | Audit Log | Spatie Laravel Activity Log |
@@ -81,8 +82,14 @@ app/Modules/Identity/
 - **Immutable models** (`LedgerEntry`, `MatchEvidence`, `Refund`, etc.) throw `LogicException` on update/delete.
 - **Public shell is shared** — welcome and guest/public Livewire pages use `resources/views/components/layouts/partials/public-navigation.blade.php` and `public-footer.blade.php`. Keep public navigation/footer changes there.
 - **Landing page content is table-backed** — `/` renders through `app/Livewire/Landing/LandingPage.php`; editable content lives in `landing_sections` and `landing_section_items`, with admin controls in `/admin/cms`.
+- **Landing game cards use the game catalog** — active games come from `games` / `game_translations`; optional card banners are stored in `games.banner_path`.
+- **Public navigation is table-backed** — public navbar links come from `public_navigation_items`, seeded by `PublicNavigationSeeder`, and are edited in `/admin/cms`.
 - **No page-local PWA scripts** — PWA install prompt, public burger menu behavior, service worker registration, and lazy Echo setup live in `resources/js/app.js`.
 - **Echo/Reverb is authenticated-only on the frontend** — do not eagerly create `window.Echo` on guest/public pages; initialize it only when `meta[name="user-uuid"]` and Reverb env config exist.
+- **Landing nav is fixed and scroll-aware** — `#public-nav` starts fully transparent over the hero video and transitions to a solid dark background on scroll via `initPublicNav()` in `app.js`. The `.nav-transparent` / `.nav-solid` CSS classes control this. On non-landing pages (no `.landing-hero` present), the nav always renders solid.
+- **Mobile nav topbar is minimal** — on screens below `md` breakpoint, the public navbar topbar shows only the logo, Sign In, and Join Now (guests) or a Dashboard shortcut (authed users). All other links (nav items, install, profile, logout) live inside the burger dropdown at `[data-public-mobile-menu]`.
+- **No horizontal scroll except the games carousel** — `html` and `body` both carry `overflow-x: hidden`. Sections with decorative orbs use `.landing-section-overflow-clip` (CSS `overflow-x: clip`). The only intentional horizontal scroll surface is `.landing-games-scroll` on the landing page games section.
+- **Landing CSS design system** — all landing-specific styles are prefixed `landing-` in `app.css`. Key classes: `.landing-page-root`, `.landing-hero`, `.landing-main-pattern`, `.landing-section-overflow-clip`, `.landing-games-scroll`, `.landing-gradient-text`, `.landing-section-title`, `.landing-section-kicker`, `.landing-card`, `.landing-stat-card`, `.landing-cta-primary`, `.landing-fade-in` (+ delay variants), `.landing-top-glow`.
 
 ---
 
@@ -178,6 +185,8 @@ If information exists in two places, the more specific file wins (e.g., module d
 | Queue jobs | Redis + Horizon | `QUEUE_CONNECTION=redis` |
 | User uploaded files | Local `public` disk (dev) | `storage/app/public/` — **not** persisted across deploys without a volume |
 | Landing page content | `landing_sections`, `landing_section_items` | Hero copy/video path, section headings, editable cards, reviews, stat labels, and footer links |
+| Landing game banners | `games.banner_path` | Optional public path for the homepage game carousel card image |
+| Public navigation | `public_navigation_items` | Editable public navbar labels, URLs, icons, visibility rules, order, and active state |
 | Public file access | `public/storage` symlink | Created by `php artisan storage:link` |
 | Audit logs | `activity_log` DB table | Spatie Activity Log |
 | App configuration | `.env` (never commit) | Use `.env.production.example` as template |
