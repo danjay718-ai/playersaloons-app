@@ -151,6 +151,7 @@ function initMobileMorePanel() {
 function initPublicShell() {
     initPublicMobileMenu();
     initPublicPwaInstall();
+    initPublicNav();
 
     if (window.lucide) {
         window.lucide.createIcons();
@@ -163,6 +164,55 @@ function initPlayerShell() {
     initPlayerNavigationLoader();
     hidePlayerPageLoader();
 }
+
+/**
+ * PUBLIC NAV — Transparent on hero, solid once scrolled
+ *
+ * On landing pages with a full-viewport hero video, the navbar
+ * starts fully transparent and transitions to a solid dark background
+ * (matching the esports theme) after the user scrolls past a threshold.
+ */
+function initPublicNav() {
+    const nav = document.getElementById('public-nav');
+    if (!nav) return;
+
+    // Clean up any old scroll listener before re-binding
+    if (nav._navScrollHandler) {
+        window.removeEventListener('scroll', nav._navScrollHandler);
+        nav._navScrollHandler = null;
+        nav._navScrollInitialised = false;
+    }
+
+    // Only apply transparent behaviour when a hero section is present
+    const hero = document.querySelector('.landing-hero');
+    if (!hero) {
+        // On non-landing pages always show solid nav
+        nav.classList.remove('nav-transparent');
+        nav.classList.add('nav-solid');
+        return;
+    }
+
+    // Avoid re-binding scroll listener on same page
+    if (nav._navScrollInitialised) return;
+    nav._navScrollInitialised = true;
+
+    const THRESHOLD = 60; // px before switching to solid
+
+    function updateNav() {
+        const scrolled = window.scrollY > THRESHOLD;
+        nav.classList.toggle('nav-solid', scrolled);
+        nav.classList.toggle('nav-transparent', !scrolled);
+    }
+
+    nav._navScrollHandler = updateNav;
+
+    // Set initial state
+    updateNav();
+
+    window.addEventListener('scroll', updateNav, { passive: true });
+}
+
+
 
 function initPlayerSubmitButtons() {
     document.querySelectorAll('.player-main-content form[wire\\:submit], .player-main-content form[wire\\:submit\\.prevent]').forEach(form => {
