@@ -14,6 +14,7 @@
     {{-- ═══════════════════════════════════════════════
          HERO SECTION — Full-viewport video hero
     ═══════════════════════════════════════════════ --}}
+    @if($hero)
     <section class="landing-hero relative flex min-h-[100svh] items-center justify-center overflow-hidden text-center">
 
         {{-- Video Background --}}
@@ -127,6 +128,7 @@
         {{-- Bottom gradient blend --}}
         <div class="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#050311] to-transparent"></div>
     </section>
+    @endif
 
 
     {{-- ═══════════════════════════════════════════════
@@ -138,6 +140,7 @@
         <div class="landing-top-glow pointer-events-none bg-gradient-to-r from-transparent via-violet-500/60 to-transparent"></div>
 
         {{-- ─── GAMES SECTION ─── --}}
+        @if($gamesSection)
         <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
             <div class="mb-8 flex flex-col gap-4 sm:mb-14 md:flex-row md:items-end md:justify-between">
                 <div>
@@ -184,9 +187,11 @@
                 <p class="mt-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700 sm:hidden">Swipe to browse games</p>
             @endif
         </section>
+        @endif
 
 
         {{-- ─── HOW IT WORKS ─── --}}
+        @if($howSection)
         <section class="landing-section-overflow-clip relative border-y border-zinc-800/40 py-16 sm:py-24">
             {{-- BG accent --}}
             <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(168,85,247,0.06),transparent)]"></div>
@@ -213,9 +218,11 @@
                 </div>
             </div>
         </section>
+        @endif
 
 
         {{-- ─── STATS ─── --}}
+        @if($statsSection)
         <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
             <div class="mb-9 text-center sm:mb-14">
                 <p class="landing-section-kicker text-emerald-400">{{ $statsSection?->subtitle }}</p>
@@ -236,9 +243,11 @@
                 @endforeach
             </div>
         </section>
+        @endif
 
 
         {{-- ─── TOP PLAYERS ─── --}}
+        @if($topPlayersSection)
         <section class="landing-section-overflow-clip relative border-y border-zinc-800/40 py-16 sm:py-24">
             <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(124,77,255,0.07),transparent)]"></div>
             <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -281,9 +290,11 @@
                 </div>
             </div>
         </section>
+        @endif
 
 
         {{-- ─── FEATURES ─── --}}
+        @if($featuresSection)
         <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
             <div class="mb-9 text-center sm:mb-14">
                 <p class="landing-section-kicker text-cyan-400">{{ $featuresSection?->subtitle }}</p>
@@ -307,9 +318,11 @@
                 @endforeach
             </div>
         </section>
+        @endif
 
 
         {{-- ─── REVIEWS ─── --}}
+        @if($reviewsSection)
         <section class="landing-section-overflow-clip relative border-t border-zinc-800/40 py-16 sm:py-24">
             <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(192,38,211,0.06),transparent)]"></div>
             <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -338,6 +351,7 @@
                 </div>
             </div>
         </section>
+        @endif
 
 
         {{-- ─── CTA BANNER ─── --}}
