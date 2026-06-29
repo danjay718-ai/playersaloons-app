@@ -21,7 +21,7 @@
         }
     </style>
 </head>
-<body class="bg-[#090d16] text-slate-100 min-h-screen antialiased flex flex-col">
+<body class="bg-[#090d16] text-slate-100 h-screen overflow-hidden antialiased flex flex-col">
 
     <!-- Mobile Header -->
     <header class="md:hidden flex items-center justify-between bg-[#0f172a] border-b border-slate-800 px-4 py-3 sticky top-0 z-50">
@@ -42,9 +42,9 @@
         </div>
     </header>
 
-    <div class="flex flex-1 flex-col md:flex-row relative">
+    <div class="flex flex-1 flex-col md:flex-row relative overflow-hidden">
         <!-- Sidebar Navigation -->
-        <aside id="admin-sidebar" class="hidden md:flex flex-col w-64 bg-[#0f172a] border-r border-slate-800 sticky top-0 h-screen z-40">
+        <aside id="admin-sidebar" class="hidden md:flex flex-col w-64 bg-[#0f172a] border-r border-slate-800 h-full z-40 shrink-0">
             <!-- Logo Section -->
             <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-[#0b0f19]">
                 <div class="flex items-center space-x-3">
@@ -111,7 +111,7 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
             <!-- Topbar (Desktop only) -->
             <header class="hidden md:flex h-16 border-b border-slate-800 bg-[#0f172a] px-8 items-center justify-between sticky top-0 z-30">
                 <div class="flex items-center space-x-3">
@@ -182,7 +182,7 @@
             </header>
 
             <!-- Main Content Container -->
-            <main class="flex-grow p-6 md:p-8 overflow-y-auto">
+            <main class="flex-1 p-6 md:p-8 overflow-y-auto min-h-0">
                 {{ $slot }}
             </main>
         </div>
