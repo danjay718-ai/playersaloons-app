@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-29 | **Current version**: v1.66 | **Branch**: `main`
+**As of**: 2026-06-29 | **Current version**: v1.67 | **Branch**: `main`
 
 ---
 
@@ -27,13 +27,14 @@
 - Landing games now render as a horizontal snap-scroll carousel; `games.banner_path` stores optional per-game card banners, and the landing background uses lightweight CSS-only game patterns
 - Landing page has a mobile responsiveness pass for player-heavy mobile traffic: tighter hero/CTA spacing, smaller carousel cards, touch-friendly sections, wrapped footer text, and a compact public mobile nav
 - Public navbar items are now editable through `/admin/cms` → Navigation, backed by `public_navigation_items`; mobile burger contains nav items and install action while the mobile topbar stays focused on auth actions
+- Legal/policy content now lives in dedicated `policy_pages`, edited at `/admin/policies`, and rendered publicly at `/policies` and `/policies/{slug}`
 - Landing page now has a fixed, scroll-aware public navbar over the hero video, horizontal overflow containment, and a JS replay fallback for the hero video loop (`#hero-video`)
 - PWA install support is present through manifest/service worker/icons and native browser install prompt handling
 - Echo/Reverb frontend setup is lazy-loaded only for authenticated pages with `meta[name="user-uuid"]`, preventing guest-page WebSocket console errors
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.66)
+## ✅ Natapos ngayong session (v1.30–v1.67)
 
 | Version | Item |
 |---|---|
@@ -74,6 +75,7 @@
 | v1.64 | Landing redesign, fixed scroll-aware public nav, and horizontal overflow containment |
 | v1.65 | Hero video loop reliability fallback |
 | v1.66 | Documentation synchronization pass for routes, versions, stale references, and wallet/withdrawal flow docs |
+| v1.67 | Dedicated database-backed policy pages with admin editor and public guest views |
 
 ---
 

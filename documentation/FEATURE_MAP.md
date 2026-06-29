@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-29 (v1.66)
+**Last Updated**: 2026-06-29 (v1.67)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -27,6 +27,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|---|
 | `GET /` | `app/Livewire/Landing/LandingPage.php` | Dynamic landing page backed by editable landing sections/items, horizontal active-game carousel with optional `games.banner_path` banners, live stats, and weekly top players |
 | `GET /tournaments` | `app/Livewire/Tournament/PublicTournamentList.php` | Public tournament listing |
+| `GET /policies` | `app/Livewire/Policies/PolicyIndex.php` | Public legal/policy index backed by `policy_pages` |
+| `GET /policies/{slug}` | `app/Livewire/Policies/PolicyPageView.php` | Public legal/policy detail page for active, published policy pages |
 | `GET /login` | `app/Livewire/Auth/Login.php` | Login (guest only) |
 | `GET /register` | `app/Livewire/Auth/Register.php` | Registration (guest only) |
 | `GET /reset-password` | `app/Livewire/Auth/PasswordReset.php` | Password reset (guest only) |
@@ -67,6 +69,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
 | `GET /admin/audit-logs` | `app/Livewire/Admin/AuditLogAdmin.php` | Spatie activity log viewer with filters |
 | `GET /admin/cms` | `app/Livewire/Admin/CmsAdmin.php` | Games, game banner/description editing, Platforms, CMS Pages, Landing Page content, and public Navigation management |
+| `GET /admin/policies` | `app/Livewire/Admin/PolicyAdmin.php` | Dedicated policy editor for Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer |
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
 
@@ -141,8 +144,11 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Landing section/card editing | `CmsAdmin::saveLandingSection()`, `CmsAdmin::saveLandingItem()` | — | — |
 | Landing defaults | `LandingPageSeeder` | — | — |
 | Public navigation defaults | `PublicNavigationSeeder` | — | — |
+| Policy page defaults | `PolicyPageSeeder` | — | — |
 | Active games on landing | `Game` + `GameTranslation` query, optional `games.banner_path` | — | — |
 | Live landing stats | `GameMatch`, `HeadToHeadMatch`, `LedgerEntry`, `User`, `Game` aggregate queries | — | — |
+| Public policy rendering | `PolicyPage` + `PolicyIndex` / `PolicyPageView` | — | — |
+| Policy editing | `PolicyAdmin::savePolicy()` | — | — |
 
 ### Tournament Lifecycle
 | Feature | Action/Service | Event | Listener/Job |
@@ -225,6 +231,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Community/NotificationBellTest.php` | Player notification bell list, unread count, single/all mark-as-read, ownership guard, realtime refresh event |
 | `Admin/AdminPanelTest.php` | Admin access guards, KYC approve/reject, match override, tournament create (TournamentForm), staff activity |
 | `Admin/BroadcastNotificationAdminTest.php` | Access guards, create/edit/expire/delete broadcasts, SUPER_ADMIN delete restriction, search filter |
+| `CMS/PolicyPageTest.php` | Public policy index/detail rendering, inactive/unpublished 404s, admin policy editing, player admin guard |
 | `Wallet/WalletServiceTest.php` | Deposit idempotency, withdrawal lifecycle, ledger sum = cached balance, listener idempotency |
 | `Wallet/WalletDashboardTest.php` | Wallet page Stripe Checkout redirect for deposits |
 | `Wallet/StripeWebhookTest.php` | Signed Stripe webhook deposit crediting, idempotency, invalid signature rejection |

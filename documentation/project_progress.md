@@ -1,6 +1,17 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-29 (v1.66) | **Branch**: `main`
+**Last Updated**: 2026-06-29 (v1.67) | **Branch**: `main`
+
+---
+
+## ✅ Database-backed Policy Pages (v1.67)
+
+- **`policy_pages`**: Added a dedicated table for legal/policy content, separate from generic `cms_pages`, with slug, title, summary, body content, active/published state, sort order, and updater tracking.
+- **Public policy pages**: Added guest-accessible `/policies` index and `/policies/{slug}` detail pages for Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer.
+- **`PolicyAdmin`**: Added `/admin/policies` for staff to edit policy title, slug, summary, rich-text body content, order, active state, and published state.
+- **Seeders/navigation**: Added `PolicyPageSeeder`, wired it into `DatabaseSeeder`, and updated public footer links to real policy URLs.
+- **Tests**: `php artisan test tests/Feature/CMS/PolicyPageTest.php tests/Feature/Admin/AdminPanelTest.php` passes: 25 tests, 84 assertions.
+- **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ---
 

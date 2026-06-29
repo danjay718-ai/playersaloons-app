@@ -1,6 +1,6 @@
 # PlayerSaloons — Architecture Baseline
 
-**Last Updated**: 2026-06-29 (v1.66) | **Original Baseline**: 2026-06-14
+**Last Updated**: 2026-06-29 (v1.67) | **Original Baseline**: 2026-06-14
 
 ## 🏗️ Architectural Overview
 
@@ -83,6 +83,19 @@ Changes here represent deviations or additions to the original baseline design. 
 - `initHeroVideoFallback()` in `app.js` listens for the `ended` event, resets playback to the start, and calls `play()` again.
 
 **Why**: Some browsers, especially during mobile/iOS playback or Livewire SPA navigation, can fail to honor native looping when buffering stalls. The JS fallback keeps the hero video reliably looping without changing CMS-managed content.
+
+---
+
+### [v1.67] Dedicated Policy Pages
+
+**Baseline reference**: CMS content existed through generic `cms_pages`, while landing content and public navigation had purpose-built tables.
+
+**What changed**:
+- Added `policy_pages` for Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer content.
+- Added a dedicated admin surface at `/admin/policies`.
+- Added public guest routes `/policies` and `/policies/{slug}`.
+
+**Why**: Legal/policy pages have stable expected slugs, footer links, and publication rules. Keeping them separate from generic CMS pages prevents accidental mixing with marketing pages while preserving database-backed editing.
 
 ---
 

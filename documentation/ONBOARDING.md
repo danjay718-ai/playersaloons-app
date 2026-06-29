@@ -84,6 +84,7 @@ app/Modules/Identity/
 - **Landing page content is table-backed** — `/` renders through `app/Livewire/Landing/LandingPage.php`; editable content lives in `landing_sections` and `landing_section_items`, with admin controls in `/admin/cms`.
 - **Landing game cards use the game catalog** — active games come from `games` / `game_translations`; optional card banners are stored in `games.banner_path`.
 - **Public navigation is table-backed** — public navbar links come from `public_navigation_items`, seeded by `PublicNavigationSeeder`, and are edited in `/admin/cms`.
+- **Policy pages are table-backed and separate from CMS pages** — legal/policy content lives in `policy_pages`, is seeded by `PolicyPageSeeder`, is edited from `/admin/policies`, and renders publicly at `/policies` and `/policies/{slug}`.
 - **No page-local PWA scripts** — PWA install prompt, public burger menu behavior, service worker registration, and lazy Echo setup live in `resources/js/app.js`.
 - **Echo/Reverb is authenticated-only on the frontend** — do not eagerly create `window.Echo` on guest/public pages; initialize it only when `meta[name="user-uuid"]` and Reverb env config exist.
 - **Landing nav is fixed and scroll-aware** — `#public-nav` starts fully transparent over the hero video and transitions to a solid dark background on scroll via `initPublicNav()` in `app.js`. The `.nav-transparent` / `.nav-solid` CSS classes control this. On non-landing pages (no `.landing-hero` present), the nav always renders solid.
@@ -187,6 +188,7 @@ If information exists in two places, the more specific file wins (e.g., module d
 | Landing page content | `landing_sections`, `landing_section_items` | Hero copy/video path, section headings, editable cards, reviews, stat labels, and footer links |
 | Landing game banners | `games.banner_path` | Optional public path for the homepage game carousel card image |
 | Public navigation | `public_navigation_items` | Editable public navbar labels, URLs, icons, visibility rules, order, and active state |
+| Policy pages | `policy_pages` | Cookie, privacy, refund/cancellation, and disclaimer content editable from `/admin/policies` |
 | Public file access | `public/storage` symlink | Created by `php artisan storage:link` |
 | Audit logs | `activity_log` DB table | Spatie Activity Log |
 | App configuration | `.env` (never commit) | Use `.env.production.example` as template |

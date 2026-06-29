@@ -134,6 +134,24 @@ Managing public content, game catalog labels, and the editable landing page.
     *   Top players of the week are computed from completed tournament matches and weekly prize activity.
 *   **Defaults**: `database/seeders/LandingPageSeeder.php` creates the standard landing sections/items for fresh installs.
 
+## 9. Policy Pages
+Managing public legal/policy pages outside the generic CMS page system.
+
+*   **Route**: `/admin/policies`
+*   **UI Component**: `app/Livewire/Admin/PolicyAdmin.php`
+*   **Public Routes**:
+    *   `/policies`: Index of active, published policies.
+    *   `/policies/{slug}`: Detail view for one active, published policy.
+*   **Policy Table**:
+    *   `policy_pages`: Stores slug, title, summary, content, sort order, active state, published timestamp, and last updater.
+*   **Editor**: Body content uses the same Quill rich text editor pattern as the tournament wizard, storing formatted HTML for public rendering.
+*   **Seeded Policy Pages**:
+    *   Cookie Policy (`/policies/cookie-policy`)
+    *   Privacy Policy (`/policies/privacy-policy`)
+    *   Refund and Cancellation Policy (`/policies/refund-and-cancellation-policy`)
+    *   Disclaimer (`/policies/disclaimer`)
+*   **Reason for Separate Area**: Policy pages are operational/legal content and are intentionally separate from `cms_pages`, so they can have fixed expected slugs, dedicated admin UX, and predictable public footer links.
+
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
 *   **Role Protection**: `test_non_admin_cannot_access_admin_dashboard` / `test_player_cannot_access_staff_activity_dashboard`
@@ -158,6 +176,8 @@ Managing public content, game catalog labels, and the editable landing page.
     *   Assert admin can create and toggle public navbar items.
 *   **Dynamic Landing Render**: `test_landing_page_renders_seeded_content_video_and_games`
     *   Assert `/` renders seeded content, the video path, game catalog cards, and dynamic sections.
+*   **Policy Pages**: `CMS/PolicyPageTest`
+    *   Assert guests can view seeded policy pages, inactive/unpublished policies 404, admins can edit policy content, and players cannot access `/admin/policies`.
 
 ### 📋 Pending Tests (Testing Debt)
 *   `test_admin_tournament_filter_persistence`: Ensure search/status filters remain set after page refresh.
