@@ -30,7 +30,7 @@
     @include('components.layouts.partials.public-navigation')
 
     <!-- Main Content Area -->
-    <main class="relative z-10 flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+    <main class="relative z-10 flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 md:pt-24 md:pb-12">
         {{ $slot }}
     </main>
 
