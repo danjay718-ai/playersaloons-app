@@ -159,6 +159,8 @@ class CmsAdmin extends AdminComponent
             $this->deletePlatform($this->deleteTargetId);
         } elseif ($this->deleteTargetType === 'page') {
             $this->deletePage($this->deleteTargetId);
+        } elseif ($this->deleteTargetType === 'navigation') {
+            $this->deleteNavigationItem($this->deleteTargetId);
         }
 
         $this->showDeleteModal = false;
