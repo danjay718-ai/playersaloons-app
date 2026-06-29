@@ -16,9 +16,9 @@
 
 ## ✅ Production Composer Build Fix (v1.71)
 
-- **`Dockerfile`**: Added `mbstring`, `curl`, `dom`, and `simplexml` to the production PHP extension install list so `composer install --no-dev` satisfies the locked package platform requirements inside the Coolify build image. Added Composer build defaults for `COMPOSER_CURL_DISABLE_HTTP2=1` and source installs, then changed the production install command to `composer install --prefer-source ...`.
+- **`Dockerfile`**: Added `mbstring`, `curl`, `dom`, and `simplexml` to the production PHP extension install list so `composer install --no-dev` satisfies the locked package platform requirements inside the Coolify build image. Added Composer build defaults for `COMPOSER_CURL_DISABLE_HTTP2=1` and `COMPOSER_PREFER_INSTALL=auto`, configured git to use HTTP/1.1, then changed the production install command to `composer install --prefer-install=auto ...`.
 - **`docker-compose.prod.yml`**: Passes `COMPOSER_CURL_DISABLE_HTTP2` and `COMPOSER_PREFER_INSTALL` as build args because Coolify deploys through this compose file.
-- **Why**: Coolify failed during Docker build at the Composer install step with exit code 100. The concrete Composer errors were failed dist ZIP downloads from GitHub codeload with `HTTP/2 400` for packages including `ralouphie/getallheaders` and `maennchen/zipstream-php`; forcing source installs avoids codeload ZIP downloads and uses git source checkouts instead.
+- **Why**: Coolify failed during Docker build at the Composer install step with exit code 100. The concrete Composer errors were failed dist ZIP downloads from GitHub codeload with `HTTP/2 400` for packages including `ralouphie/getallheaders` and `maennchen/zipstream-php`. Forcing source for every package then made the build do many git source syncs and fail with exit code 255, so production now uses `auto`: fast dist installs where possible and source fallback where needed.
 - **Tests**: `composer validate --strict`, `composer check-platform-reqs --no-dev`, and `composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --dry-run` pass locally. Docker is not available in this workspace, so the full image build could not be reproduced here.
 - **PHPStan**: Not run for this deployment Dockerfile fix.
 
