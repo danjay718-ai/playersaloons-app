@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-29 (v1.68)
+**Last Updated**: 2026-06-29 (v1.69)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -32,6 +32,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /login` | `app/Livewire/Auth/Login.php` | Login (guest only) |
 | `GET /register` | `app/Livewire/Auth/Register.php` | Registration (guest only) |
 | `GET /reset-password` | `app/Livewire/Auth/PasswordReset.php` | Password reset (guest only) |
+| `POST /language` | `app/Http/Controllers/LanguageController.php` | Switches the active UI locale for guests via session and authenticated users via `users.locale` |
 | `POST /stripe/webhook` | `app/Http/Controllers/StripeWebhookController.php` | Stripe webhook receiver for sandbox/staging deposit fulfillment |
 
 ### Player Routes (auth required)
@@ -69,6 +70,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
 | `GET /admin/audit-logs` | `app/Livewire/Admin/AuditLogAdmin.php` | Spatie activity log viewer with filters |
 | `GET /admin/cms` | `app/Livewire/Admin/CmsAdmin.php` | Games, game banner/description editing, Platforms, CMS Pages, Landing Page content, and public Navigation management |
+| `GET /admin/translations` | `app/Livewire/Admin/TranslationAdmin.php` | Translation manager for UI phrase keys; imports `lang/*.json`, edits `translation_strings`, fills missing values, and exports JSON runtime files |
 | `GET /admin/policies` | `app/Livewire/Admin/PolicyAdmin.php` | Dedicated policy editor for Terms and Conditions, Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer |
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
@@ -104,6 +106,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | H2H duel prompt | `app/Livewire/Match/HeadToHeadDuelPrompt.php` | Dashboard-wide polling modal that alerts players when a duel is active or when an open duel invite is available |
 | Player loading states | `resources/js/app.js`, `resources/css/app.css`, `resources/views/components/layouts/dashboard.blade.php` | Disables Livewire submit buttons during submit and shows a game-style full-page loader for uncached player `wire:navigate` route changes; tab links are excluded and visited routes are cached in `sessionStorage` |
 | Player upload feedback | `resources/views/livewire/profile/profile-dashboard.blade.php` | Shows immediate selected-file feedback and Livewire upload progress for avatar and KYC document uploads |
+| Language switcher | `resources/views/components/localization/language-switcher.blade.php` | Reusable locale dropdown shown in guest/public, player, and admin shells; posts to `/language` and reads supported languages from `config/localization.php` |
 
 ### Shared Public Layout Components
 
@@ -118,6 +121,16 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, scroll-aware nav, hero video replay fallback, native PWA install prompt, service worker registration, and lazy authenticated Echo setup. |
 | PWA manifest/service worker | `public/manifest.json`, `public/sw.js`, `public/icon-192.png`, `public/icon-512.png` | Installable app metadata, square PWA icons, static asset caching, and network-only HTML navigation so stale landing pages are not served after logout. |
 | Horizontal scroll containment | `html, body { overflow-x: hidden }` in `app.css` | Global guard. Decorative sections use `overflow-x: clip`. The only intentional horizontal scroll is `.landing-games-scroll`. |
+
+### Localization Runtime
+
+| Surface | File/Component | Description |
+|---|---|---|
+| Locale selection | `app/Http/Middleware/SetLocale.php` | Sets `app()->getLocale()` from authenticated `users.locale`, guest session locale, or app fallback. Safely handles requests before a session store is attached. |
+| Rendered UI text translation | `app/Http/Middleware/TranslateRenderedHtml.php` | Translates rendered HTML text nodes plus `placeholder`, `title`, `aria-label`, and `alt` attributes by exact JSON key. Also handles Livewire JSON payloads that contain rendered HTML. |
+| Supported language list | `config/localization.php` | Defines supported locales: English, French, Spanish, German, Italian, Dutch, Portuguese, Russian, Japanese, Chinese, and Polish. |
+| Runtime files | `lang/*.json` | Laravel JSON translation files used at runtime. Admin edits are exported here from `translation_strings`. |
+| Admin editing source | `translation_strings` table | Database-backed phrase catalog edited from `/admin/translations`; JSON files are export/cache output. |
 
 ---
 
@@ -149,6 +162,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Live landing stats | `GameMatch`, `HeadToHeadMatch`, `LedgerEntry`, `User`, `Game` aggregate queries | — | — |
 | Public policy rendering | `PolicyPage` + `PolicyIndex` / `PolicyPageView` | — | — |
 | Policy editing | `PolicyAdmin::savePolicy()` | — | — |
+| UI translation management | `TranslationAdmin` + `TranslationCatalogService` | — | Syncs `lang/*.json` into `translation_strings`, fills missing values from English fallback, and exports JSON runtime files |
 
 ### Tournament Lifecycle
 | Feature | Action/Service | Event | Listener/Job |
@@ -231,6 +245,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Community/NotificationBellTest.php` | Player notification bell list, unread count, single/all mark-as-read, ownership guard, realtime refresh event |
 | `Admin/AdminPanelTest.php` | Admin access guards, KYC approve/reject, match override, tournament create (TournamentForm), staff activity |
 | `Admin/BroadcastNotificationAdminTest.php` | Access guards, create/edit/expire/delete broadcasts, SUPER_ADMIN delete restriction, search filter |
+| `Admin/TranslationAdminTest.php` | Translation manager access, JSON key sync into `translation_strings`, missing-locale filtering |
+| `Localization/LanguageSwitchTest.php` | Guest session locale rendering and authenticated user locale persistence |
 | `CMS/PolicyPageTest.php` | Public policy index/detail rendering, inactive/unpublished 404s, admin policy editing, player admin guard |
 | `Wallet/WalletServiceTest.php` | Deposit idempotency, withdrawal lifecycle, ledger sum = cached balance, listener idempotency |
 | `Wallet/WalletDashboardTest.php` | Wallet page Stripe Checkout redirect for deposits |

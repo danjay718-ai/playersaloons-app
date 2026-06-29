@@ -85,6 +85,9 @@ app/Modules/Identity/
 - **Landing game cards use the game catalog** — active games come from `games` / `game_translations`; optional card banners are stored in `games.banner_path`.
 - **Public navigation is table-backed** — public navbar links come from `public_navigation_items`, seeded by `PublicNavigationSeeder`, and are edited in `/admin/cms`.
 - **Policy pages are table-backed and separate from CMS pages** — legal/policy content lives in `policy_pages`, is seeded by `PolicyPageSeeder`, is edited from `/admin/policies`, and renders publicly at `/policies` and `/policies/{slug}`.
+- **All user-facing words must be translatable** — when adding any visible UI text, placeholder, tooltip/title, aria-label, email/notification copy, validation/session message, or seeded public content, add the English phrase as a key in `lang/en.json` and add matching entries to the supported locale files as translations become available. The rendered HTML translator can translate existing Blade text by exact key, but new text is not truly localized until the phrase exists in the locale JSON files.
+- **Content-backed labels need locale records** — for games and CMS-style content, use existing translation tables (`game_translations`, CMS/page/policy/landing translation records where available) and read them through current-locale helpers or current-locale queries with English fallback. Do not hard-code `locale = en` for user-visible display except as a fallback.
+- **Translation management lives in admin** — `/admin/translations` imports current `lang/*.json` phrases into `translation_strings`, lets staff fill missing locale text, and exports changes back to JSON. Use **Sync JSON** after code adds new file-based keys, edit/fill translations, then use **Save & Export** or **Export JSON** so runtime translation files are refreshed.
 - **No page-local PWA scripts** — PWA install prompt, public burger menu behavior, service worker registration, and lazy Echo setup live in `resources/js/app.js`.
 - **Echo/Reverb is authenticated-only on the frontend** — do not eagerly create `window.Echo` on guest/public pages; initialize it only when `meta[name="user-uuid"]` and Reverb env config exist.
 - **Landing nav is fixed and scroll-aware** — `#public-nav` starts fully transparent over the hero video and transitions to a solid dark background on scroll via `initPublicNav()` in `app.js`. The `.nav-transparent` / `.nav-solid` CSS classes control this. On non-landing pages (no `.landing-hero` present), the nav always renders solid.
@@ -100,7 +103,8 @@ Every new feature, bug fix, or enhancement is only considered **done** when all 
 
 1. **PHPStan passes at Level 5 minimum** — run `./vendor/bin/phpstan analyse` before marking done. New code must not introduce errors. Level 8 is the target for core modules (Identity, Wallet, Tournament, Match).
 2. **Test written and passing** — every new Action, Service, or state transition must have a corresponding test. Feature tests for Livewire/API, unit tests for StateMachines and Services.
-3. **Docs updated** — relevant doc files updated per the conventions below.
+3. **Localization checked** — every new user-readable word or content value is either already table-backed with locale support or has an English key in `lang/en.json` plus entries/placeholders in the supported locale JSON files (`fr`, `es`, `de`, `it`, `nl`, `pt`, `ru`, `ja`, `zh`, `pl`). Include placeholders, buttons, empty states, flash/session messages, validation text, aria labels, titles/tooltips, navigation labels, and notification/email copy.
+4. **Docs updated** — relevant doc files updated per the conventions below.
 
 ```bash
 # Run before marking anything done
@@ -189,6 +193,7 @@ If information exists in two places, the more specific file wins (e.g., module d
 | Landing game banners | `games.banner_path` | Optional public path for the homepage game carousel card image |
 | Public navigation | `public_navigation_items` | Editable public navbar labels, URLs, icons, visibility rules, order, and active state |
 | Policy pages | `policy_pages` | Terms, cookie, privacy, refund/cancellation, and disclaimer content editable from `/admin/policies` |
+| UI translations | `translation_strings` + `lang/*.json` | Admin-managed from `/admin/translations`; database is the editing source, JSON files are the runtime/export cache |
 | Public file access | `public/storage` symlink | Created by `php artisan storage:link` |
 | Audit logs | `activity_log` DB table | Spatie Activity Log |
 | App configuration | `.env` (never commit) | Use `.env.production.example` as template |

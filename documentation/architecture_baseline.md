@@ -1,6 +1,6 @@
 # PlayerSaloons — Architecture Baseline
 
-**Last Updated**: 2026-06-29 (v1.67) | **Original Baseline**: 2026-06-14
+**Last Updated**: 2026-06-29 (v1.69) | **Original Baseline**: 2026-06-14
 
 ## 🏗️ Architectural Overview
 
@@ -42,6 +42,22 @@ PlayerSaloons is a modular monolithic Laravel application structured by domain-d
 ## 📐 Post-v1.14 Architectural Changes
 
 Changes here represent deviations or additions to the original baseline design. Each entry explains what changed, why it was changed, and which part of the baseline it relates to.
+
+---
+
+### [v1.69] Database-Backed Localization with JSON Runtime Export
+
+**Baseline reference**: CMS and public content were table-backed, but fixed UI phrases were hardcoded in Blade/PHP and Laravel locale selection was not user-configurable.
+
+**What changed**:
+- Added `config/localization.php` as the supported-language source for English, French, Spanish, German, Italian, Dutch, Portuguese, Russian, Japanese, Chinese, and Polish.
+- Added `users.locale` plus `SetLocale` middleware and `LanguageController` so guests can store locale in session and authenticated users persist locale preference.
+- Added `translation_strings` as the admin-editable phrase catalog, managed through `/admin/translations` (`TranslationAdmin` + `TranslationCatalogService`).
+- Kept `lang/*.json` as the runtime translation cache/export target so Laravel JSON translations remain the rendering mechanism.
+- Added `TranslateRenderedHtml` to translate existing rendered Blade/Livewire text nodes and common readable attributes by exact JSON key, including Livewire JSON payload fragments.
+- Added current-locale helpers for CMS/game translations with English fallback.
+
+**Why**: The app needed non-developer translation management without replacing Laravel's JSON translation runtime. The database table gives admins a safe editing surface and missing-translation tracking; JSON export keeps runtime lookup simple and compatible with Laravel. Rendered HTML translation provides broad coverage for the existing Blade-heavy codebase while new code can still add explicit JSON keys and table-backed locale records over time.
 
 ---
 

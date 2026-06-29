@@ -153,6 +153,32 @@ Managing public legal/policy pages outside the generic CMS page system.
     *   Disclaimer (`/policies/disclaimer`)
 *   **Reason for Separate Area**: Policy pages are operational/legal content and are intentionally separate from `cms_pages`, so they can have fixed expected slugs, dedicated admin UX, and predictable public footer links.
 
+## 10. Translation Management
+Managing user-facing UI phrases and locale JSON runtime files.
+
+*   **Route**: `/admin/translations`
+*   **UI Component**: `app/Livewire/Admin/TranslationAdmin.php`
+*   **View**: `resources/views/livewire/admin/translation-admin.blade.php`
+*   **Data Model**: `app/Modules/Localization/Models/TranslationString.php`
+*   **Service**: `app/Modules/Localization/Services/TranslationCatalogService.php`
+*   **Tables / Files**:
+    *   `translation_strings`: Database editing source for each phrase key and locale.
+    *   `lang/*.json`: Runtime translation files exported from the database.
+    *   `users.locale`: Stores the preferred locale for authenticated users.
+*   **Admin Workflow**:
+    *   Click **Sync JSON** after developers add new `lang/en.json` keys in code.
+    *   Use search, locale filter, and **Missing only** to find untranslated phrases.
+    *   Click a row edit action to fill translations for all supported locales.
+    *   Click **Save & Export** so the database changes are written back to `lang/*.json`.
+    *   Click **Fill Missing** when missing entries should be populated with English fallback text first; real translations can still be edited later.
+*   **Runtime Flow**:
+    *   `SetLocale` chooses locale from `users.locale`, session, or fallback.
+    *   `TranslateRenderedHtml` translates rendered Blade/Livewire text and supported attributes by exact JSON key.
+    *   Game/CMS translation helpers read current locale first and fall back to English.
+*   **Tests**:
+    *   `tests/Feature/Admin/TranslationAdminTest.php`
+    *   `tests/Feature/Localization/LanguageSwitchTest.php`
+
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
 *   **Role Protection**: `test_non_admin_cannot_access_admin_dashboard` / `test_player_cannot_access_staff_activity_dashboard`
@@ -179,6 +205,10 @@ Managing public legal/policy pages outside the generic CMS page system.
     *   Assert `/` renders seeded content, the video path, game catalog cards, and dynamic sections.
 *   **Policy Pages**: `CMS/PolicyPageTest`
     *   Assert guests can view seeded policy pages, inactive/unpublished policies 404, admins can edit policy content, and players cannot access `/admin/policies`.
+*   **Translation Manager**: `Admin/TranslationAdminTest`
+    *   Assert admins can open `/admin/translations`, sync JSON keys into `translation_strings`, and filter missing locale rows.
+*   **Language Switching**: `Localization/LanguageSwitchTest`
+    *   Assert guest session locale changes rendered HTML and authenticated user locale preference persists.
 
 ### 📋 Pending Tests (Testing Debt)
 *   `test_admin_tournament_filter_persistence`: Ensure search/status filters remain set after page refresh.

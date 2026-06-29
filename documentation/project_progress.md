@@ -1,6 +1,19 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-29 (v1.68) | **Branch**: `main`
+**Last Updated**: 2026-06-29 (v1.69) | **Branch**: `main`
+
+---
+
+## ✅ Admin Translation Manager and Runtime Localization (v1.69)
+
+- **`config/localization.php` / `lang/*.json`**: Added supported locale configuration and JSON runtime files for English, French, Spanish, German, Italian, Dutch, Portuguese, Russian, Japanese, Chinese, and Polish.
+- **`SetLocale` / `LanguageController`**: Added guest/session and authenticated-user language switching through `POST /language`; authenticated users persist preference in `users.locale`.
+- **`TranslateRenderedHtml`**: Added rendered HTML translation for Blade and Livewire output, including visible text plus `placeholder`, `title`, `aria-label`, and `alt` attributes by exact JSON key.
+- **`TranslationAdmin` / `TranslationCatalogService`**: Added `/admin/translations` for syncing JSON phrase keys into `translation_strings`, editing translations, filtering missing locale values, filling missing entries from English fallback, and exporting runtime JSON files.
+- **CMS/game locale helpers**: Added current-locale helpers for game and CMS page labels with English fallback, removing hardcoded English display reads for user-visible content.
+- **Docs**: Updated `ONBOARDING.md`, `FEATURE_MAP.md`, and `05_admin_operations.md` with the localization workflow and admin management rules.
+- **Tests**: `php artisan test tests/Feature/Admin/TranslationAdminTest.php tests/Feature/Localization/LanguageSwitchTest.php` passes: 4 tests, 10 assertions.
+- **PHPStan**: Not run for this pass.
 
 ---
 
