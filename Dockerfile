@@ -1,7 +1,9 @@
 FROM php:8.4-fpm-alpine
 
 ARG COMPOSER_CURL_DISABLE_HTTP2=1
+ARG COMPOSER_PREFER_INSTALL=source
 ENV COMPOSER_CURL_DISABLE_HTTP2=${COMPOSER_CURL_DISABLE_HTTP2}
+ENV COMPOSER_PREFER_INSTALL=${COMPOSER_PREFER_INSTALL}
 
 # Install system dependencies + nginx
 RUN apk add --no-cache \
@@ -27,7 +29,9 @@ WORKDIR /var/www
 COPY . /var/www
 
 # Install PHP dependencies (no dev, optimized autoloader)
-RUN APP_ENV=local COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+# Coolify/VPS builds can fail on GitHub codeload dist ZIPs with HTTP/2 400,
+# so production installs use source checkouts instead of codeload archives.
+RUN APP_ENV=local COMPOSER_MEMORY_LIMIT=-1 composer install --prefer-source --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Install JS dependencies and build assets
 RUN npm ci && npm run build && rm -rf node_modules
