@@ -1,13 +1,22 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-29 (v1.67) | **Branch**: `main`
+**Last Updated**: 2026-06-29 (v1.68) | **Branch**: `main`
+
+---
+
+## ✅ Terms and Conditions Policy Page (v1.68)
+
+- **`PolicyPageSeeder`**: Added Terms and Conditions as a seeded policy page at `/policies/terms-and-conditions`.
+- **Footer links**: Added the Terms link and allowed footer policy links to wrap on smaller screens.
+- **Tests**: Updated `PolicyPageTest` to cover the Terms and Conditions public page.
+- **PHPStan**: Not rerun for this small policy-content follow-up; previous run exited with code 1 and no diagnostics/output in this environment.
 
 ---
 
 ## ✅ Database-backed Policy Pages (v1.67)
 
 - **`policy_pages`**: Added a dedicated table for legal/policy content, separate from generic `cms_pages`, with slug, title, summary, body content, active/published state, sort order, and updater tracking.
-- **Public policy pages**: Added guest-accessible `/policies` index and `/policies/{slug}` detail pages for Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer.
+- **Public policy pages**: Added guest-accessible `/policies` index and `/policies/{slug}` detail pages for Terms and Conditions, Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer.
 - **`PolicyAdmin`**: Added `/admin/policies` for staff to edit policy title, slug, summary, rich-text body content, order, active state, and published state.
 - **Seeders/navigation**: Added `PolicyPageSeeder`, wired it into `DatabaseSeeder`, and updated public footer links to real policy URLs.
 - **Tests**: `php artisan test tests/Feature/CMS/PolicyPageTest.php tests/Feature/Admin/AdminPanelTest.php` passes: 25 tests, 84 assertions.

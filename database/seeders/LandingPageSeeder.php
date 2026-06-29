@@ -119,6 +119,7 @@ class LandingPageSeeder extends Seeder
                 'body' => 'ALL RIGHTS RESERVED. OPERATED BY PLAYERSALOONS SYSTEMS.',
                 'sort_order' => 8,
                 'items' => [
+                    ['item_key' => 'terms', 'label' => 'Terms', 'url' => '/policies/terms-and-conditions'],
                     ['item_key' => 'cookies', 'label' => 'Cookies', 'url' => '/policies/cookie-policy'],
                     ['item_key' => 'privacy', 'label' => 'Privacy', 'url' => '/policies/privacy-policy'],
                     ['item_key' => 'refunds', 'label' => 'Refunds', 'url' => '/policies/refund-and-cancellation-policy'],

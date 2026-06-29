@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-29 | **Current version**: v1.67 | **Branch**: `main`
+**As of**: 2026-06-29 | **Current version**: v1.68 | **Branch**: `main`
 
 ---
 
@@ -34,7 +34,7 @@
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.67)
+## ✅ Natapos ngayong session (v1.30–v1.68)
 
 | Version | Item |
 |---|---|
@@ -76,6 +76,7 @@
 | v1.65 | Hero video loop reliability fallback |
 | v1.66 | Documentation synchronization pass for routes, versions, stale references, and wallet/withdrawal flow docs |
 | v1.67 | Dedicated database-backed policy pages with admin editor and public guest views |
+| v1.68 | Added Terms and Conditions to the dedicated policy pages |
 
 ---
 

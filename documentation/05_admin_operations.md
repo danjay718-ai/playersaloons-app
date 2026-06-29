@@ -146,6 +146,7 @@ Managing public legal/policy pages outside the generic CMS page system.
     *   `policy_pages`: Stores slug, title, summary, content, sort order, active state, published timestamp, and last updater.
 *   **Editor**: Body content uses the same Quill rich text editor pattern as the tournament wizard, storing formatted HTML for public rendering.
 *   **Seeded Policy Pages**:
+    *   Terms and Conditions (`/policies/terms-and-conditions`)
     *   Cookie Policy (`/policies/cookie-policy`)
     *   Privacy Policy (`/policies/privacy-policy`)
     *   Refund and Cancellation Policy (`/policies/refund-and-cancellation-policy`)

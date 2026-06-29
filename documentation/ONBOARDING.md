@@ -188,7 +188,7 @@ If information exists in two places, the more specific file wins (e.g., module d
 | Landing page content | `landing_sections`, `landing_section_items` | Hero copy/video path, section headings, editable cards, reviews, stat labels, and footer links |
 | Landing game banners | `games.banner_path` | Optional public path for the homepage game carousel card image |
 | Public navigation | `public_navigation_items` | Editable public navbar labels, URLs, icons, visibility rules, order, and active state |
-| Policy pages | `policy_pages` | Cookie, privacy, refund/cancellation, and disclaimer content editable from `/admin/policies` |
+| Policy pages | `policy_pages` | Terms, cookie, privacy, refund/cancellation, and disclaimer content editable from `/admin/policies` |
 | Public file access | `public/storage` symlink | Created by `php artisan storage:link` |
 | Audit logs | `activity_log` DB table | Spatie Activity Log |
 | App configuration | `.env` (never commit) | Use `.env.production.example` as template |

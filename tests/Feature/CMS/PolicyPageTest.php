@@ -31,6 +31,7 @@ class PolicyPageTest extends TestCase
         $this->get('/policies')
             ->assertOk()
             ->assertSee('Policies')
+            ->assertSee('Terms and Conditions')
             ->assertSee('Cookie Policy')
             ->assertSee('Privacy Policy')
             ->assertSee('Refund and Cancellation Policy')
@@ -41,6 +42,11 @@ class PolicyPageTest extends TestCase
             ->assertSee('Privacy Policy')
             ->assertSee('What information we collect')
             ->assertSee('PlayerSaloons collects account');
+
+        $this->get('/policies/terms-and-conditions')
+            ->assertOk()
+            ->assertSee('Terms and Conditions')
+            ->assertSee('The rules for accessing and using PlayerSaloons services');
     }
 
     public function test_inactive_or_unpublished_policy_page_returns_not_found(): void

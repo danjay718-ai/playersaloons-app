@@ -7,7 +7,8 @@
         <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-700">
             &copy; {{ date('Y') }} ALL RIGHTS RESERVED. OPERATED BY PLAYERSALOONS SYSTEMS.
         </p>
-        <div class="flex gap-8 text-[10px] font-black uppercase tracking-widest text-zinc-600">
+        <div class="flex flex-wrap justify-center gap-4 text-[10px] font-black uppercase tracking-widest text-zinc-600 sm:gap-8">
+            <a href="/policies/terms-and-conditions" wire:navigate class="transition-colors hover:text-cyan-400">Terms</a>
             <a href="/policies/cookie-policy" wire:navigate class="transition-colors hover:text-cyan-400">Cookies</a>
             <a href="/policies/privacy-policy" wire:navigate class="transition-colors hover:text-cyan-400">Privacy</a>
             <a href="/policies/refund-and-cancellation-policy" wire:navigate class="transition-colors hover:text-cyan-400">Refunds</a>

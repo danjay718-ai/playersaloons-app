@@ -59,6 +59,12 @@ class PolicyPageSeeder extends Seeder
     {
         return [
             [
+                'slug' => 'terms-and-conditions',
+                'title' => 'Terms and Conditions',
+                'summary' => 'The rules for accessing and using PlayerSaloons services.',
+                'content' => "By accessing or using PlayerSaloons, you agree to follow these Terms and Conditions, platform rules, tournament rules, fair-play requirements, and any additional instructions shown in the product.\n\nYou are responsible for maintaining accurate account information, protecting your login credentials, following eligibility requirements, and using the platform lawfully. You may not abuse tournament systems, manipulate results, submit false evidence, harass other users, attempt unauthorized access, or interfere with platform operations.\n\nTournament entries, head-to-head duels, wallet activity, disputes, and payout workflows are governed by the applicable rules shown in the platform and related policy pages. PlayerSaloons may review activity, restrict access, suspend accounts, reverse improper transactions, or take other action when needed to protect players, staff, or platform integrity.\n\nWe may update these Terms and Conditions as features, legal requirements, business operations, or compliance obligations change. Continued use of PlayerSaloons after updates means you accept the revised terms.",
+            ],
+            [
                 'slug' => 'cookie-policy',
                 'title' => 'Cookie Policy',
                 'summary' => 'How PlayerSaloons uses cookies and similar browser storage.',
@@ -91,6 +97,7 @@ class PolicyPageSeeder extends Seeder
     private function footerLinks(): array
     {
         return [
+            ['item_key' => 'terms', 'label' => 'Terms', 'url' => '/policies/terms-and-conditions'],
             ['item_key' => 'cookies', 'label' => 'Cookies', 'url' => '/policies/cookie-policy'],
             ['item_key' => 'privacy', 'label' => 'Privacy', 'url' => '/policies/privacy-policy'],
             ['item_key' => 'refunds', 'label' => 'Refunds', 'url' => '/policies/refund-and-cancellation-policy'],
