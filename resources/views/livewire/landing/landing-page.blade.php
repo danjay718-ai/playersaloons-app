@@ -18,11 +18,40 @@
 
         {{-- Video Background --}}
         @if($hero?->media_path)
-            <video id="hero-video"
-                class="absolute inset-0 h-full w-full object-cover scale-105"
-                autoplay muted loop playsinline preload="auto">
-                <source src="{{ $hero->media_path }}" type="video/mp4">
-            </video>
+            {{--
+                Alpine.js handles the loop entirely inside x-data.
+                wire:ignore keeps Livewire morphdom away from this element
+                so component re-renders never reset the video playback.
+                x-init sets loop=true programmatically and starts a 500 ms
+                watchdog that force-restarts the video if it ever stalls.
+            --}}
+            <div wire:ignore
+                x-data="{
+                    init() {
+                        const v = this.$el.querySelector('video');
+                        if (!v) return;
+                        v.loop = true;
+
+                        v.addEventListener('ended', () => {
+                            v.currentTime = 0;
+                            v.play().catch(() => {});
+                        });
+
+                        setInterval(() => {
+                            const nearEnd = v.duration && (v.duration - v.currentTime) < 0.5;
+                            if (v.ended || (nearEnd && v.paused)) {
+                                v.currentTime = 0;
+                                v.play().catch(() => {});
+                            }
+                        }, 500);
+                    }
+                }">
+                <video id="hero-video"
+                    class="absolute inset-0 h-full w-full object-cover scale-105"
+                    autoplay muted loop playsinline preload="auto">
+                    <source src="{{ $hero->media_path }}" type="video/mp4">
+                </video>
+            </div>
         @endif
 
 

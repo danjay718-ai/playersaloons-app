@@ -215,24 +215,44 @@ function initPublicNav() {
 
 /**
  * LANDING HERO VIDEO — Fallback loop listener
- * 
+ *
  * Some browsers (especially on mobile iOS or when using SPA navigation)
  * will occasionally ignore the native HTML `loop` attribute. This guarantees
  * the hero video will always replay when it finishes.
+ *
+ * Three-layer approach:
+ *   1. Ensure `loop` is set programmatically (guards against Livewire
+ *      morphdom stripping the attribute during re-renders).
+ *   2. `ended` event — standard replay trigger.
+ *   3. `timeupdate` safety net — catches browsers that freeze instead of
+ *      firing `ended` when a looped video reaches its duration.
  */
 function initHeroVideoFallback() {
     const video = document.getElementById('hero-video');
     if (!video) return;
 
-    // Avoid attaching multiple listeners
+    // Layer 1: always enforce loop via property (survives attribute morphing)
+    video.loop = true;
+
+    // Avoid attaching multiple event listeners on the same element
     if (video._loopInitialised) return;
     video._loopInitialised = true;
 
+    // Layer 2: explicit restart on ended
     video.addEventListener('ended', () => {
         video.currentTime = 0;
         video.play().catch(() => {
-            // Ignore auto-play errors (e.g. if user hasn't interacted)
+            // Ignore auto-play policy errors
         });
+    });
+
+    // Layer 3: timeupdate safety net — if the video stalls within 0.3 s of
+    // its end without firing `ended`, force a restart manually.
+    video.addEventListener('timeupdate', () => {
+        if (video.duration && (video.duration - video.currentTime) < 0.3 && video.paused) {
+            video.currentTime = 0;
+            video.play().catch(() => {});
+        }
     });
 }
 
