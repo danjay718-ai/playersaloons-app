@@ -4,10 +4,11 @@
 
 ---
 
-## ✅ Production Composer Platform Extensions Fix (v1.71)
+## ✅ Production Composer Build Fix (v1.71)
 
-- **`Dockerfile`**: Added `mbstring`, `curl`, `dom`, and `simplexml` to the production PHP extension install list so `composer install --no-dev` satisfies the locked package platform requirements inside the Coolify build image.
-- **Why**: Coolify failed during Docker build at the Composer install step with exit code 100. The visible log stopped at the failing Dockerfile line, but the production dependency lock requires these extensions and the previous image installed only the smaller app/runtime subset.
+- **`Dockerfile`**: Added `mbstring`, `curl`, `dom`, and `simplexml` to the production PHP extension install list so `composer install --no-dev` satisfies the locked package platform requirements inside the Coolify build image. Added `COMPOSER_CURL_DISABLE_HTTP2=1` as a build-time/runtime Composer environment default to avoid GitHub codeload HTTP/2 download failures.
+- **`docker-compose.prod.yml`**: Passes `COMPOSER_CURL_DISABLE_HTTP2` as a build arg, defaulting to `1`, because Coolify deploys through this compose file.
+- **Why**: Coolify failed during Docker build at the Composer install step with exit code 100. The concrete Composer error was a failed `ralouphie/getallheaders` dist ZIP download from GitHub codeload with `HTTP/2 400`, and source fallback was disabled.
 - **Tests**: `composer validate --strict`, `composer check-platform-reqs --no-dev`, and `composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --dry-run` pass locally. Docker is not available in this workspace, so the full image build could not be reproduced here.
 - **PHPStan**: Not run for this deployment Dockerfile fix.
 

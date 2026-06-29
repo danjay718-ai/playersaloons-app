@@ -1,5 +1,8 @@
 FROM php:8.4-fpm-alpine
 
+ARG COMPOSER_CURL_DISABLE_HTTP2=1
+ENV COMPOSER_CURL_DISABLE_HTTP2=${COMPOSER_CURL_DISABLE_HTTP2}
+
 # Install system dependencies + nginx
 RUN apk add --no-cache \
     bash \
