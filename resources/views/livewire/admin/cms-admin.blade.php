@@ -440,7 +440,7 @@
                                     <button wire:click="openEditNavigationItemModal({{ $item->id }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit Navigation Item">
                                         <i data-lucide="edit" class="w-4 h-4"></i>
                                     </button>
-                                    <button wire:click="deleteNavigationItem({{ $item->id }})" class="p-1.5 text-red-400 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete Navigation Item">
+                                    <button wire:click="confirmDelete('navigation', {{ $item->id }})" class="p-1.5 text-red-400 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete Navigation Item">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </td>
@@ -784,7 +784,7 @@
                     </div>
                     <h3 class="text-lg font-bold text-slate-200 mb-2">Confirm Deletion</h3>
                     <p class="text-sm text-slate-400 mb-6">
-                        Are you sure you want to delete this {{ $deleteTargetType }}? This action cannot be undone.
+                        Are you sure you want to delete this {{ $deleteTargetType === 'navigation' ? 'navigation item' : $deleteTargetType }}? This action cannot be undone.
                     </p>
                     
                     <div class="flex space-x-3 justify-center">
