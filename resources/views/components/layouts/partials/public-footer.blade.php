@@ -8,9 +8,10 @@
             &copy; {{ date('Y') }} ALL RIGHTS RESERVED. OPERATED BY PLAYERSALOONS SYSTEMS.
         </p>
         <div class="flex gap-8 text-[10px] font-black uppercase tracking-widest text-zinc-600">
-            <a href="#" class="transition-colors hover:text-cyan-400">Terms</a>
-            <a href="#" class="transition-colors hover:text-cyan-400">Privacy</a>
-            <a href="#" class="transition-colors hover:text-cyan-400">Support</a>
+            <a href="/policies/cookie-policy" wire:navigate class="transition-colors hover:text-cyan-400">Cookies</a>
+            <a href="/policies/privacy-policy" wire:navigate class="transition-colors hover:text-cyan-400">Privacy</a>
+            <a href="/policies/refund-and-cancellation-policy" wire:navigate class="transition-colors hover:text-cyan-400">Refunds</a>
+            <a href="/policies/disclaimer" wire:navigate class="transition-colors hover:text-cyan-400">Disclaimer</a>
         </div>
     </div>
 </footer>

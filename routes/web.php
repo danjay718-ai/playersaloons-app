@@ -10,6 +10,7 @@ use App\Livewire\Admin\BroadcastNotificationAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Admin\PolicyAdmin;
 use App\Livewire\Admin\StaffActivityDashboard;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Admin\TournamentForm;
@@ -25,6 +26,8 @@ use App\Livewire\Landing\LandingPage;
 use App\Livewire\Match\HeadToHeadList;
 use App\Livewire\Match\LeaderboardList;
 use App\Livewire\Match\MatchDetail;
+use App\Livewire\Policies\PolicyIndex;
+use App\Livewire\Policies\PolicyPageView;
 use App\Livewire\Profile\ProfileDashboard;
 use App\Livewire\Stream\StreamList;
 use App\Livewire\Team\TeamDashboard;
@@ -41,6 +44,8 @@ use Illuminate\Support\Facades\Storage;
 Route::get('/', LandingPage::class);
 
 Route::get('/tournaments', PublicTournamentList::class);
+Route::get('/policies', PolicyIndex::class)->name('policies.index');
+Route::get('/policies/{slug}', PolicyPageView::class)->name('policies.show');
 
 Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
 
@@ -102,6 +107,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', UserAdmin::class);
         Route::get('/audit-logs', AuditLogAdmin::class);
         Route::get('/cms', CmsAdmin::class);
+        Route::get('/policies', PolicyAdmin::class);
         Route::get('/notifications', BroadcastNotificationAdmin::class)->name('admin.notifications');
         Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');
     });

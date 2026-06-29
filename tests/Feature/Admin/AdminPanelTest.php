@@ -8,6 +8,7 @@ use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Admin\PolicyAdmin;
 use App\Livewire\Admin\StaffActivityDashboard;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Admin\TournamentForm;
@@ -184,6 +185,7 @@ class AdminPanelTest extends TestCase
             '/admin/users' => UserAdmin::class,
             '/admin/audit-logs' => AuditLogAdmin::class,
             '/admin/cms' => CmsAdmin::class,
+            '/admin/policies' => PolicyAdmin::class,
         ];
 
         foreach ($pages as $url => $component) {

@@ -70,6 +70,7 @@
                         ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users'],
                         ['label' => 'Audit Logs', 'icon' => 'file-text', 'url' => '/admin/audit-logs'],
                         ['label' => 'CMS & Games', 'icon' => 'database', 'url' => '/admin/cms'],
+                        ['label' => 'Policies', 'icon' => 'scroll-text', 'url' => '/admin/policies'],
                         ['label' => 'Notifications', 'icon' => 'megaphone', 'url' => '/admin/notifications'],
                     ];
                 @endphp
