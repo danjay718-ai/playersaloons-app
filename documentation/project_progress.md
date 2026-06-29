@@ -1,6 +1,16 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-29 (v1.71) | **Branch**: `main`
+**Last Updated**: 2026-06-29 (v1.72) | **Branch**: `main`
+
+---
+
+## ✅ Production Startup CMS Seeding Fix (v1.72)
+
+- **`docker/start.sh`**: Added production startup seeding for `PlatformSeeder`, `PolicyPageSeeder`, `LandingPageSeeder`, `PublicNavigationSeeder`, and `TranslationStringSeeder` after migrations.
+- **Why**: `DatabaseSeeder` included the new seeders locally, but production startup intentionally runs a curated list of seeders instead of the full demo-data `DatabaseSeeder`. Coolify therefore migrated the tables but did not populate platforms, landing sections/items, public navigation, policy footer links, or translation rows.
+- **Scope**: Kept demo-heavy seeders such as `TournamentsTableSeeder` and `PlayerAccountSeeder` out of production startup. The added seeders are idempotent operational defaults.
+- **Tests**: Local targeted production seed sequence passes.
+- **PHPStan**: Not run for this startup script fix.
 
 ---
 
