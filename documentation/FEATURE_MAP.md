@@ -1,10 +1,10 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-26 (v1.64)
+**Last Updated**: 2026-06-29 (v1.66)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
-For architecture decisions and rationale, see `PlayerSaloons_Architecture_Baseline_v1.md`.
+For architecture decisions and rationale, see `architecture_baseline.md`.
 For step-by-step user flows and file-level details, see `/documentation/`.
 
 ---
@@ -70,7 +70,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
 
-### REST API Routes (`/api/v1`, Sanctum auth)
+### REST API Routes (`/api/v1`)
 
 | Endpoint | Controller | Description |
 |---|---|---|
@@ -81,8 +81,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /api/v1/matches/{uuid}` | `MatchApiController` | Match detail |
 | `POST /api/v1/matches/{uuid}/result` | `MatchApiController` | Submit match result |
 | `POST /api/v1/matches/{uuid}/dispute` | `MatchApiController` | Open dispute |
-| `GET /api/v1/wallet` | `WalletApiController` | Wallet balance |
-| `GET /api/v1/wallet/ledger` | `WalletApiController` | Transaction ledger (paginated) |
+| `GET /api/v1/wallet/balance` | `WalletApiController` | Wallet balance |
+| `GET /api/v1/wallet/transactions` | `WalletApiController` | Transaction history (paginated) |
 | `POST /api/v1/wallet/withdraw` | `WalletApiController` | Request withdrawal (KYC required) |
 | `GET /api/v1/profile` | `ProfileApiController` | View profile |
 | `PUT /api/v1/profile` | `ProfileApiController` | Update profile |
@@ -90,7 +90,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /api/v1/teams/{uuid}` | `TeamApiController` | Team detail |
 | `POST /api/v1/teams/{uuid}/invite` | `TeamApiController` | Invite player |
 | `GET /api/v1/notifications` | `NotificationApiController` | Notification list (paginated) |
-| `POST /api/v1/notifications/{id}/read` | `NotificationApiController` | Mark as read |
+| `POST /api/v1/notifications/{uuid}/read` | `NotificationApiController` | Mark as read |
 
 ### Shared Player Layout Components
 
@@ -109,10 +109,10 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Public navbar | `resources/views/components/layouts/partials/public-navigation.blade.php` | Fixed-position navbar backed by `public_navigation_items`. Transparent over the hero video, transitions to solid dark background on scroll (`initPublicNav()` in `app.js`, `.nav-transparent` / `.nav-solid` CSS classes). Desktop shows nav links; mobile topbar shows only logo + auth actions (Sign In / Join Now or Dashboard shortcut); all other items move into the burger dropdown. |
 | Public footer | `resources/views/components/layouts/partials/public-footer.blade.php` | Shared public footer for welcome and public/guest Livewire pages. |
 | Landing shell | `resources/views/components/layouts/landing.blade.php` | Full-bleed landing shell for the dynamic homepage. Preloads Orbitron + Inter from Google Fonts. Uses fixed (not sticky) nav so the hero video is visible beneath it on load. |
-| Landing page | `resources/views/livewire/landing/landing-page.blade.php` | Esports-themed dynamic landing: full-viewport video hero, CMS-editable sections, horizontal snap-scroll game carousel (`.landing-games-scroll`), glassmorphism cards, animated fade-in content, gradient CTA banner, and managed footer. |
+| Landing page | `resources/views/livewire/landing/landing-page.blade.php` | Esports-themed dynamic landing: full-viewport video hero with `id="hero-video"` for JS replay fallback, CMS-editable sections, horizontal snap-scroll game carousel (`.landing-games-scroll`), glassmorphism cards, animated fade-in content, gradient CTA banner, and managed footer. |
 | Landing CSS design system | `resources/css/app.css` (`.landing-*` classes) | All landing styles are prefixed `landing-`. Key classes: `.landing-page-root` (outer overflow clip), `.landing-hero`, `.landing-main-pattern`, `.landing-section-overflow-clip` (sections with decorative orbs), `.landing-games-scroll` (the only permitted horizontal scroll), `.landing-gradient-text`, `.landing-section-title`, `.landing-section-kicker`, `.landing-card`, `.landing-stat-card`, `.landing-cta-primary`, `.landing-fade-in` (+ delay variants), `.landing-top-glow`. |
 | Scroll-aware nav JS | `resources/js/app.js` — `initPublicNav()` | Detects `.landing-hero` presence. If found: registers a passive scroll listener and toggles `.nav-transparent` / `.nav-solid` on `#public-nav` at a 60 px threshold. If not found (non-landing pages): always applies `.nav-solid`. Cleans up previous scroll listeners on Livewire SPA navigation to avoid memory leaks. |
-| Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, scroll-aware nav, native PWA install prompt, service worker registration, and lazy authenticated Echo setup. |
+| Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, scroll-aware nav, hero video replay fallback, native PWA install prompt, service worker registration, and lazy authenticated Echo setup. |
 | PWA manifest/service worker | `public/manifest.json`, `public/sw.js`, `public/icon-192.png`, `public/icon-512.png` | Installable app metadata, square PWA icons, static asset caching, and network-only HTML navigation so stale landing pages are not served after logout. |
 | Horizontal scroll containment | `html, body { overflow-x: hidden }` in `app.css` | Global guard. Decorative sections use `overflow-x: clip`. The only intentional horizontal scroll is `.landing-games-scroll`. |
 
@@ -225,7 +225,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Community/NotificationBellTest.php` | Player notification bell list, unread count, single/all mark-as-read, ownership guard, realtime refresh event |
 | `Admin/AdminPanelTest.php` | Admin access guards, KYC approve/reject, match override, tournament create (TournamentForm), staff activity |
 | `Admin/BroadcastNotificationAdminTest.php` | Access guards, create/edit/expire/delete broadcasts, SUPER_ADMIN delete restriction, search filter |
-| `Wallet/WalletFeatureTest.php` | Deposit idempotency, withdrawal lifecycle, ledger sum = cached balance, listener idempotency |
+| `Wallet/WalletServiceTest.php` | Deposit idempotency, withdrawal lifecycle, ledger sum = cached balance, listener idempotency |
 | `Wallet/WalletDashboardTest.php` | Wallet page Stripe Checkout redirect for deposits |
 | `Wallet/StripeWebhookTest.php` | Signed Stripe webhook deposit crediting, idempotency, invalid signature rejection |
 | `Tournament/TournamentModuleTest.php` | Registration, check-in, bracket generation, cancellation, refunds, prize distribution |
@@ -248,7 +248,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Tournament/BracketGenerationServiceTest.php` | 2, 5, 6, 8-player bracket sizes with bye math |
 
 ### Pending Tests (Not Yet Written)
-See `PlayerSaloons_Execution_Checklist_v1.md` → Testing Debt section for the full list.
+See `execution_checklist.md` → Testing Debt section for the full list.
 
 ---
 

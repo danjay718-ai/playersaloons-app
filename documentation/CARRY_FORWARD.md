@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-26 | **Current version**: v1.63 | **Branch**: `main`
+**As of**: 2026-06-29 | **Current version**: v1.66 | **Branch**: `main`
 
 ---
 
@@ -7,7 +7,7 @@
 
 - Production deployed sa `https://app-testing.website` via Docker Compose + Coolify (Linode)
 - SSL active (HTTPS via Let's Encrypt), login working, Horizon active
-- PHPStan Level 5 was previously clean on recent feature work; latest v1.40 run exited with code 1 without diagnostics/output in this environment
+- PHPStan Level 5 was previously clean on feature work; later environment runs exited with code 1 without diagnostics/output, and v1.66 was documentation-only
 - `predis/predis` installed — local dev gumagamit ng `REDIS_CLIENT=predis`
 - Match confirmation flow now uses canonical `WAITING_FOR_CONFIRMATION`; `RESULT_SUBMITTED` remains legacy-compatible only
 - Welcome page header now shows logo image only, without adjacent `PLAYERSALOONS` text
@@ -27,12 +27,13 @@
 - Landing games now render as a horizontal snap-scroll carousel; `games.banner_path` stores optional per-game card banners, and the landing background uses lightweight CSS-only game patterns
 - Landing page has a mobile responsiveness pass for player-heavy mobile traffic: tighter hero/CTA spacing, smaller carousel cards, touch-friendly sections, wrapped footer text, and a compact public mobile nav
 - Public navbar items are now editable through `/admin/cms` → Navigation, backed by `public_navigation_items`; mobile burger contains nav items and install action while the mobile topbar stays focused on auth actions
+- Landing page now has a fixed, scroll-aware public navbar over the hero video, horizontal overflow containment, and a JS replay fallback for the hero video loop (`#hero-video`)
 - PWA install support is present through manifest/service worker/icons and native browser install prompt handling
 - Echo/Reverb frontend setup is lazy-loaded only for authenticated pages with `meta[name="user-uuid"]`, preventing guest-page WebSocket console errors
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.63)
+## ✅ Natapos ngayong session (v1.30–v1.66)
 
 | Version | Item |
 |---|---|
@@ -70,6 +71,9 @@
 | v1.61 | Landing game carousel, lightweight background patterns, and editable game banners |
 | v1.62 | Landing mobile responsiveness pass and compact mobile public nav |
 | v1.63 | DB-backed public navigation items and `/admin/cms` navigation editor |
+| v1.64 | Landing redesign, fixed scroll-aware public nav, and horizontal overflow containment |
+| v1.65 | Hero video loop reliability fallback |
+| v1.66 | Documentation synchronization pass for routes, versions, stale references, and wallet/withdrawal flow docs |
 
 ---
 

@@ -24,7 +24,8 @@ Verifying and processing cash-out requests.
 *   **UI Component**: `app/Livewire/Admin/WithdrawalAdmin.php`
 *   **Logic (Actions)**:
     *   `app/Modules/Wallet/Actions/ApproveWithdrawalAction.php`: Moves request to APPROVED status. Enforces `FINANCE_OPERATOR | ADMIN | SUPER_ADMIN` role and four-eyes check.
-    *   `app/Modules/Wallet/Actions/ProcessWithdrawalAction.php`: Executes the final debit and marks as PROCESSED. Same role guard.
+    *   `app/Modules/Wallet/Actions/ProcessWithdrawalAction.php`: Confirms the external payout was sent and marks the withdrawal as PROCESSED. Same role guard.
+    *   `app/Modules/Wallet/Listeners/CreateLedgerEntryListener.php`: Debits the wallet asynchronously when `WithdrawalApproved` is dispatched.
 *   **Security**: `WithdrawalAdmin::approve()` and `processPayout()` both call `$reviewer->can('approve', $withdrawal)` (via `WithdrawalPolicy`) before executing actions.
 *   **Connected Files**:
     *   `app/Modules/Wallet/Policies/WithdrawalPolicy.php`: Enforces the **Four-Eyes Principle** (reviewer cannot be the requester).

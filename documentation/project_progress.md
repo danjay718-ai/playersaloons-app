@@ -1,6 +1,16 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-26 (v1.65) | **Branch**: `main`
+**Last Updated**: 2026-06-29 (v1.66) | **Branch**: `main`
+
+---
+
+## ✅ Documentation Synchronization Pass (v1.66)
+
+- **Docs sync**: Aligned `FEATURE_MAP.md`, `CARRY_FORWARD.md`, `execution_checklist.md`, `architecture_baseline.md`, and module flow docs with the current v1.65 code/documentation state.
+- **Route map fixes**: Updated API wallet routes to `/api/v1/wallet/balance` and `/api/v1/wallet/transactions`, and notification read route to `{uuid}`.
+- **Stale references**: Replaced old generated doc filenames with current `documentation/*.md` paths, fixed the wallet test filename, and corrected withdrawal debit wording to match the queued `CreateLedgerEntryListener` flow.
+- **Tests**: Not run — documentation-only sync.
+- **PHPStan**: Not run — documentation-only sync.
 
 ---
 
@@ -553,7 +563,7 @@ Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles
 
 - **Head-to-Head Feature Modularization (v1.11)**:
   - **Dedicated H2H Page**: Extracted 'Head-to-Head' duels from the `PlayerDashboard` into a dedicated Livewire page (`/head-to-head`), improving load times and simplifying the dashboard DOM.
-  - **Prototype/Mock Implementation**: Current H2H functionality uses mock in-memory data for UI demonstration. Production implementation (backend tables, matchmaking engine, websockets) is tracked in [PlayerSaloons_Execution_Checklist_v1.md].
+  - **Prototype/Mock Implementation at the time**: v1.11 used mock in-memory data for UI demonstration. The production DB-backed H2H flow was later implemented in v1.39 and follow-up H2H work is tracked in `documentation/execution_checklist.md`.
   - **Navigation Update**: Updated sidebar to include a direct link to the new H2H page and removed H2H tab from the main dashboard.
 
 - **Dashboard Redesign (v1.13)**:
@@ -749,7 +759,7 @@ Audited the full Admin & Operations flow against `documentation/05_admin_operati
 
 ## 🔲 Pending / Not Yet Done
 
-This section consolidates all known incomplete work across the project. For detailed task lists, see `PlayerSaloons_Execution_Checklist_v1.md`.
+This section consolidates all known incomplete work across the project. For detailed task lists, see `documentation/execution_checklist.md`.
 
 ### Testing Debt
 The following tests are identified but not yet written:

@@ -1,6 +1,6 @@
 # PlayerSaloons — Architecture Baseline
 
-**Last Updated**: 2026-06-26 (v1.64) | **Original Baseline**: 2026-06-14
+**Last Updated**: 2026-06-29 (v1.66) | **Original Baseline**: 2026-06-14
 
 ## 🏗️ Architectural Overview
 
@@ -71,6 +71,18 @@ Changes here represent deviations or additions to the original baseline design. 
 - `.landing-games-scroll` is **explicitly exempted** — it retains `overflow-x: auto` and `-webkit-overflow-scrolling: touch` for the swipeable horizontal game carousel.
 
 **Why**: `overflow-x: hidden` on `body` alone is insufficient when `position: fixed` or `position: absolute` elements exist, because `overflow: hidden` on an ancestor of a fixed element does not clip it. Using `overflow-x: clip` (which does not create a new stacking/scroll context) on the page root and individual sections provides containment without breaking fixed positioning or `backdrop-filter`. The global `body` guard handles everything else.
+
+---
+
+### [v1.65] Hero Video Loop Fallback
+
+**Baseline reference**: Landing page hero media relied only on the native HTML video `loop` attribute.
+
+**What changed**:
+- The landing hero video now has `id="hero-video"` and uses `preload="auto"`.
+- `initHeroVideoFallback()` in `app.js` listens for the `ended` event, resets playback to the start, and calls `play()` again.
+
+**Why**: Some browsers, especially during mobile/iOS playback or Livewire SPA navigation, can fail to honor native looping when buffering stalls. The JS fallback keeps the hero video reliably looping without changing CMS-managed content.
 
 ---
 
@@ -228,4 +240,4 @@ Changes here represent deviations or additions to the original baseline design. 
 
 ## 🛠️ Pending Implementation (Post-MVP Checklist)
 
-*Refer to [PlayerSaloons_Execution_Checklist_v1.md] for detailed implementation tasks.*
+*Refer to [execution_checklist.md] for detailed implementation tasks.*

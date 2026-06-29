@@ -59,7 +59,7 @@ STRIPE_WEBHOOK_SECRET=whsec_from_staging_dashboard_endpoint
 Cashing out funds from the platform.
 
 *   **Action**: Player requests a withdrawal of their available balance.
-*   **UI Component**: `app/Http/Controllers/Api/V1/WalletApiController.php` (for API) or `app/Livewire/Wallet/WithdrawalRequest.php`.
+*   **UI Component**: `app/Livewire/Wallet/WalletDashboard.php` for the player wallet page; `app/Http/Controllers/Api/V1/WalletApiController.php` for API withdrawals.
 *   **Logic (Actions)**:
     *   `app/Modules/Wallet/Actions/RequestWithdrawalAction.php`: Validates balance, KYC status, and creates a pending withdrawal.
 *   **Connected Files**:
@@ -76,8 +76,7 @@ Real-time monitoring of wallet funds and history.
 *   **Connected Files**:
     *   `app/Modules/Wallet/Models/Wallet.php`: Stores the `cached_balance` for quick retrieval.
     *   `app/Modules/Wallet/Models/LedgerEntry.php`: Provides the detailed transaction log.
-    *   `app/Http/Resources/WalletResource.php`: Serializes wallet data for the frontend.
-    *   `app/Http/Resources/LedgerEntryResource.php`: Serializes transaction history.
+    *   `app/Http/Controllers/Api/V1/WalletApiController.php`: Exposes `/api/v1/wallet/balance`, `/api/v1/wallet/transactions`, and `/api/v1/wallet/withdraw`.
 
 ## 🧪 Isolated Test Cases
 ### 1. Ledger Integrity
