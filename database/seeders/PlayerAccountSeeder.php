@@ -21,13 +21,18 @@ class PlayerAccountSeeder extends Seeder
         $password = Hash::make('password123');
 
         for ($i = 1; $i <= 50; $i++) {
-            $user = User::create([
-                'uuid' => (string) Str::uuid(),
-                'username' => 'testplayer' . $i,
-                'email' => 'player' . $i . '@example.com',
-                'password' => $password,
-                'email_verified_at' => now(),
+            $user = User::query()->firstOrNew([
+                'email' => 'player'.$i.'@example.com',
             ]);
+
+            if (! $user->exists) {
+                $user->uuid = (string) Str::uuid();
+                $user->password = $password;
+                $user->email_verified_at = now();
+            }
+
+            $user->username = 'testplayer'.$i;
+            $user->save();
 
             $user->assignRole($role);
         }

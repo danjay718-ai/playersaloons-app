@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Models\Bracket;
@@ -103,6 +104,7 @@ class TournamentsTableSeeder extends Seeder
         $pubg = Game::query()->where('slug', 'pubg-mobile')->first();
         $cod = Game::query()->where('slug', 'call-of-duty-mobile')->first();
         $mlbb = Game::query()->where('slug', 'mobile-legends-bang-bang')->first();
+        $platformIds = Platform::query()->pluck('id', 'slug');
 
         // 3. Define tournament data with image banners and frequencies
         $tournamentsData = [
@@ -111,6 +113,7 @@ class TournamentsTableSeeder extends Seeder
                 'slug' => 'valorant-daily-cup',
                 'game_id' => $valorant->id,
                 'status' => TournamentStatus::REGISTRATION_OPEN,
+                'platform_slug' => 'pc',
                 'frequency' => 'daily',
                 'entry_fee' => 0.00,
                 'prize_pool' => 100.00,
@@ -123,6 +126,7 @@ class TournamentsTableSeeder extends Seeder
                 'slug' => 'dota-2-weekly-clash',
                 'game_id' => $dota2->id,
                 'status' => TournamentStatus::REGISTRATION_OPEN,
+                'platform_slug' => 'pc',
                 'frequency' => 'weekly',
                 'entry_fee' => 5.00,
                 'prize_pool' => 500.00,
@@ -135,6 +139,7 @@ class TournamentsTableSeeder extends Seeder
                 'slug' => 'pubg-mobile-monthly-championship',
                 'game_id' => $pubg->id,
                 'status' => TournamentStatus::ONGOING,
+                'platform_slug' => 'mobile',
                 'frequency' => 'monthly',
                 'entry_fee' => 10.00,
                 'prize_pool' => 2000.00,
@@ -147,6 +152,7 @@ class TournamentsTableSeeder extends Seeder
                 'slug' => 'call-of-duty-daily-duel',
                 'game_id' => $cod->id,
                 'status' => TournamentStatus::COMPLETED,
+                'platform_slug' => 'mobile',
                 'frequency' => 'daily',
                 'entry_fee' => 0.00,
                 'prize_pool' => 50.00,
@@ -159,6 +165,7 @@ class TournamentsTableSeeder extends Seeder
                 'slug' => 'mobile-legends-weekly-showdown',
                 'game_id' => $mlbb->id,
                 'status' => TournamentStatus::COMPLETED,
+                'platform_slug' => 'mobile',
                 'frequency' => 'weekly',
                 'entry_fee' => 2.00,
                 'prize_pool' => 250.00,
@@ -171,6 +178,7 @@ class TournamentsTableSeeder extends Seeder
                 'slug' => 'valorant-masters-monthly',
                 'game_id' => $valorant->id,
                 'status' => TournamentStatus::REGISTRATION_OPEN,
+                'platform_slug' => 'pc',
                 'frequency' => 'monthly',
                 'entry_fee' => 15.00,
                 'prize_pool' => 5000.00,
@@ -183,6 +191,7 @@ class TournamentsTableSeeder extends Seeder
                 'slug' => 'dota-2-daily-brawl',
                 'game_id' => $dota2->id,
                 'status' => TournamentStatus::CANCELLED,
+                'platform_slug' => 'pc',
                 'frequency' => 'daily',
                 'entry_fee' => 0.00,
                 'prize_pool' => 30.00,
@@ -195,6 +204,7 @@ class TournamentsTableSeeder extends Seeder
                 'slug' => 'cod-mobile-weekly-league',
                 'game_id' => $cod->id,
                 'status' => TournamentStatus::REGISTRATION_CLOSED,
+                'platform_slug' => 'mobile',
                 'frequency' => 'weekly',
                 'entry_fee' => 4.00,
                 'prize_pool' => 300.00,
@@ -205,11 +215,16 @@ class TournamentsTableSeeder extends Seeder
         ];
 
         foreach ($tournamentsData as $tData) {
+            $platformSlug = $tData['platform_slug'];
+            unset($tData['platform_slug']);
+            $tData['platform_id'] = $platformIds[$platformSlug] ?? null;
+
             // Check if tournament exists
             $t = Tournament::query()->where('slug', $tData['slug'])->first();
             if ($t) {
                 $t->update([
                     'status' => $tData['status'],
+                    'platform_id' => $tData['platform_id'],
                     'frequency' => $tData['frequency'],
                     'banner_url' => $tData['banner_url'],
                     'entry_fee' => $tData['entry_fee'],

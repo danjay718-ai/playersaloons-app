@@ -11,10 +11,20 @@ class PublicNavigationSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->items() as $item) {
-            PublicNavigationItem::query()->updateOrCreate(
-                ['label' => $item['label']],
-                array_merge(['uuid' => Str::uuid()->toString()], $item)
-            );
+            $navItem = PublicNavigationItem::query()
+                ->withTrashed()
+                ->firstOrNew(['label' => $item['label']]);
+
+            if (! $navItem->exists) {
+                $navItem->uuid = Str::uuid()->toString();
+            }
+
+            if ($navItem->exists && $navItem->trashed()) {
+                $navItem->restore();
+            }
+
+            $navItem->fill($item);
+            $navItem->save();
         }
     }
 
@@ -32,6 +42,7 @@ class PublicNavigationSeeder extends Seeder
                 'visibility' => 'public',
                 'sort_order' => 10,
                 'is_active' => true,
+                'opens_new_tab' => false,
             ],
             [
                 'label' => 'Teams',
@@ -41,6 +52,7 @@ class PublicNavigationSeeder extends Seeder
                 'visibility' => 'guest_or_player',
                 'sort_order' => 20,
                 'is_active' => true,
+                'opens_new_tab' => false,
             ],
             [
                 'label' => 'Dashboard',
@@ -50,6 +62,7 @@ class PublicNavigationSeeder extends Seeder
                 'visibility' => 'auth',
                 'sort_order' => 30,
                 'is_active' => true,
+                'opens_new_tab' => false,
             ],
         ];
     }

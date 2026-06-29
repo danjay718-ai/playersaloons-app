@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Models\PolicyPage;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class PolicyPageSeeder extends Seeder
@@ -15,40 +13,24 @@ class PolicyPageSeeder extends Seeder
     public function run(): void
     {
         foreach ($this->pages() as $index => $page) {
-            PolicyPage::query()->updateOrCreate(
-                ['slug' => $page['slug']],
-                array_merge([
-                    'uuid' => Str::uuid()->toString(),
-                    'sort_order' => $index + 1,
-                    'is_active' => true,
-                    'published_at' => now(),
-                ], $page)
-            );
-        }
+            $policyPage = PolicyPage::query()
+                ->withTrashed()
+                ->firstOrNew(['slug' => $page['slug']]);
 
-        $this->syncLandingFooterLinks();
-    }
+            if (! $policyPage->exists) {
+                $policyPage->uuid = Str::uuid()->toString();
+            }
 
-    private function syncLandingFooterLinks(): void
-    {
-        if (! Schema::hasTable('landing_sections') || ! Schema::hasTable('landing_section_items')) {
-            return;
-        }
+            if ($policyPage->exists && $policyPage->trashed()) {
+                $policyPage->restore();
+            }
 
-        $footer = LandingSection::query()->where('key', 'footer')->first();
-        if (! $footer) {
-            return;
-        }
-
-        foreach ($this->footerLinks() as $index => $itemData) {
-            $footer->items()->updateOrCreate(
-                ['item_key' => $itemData['item_key']],
-                array_merge([
-                    'uuid' => Str::uuid()->toString(),
-                    'sort_order' => $index + 1,
-                    'is_active' => true,
-                ], $itemData)
-            );
+            $policyPage->fill(array_merge([
+                'sort_order' => $index + 1,
+                'is_active' => true,
+                'published_at' => $policyPage->published_at ?? now(),
+            ], $page));
+            $policyPage->save();
         }
     }
 
@@ -91,17 +73,4 @@ class PolicyPageSeeder extends Seeder
         ];
     }
 
-    /**
-     * @return array<int, array<string, string>>
-     */
-    private function footerLinks(): array
-    {
-        return [
-            ['item_key' => 'terms', 'label' => 'Terms', 'url' => '/policies/terms-and-conditions'],
-            ['item_key' => 'cookies', 'label' => 'Cookies', 'url' => '/policies/cookie-policy'],
-            ['item_key' => 'privacy', 'label' => 'Privacy', 'url' => '/policies/privacy-policy'],
-            ['item_key' => 'refunds', 'label' => 'Refunds', 'url' => '/policies/refund-and-cancellation-policy'],
-            ['item_key' => 'disclaimer', 'label' => 'Disclaimer', 'url' => '/policies/disclaimer'],
-        ];
-    }
 }

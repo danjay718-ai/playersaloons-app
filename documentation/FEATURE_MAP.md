@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-29 (v1.69)
+**Last Updated**: 2026-06-29 (v1.70)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -113,7 +113,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Surface | Component/File | Description |
 |---|---|---|
 | Public navbar | `resources/views/components/layouts/partials/public-navigation.blade.php` | Fixed-position navbar backed by `public_navigation_items`. Transparent over the hero video, transitions to solid dark background on scroll (`initPublicNav()` in `app.js`, `.nav-transparent` / `.nav-solid` CSS classes). Desktop shows nav links; mobile topbar shows only logo + auth actions (Sign In / Join Now or Dashboard shortcut); all other items move into the burger dropdown. |
-| Public footer | `resources/views/components/layouts/partials/public-footer.blade.php` | Shared public footer for welcome and public/guest Livewire pages. |
+| Public footer | `resources/views/components/layouts/partials/public-footer.blade.php` | Shared public footer for welcome and public/guest Livewire pages. Reads the active `footer` landing section/items from the database; seeded footer policy links are generated from active `policy_pages`. |
 | Landing shell | `resources/views/components/layouts/landing.blade.php` | Full-bleed landing shell for the dynamic homepage. Preloads Orbitron + Inter from Google Fonts. Uses fixed (not sticky) nav so the hero video is visible beneath it on load. |
 | Landing page | `resources/views/livewire/landing/landing-page.blade.php` | Esports-themed dynamic landing: full-viewport video hero with `id="hero-video"` for JS replay fallback, CMS-editable sections, horizontal snap-scroll game carousel (`.landing-games-scroll`), glassmorphism cards, animated fade-in content, gradient CTA banner, and managed footer. |
 | Landing CSS design system | `resources/css/app.css` (`.landing-*` classes) | All landing styles are prefixed `landing-`. Key classes: `.landing-page-root` (outer overflow clip), `.landing-hero`, `.landing-main-pattern`, `.landing-section-overflow-clip` (sections with decorative orbs), `.landing-games-scroll` (the only permitted horizontal scroll), `.landing-gradient-text`, `.landing-section-title`, `.landing-section-kicker`, `.landing-card`, `.landing-stat-card`, `.landing-cta-primary`, `.landing-fade-in` (+ delay variants), `.landing-top-glow`. |
@@ -155,14 +155,15 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|---|---|
 | Dynamic landing page content | `LandingPageContentService` | — | — |
 | Landing section/card editing | `CmsAdmin::saveLandingSection()`, `CmsAdmin::saveLandingItem()` | — | — |
-| Landing defaults | `LandingPageSeeder` | — | — |
+| Landing defaults | `LandingPageSeeder` | — | Creates standard landing sections/items and derives footer policy links from seeded active `policy_pages` |
 | Public navigation defaults | `PublicNavigationSeeder` | — | — |
 | Policy page defaults | `PolicyPageSeeder` | — | — |
+| Platform defaults | `PlatformSeeder` | — | Seeds PC, Console, Mobile, and Cross-Platform platform rows used by tournament/H2H forms and demo tournaments |
 | Active games on landing | `Game` + `GameTranslation` query, optional `games.banner_path` | — | — |
 | Live landing stats | `GameMatch`, `HeadToHeadMatch`, `LedgerEntry`, `User`, `Game` aggregate queries | — | — |
 | Public policy rendering | `PolicyPage` + `PolicyIndex` / `PolicyPageView` | — | — |
 | Policy editing | `PolicyAdmin::savePolicy()` | — | — |
-| UI translation management | `TranslationAdmin` + `TranslationCatalogService` | — | Syncs `lang/*.json` into `translation_strings`, fills missing values from English fallback, and exports JSON runtime files |
+| UI translation management | `TranslationAdmin` + `TranslationCatalogService` | — | `TranslationStringSeeder` and admin actions sync `lang/*.json` into `translation_strings`, fill missing values from English fallback, and export JSON runtime files |
 
 ### Tournament Lifecycle
 | Feature | Action/Service | Event | Listener/Job |

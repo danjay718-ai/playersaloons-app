@@ -1,6 +1,20 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-29 (v1.69) | **Branch**: `main`
+**Last Updated**: 2026-06-29 (v1.70) | **Branch**: `main`
+
+---
+
+## ✅ Related CMS Seed Flow (v1.70)
+
+- **`PlatformSeeder`**: Added platform defaults for PC, Console, Mobile, and Cross-Platform so tournament/H2H platform options exist after a fresh `db:seed`.
+- **`TranslationStringSeeder`**: Added main seed-flow syncing from `lang/*.json` into `translation_strings` so `/admin/translations` has database rows immediately after seeding.
+- **`PolicyPageSeeder` / `LandingPageSeeder`**: Split ownership so policy rows are seeded first, then landing footer policy links are generated from active `policy_pages` instead of duplicated as an independent hardcoded footer list.
+- **`public-footer.blade.php`**: Changed the shared public footer to read the active `footer` landing section/items from the database, matching the landing page footer data.
+- **`TournamentsTableSeeder`**: Seeded tournaments now resolve `platform_id` from seeded platform slugs.
+- **`PlayerAccountSeeder`**: Made demo player seeding idempotent so repeated `php artisan db:seed` runs do not fail on duplicate usernames/emails.
+- **Docs**: Updated `ONBOARDING.md`, `FEATURE_MAP.md`, and `05_admin_operations.md` with seed dependencies and table-backed footer behavior.
+- **Tests**: `php artisan db:seed` passes after repeated runs; PHP syntax checks passed for changed seeders.
+- **PHPStan**: Not run for this seeding-focused pass.
 
 ---
 

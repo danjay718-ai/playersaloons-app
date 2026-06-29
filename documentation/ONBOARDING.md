@@ -82,6 +82,7 @@ app/Modules/Identity/
 - **Immutable models** (`LedgerEntry`, `MatchEvidence`, `Refund`, etc.) throw `LogicException` on update/delete.
 - **Public shell is shared** — welcome and guest/public Livewire pages use `resources/views/components/layouts/partials/public-navigation.blade.php` and `public-footer.blade.php`. Keep public navigation/footer changes there.
 - **Landing page content is table-backed** — `/` renders through `app/Livewire/Landing/LandingPage.php`; editable content lives in `landing_sections` and `landing_section_items`, with admin controls in `/admin/cms`.
+- **Seeded CMS content should derive from related seed data** — when seeded public content references another domain table, seed the source table first and generate the dependent rows from that table. Example: `PolicyPageSeeder` owns `policy_pages`; `LandingPageSeeder` queries active policies and generates the landing/footer policy links from those rows.
 - **Landing game cards use the game catalog** — active games come from `games` / `game_translations`; optional card banners are stored in `games.banner_path`.
 - **Public navigation is table-backed** — public navbar links come from `public_navigation_items`, seeded by `PublicNavigationSeeder`, and are edited in `/admin/cms`.
 - **Policy pages are table-backed and separate from CMS pages** — legal/policy content lives in `policy_pages`, is seeded by `PolicyPageSeeder`, is edited from `/admin/policies`, and renders publicly at `/policies` and `/policies/{slug}`.
@@ -192,7 +193,8 @@ If information exists in two places, the more specific file wins (e.g., module d
 | Landing page content | `landing_sections`, `landing_section_items` | Hero copy/video path, section headings, editable cards, reviews, stat labels, and footer links |
 | Landing game banners | `games.banner_path` | Optional public path for the homepage game carousel card image |
 | Public navigation | `public_navigation_items` | Editable public navbar labels, URLs, icons, visibility rules, order, and active state |
-| Policy pages | `policy_pages` | Terms, cookie, privacy, refund/cancellation, and disclaimer content editable from `/admin/policies` |
+| Policy pages | `policy_pages` | Terms, cookie, privacy, refund/cancellation, and disclaimer content editable from `/admin/policies`; landing footer policy links are generated from these rows during seeding |
+| Platforms | `platforms` | Seeded by `PlatformSeeder`; tournament/H2H forms and seeded tournaments resolve platform references from these rows |
 | UI translations | `translation_strings` + `lang/*.json` | Admin-managed from `/admin/translations`; database is the editing source, JSON files are the runtime/export cache |
 | Public file access | `public/storage` symlink | Created by `php artisan storage:link` |
 | Audit logs | `activity_log` DB table | Spatie Activity Log |

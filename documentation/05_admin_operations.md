@@ -132,7 +132,9 @@ Managing public content, game catalog labels, and the editable landing page.
     *   Games list comes from active rows in `games` and `game_translations`, displayed as a horizontal carousel.
     *   Live stats are computed from matches, H2H matches, prize/H2H payout ledger entries, active users, and active games.
     *   Top players of the week are computed from completed tournament matches and weekly prize activity.
-*   **Defaults**: `database/seeders/LandingPageSeeder.php` creates the standard landing sections/items for fresh installs.
+*   **Defaults**:
+    *   `database/seeders/LandingPageSeeder.php` creates the standard landing sections/items for fresh installs.
+    *   Footer policy links are not duplicated as a static list; `LandingPageSeeder` reads active `policy_pages` seeded by `PolicyPageSeeder` and generates the footer items from those policy rows.
 
 ## 9. Policy Pages
 Managing public legal/policy pages outside the generic CMS page system.
@@ -152,6 +154,7 @@ Managing public legal/policy pages outside the generic CMS page system.
     *   Refund and Cancellation Policy (`/policies/refund-and-cancellation-policy`)
     *   Disclaimer (`/policies/disclaimer`)
 *   **Reason for Separate Area**: Policy pages are operational/legal content and are intentionally separate from `cms_pages`, so they can have fixed expected slugs, dedicated admin UX, and predictable public footer links.
+*   **Seed Relationship**: `PolicyPageSeeder` owns the policy records. `LandingPageSeeder` depends on those seeded policy records to create the landing/public footer links, so `DatabaseSeeder` runs policies before landing content.
 
 ## 10. Translation Management
 Managing user-facing UI phrases and locale JSON runtime files.
@@ -175,6 +178,7 @@ Managing user-facing UI phrases and locale JSON runtime files.
     *   `SetLocale` chooses locale from `users.locale`, session, or fallback.
     *   `TranslateRenderedHtml` translates rendered Blade/Livewire text and supported attributes by exact JSON key.
     *   Game/CMS translation helpers read current locale first and fall back to English.
+*   **Defaults**: `TranslationStringSeeder` runs in the main `DatabaseSeeder` flow and syncs current `lang/*.json` phrase keys into `translation_strings`.
 *   **Tests**:
     *   `tests/Feature/Admin/TranslationAdminTest.php`
     *   `tests/Feature/Localization/LanguageSwitchTest.php`

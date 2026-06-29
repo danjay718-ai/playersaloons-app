@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Modules\CMS\Models\LandingSection;
+use App\Modules\CMS\Models\PolicyPage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -14,22 +15,111 @@ class LandingPageSeeder extends Seeder
             $items = $sectionData['items'] ?? [];
             unset($sectionData['items']);
 
-            $section = LandingSection::query()->updateOrCreate(
-                ['key' => $sectionData['key']],
-                array_merge(['uuid' => Str::uuid()->toString()], $sectionData)
-            );
+            $section = LandingSection::query()
+                ->withTrashed()
+                ->firstOrNew(['key' => $sectionData['key']]);
+
+            if (! $section->exists) {
+                $section->uuid = Str::uuid()->toString();
+            }
+
+            if ($section->exists && $section->trashed()) {
+                $section->restore();
+            }
+
+            $section->fill($sectionData);
+            $section->save();
 
             foreach ($items as $index => $itemData) {
-                $section->items()->updateOrCreate(
-                    ['item_key' => $itemData['item_key'] ?? Str::slug((string) ($itemData['title'] ?? 'item-'.$index))],
-                    array_merge([
-                        'uuid' => Str::uuid()->toString(),
-                        'sort_order' => $index + 1,
-                        'is_active' => true,
-                    ], $itemData)
-                );
+                $itemKey = $itemData['item_key'] ?? Str::slug((string) ($itemData['title'] ?? 'item-'.$index));
+                $item = $section->items()
+                    ->withTrashed()
+                    ->firstOrNew(['item_key' => $itemKey]);
+
+                if (! $item->exists) {
+                    $item->uuid = Str::uuid()->toString();
+                }
+
+                if ($item->exists && $item->trashed()) {
+                    $item->restore();
+                }
+
+                $item->fill(array_merge([
+                    'item_key' => $itemKey,
+                    'sort_order' => $index + 1,
+                    'is_active' => true,
+                ], $itemData));
+                $item->save();
             }
         }
+
+        $this->syncPolicyFooterLinks();
+    }
+
+    private function syncPolicyFooterLinks(): void
+    {
+        $footer = LandingSection::query()->where('key', 'footer')->first();
+        if (! $footer) {
+            return;
+        }
+
+        $policyPages = PolicyPage::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        $syncedItemKeys = [];
+
+        foreach ($policyPages as $index => $policyPage) {
+            $itemKey = $this->footerItemKey($policyPage->slug);
+            $syncedItemKeys[] = $itemKey;
+            $item = $footer->items()
+                ->withTrashed()
+                ->firstOrNew(['item_key' => $itemKey]);
+
+            if (! $item->exists) {
+                $item->uuid = Str::uuid()->toString();
+            }
+
+            if ($item->exists && $item->trashed()) {
+                $item->restore();
+            }
+
+            $item->fill([
+                'item_key' => $itemKey,
+                'label' => $this->footerLabel($policyPage->slug, $policyPage->title),
+                'url' => route('policies.show', ['slug' => $policyPage->slug], false),
+                'sort_order' => $index + 1,
+                'is_active' => true,
+            ]);
+            $item->save();
+        }
+
+        $footer->items()
+            ->whereNotIn('item_key', $syncedItemKeys)
+            ->update(['is_active' => false]);
+    }
+
+    private function footerItemKey(string $slug): string
+    {
+        return match ($slug) {
+            'terms-and-conditions' => 'terms',
+            'cookie-policy' => 'cookies',
+            'privacy-policy' => 'privacy',
+            'refund-and-cancellation-policy' => 'refunds',
+            default => Str::slug($slug),
+        };
+    }
+
+    private function footerLabel(string $slug, string $title): string
+    {
+        return match ($slug) {
+            'terms-and-conditions' => 'Terms',
+            'cookie-policy' => 'Cookies',
+            'privacy-policy' => 'Privacy',
+            'refund-and-cancellation-policy' => 'Refunds',
+            default => $title,
+        };
     }
 
     /**
@@ -118,13 +208,6 @@ class LandingPageSeeder extends Seeder
                 'title' => 'PlayerSaloons',
                 'body' => 'ALL RIGHTS RESERVED. OPERATED BY PLAYERSALOONS SYSTEMS.',
                 'sort_order' => 8,
-                'items' => [
-                    ['item_key' => 'terms', 'label' => 'Terms', 'url' => '/policies/terms-and-conditions'],
-                    ['item_key' => 'cookies', 'label' => 'Cookies', 'url' => '/policies/cookie-policy'],
-                    ['item_key' => 'privacy', 'label' => 'Privacy', 'url' => '/policies/privacy-policy'],
-                    ['item_key' => 'refunds', 'label' => 'Refunds', 'url' => '/policies/refund-and-cancellation-policy'],
-                    ['item_key' => 'disclaimer', 'label' => 'Disclaimer', 'url' => '/policies/disclaimer'],
-                ],
             ],
         ];
     }
