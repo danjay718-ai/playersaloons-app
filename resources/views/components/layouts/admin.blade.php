@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Admin Panel | PlayerSaloons' }}</title>
+    <title>{{ $title ?? __('Admin Panel | PlayerSaloons') }}</title>
 
     <!-- Google Fonts for Professional Aesthetic (Inter only, no Orbitron for admin) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +27,7 @@
     <header class="md:hidden flex items-center justify-between bg-[#0f172a] border-b border-slate-800 px-4 py-3 sticky top-0 z-50">
         <div class="flex items-center space-x-3">
             <span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
-            <span class="font-bold text-sm tracking-wider uppercase text-slate-200">PS ADMIN</span>
+            <span class="font-bold text-sm tracking-wider uppercase text-slate-200">{{ __('PS ADMIN') }}</span>
         </div>
         <div class="flex items-center space-x-2">
             @php $mobileRole = auth()->user()?->roles?->pluck('name')?->first() ?? 'Staff'; @endphp
@@ -53,7 +53,7 @@
                     </div>
                     <div>
                         <h1 class="text-xs font-extrabold tracking-widest text-slate-200 uppercase">PlayerSaloons</h1>
-                        <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Control Terminal</p>
+                        <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">{{ __('Control Terminal') }}</p>
                     </div>
                 </div>
             </div>
@@ -62,16 +62,17 @@
             <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
                 @php
                     $adminNavItems = [
-                        ['label' => 'Dashboard', 'icon' => 'layout-dashboard', 'url' => '/admin'],
-                        ['label' => 'Tournaments', 'icon' => 'trophy', 'url' => '/admin/tournaments'],
-                        ['label' => 'Matches & Disputes', 'icon' => 'swords', 'url' => '/admin/matches'],
-                        ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc'],
-                        ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals'],
-                        ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users'],
-                        ['label' => 'Audit Logs', 'icon' => 'file-text', 'url' => '/admin/audit-logs'],
-                        ['label' => 'CMS & Games', 'icon' => 'database', 'url' => '/admin/cms'],
-                        ['label' => 'Policies', 'icon' => 'scroll-text', 'url' => '/admin/policies'],
-                        ['label' => 'Notifications', 'icon' => 'megaphone', 'url' => '/admin/notifications'],
+                        ['label' => __('Dashboard'), 'icon' => 'layout-dashboard', 'url' => '/admin'],
+                        ['label' => __('Tournaments'), 'icon' => 'trophy', 'url' => '/admin/tournaments'],
+                        ['label' => __('Matches & Disputes'), 'icon' => 'swords', 'url' => '/admin/matches'],
+                        ['label' => __('KYC Submissions'), 'icon' => 'file-check', 'url' => '/admin/kyc'],
+                        ['label' => __('Withdrawals'), 'icon' => 'wallet', 'url' => '/admin/withdrawals'],
+                        ['label' => __('User Directory'), 'icon' => 'users', 'url' => '/admin/users'],
+                        ['label' => __('Audit Logs'), 'icon' => 'file-text', 'url' => '/admin/audit-logs'],
+                        ['label' => __('CMS & Games'), 'icon' => 'database', 'url' => '/admin/cms'],
+                        ['label' => __('Translations'), 'icon' => 'languages', 'url' => '/admin/translations'],
+                        ['label' => __('Policies'), 'icon' => 'scroll-text', 'url' => '/admin/policies'],
+                        ['label' => __('Notifications'), 'icon' => 'megaphone', 'url' => '/admin/notifications'],
                     ];
                 @endphp
 
@@ -94,7 +95,7 @@
             <div class="p-4 border-t border-slate-800 bg-[#0b0f19]/50 space-y-2">
                 <a href="/dashboard" wire:navigate class="flex items-center px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">
                     <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-2"></i>
-                    <span>Player Terminal</span>
+                    <span>{{ __('Player Terminal') }}</span>
                 </a>
                 <div class="flex items-center justify-between px-4 py-2 bg-slate-900/40 rounded-lg border border-slate-800/50">
                     <div class="truncate">
@@ -103,7 +104,7 @@
                     </div>
                     <form method="POST" action="{{ route('logout') }}" class="m-0">
                         @csrf
-                        <button type="submit" class="p-1.5 text-slate-500 hover:text-red-400 transition-colors" title="Disconnect">
+                        <button type="submit" class="p-1.5 text-slate-500 hover:text-red-400 transition-colors" title="{{ __('Disconnect') }}">
                             <i data-lucide="log-out" class="w-4 h-4"></i>
                         </button>
                     </form>
@@ -118,13 +119,13 @@
                 <div class="flex items-center space-x-3">
                     <span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
                     <h2 class="font-extrabold text-sm uppercase tracking-widest text-slate-200">
-                        {{ $admin_title ?? 'System Administration' }}
+                        {{ $admin_title ?? __('System Administration') }}
                     </h2>
                 </div>
                 
                 <div class="flex items-center space-x-4">
                     @php
-                        $systemStatus = 'System: Online';
+                        $systemStatus = __('System: Online');
                         $statusColor = 'bg-emerald-500';
                         $pulseClass = 'animate-pulse';
                         
@@ -133,12 +134,12 @@
                             $maintenanceMode = \App\Modules\Operations\Models\SystemSetting::where('key', 'system.maintenance_mode')->value('value');
                             
                             if ($maintenanceMode === 'true') {
-                                $systemStatus = 'System: Maintenance';
+                                $systemStatus = __('System: Maintenance');
                                 $statusColor = 'bg-amber-500';
                                 $pulseClass = '';
                             }
                         } catch (\Exception $e) {
-                            $systemStatus = 'System: Offline';
+                            $systemStatus = __('System: Offline');
                             $statusColor = 'bg-red-500';
                             $pulseClass = '';
                         }
@@ -173,9 +174,10 @@
                             </span>
                         </div>
                     </a>
+                    <x-localization.language-switcher variant="admin" />
                     <form method="POST" action="{{ route('logout') }}" class="m-0">
                         @csrf
-                        <button type="submit" title="Sign out" class="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/20">
+                        <button type="submit" title="{{ __('Sign out') }}" class="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/20">
                             <i data-lucide="log-out" class="w-4 h-4"></i>
                         </button>
                     </form>
@@ -224,7 +226,7 @@
             <div class="p-4 border-t border-slate-800 bg-[#0b0f19]/50 space-y-2">
                 <a href="/dashboard" wire:navigate class="flex items-center px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">
                     <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-2"></i>
-                    <span>Player Terminal</span>
+                    <span>{{ __('Player Terminal') }}</span>
                 </a>
                 <div class="flex items-center justify-between px-4 py-2 bg-slate-900/40 rounded-lg border border-slate-800/50 text-xs">
                     <div class="truncate">
@@ -232,6 +234,7 @@
                         <p class="text-[9px] text-slate-500 uppercase tracking-wider mt-0.5">{{ str_replace('_', ' ', auth()->user()->roles->pluck('name')->first() ?? 'Staff') }}</p>
                     </div>
                 </div>
+                <x-localization.language-switcher variant="admin" align="left" class="w-full" />
             </div>
         </div>
     </div>

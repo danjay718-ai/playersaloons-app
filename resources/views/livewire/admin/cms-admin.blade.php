@@ -78,10 +78,10 @@
                                     @endif
                                 </td>
                                 <td class="p-4 text-slate-200 font-semibold">
-                                    {{ $game->translations->where('locale', 'en')->first()?->name ?? 'N/A' }}
+                                    {{ $game->localizedName() }}
                                 </td>
-                                <td class="p-4 text-slate-400 max-w-[280px] truncate" title="{{ $game->translations->where('locale', 'en')->first()?->description }}">
-                                    {{ $game->translations->where('locale', 'en')->first()?->description ?? 'No description' }}
+                                <td class="p-4 text-slate-400 max-w-[280px] truncate" title="{{ $game->localizedDescription() }}">
+                                    {{ $game->localizedDescription() ?? __('No description') }}
                                 </td>
                                 <td class="p-4">
                                     <button wire:click="toggleGameActive({{ $game->id }})" 
@@ -138,7 +138,7 @@
                         @forelse($pages as $page)
                             <tr class="hover:bg-slate-900/40" wire:key="page-{{ $page->id }}">
                                 <td class="p-4 font-semibold text-slate-200">
-                                    {{ $page->translations->where('locale', 'en')->first()?->title ?? 'Untitled Page' }}
+                                    {{ $page->localizedTitle() }}
                                     <span class="block text-[9px] text-slate-550 mt-0.5">UUID: {{ $page->uuid }}</span>
                                 </td>
                                 <td class="p-4 text-slate-350 font-mono">

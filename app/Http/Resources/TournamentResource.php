@@ -38,7 +38,9 @@ class TournamentResource extends JsonResource
             'cancelled_at' => $this->cancelled_at,
             'game' => [
                 'uuid' => $this->game->uuid,
-                'name' => ($translation = $this->game->translations()->where('locale', 'en')->first()) ? $translation->name : $this->game->slug,
+                'name' => $this->game->translations()->where('locale', app()->getLocale())->first()?->name
+                    ?? $this->game->translations()->where('locale', 'en')->first()?->name
+                    ?? $this->game->slug,
             ],
         ];
     }

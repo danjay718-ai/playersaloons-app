@@ -28,6 +28,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $email
  * @property string $username
  * @property string $password
+ * @property string $locale
  * @property Carbon|null $email_verified_at
  * @property UserStatus $status
  * @property-read Wallet|null $wallet
@@ -60,6 +61,7 @@ class User extends Authenticatable implements HasMedia
         'password',
         'email_verified_at',
         'status',
+        'locale',
         'last_login_at',
     ];
 

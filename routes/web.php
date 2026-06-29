@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\LanguageController;
 use App\Livewire\Admin\AdminDashboard;
 use App\Livewire\Admin\AdminProfile;
 use App\Livewire\Admin\AuditLogAdmin;
@@ -14,6 +15,7 @@ use App\Livewire\Admin\PolicyAdmin;
 use App\Livewire\Admin\StaffActivityDashboard;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Admin\TournamentForm;
+use App\Livewire\Admin\TranslationAdmin;
 use App\Livewire\Admin\UserAdmin;
 use App\Livewire\Admin\WithdrawalAdmin;
 use App\Livewire\Auth\EmailVerification;
@@ -48,6 +50,7 @@ Route::get('/policies', PolicyIndex::class)->name('policies.index');
 Route::get('/policies/{slug}', PolicyPageView::class)->name('policies.show');
 
 Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
+Route::post('/language', [LanguageController::class, 'update'])->name('language.update');
 
 // Guest only routes
 Route::middleware('guest')->group(function () {
@@ -107,6 +110,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', UserAdmin::class);
         Route::get('/audit-logs', AuditLogAdmin::class);
         Route::get('/cms', CmsAdmin::class);
+        Route::get('/translations', TranslationAdmin::class)->name('admin.translations');
         Route::get('/policies', PolicyAdmin::class);
         Route::get('/notifications', BroadcastNotificationAdmin::class)->name('admin.notifications');
         Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');

@@ -3,7 +3,7 @@
     $opponent = $isCreator ? $match->opponent : $match->creator;
     $myHandle = $isCreator ? $match->creator_game_handle : $match->opponent_game_handle;
     $opponentHandle = $isCreator ? $match->opponent_game_handle : $match->creator_game_handle;
-    $gameName = $match->game->translations->where('locale', 'en')->first()?->name ?? $match->game->slug;
+    $gameName = $match->game->localizedName();
 @endphp
 
 <article class="group relative overflow-hidden rounded-2xl border border-purple-500/20 bg-zinc-950/80 p-1 shadow-[0_0_15px_rgba(168,85,247,0.05)] backdrop-blur-md transition-all hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]">

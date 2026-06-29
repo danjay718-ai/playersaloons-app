@@ -69,7 +69,7 @@
                         <div class="space-y-3 min-w-[280px] lg:max-w-xs">
                             <div class="flex items-center space-x-3">
                                 <span class="text-[9px] font-black text-cyan-400 uppercase tracking-widest bg-zinc-950/85 border border-cyan-800/50 rounded-full px-2.5 py-1">
-                                    {{ $tournament->game->translations->where('locale', 'en')->first()?->name ?? $tournament->game->slug }}
+                                    {{ $tournament->game->localizedName() }}
                                 </span>
                                 @php
                                     $histColors = [

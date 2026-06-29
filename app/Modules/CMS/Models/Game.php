@@ -47,4 +47,27 @@ class Game extends Model
     {
         return $this->hasMany(GameTranslation::class);
     }
+
+    public function translation(?string $locale = null): ?GameTranslation
+    {
+        $locale ??= app()->getLocale();
+
+        if ($this->relationLoaded('translations')) {
+            return $this->translations->firstWhere('locale', $locale)
+                ?? $this->translations->firstWhere('locale', 'en');
+        }
+
+        return $this->translations()->where('locale', $locale)->first()
+            ?? $this->translations()->where('locale', 'en')->first();
+    }
+
+    public function localizedName(?string $locale = null): string
+    {
+        return $this->translation($locale)?->name ?? $this->slug;
+    }
+
+    public function localizedDescription(?string $locale = null): ?string
+    {
+        return $this->translation($locale)?->description;
+    }
 }

@@ -61,7 +61,9 @@ class HeadToHeadDuelPrompt extends Component
             ->first();
 
         if ($match) {
-            $gameName = $match->game->translations->where('locale', 'en')->first()?->name ?? $match->game->slug;
+            $gameName = $match->game->translations->where('locale', app()->getLocale())->first()?->name
+                ?? $match->game->translations->where('locale', 'en')->first()?->name
+                ?? $match->game->slug;
             $opponent = $match->creator_user_id === $user->getKey() ? $match->opponent : $match->creator;
             $title = $match->creator_user_id === $user->getKey() ? 'Your duel was accepted' : 'Duel invitation matched';
 
@@ -93,7 +95,9 @@ class HeadToHeadDuelPrompt extends Component
             return null;
         }
 
-        $gameName = $challenge->game->translations->where('locale', 'en')->first()?->name ?? $challenge->game->slug;
+        $gameName = $challenge->game->translations->where('locale', app()->getLocale())->first()?->name
+            ?? $challenge->game->translations->where('locale', 'en')->first()?->name
+            ?? $challenge->game->slug;
 
         return [
             'type' => 'challenge',

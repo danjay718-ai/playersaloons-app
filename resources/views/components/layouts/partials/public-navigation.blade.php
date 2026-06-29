@@ -45,7 +45,7 @@
                     @if($item->icon)
                         <i data-lucide="{{ $item->icon }}" class="h-3.5 w-3.5"></i>
                     @endif
-                    <span>{{ $item->label }}</span>
+                    <span>{{ __($item->label) }}</span>
                 </a>
             @endforeach
         </nav>
@@ -73,7 +73,7 @@
                     class="md:hidden flex items-center justify-center rounded-full border border-zinc-700/60
                            bg-zinc-900/60 px-3 py-2 text-[9px] font-black uppercase tracking-wider
                            text-zinc-300 backdrop-blur transition-all hover:border-cyan-500/50 hover:text-cyan-300">
-                    Dashboard
+                    {{ __('Dashboard') }}
                 </a>
             @endauth
 
@@ -83,7 +83,7 @@
                 <a href="/login"
                     class="rounded-full py-2 px-3 text-[10px] font-black uppercase tracking-wider
                            text-zinc-300 transition-colors hover:text-white sm:px-4">
-                    Sign In
+                    {{ __('Sign In') }}
                 </a>
 
                 {{-- Join Now — always visible --}}
@@ -93,7 +93,7 @@
                            shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all duration-300
                            hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] hover:brightness-110
                            sm:px-5">
-                    Join Now
+                    {{ __('Join Now') }}
                 </a>
             @endguest
 
@@ -104,17 +104,19 @@
                        text-[10px] font-black uppercase tracking-widest text-fuchsia-300
                        shadow-[0_0_15px_rgba(192,38,211,0.2)] backdrop-blur transition-all
                        hover:bg-fuchsia-600/40 disabled:cursor-not-allowed disabled:opacity-50"
-                data-pwa-install-desktop aria-label="Install PlayerSaloons app" disabled>
+                data-pwa-install-desktop aria-label="{{ __('Install PlayerSaloons app') }}" disabled>
                 <i data-lucide="download" class="h-3.5 w-3.5"></i>
-                <span>Install</span>
+                <span>{{ __('Install') }}</span>
             </button>
+
+            <x-localization.language-switcher variant="public" class="hidden sm:block" />
 
             {{-- Burger — mobile only (md:hidden) --}}
             <button type="button"
                 class="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-full
                        border border-zinc-700/60 bg-zinc-900/60 text-zinc-300 backdrop-blur
                        transition-all hover:border-cyan-500/50 hover:text-white"
-                data-public-menu-button aria-label="Open navigation menu" aria-expanded="false">
+                data-public-menu-button aria-label="{{ __('Open navigation menu') }}" aria-expanded="false">
                 <i data-lucide="menu" class="h-4 w-4" data-menu-icon-open></i>
                 <i data-lucide="x" class="hidden h-4 w-4" data-menu-icon-close></i>
             </button>
@@ -137,7 +139,7 @@
                            bg-zinc-900/50 px-4 py-3.5 text-[10px] font-black uppercase tracking-widest
                            transition-all hover:border-cyan-500/30 hover:bg-cyan-500/5
                            {{ $isActive ? 'text-cyan-300 border-cyan-500/30' : 'text-zinc-300' }}">
-                    <span>{{ $item->label }}</span>
+                    <span>{{ __($item->label) }}</span>
                     @if($item->icon)
                         <i data-lucide="{{ $item->icon }}" class="h-4 w-4"></i>
                     @endif
@@ -150,7 +152,7 @@
                     class="flex items-center justify-between rounded-xl border border-zinc-800/60
                            bg-zinc-900/50 px-4 py-3.5 text-[10px] font-black uppercase tracking-widest
                            text-zinc-300 transition-all hover:border-violet-500/30 hover:bg-violet-500/5">
-                    <span>My Profile</span>
+                    <span>{{ __('My Profile') }}</span>
                     <i data-lucide="user" class="h-4 w-4"></i>
                 </a>
 
@@ -160,7 +162,7 @@
                         class="flex w-full items-center justify-between rounded-xl border border-red-500/20
                                bg-red-500/10 px-4 py-3.5 text-[10px] font-black uppercase tracking-widest
                                text-red-300 transition-all hover:bg-red-500/15">
-                        <span>Logout</span>
+                        <span>{{ __('Logout') }}</span>
                         <i data-lucide="log-out" class="h-4 w-4"></i>
                     </button>
                 </form>
@@ -172,10 +174,12 @@
                        border border-fuchsia-500/50 bg-fuchsia-600/20 px-4 py-3.5 text-[10px]
                        font-black uppercase tracking-widest text-fuchsia-300 transition-all
                        hover:bg-fuchsia-600/40 disabled:cursor-not-allowed disabled:opacity-50"
-                data-pwa-install-mobile aria-label="Install PlayerSaloons app" disabled>
+                data-pwa-install-mobile aria-label="{{ __('Install PlayerSaloons app') }}" disabled>
                 <i data-lucide="download" class="h-4 w-4"></i>
-                <span>Install App</span>
+                <span>{{ __('Install App') }}</span>
             </button>
+
+            <x-localization.language-switcher variant="public" align="left" class="w-full" />
         </div>
     </div>
 

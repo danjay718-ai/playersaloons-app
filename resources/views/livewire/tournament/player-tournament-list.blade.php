@@ -46,7 +46,7 @@
                     <option value="">All Games</option>
                     @foreach($games as $game)
                         <option value="{{ $game->id }}">
-                            {{ $game->translations->where('locale', 'en')->first()?->name ?? $game->slug }}
+                            {{ $game->localizedName() }}
                         </option>
                     @endforeach
                 </select>

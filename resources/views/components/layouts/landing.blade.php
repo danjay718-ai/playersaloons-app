@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'PlayerSaloons | Play. Win. Cash.' }}</title>
-    <meta name="description" content="The ultimate battleground for competitive gamers. Join high-stakes tournaments, dominate the bracket, and secure instant payouts.">
+    <title>{{ $title ?? __('PlayerSaloons | Play. Win. Cash.') }}</title>
+    <meta name="description" content="{{ __('The ultimate battleground for competitive gamers. Join high-stakes tournaments, dominate the bracket, and secure instant payouts.') }}">
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#050311">

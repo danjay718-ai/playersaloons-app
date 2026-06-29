@@ -21,7 +21,7 @@
                     <div class="relative mt-2">
                         <select wire:model.live="gameId" id="gameId" class="w-full appearance-none rounded-xl border-2 border-fuchsia-500/40 bg-black/60 px-4 py-3.5 pr-10 font-orbitron text-sm font-black text-white shadow-[0_0_15px_rgba(217,70,239,0.2)] focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(217,70,239,0.4)] focus:outline-none transition-all">
                             @foreach($games as $game)
-                                <option value="{{ $game->id }}" class="bg-zinc-900">{{ $game->translations->where('locale', 'en')->first()?->name ?? $game->slug }}</option>
+                                <option value="{{ $game->id }}" class="bg-zinc-900">{{ $game->localizedName() }}</option>
                             @endforeach
                         </select>
                         <i data-lucide="chevron-down" class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fuchsia-400"></i>
@@ -84,7 +84,7 @@
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                     @forelse($waitingChallenges as $challenge)
                         @php
-                            $gameName = $challenge->game->translations->where('locale', 'en')->first()?->name ?? $challenge->game->slug;
+                            $gameName = $challenge->game->localizedName();
                         @endphp
                         <article class="rounded-xl border border-purple-500/10 bg-zinc-950/60 p-4">
                             <div class="flex items-start justify-between gap-4">
@@ -197,7 +197,7 @@
                 <div class="space-y-2">
                     <label class="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Selected Game</label>
                     <div class="w-full rounded-xl border border-purple-500/20 bg-zinc-900 px-4 py-3 font-orbitron text-sm font-black text-purple-300">
-                        {{ $games->firstWhere('id', $gameId)?->translations->where('locale', 'en')->first()?->name ?? 'Unknown Game' }}
+                        {{ $games->firstWhere('id', $gameId)?->localizedName() ?? __('Unknown Game') }}
                     </div>
                 </div>
 

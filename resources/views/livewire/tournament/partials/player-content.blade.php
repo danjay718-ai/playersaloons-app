@@ -39,7 +39,7 @@
             <div class="space-y-6">
                 <div class="flex items-center space-x-4">
                     <span class="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] bg-cyan-950/40 border border-cyan-800/60 rounded-full px-4 py-1.5 shadow-[0_0_15px_rgba(34,211,238,0.15)]">
-                        {{ $tournament->game->translations->where('locale', 'en')->first()?->name ?? $tournament->game->slug }}
+                        {{ $tournament->game->localizedName() }}
                     </span>
                     @php
                         $statusColors = [

@@ -46,6 +46,24 @@ class CmsPage extends Model
         return $this->hasMany(CmsPageTranslation::class, 'page_id');
     }
 
+    public function translation(?string $locale = null): ?CmsPageTranslation
+    {
+        $locale ??= app()->getLocale();
+
+        if ($this->relationLoaded('translations')) {
+            return $this->translations->firstWhere('locale', $locale)
+                ?? $this->translations->firstWhere('locale', 'en');
+        }
+
+        return $this->translations()->where('locale', $locale)->first()
+            ?? $this->translations()->where('locale', 'en')->first();
+    }
+
+    public function localizedTitle(?string $locale = null): string
+    {
+        return $this->translation($locale)?->title ?? __('Untitled Page');
+    }
+
     /**
      * Get the user who created the page.
      *

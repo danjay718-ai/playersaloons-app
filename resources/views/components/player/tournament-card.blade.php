@@ -18,7 +18,9 @@
     ];
 
     $statusValue = $tournament->status->value ?? $tournament->status;
-    $gameName = $tournament->game?->translations?->where('locale', 'en')->first()?->name ?? $tournament->game?->slug ?? 'Game';
+    $gameTranslation = $tournament->game?->translations?->where('locale', app()->getLocale())->first()
+        ?? $tournament->game?->translations?->where('locale', 'en')->first();
+    $gameName = $gameTranslation?->name ?? $tournament->game?->slug ?? __('Game');
     $registrationsCount = $tournament->getAttribute('registrations_count')
         ?? ($tournament->relationLoaded('registrations') ? $tournament->registrations->count() : 0);
 @endphp

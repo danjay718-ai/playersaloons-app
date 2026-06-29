@@ -5,14 +5,14 @@
             <span class="font-orbitron text-xs font-black uppercase tracking-widest text-zinc-400">PlayerSaloons</span>
         </div>
         <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-700">
-            &copy; {{ date('Y') }} ALL RIGHTS RESERVED. OPERATED BY PLAYERSALOONS SYSTEMS.
+            &copy; {{ date('Y') }} {{ __('All rights reserved. Operated by PlayerSaloons Systems.') }}
         </p>
         <div class="flex flex-wrap justify-center gap-4 text-[10px] font-black uppercase tracking-widest text-zinc-600 sm:gap-8">
-            <a href="/policies/terms-and-conditions" wire:navigate class="transition-colors hover:text-cyan-400">Terms</a>
-            <a href="/policies/cookie-policy" wire:navigate class="transition-colors hover:text-cyan-400">Cookies</a>
-            <a href="/policies/privacy-policy" wire:navigate class="transition-colors hover:text-cyan-400">Privacy</a>
-            <a href="/policies/refund-and-cancellation-policy" wire:navigate class="transition-colors hover:text-cyan-400">Refunds</a>
-            <a href="/policies/disclaimer" wire:navigate class="transition-colors hover:text-cyan-400">Disclaimer</a>
+            <a href="/policies/terms-and-conditions" wire:navigate class="transition-colors hover:text-cyan-400">{{ __('Terms') }}</a>
+            <a href="/policies/cookie-policy" wire:navigate class="transition-colors hover:text-cyan-400">{{ __('Cookies') }}</a>
+            <a href="/policies/privacy-policy" wire:navigate class="transition-colors hover:text-cyan-400">{{ __('Privacy') }}</a>
+            <a href="/policies/refund-and-cancellation-policy" wire:navigate class="transition-colors hover:text-cyan-400">{{ __('Refunds') }}</a>
+            <a href="/policies/disclaimer" wire:navigate class="transition-colors hover:text-cyan-400">{{ __('Disclaimer') }}</a>
         </div>
     </div>
 </footer>

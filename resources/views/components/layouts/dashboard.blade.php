@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>{{ $title ?? 'Gamer Terminal | PlayerSaloons' }}</title>
+    <title>{{ $title ?? __('Gamer Terminal | PlayerSaloons') }}</title>
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
@@ -53,15 +53,15 @@
 
         @php
             $moreItems = [
-                ['label' => 'Leaderboard', 'icon' => 'award',          'url' => '/leaderboards',    'pattern' => 'leaderboards'],
-                ['label' => 'Streams',     'icon' => 'tv',              'url' => '/streams',         'pattern' => 'streams'],
-                ['label' => 'Chat',        'icon' => 'message-square',  'url' => '/chat',            'pattern' => 'chat'],
-                ['label' => 'My Teams',    'icon' => 'users',           'url' => '/teams',           'pattern' => 'teams'],
-                ['label' => 'Wallet',      'icon' => 'wallet',          'url' => '/wallet',          'pattern' => 'wallet'],
-                ['label' => 'Profile',     'icon' => 'user-round',      'url' => '/profile',         'pattern' => 'profile'],
+                ['label' => __('Leaderboard'), 'icon' => 'award',          'url' => '/leaderboards',    'pattern' => 'leaderboards'],
+                ['label' => __('Streams'),     'icon' => 'tv',              'url' => '/streams',         'pattern' => 'streams'],
+                ['label' => __('Chat'),        'icon' => 'message-square',  'url' => '/chat',            'pattern' => 'chat'],
+                ['label' => __('My Teams'),    'icon' => 'users',           'url' => '/teams',           'pattern' => 'teams'],
+                ['label' => __('Wallet'),      'icon' => 'wallet',          'url' => '/wallet',          'pattern' => 'wallet'],
+                ['label' => __('Profile'),     'icon' => 'user-round',      'url' => '/profile',         'pattern' => 'profile'],
             ];
             if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER'])) {
-                $moreItems[] = ['label' => 'Admin', 'icon' => 'shield', 'url' => '/admin', 'pattern' => 'admin*'];
+                $moreItems[] = ['label' => __('Admin'), 'icon' => 'shield', 'url' => '/admin', 'pattern' => 'admin*'];
             }
         @endphp
 
@@ -77,12 +77,16 @@
             @endforeach
         </div>
 
+        <div class="px-4 py-3">
+            <x-localization.language-switcher variant="player" align="left" class="w-full" />
+        </div>
+
         <!-- Logout -->
         <form method="POST" action="{{ route('logout') }}" class="m-0">
             @csrf
             <button type="submit" class="more-panel-logout">
                 <i data-lucide="log-out" class="more-panel-logout-icon"></i>
-                Disconnect
+                {{ __('Disconnect') }}
             </button>
         </form>
     </div>
@@ -107,13 +111,13 @@
             <!-- Navigation Links -->
             @php
                 $navItems = [
-                    ['label' => 'Overview',    'icon' => 'layout-dashboard', 'url' => '/dashboard',        'active' => request()->is('dashboard')],
-                    ['label' => 'Tournaments', 'icon' => 'search',           'url' => '/tournaments/browse','active' => request()->is('tournaments/browse*')],
-                    ['label' => 'My Games',    'icon' => 'trophy',           'url' => '/my-tournaments',   'active' => request()->is('my-tournaments')],
-                    ['label' => 'H2H Duels',   'icon' => 'swords',          'url' => '/head-to-head',     'active' => request()->is('head-to-head')],
-                    ['label' => 'Leaderboard', 'icon' => 'award',            'url' => '/leaderboards',     'active' => request()->is('leaderboards')],
-                    ['label' => 'Streams',     'icon' => 'tv',               'url' => '/streams',          'active' => request()->is('streams')],
-                    ['label' => 'Chat',        'icon' => 'message-square',   'url' => '/chat',             'active' => request()->is('chat')],
+                    ['label' => __('Overview'),    'icon' => 'layout-dashboard', 'url' => '/dashboard',        'active' => request()->is('dashboard')],
+                    ['label' => __('Tournaments'), 'icon' => 'search',           'url' => '/tournaments/browse','active' => request()->is('tournaments/browse*')],
+                    ['label' => __('My Games'),    'icon' => 'trophy',           'url' => '/my-tournaments',   'active' => request()->is('my-tournaments')],
+                    ['label' => __('H2H Duels'),   'icon' => 'swords',          'url' => '/head-to-head',     'active' => request()->is('head-to-head')],
+                    ['label' => __('Leaderboard'), 'icon' => 'award',            'url' => '/leaderboards',     'active' => request()->is('leaderboards')],
+                    ['label' => __('Streams'),     'icon' => 'tv',               'url' => '/streams',          'active' => request()->is('streams')],
+                    ['label' => __('Chat'),        'icon' => 'message-square',   'url' => '/chat',             'active' => request()->is('chat')],
                 ];
             @endphp
 
@@ -143,7 +147,7 @@
                         <i data-lucide="shield" class="w-5 h-5"></i>
                     </div>
                     <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-widest transition-opacity duration-200">
-                        Admin Panel
+                        {{ __('Admin Panel') }}
                     </span>
                 </a>
                 @endif
@@ -155,7 +159,7 @@
                             <i data-lucide="log-out" class="w-5 h-5"></i>
                         </div>
                         <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-widest transition-opacity duration-200">
-                            Exit Terminal
+                            {{ __('Exit Terminal') }}
                         </span>
                     </button>
                 </form>
@@ -178,14 +182,14 @@
 
                     <!-- Mobile Page Title -->
                     <h1 class="md:hidden text-xs font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple">
-                        @yield('dashboard_title', 'TERMINAL')
+                        @yield('dashboard_title', __('TERMINAL'))
                     </h1>
 
                     <!-- Desktop section title -->
                     <div class="hidden md:flex items-center space-x-3">
                         <span class="hidden xs:block w-2 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)]"></span>
                         <h1 class="text-xs sm:text-sm md:text-base font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple truncate max-w-[150px] sm:max-w-none">
-                            @yield('dashboard_title', 'DASHBOARD')
+                            @yield('dashboard_title', __('DASHBOARD'))
                         </h1>
                     </div>
                 </div>
@@ -197,7 +201,7 @@
                     <a href="/wallet" wire:navigate class="hidden xs:flex items-center space-x-2 bg-[#120a26]/70 border border-emerald-500/30 hover:border-emerald-400/60 rounded-xl px-3 py-1.5 transition-all duration-300 shadow-[inset_0_0_8px_rgba(16,185,129,0.05)] group">
                         <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></div>
                         <div class="flex flex-col text-right">
-                            <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">BAL</span>
+                            <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">{{ __('BAL') }}</span>
                             <span class="text-xs font-black text-emerald-400 font-orbitron tracking-wider group-hover:text-emerald-300 transition-colors">
                                 ${{ number_format((float)(auth()->user()->wallet?->cached_balance ?? 0.00), 2) }}
                             </span>
@@ -207,7 +211,7 @@
                     <!-- Deposit CTA Button (hidden on smallest screens) -->
                     <a href="/wallet" wire:navigate class="hidden sm:inline-flex relative items-center justify-center p-0.5 overflow-hidden text-xs font-bold text-white rounded-lg group bg-gradient-to-br from-purple-600 to-fuchsia-500 hover:from-purple-500 hover:to-fuchsia-400 border border-fuchsia-400/20 shadow-[0_0_15px_rgba(217,70,239,0.3)] hover:shadow-[0_0_20px_rgba(217,70,239,0.6)] transition-all duration-300 cursor-pointer">
                         <span class="relative px-3 py-1.5 transition-all ease-in duration-75 bg-[#0a0718]/90 rounded-md group-hover:bg-transparent font-orbitron tracking-widest uppercase text-[10px]">
-                            + Deposit
+                            {{ __('+ Deposit') }}
                         </span>
                     </a>
 
@@ -254,18 +258,18 @@
                             @endif
                             <a href="{{ $profileUrl }}" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-zinc-350 hover:bg-purple-950/30 hover:text-white transition-colors">
                                 <i data-lucide="user" class="w-4 h-4 text-purple-400"></i>
-                                <span>My Profile</span>
+                                <span>{{ __('My Profile') }}</span>
                             </a>
                             @if(!auth()->user()->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
                             <a href="/wallet" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-zinc-350 hover:bg-purple-950/30 hover:text-white transition-colors">
                                 <i data-lucide="wallet" class="w-4 h-4 text-purple-400"></i>
-                                <span>My Wallet</span>
+                                <span>{{ __('My Wallet') }}</span>
                             </a>
                             @endif
                             @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
                             <a href="/admin" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-amber-400 hover:bg-amber-950/30 hover:text-amber-300 transition-colors">
                                 <i data-lucide="shield" class="w-4 h-4"></i>
-                                <span>Admin Panel</span>
+                                <span>{{ __('Admin Panel') }}</span>
                             </a>
                             @endif
                             <hr class="border-purple-500/10 my-1">
@@ -273,33 +277,13 @@
                                 @csrf
                                 <button type="submit" class="w-full flex items-center space-x-2 px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left">
                                     <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
-                                    <span>Disconnect</span>
+                                    <span>{{ __('Disconnect') }}</span>
                                 </button>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Language Switcher Dropdown -->
-                    <div class="relative hidden sm:block" x-data="{ open: false }" @click.outside="open = false">
-                        <button @click="open = !open" class="p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 hover:border-purple-500/40 text-zinc-400 hover:text-purple-300 transition-all duration-200 flex items-center space-x-1">
-                            <i data-lucide="globe" class="w-4 h-4"></i>
-                            <span class="text-[9px] font-bold font-orbitron">EN</span>
-                        </button>
-                        
-                        <div x-show="open" 
-                             x-transition:enter="transition ease-out duration-100"
-                             x-transition:enter-start="transform opacity-0 scale-95"
-                             x-transition:enter-end="transform opacity-100 scale-100"
-                             x-transition:leave="transition ease-in duration-75"
-                             x-transition:leave-start="transform opacity-100 scale-100"
-                             x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-3 w-28 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-1"
-                             x-cloak>
-                            <a href="#" class="block px-4 py-2 text-xs text-zinc-350 bg-purple-950/20 text-white font-bold">English</a>
-                            <a href="#" class="block px-4 py-2 text-xs text-zinc-450 hover:bg-purple-950/30 hover:text-white transition-colors">Español</a>
-                            <a href="#" class="block px-4 py-2 text-xs text-zinc-450 hover:bg-purple-950/30 hover:text-white transition-colors">Tagalog</a>
-                        </div>
-                    </div>
+                    <x-localization.language-switcher variant="player" class="hidden sm:block" />
 
                 </div>
             </header>
@@ -310,8 +294,8 @@
                     <div class="player-page-loader-shell">
                         <div class="player-loader-hud">
                             <div>
-                                <p class="player-loader-kicker">Loading arena</p>
-                                <p class="player-loader-title">Syncing player terminal</p>
+                                <p class="player-loader-kicker">{{ __('Loading arena') }}</p>
+                                <p class="player-loader-title">{{ __('Syncing player terminal') }}</p>
                             </div>
                             <div class="player-loader-ring" aria-hidden="true"></div>
                         </div>
@@ -353,11 +337,11 @@
     <nav id="mobile-bottom-nav" role="navigation" aria-label="Main navigation">
         @php
             $bottomNavItems = [
-                ['label' => 'Overview',    'icon' => 'layout-dashboard', 'url' => '/dashboard',        'pattern' => 'dashboard'],
-                ['label' => 'Browse',      'icon' => 'search',           'url' => '/tournaments/browse','pattern' => 'tournaments/browse*'],
-                ['label' => 'H2H',         'icon' => 'swords',           'url' => '/head-to-head',     'pattern' => 'head-to-head'],
-                ['label' => 'My Games',    'icon' => 'trophy',           'url' => '/my-tournaments',   'pattern' => 'my-tournaments'],
-                ['label' => 'More',        'icon' => 'grid-3x3',         'url' => null,                'pattern' => null],
+                ['label' => __('Overview'),    'icon' => 'layout-dashboard', 'url' => '/dashboard',        'pattern' => 'dashboard'],
+                ['label' => __('Browse'),      'icon' => 'search',           'url' => '/tournaments/browse','pattern' => 'tournaments/browse*'],
+                ['label' => __('H2H'),         'icon' => 'swords',           'url' => '/head-to-head',     'pattern' => 'head-to-head'],
+                ['label' => __('My Games'),    'icon' => 'trophy',           'url' => '/my-tournaments',   'pattern' => 'my-tournaments'],
+                ['label' => __('More'),        'icon' => 'grid-3x3',         'url' => null,                'pattern' => null],
             ];
         @endphp
 
@@ -375,7 +359,7 @@
                     {{-- "More" button triggers the slide-up panel --}}
                     <button type="button"
                             id="mobile-more-btn"
-                            aria-label="More navigation options"
+                            aria-label="{{ __('More navigation options') }}"
                             aria-expanded="false"
                             class="mobile-nav-item">
                         <i data-lucide="{{ $item['icon'] }}" class="mobile-nav-icon"></i>
