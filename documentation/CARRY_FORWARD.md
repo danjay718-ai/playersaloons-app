@@ -87,9 +87,9 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 | Priority | Item | Effort |
 |---|---|---|
 | 🟡 | H2H ELO/skill matching | Optional for v1; matchmaker currently uses game/stake/platform/region |
-| 🟢 | Referral system logic | Medium |
+| ⚪ | Referral system logic | Deferred; growth/marketing feature, not required for current Phase 2 scope |
 | 🔵 | 2FA | Large |
-| 🔵 | External payout integration | Large + business decision |
+| ⚪ | External payout integration | Deferred; sandbox continues with manual payout workflow until payout provider/compliance path is confirmed |
 | 🔵 | Compliance/blacklisting, contact inquiries, newsletter admin | Medium/Large |
 | 🔵 | CMS Blog/News + translation management | Medium |
 | 🟡 | Remaining testing debt | Tournament filters, pagination, elimination modal, N+1 checks |

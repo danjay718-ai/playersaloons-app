@@ -108,7 +108,7 @@ To ensure flow integrity, the following tests must be implemented and passing:
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
-    *   **Referral System Logic**: The referral integer ID is in the DB but the logic to reward referrers is not yet implemented.
+    *   **Referral System Logic**: The referral integer ID is in the DB but the logic to reward referrers is not yet implemented. This is intentionally deferred from the current Phase 2 scope because it is a growth/marketing feature rather than a launch-critical player workflow.
     *   **2FA Support**: Schema has `two_factor_secret` and `two_factor_recovery_codes` (via Laravel Fortify/standard) but UI/Action logic is missing.
     *   **Social Login**: `provider_name` and `provider_id` are in some variations of the plan but not yet in the current migration.
 *   **Unused Schema Columns**:

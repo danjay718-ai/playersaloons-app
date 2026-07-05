@@ -129,7 +129,7 @@ ApproveWithdrawalAction
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
-    *   **External Payout Integration**: The `PROCESSED` state is manual; integration with PayPal/Stripe Connect for automated payouts is missing.
+    *   **External Payout Integration**: The `PROCESSED` state is manual; integration with PayPal/Stripe Connect or another payout provider is intentionally deferred. Sandbox testing will use the existing manual admin payout workflow because full payout integration depends on the final provider, onboarding model, supported regions, and compliance requirements.
     *   **Currency Conversion**: Schema assumes a single currency (e.g., USD); no `currency_code` or conversion logic in `WalletService`.
 *   **Unused Schema Columns**:
     *   `deposits.fee_amount`: Field exists (and is now in `$fillable` + `casts`), but currently 100% of deposit is credited — fee deduction logic not yet implemented.
