@@ -8,6 +8,7 @@ use App\Livewire\Admin\AdminDashboard;
 use App\Livewire\Admin\AdminProfile;
 use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\BroadcastNotificationAdmin;
+use App\Livewire\Admin\ContactInquiryAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
@@ -22,6 +23,7 @@ use App\Livewire\Auth\EmailVerification;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\PasswordReset;
 use App\Livewire\Auth\Register;
+use App\Livewire\Community\ContactPage;
 use App\Livewire\Community\GlobalChat;
 use App\Livewire\Dashboard\PlayerDashboard;
 use App\Livewire\Landing\LandingPage;
@@ -38,6 +40,7 @@ use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Livewire\Wallet\WalletDashboard;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -48,6 +51,7 @@ Route::get('/', LandingPage::class);
 Route::get('/tournaments', PublicTournamentList::class);
 Route::get('/policies', PolicyIndex::class)->name('policies.index');
 Route::get('/policies/{slug}', PolicyPageView::class)->name('policies.show');
+Route::get('/contact', ContactPage::class)->name('contact');
 
 Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
 Route::post('/language', [LanguageController::class, 'update'])->name('language.update');
@@ -57,24 +61,33 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
     Route::get('/register', Register::class)->name('register');
     Route::get('/reset-password', PasswordReset::class)->name('password.request');
+    Route::get('/reset-password/{token}', PasswordReset::class)->name('password.reset');
 });
 
 // Authenticated only routes
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
-    Route::get('/my-tournaments', MyTournamentsList::class)->name('my-tournaments');
-    Route::get('/tournaments/browse', PlayerTournamentList::class)->name('tournaments.browse');
-    Route::get('/head-to-head', HeadToHeadList::class)->name('head-to-head');
-    Route::get('/leaderboards', LeaderboardList::class)->name('leaderboards');
-    Route::get('/streams', StreamList::class)->name('streams');
-    Route::get('/chat', GlobalChat::class)->name('chat');
-    Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
-    Route::get('/matches/{uuid}', MatchDetail::class);
-
-    Route::get('/wallet', WalletDashboard::class)->name('wallet');
-    Route::get('/profile', ProfileDashboard::class);
-    Route::get('/teams', TeamDashboard::class);
     Route::get('/verify-email', EmailVerification::class)->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+
+        return redirect('/dashboard');
+    })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+
+    Route::middleware('verified')->group(function () {
+        Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
+        Route::get('/my-tournaments', MyTournamentsList::class)->name('my-tournaments');
+        Route::get('/tournaments/browse', PlayerTournamentList::class)->name('tournaments.browse');
+        Route::get('/head-to-head', HeadToHeadList::class)->name('head-to-head');
+        Route::get('/leaderboards', LeaderboardList::class)->name('leaderboards');
+        Route::get('/streams', StreamList::class)->name('streams');
+        Route::get('/chat', GlobalChat::class)->name('chat');
+        Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
+        Route::get('/matches/{uuid}', MatchDetail::class);
+
+        Route::get('/wallet', WalletDashboard::class)->name('wallet');
+        Route::get('/profile', ProfileDashboard::class);
+        Route::get('/teams', TeamDashboard::class);
+    });
 
     Route::post('/logout', function () {
         Auth::logout();
@@ -113,6 +126,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/translations', TranslationAdmin::class)->name('admin.translations');
         Route::get('/policies', PolicyAdmin::class);
         Route::get('/notifications', BroadcastNotificationAdmin::class)->name('admin.notifications');
+        Route::get('/contact-inquiries', ContactInquiryAdmin::class)->name('admin.contact-inquiries');
         Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');
     });
 });

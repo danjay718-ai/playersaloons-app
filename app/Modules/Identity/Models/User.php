@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Models;
 
 use App\Modules\Community\Models\Notification;
+use App\Notifications\Auth\ResetPasswordNotification;
+use App\Notifications\Auth\VerifyEmailNotification;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
 use Database\Factories\UserFactory;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
@@ -30,13 +33,21 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $password
  * @property string $locale
  * @property Carbon|null $email_verified_at
+ * @property Carbon|null $accepted_terms_at
+ * @property Carbon|null $accepted_privacy_policy_at
+ * @property Carbon|null $accepted_cookie_policy_at
+ * @property Carbon|null $age_confirmed_at
+ * @property bool $newsletter_subscribed
+ * @property Carbon|null $newsletter_subscribed_at
+ * @property string|null $policy_acceptance_ip
+ * @property string|null $policy_acceptance_user_agent
  * @property UserStatus $status
  * @property-read Wallet|null $wallet
  * @property-read UserProfile|null $profile
  * @property-read Collection<int, KycSubmission> $kycSubmissions
  * @property-read Collection<int, Notification> $notifications
  */
-class User extends Authenticatable implements HasMedia
+class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, InteractsWithMedia, Notifiable, SoftDeletes;
@@ -63,6 +74,14 @@ class User extends Authenticatable implements HasMedia
         'status',
         'locale',
         'last_login_at',
+        'accepted_terms_at',
+        'accepted_privacy_policy_at',
+        'accepted_cookie_policy_at',
+        'age_confirmed_at',
+        'newsletter_subscribed',
+        'newsletter_subscribed_at',
+        'policy_acceptance_ip',
+        'policy_acceptance_user_agent',
     ];
 
     /**
@@ -85,6 +104,12 @@ class User extends Authenticatable implements HasMedia
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'accepted_terms_at' => 'datetime',
+            'accepted_privacy_policy_at' => 'datetime',
+            'accepted_cookie_policy_at' => 'datetime',
+            'age_confirmed_at' => 'datetime',
+            'newsletter_subscribed' => 'boolean',
+            'newsletter_subscribed_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
         ];
@@ -130,5 +155,15 @@ class User extends Authenticatable implements HasMedia
     public function isOnline(): bool
     {
         return (bool) Redis::exists('user_online:'.$this->id);
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification);
+    }
+
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 }

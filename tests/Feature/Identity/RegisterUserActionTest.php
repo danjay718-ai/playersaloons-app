@@ -7,9 +7,11 @@ namespace Tests\Feature\Identity;
 use App\Modules\Identity\Actions\RegisterUserAction;
 use App\Modules\Identity\Events\UserRegistered;
 use App\Modules\Identity\Models\User;
+use App\Notifications\Auth\VerifyEmailNotification;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -97,5 +99,45 @@ class RegisterUserActionTest extends TestCase
             ->set('password_confirmation', 'secret-password')
             ->call('register')
             ->assertHasErrors(['username']);
+    }
+
+    public function test_registration_requires_policy_acceptance_and_age_confirmation(): void
+    {
+        Livewire::test(\App\Livewire\Auth\Register::class)
+            ->set('username', 'consent_user')
+            ->set('email', 'consent@example.com')
+            ->set('password', 'secret-password')
+            ->set('password_confirmation', 'secret-password')
+            ->call('register')
+            ->assertHasErrors([
+                'accepted_policies',
+                'age_confirmed',
+            ]);
+    }
+
+    public function test_registration_stores_policy_age_and_newsletter_consent(): void
+    {
+        Notification::fake();
+
+        Livewire::test(\App\Livewire\Auth\Register::class)
+            ->set('username', 'consented_user')
+            ->set('email', 'consented@example.com')
+            ->set('password', 'secret-password')
+            ->set('password_confirmation', 'secret-password')
+            ->set('accepted_policies', true)
+            ->set('age_confirmed', true)
+            ->set('newsletter_subscribed', true)
+            ->call('register')
+            ->assertRedirect('/verify-email');
+
+        $user = User::query()->where('email', 'consented@example.com')->firstOrFail();
+
+        $this->assertNotNull($user->accepted_terms_at);
+        $this->assertNotNull($user->accepted_privacy_policy_at);
+        $this->assertNotNull($user->accepted_cookie_policy_at);
+        $this->assertNotNull($user->age_confirmed_at);
+        $this->assertTrue($user->newsletter_subscribed);
+        $this->assertNotNull($user->newsletter_subscribed_at);
+        Notification::assertSentTo($user, VerifyEmailNotification::class);
     }
 }

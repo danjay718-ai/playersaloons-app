@@ -4,23 +4,35 @@ declare(strict_types=1);
 
 namespace App\Livewire\Auth;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class EmailVerification extends Component
 {
-    public function verify()
+    public function mount()
     {
         $user = Auth::user();
 
-        if ($user) {
-            $user->update(['email_verified_at' => now()]);
-            session()->flash('message', 'Email verified successfully!');
+        if ($user && $user->hasVerifiedEmail()) {
+            return redirect()->to('/dashboard');
+        }
+    }
 
+    public function resend()
+    {
+        $user = Auth::user();
+
+        if (! $user instanceof MustVerifyEmail) {
+            return redirect()->to('/login');
+        }
+
+        if ($user->hasVerifiedEmail()) {
             return redirect()->to('/dashboard');
         }
 
-        return redirect()->to('/login');
+        $user->sendEmailVerificationNotification();
+        session()->flash('message', 'Verification email sent. Please check your inbox.');
     }
 
     public function render()

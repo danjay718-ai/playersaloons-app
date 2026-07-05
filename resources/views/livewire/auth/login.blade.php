@@ -61,12 +61,16 @@
             </div>
 
             <div>
-                <button type="submit" 
-                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-all duration-200 shadow-md shadow-violet-900/30">
+                <button type="submit"
+                    wire:loading.attr="disabled"
+                    wire:target="login"
+                    wire:loading.class="cursor-not-allowed opacity-70"
+                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-all duration-200 shadow-md shadow-violet-900/30">
                     <span class="absolute left-0 inset-y-0 flex items-center pl-3">
                         <i data-lucide="log-in" class="w-4 h-4 text-violet-300 group-hover:text-white transition-colors"></i>
                     </span>
-                    Sign In to Play
+                    <span wire:loading.remove wire:target="login">Sign In to Play</span>
+                    <span wire:loading wire:target="login">Signing In...</span>
                 </button>
             </div>
         </form>

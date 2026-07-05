@@ -183,6 +183,23 @@ Managing user-facing UI phrases and locale JSON runtime files.
     *   `tests/Feature/Admin/TranslationAdminTest.php`
     *   `tests/Feature/Localization/LanguageSwitchTest.php`
 
+## 11. Contact Inquiries
+Managing support/contact messages submitted by guests and signed-in players.
+
+*   **Public Route**: `/contact`
+*   **Admin Route**: `/admin/contact-inquiries`
+*   **Public/Player UI Component**: `app/Livewire/Community/ContactPage.php`
+*   **Admin UI Component**: `app/Livewire/Admin/ContactInquiryAdmin.php`
+*   **Data Model**: `app/Modules/Community/Models/ContactInquiry.php`
+*   **Features**:
+    *   Guests and players can submit name, email, category, subject, and message.
+    *   Signed-in verified players see the form inside the player dashboard layout and their account is linked automatically.
+    *   Public footer links to `/contact`; player sidebar and mobile More panel include Support.
+    *   Staff can search/filter by status/category, review details, add internal notes, mark resolved, or archive.
+    *   New inquiries create in-app staff notifications for SUPER_ADMIN, ADMIN, and SUPPORT_AGENT users.
+*   **Statuses**: `new`, `in_review`, `resolved`, `archived`.
+*   **Tests**: `tests/Feature/Community/ContactInquiryTest.php`
+
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
 *   **Role Protection**: `test_non_admin_cannot_access_admin_dashboard` / `test_player_cannot_access_staff_activity_dashboard`

@@ -8,23 +8,28 @@ Players sign up for an account to begin their journey.
 *   **Action**: Player fills out the registration form.
 *   **UI Component**: `app/Livewire/Auth/Register.php`
 *   **View**: `resources/views/livewire/auth/register.blade.php`
+*   **Consent Requirements**: Submit stays disabled until required account fields are filled, passwords match, the player accepts the Cookie Policy, Terms & Conditions, and Privacy Policy, and confirms they are 18 years or older. Newsletter/platform update subscription is optional and currently records opt-in only; sending newsletters is deferred.
 *   **Logic (Actions)**:
-    *   `app/Modules/Identity/Actions/RegisterUserAction.php`: Atomically creates User, Profile, and assigns the `PLAYER` role. `UserRegistered` is dispatched **after** the transaction commits to guarantee queued listeners can query committed data.
+    *   `app/Modules/Identity/Actions/RegisterUserAction.php`: Atomically creates User, Profile, stores registration consent timestamps/newsletter preference, and assigns the `PLAYER` role. `UserRegistered` is dispatched **after** the transaction commits to guarantee queued listeners can query committed data.
+    *   `app/Livewire/Auth/Register.php`: Sends Laravel's email verification notification after registration, logs the user in, and sends them to `/verify-email` instead of the dashboard.
 *   **Connected Files**:
     *   `app/Modules/Identity/Models/User.php`: The custom User model.
     *   `app/Modules/Identity/Events/UserRegistered.php`: Dispatched upon successful registration.
     *   `app/Modules/Wallet/Listeners/CreateWalletListener.php`: Subscribes to `UserRegistered` to create the player's initial wallet (runs on `wallet` queue).
     *   `database/migrations/0001_01_01_000000_create_users_table.php`
+    *   `database/migrations/2026_07_05_000000_add_registration_consent_fields_to_users_table.php`
 
 ## 2. Email Verification
 Ensures the player's email is valid and owned by them.
 
-*   **Action**: Player clicks the link sent to their email.
+*   **Action**: Player clicks the signed verification link sent to their email. Until verified, authenticated player routes redirect to `/verify-email`.
 *   **UI Component**: `app/Livewire/Auth/EmailVerification.php`
 *   **Profile Surface**: `app/Livewire/Profile/ProfileDashboard.php` also shows a verified email field and verify button, backed by `users.email_verified_at`.
 *   **Connected Files**:
     *   `app/Modules/Identity/Events/EmailVerified.php`: Dispatched upon successful verification.
     *   `app/Shared/Events/DomainEvent.php`: Base event class.
+    *   `routes/web.php`: Defines `/email/verify/{id}/{hash}` as a signed verification route and applies `verified` middleware to player routes.
+    *   `app/Notifications/Auth/VerifyEmailNotification.php` and `resources/views/emails/auth/verify-email.blade.php`: Lightweight PlayerSaloons-branded verification email.
 
 ## 3. KYC Submission
 Identity verification is required for financial transactions (e.g., withdrawals).
@@ -85,6 +90,8 @@ To ensure flow integrity, the following tests must be implemented and passing:
     *   Assert `wallets` table has entry with `cached_balance = 0.00`.
 *   **Validation**: `test_registration_fails_with_invalid_email`
 *   **Duplicate**: `test_registration_fails_with_existing_username`
+*   **Consent Required**: `test_registration_requires_policy_acceptance_and_age_confirmation`
+*   **Consent Stored**: `test_registration_stores_policy_age_and_newsletter_consent`
 
 ### 2. KYC Tests — `tests/Feature/Identity/SubmitKycActionTest.php`
 *   **Success**: `test_player_can_submit_kyc_documents`

@@ -386,26 +386,4 @@
 
     </main>
 
-
-    {{-- ─── FOOTER ─── --}}
-    <footer class="relative border-t border-zinc-800/50 bg-[#030209] px-4 py-10 sm:py-12">
-        <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent"></div>
-        <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 text-center md:flex-row md:text-left">
-            <div class="flex items-center gap-3">
-                <img src="/playersaloons_logo.webp" alt="Logo" class="h-7 w-auto brightness-75">
-                <span class="font-orbitron text-xs font-black uppercase tracking-widest text-zinc-500">
-                    {{ $footer?->title ?? 'PlayerSaloons' }}
-                </span>
-            </div>
-            <p class="max-w-xs text-[9px] font-bold uppercase leading-5 tracking-widest text-zinc-700 sm:max-w-none sm:text-[10px]">
-                &copy; {{ date('Y') }} {{ $footer?->body ?? 'ALL RIGHTS RESERVED. OPERATED BY PLAYERSALOONS SYSTEMS.' }}
-            </p>
-            <div class="flex flex-wrap justify-center gap-x-6 gap-y-3 text-[10px] font-black uppercase tracking-widest text-zinc-600 md:justify-end">
-                @foreach($footer?->activeItems ?? [] as $item)
-                    <a href="{{ $item->url ?: '#' }}" class="transition-colors hover:text-cyan-400">{{ $item->label ?: $item->title }}</a>
-                @endforeach
-            </div>
-        </div>
-    </footer>
-
 </div>

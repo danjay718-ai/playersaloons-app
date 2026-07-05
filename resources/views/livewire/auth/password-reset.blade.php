@@ -8,9 +8,15 @@
                 RESET PASSWORD
             </h2>
             <p class="mt-2 text-sm text-zinc-400">
-                {{ $isResetMode ? 'Enter your new secure password.' : 'Enter your email address to initiate the reset.' }}
+                {{ $isResetMode ? 'Enter your new secure password.' : 'Enter your email address and we will send a reset link.' }}
             </p>
         </div>
+
+        @if (session('message'))
+            <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-200">
+                {{ session('message') }}
+            </div>
+        @endif
 
         @if (!$isResetMode)
             <!-- Request Stage -->
@@ -30,9 +36,13 @@
                 </div>
 
                 <div>
-                    <button type="submit" 
-                        class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-all duration-200 shadow-md shadow-violet-900/30">
-                        Continue
+                    <button type="submit"
+                        wire:loading.attr="disabled"
+                        wire:target="requestReset"
+                        wire:loading.class="cursor-not-allowed opacity-70"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-all duration-200 shadow-md shadow-violet-900/30">
+                        <span wire:loading.remove wire:target="requestReset">Send Reset Link</span>
+                        <span wire:loading wire:target="requestReset">Sending Link...</span>
                     </button>
                 </div>
             </form>
@@ -75,9 +85,13 @@
                 </div>
 
                 <div>
-                    <button type="submit" 
-                        class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-all duration-200 shadow-md shadow-violet-900/30">
-                        Reset Password
+                    <button type="submit"
+                        wire:loading.attr="disabled"
+                        wire:target="resetPassword"
+                        wire:loading.class="cursor-not-allowed opacity-70"
+                        class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-all duration-200 shadow-md shadow-violet-900/30">
+                        <span wire:loading.remove wire:target="resetPassword">Reset Password</span>
+                        <span wire:loading wire:target="resetPassword">Resetting Password...</span>
                     </button>
                 </div>
             </form>

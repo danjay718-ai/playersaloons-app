@@ -21,8 +21,6 @@
         </div>
     </article>
 
-    @include('components.layouts.partials.public-footer')
-
     <style>
         .policy-rich-content p {
             margin-bottom: 1.5rem;

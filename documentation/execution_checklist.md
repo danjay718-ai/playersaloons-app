@@ -90,8 +90,8 @@ These tests are identified but not yet implemented. Priority order within each s
 
 ### Compliance & User Management
 - [ ] Compliance/Blacklisting (Middleware + Admin Page)
-- [ ] Contact Inquiries (Admin Page)
-- [ ] Newsletter Management (Admin Page)
+- [x] Contact Inquiries (Public/player form + Admin Page) *(done v1.78)*
+- [ ] Newsletter Management (Admin Page). **Deferred**: registration now records newsletter/update opt-in, but actual newsletter sending, audience management, campaign tools, and unsubscribe flows are deferred until the newsletter provider/workflow is selected.
 
 ### Identity
 - [ ] Referral System Logic — integer ref ID is in DB but reward logic not implemented. **Deferred**: not required for the current Phase 2 scope; can be revisited as a growth/marketing feature after launch priorities are stable.

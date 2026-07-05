@@ -76,6 +76,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'system_settings.manage',
         'audit_logs.view',
         'broadcast_messages.manage',
+        'contact_inquiries.manage',
 
         // CMS
         'cms.view',
@@ -154,6 +155,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'games.view',
             'broadcast_messages.manage',
             'audit_logs.view',
+            'contact_inquiries.manage',
         ],
 
         'SUPPORT_AGENT' => [
@@ -169,6 +171,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'cms.view',
             'games.view',
             'audit_logs.view',
+            'contact_inquiries.manage',
         ],
 
         'FINANCE_OPERATOR' => [
@@ -237,6 +240,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'system_settings.manage',
             'audit_logs.view',
             'broadcast_messages.manage',
+            'contact_inquiries.manage',
             // CMS
             'cms.view',
             'cms.manage',

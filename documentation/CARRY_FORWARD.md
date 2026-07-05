@@ -90,7 +90,8 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 | ⚪ | Referral system logic | Deferred; growth/marketing feature, not required for current Phase 2 scope |
 | 🔵 | 2FA | Large |
 | ⚪ | External payout integration | Deferred; sandbox continues with manual payout workflow until payout provider/compliance path is confirmed |
-| 🔵 | Compliance/blacklisting, contact inquiries, newsletter admin | Medium/Large |
+| 🔵 | Compliance/blacklisting | Medium/Large |
+| ⚪ | Newsletter management/sending | Deferred; registration stores opt-in only until newsletter provider/workflow is selected |
 | 🔵 | CMS Blog/News + translation management | Medium |
 | 🟡 | Remaining testing debt | Tournament filters, pagination, elimination modal, N+1 checks |
 | ⚪ | R2 storage migration | Deferred during testing; Docker volumes are acceptable until full launch |

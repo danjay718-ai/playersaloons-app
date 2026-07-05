@@ -59,7 +59,8 @@ class LandingPageTest extends TestCase
             ->assertSee('Live Platform Stats')
             ->assertSee('Top Players This Week')
             ->assertSee('Built For Competitive Play')
-            ->assertSee('Player Reviews');
+            ->assertSee('Player Reviews')
+            ->assertSee('Contact');
     }
 
     public function test_admin_can_update_landing_section_and_create_item(): void

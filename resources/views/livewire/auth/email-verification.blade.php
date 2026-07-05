@@ -12,21 +12,34 @@
                 VERIFY YOUR EMAIL
             </h2>
             <p class="text-sm text-zinc-400">
-                To start competing, you need to verify your email address. In a real-world scenario, you would receive a validation link, but for this MVP, you can verify instantly below.
+                We sent a verification link to your email address. Verify your email before opening the player dashboard, wallet, tournaments, teams, or matches.
             </p>
         </div>
 
+        @if (session('message'))
+            <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-200">
+                {{ session('message') }}
+            </div>
+        @endif
+
         <div class="pt-4">
-            <button wire:click="verify" 
-                class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-all duration-200 shadow-md shadow-violet-900/30">
-                Verify Email Address
+            <button wire:click="resend"
+                wire:loading.attr="disabled"
+                wire:target="resend"
+                wire:loading.class="cursor-not-allowed opacity-70"
+                class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-violet-500 transition-all duration-200 shadow-md shadow-violet-900/30">
+                <span wire:loading.remove wire:target="resend">Resend Verification Email</span>
+                <span wire:loading wire:target="resend">Sending Verification Email...</span>
             </button>
         </div>
 
         <div class="pt-2">
-            <a href="/dashboard" wire:navigate class="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
-                Back to Dashboard
-            </a>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                    Sign out and verify later
+                </button>
+            </form>
         </div>
     </div>
 </div>

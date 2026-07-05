@@ -73,6 +73,7 @@
                         ['label' => __('Translations'), 'icon' => 'languages', 'url' => '/admin/translations'],
                         ['label' => __('Policies'), 'icon' => 'scroll-text', 'url' => '/admin/policies'],
                         ['label' => __('Notifications'), 'icon' => 'megaphone', 'url' => '/admin/notifications'],
+                        ['label' => __('Contact Inquiries'), 'icon' => 'inbox', 'url' => '/admin/contact-inquiries'],
                     ];
                 @endphp
 

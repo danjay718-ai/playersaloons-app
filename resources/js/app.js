@@ -8,9 +8,7 @@ window.Pusher = Pusher;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide icons on first load
-    if (window.lucide) {
-        window.lucide.createIcons();
-    }
+    refreshLucideIcons();
 
     initPublicShell();
     initPlayerShell();
@@ -21,9 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('livewire:navigated', () => {
     // Re-initialize icons after Livewire navigation
-    if (window.lucide) {
-        window.lucide.createIcons();
-    }
+    refreshLucideIcons();
 
     initPublicShell();
     initPlayerShell();
@@ -33,10 +29,12 @@ document.addEventListener('livewire:navigated', () => {
 });
 
 document.addEventListener('livewire:init', () => {
+    Livewire.hook('morph.updated', () => {
+        refreshLucideIcons();
+    });
+
     Livewire.hook('message.processed', (message, component) => {
-        if (window.lucide) {
-            window.lucide.createIcons();
-        }
+        refreshLucideIcons();
 
         initPublicShell();
         initPlayerShell();
@@ -154,9 +152,7 @@ function initPublicShell() {
     initPublicNav();
     initHeroVideoFallback();
 
-    if (window.lucide) {
-        window.lucide.createIcons();
-    }
+    refreshLucideIcons();
 }
 
 function initPlayerShell() {
@@ -387,10 +383,20 @@ function initPublicMobileMenu() {
             openIcon?.classList.toggle('hidden', !isOpen);
             closeIcon?.classList.toggle('hidden', isOpen);
 
-            if (window.lucide) {
-                window.lucide.createIcons();
-            }
+            refreshLucideIcons();
         });
+    });
+}
+
+function refreshLucideIcons() {
+    if (!window.lucide) return;
+
+    if (window.__lucideRefreshQueued) return;
+    window.__lucideRefreshQueued = true;
+
+    window.requestAnimationFrame(() => {
+        window.__lucideRefreshQueued = false;
+        window.lucide.createIcons();
     });
 }
 

@@ -31,5 +31,4 @@
         </div>
     </section>
 
-    @include('components.layouts.partials.public-footer')
 </main>

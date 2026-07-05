@@ -36,6 +36,8 @@ class ProfileDashboardTest extends TestCase
 
     public function test_player_profile_page_renders_game_profile_without_inline_kyc_form(): void
     {
+        $this->user->forceFill(['email_verified_at' => now()])->save();
+
         $this->actingAs($this->user)
             ->get('/profile')
             ->assertOk()

@@ -1,6 +1,88 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-06-29 (v1.72) | **Branch**: `main`
+**Last Updated**: 2026-07-05 (v1.81) | **Branch**: `main`
+
+---
+
+## ✅ Contact Inquiry Resolve UX Fix (v1.81)
+
+- **Admin resolve action**: Resolve and Archive now validate that an inquiry is selected, update the inquiry status, reset pagination, and move the status filter to the resulting state so the admin can immediately see the updated record.
+- **Admin feedback**: Added visible status badge, success/error handling, and loading/disabled states for Save Notes, Resolve, and Archive buttons.
+- **Tests**: `php artisan test tests/Feature/Community/ContactInquiryTest.php` passes.
+- **Build**: `npm run build` passes.
+- **Known unrelated test issue**: `AdminPanelTest::test_admin_can_access_other_admin_pages` still fails when rendering User Admin without Redis available for the online indicator.
+
+---
+
+## ✅ Shared Guest Footer Consolidation (v1.80)
+
+- **Guest footer architecture**: Moved the shared public footer into `components.layouts.landing` so the landing page and policy pages use the same guest footer partial as the other public pages.
+- **Duplicate footer cleanup**: Removed the custom landing footer markup and manual policy footer includes to prevent guest footer drift.
+- **Regression coverage**: Updated the landing page feature test to assert the shared footer Contact link renders on `/`.
+- **Tests**: `php artisan test tests/Feature/CMS/LandingPageTest.php tests/Feature/CMS/PolicyPageTest.php tests/Feature/Community/ContactInquiryTest.php` passes.
+- **Build**: `npm run build` passes.
+
+---
+
+## ✅ Contact Inquiries Public Form and Admin Inbox (v1.78)
+
+- **`ContactPage`**: Added `/contact` support form for guests and players. Verified players get the player dashboard layout and automatic account linking; guests get the public layout.
+- **`ContactInquiryAdmin`**: Added `/admin/contact-inquiries` inbox with search, status/category filters, inquiry review, internal notes, resolve, and archive actions.
+- **Navigation**: Added Contact link to public footer and Support link to player sidebar/mobile More panel. Added Contact Inquiries to the admin sidebar.
+- **Notifications**: New contact submissions create in-app staff notifications for SUPER_ADMIN, ADMIN, and SUPPORT_AGENT users.
+- **Database**: Added `contact_inquiries` table.
+- **Tests**: Added `ContactInquiryTest`; focused contact tests pass.
+- **Build**: `npm run build` passes.
+- **PHPStan**: Attempted on changed contact files; exited with code 1 and no diagnostics/output in this environment.
+
+---
+
+## ✅ Branded Lightweight Auth Email Templates (v1.77)
+
+- **Email branding**: Replaced Laravel default verification/password-reset emails with lightweight PlayerSaloons-branded Blade templates using the platform icon, dark esports styling, direct CTA button, and fallback URL.
+- **Notifications**: Added custom verification and password-reset notification classes and wired `User` to send them.
+- **Environment branding**: Updated app/example env names from Laravel to PlayerSaloons so mail headers/from names no longer show Laravel.
+- **Tests**: Focused auth email tests and full Auth/Identity feature tests pass.
+- **PHPStan**: Not run for this Blade/notification pass.
+
+---
+
+## ✅ Auth Form Double-Submit Guard (v1.76)
+
+- **Auth forms**: Login, registration, password reset, and verification resend buttons now disable during their Livewire request and show loading text, preventing repeated clicks while a submission is processing.
+- **Tests**: `php artisan test tests/Feature/Auth tests/Feature/Identity` passes.
+- **Build**: `npm run build` passes.
+
+---
+
+## ✅ Local Registration Migration and Auth Icon Refresh Fix (v1.75)
+
+- **Database**: Ran the pending `2026_07_05_000000_add_registration_consent_fields_to_users_table` migration locally, fixing the SQLite `users.accepted_terms_at` missing-column error during registration.
+- **`resources/js/app.js`**: Added a queued `refreshLucideIcons()` helper and Livewire `morph.updated` hook so Lucide icons are restored after login/register input updates, validation errors, and Livewire form morphs.
+- **Tests**: `php artisan test tests/Feature/Auth tests/Feature/Identity` passes.
+- **Build**: `npm run build` passes.
+
+---
+
+## ✅ Email Verification, Forgot Password Email, and Newsletter Deferral (v1.74)
+
+- **Registration email verification**: New accounts now receive Laravel's email verification notification, are redirected to `/verify-email`, and cannot access verified player routes until the signed email link is opened.
+- **`EmailVerification`**: Replaced the instant MVP verify button with a resend-verification-email flow.
+- **Forgot password**: `/reset-password` now sends Laravel password reset link emails, and `/reset-password/{token}` handles the emailed reset form.
+- **Newsletter**: Registration stores newsletter/update opt-in only. Actual newsletter sending, campaign management, audience tooling, and unsubscribe flow are deferred until the provider/workflow is selected.
+- **Tests**: Added focused email-delivery coverage for verification and reset-link notifications.
+- **PHPStan**: Attempted on changed auth/identity files and routes; exited with code 1 and no diagnostics/output in this environment.
+
+---
+
+## ✅ Registration Consent and Join Form Redesign (v1.73)
+
+- **`Register` / `register.blade.php`**: Redesigned the Join Now form into a two-panel account setup flow. Submit is disabled until required fields are filled, passwords match, the policy checkbox is accepted, and the 18+ confirmation is checked. Added optional newsletter/platform update opt-in.
+- **`users`**: Added registration consent fields for Terms, Privacy Policy, Cookie Policy, age confirmation, newsletter subscription, and policy acceptance metadata.
+- **`RegisterUserAction`**: Persists consent timestamps and newsletter preference when a new player account is created.
+- **Docs**: Updated `FEATURE_MAP.md` and `01_identity_onboarding.md`.
+- **Tests**: Added focused registration consent tests in `RegisterUserActionTest`.
+- **PHPStan**: Pending for this pass.
 
 ---
 

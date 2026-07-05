@@ -21,6 +21,7 @@
             @empty
                 <a href="{{ route('policies.index') }}" wire:navigate class="transition-colors hover:text-cyan-400">{{ __('Policies') }}</a>
             @endforelse
+            <a href="{{ route('contact') }}" wire:navigate class="transition-colors hover:text-cyan-400">{{ __('Contact') }}</a>
         </div>
     </div>
 </footer>

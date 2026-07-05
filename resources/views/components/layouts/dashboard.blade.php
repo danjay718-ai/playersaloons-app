@@ -59,6 +59,7 @@
                 ['label' => __('My Teams'),    'icon' => 'users',           'url' => '/teams',           'pattern' => 'teams'],
                 ['label' => __('Wallet'),      'icon' => 'wallet',          'url' => '/wallet',          'pattern' => 'wallet'],
                 ['label' => __('Profile'),     'icon' => 'user-round',      'url' => '/profile',         'pattern' => 'profile'],
+                ['label' => __('Support'),     'icon' => 'headphones',      'url' => '/contact',         'pattern' => 'contact'],
             ];
             if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER'])) {
                 $moreItems[] = ['label' => __('Admin'), 'icon' => 'shield', 'url' => '/admin', 'pattern' => 'admin*'];
@@ -118,6 +119,7 @@
                     ['label' => __('Leaderboard'), 'icon' => 'award',            'url' => '/leaderboards',     'active' => request()->is('leaderboards')],
                     ['label' => __('Streams'),     'icon' => 'tv',               'url' => '/streams',          'active' => request()->is('streams')],
                     ['label' => __('Chat'),        'icon' => 'message-square',   'url' => '/chat',             'active' => request()->is('chat')],
+                    ['label' => __('Support'),     'icon' => 'headphones',       'url' => '/contact',          'active' => request()->is('contact')],
                 ];
             @endphp
 

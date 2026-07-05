@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-06-29 (v1.70)
+**Last Updated**: 2026-07-05 (v1.78)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -29,9 +29,11 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /tournaments` | `app/Livewire/Tournament/PublicTournamentList.php` | Public tournament listing |
 | `GET /policies` | `app/Livewire/Policies/PolicyIndex.php` | Public legal/policy index backed by `policy_pages` |
 | `GET /policies/{slug}` | `app/Livewire/Policies/PolicyPageView.php` | Public legal/policy detail page for active, published policy pages |
+| `GET /contact` | `app/Livewire/Community/ContactPage.php` | Public/player contact support form; guests use public layout and verified players use the player dashboard layout |
 | `GET /login` | `app/Livewire/Auth/Login.php` | Login (guest only) |
-| `GET /register` | `app/Livewire/Auth/Register.php` | Registration (guest only) |
-| `GET /reset-password` | `app/Livewire/Auth/PasswordReset.php` | Password reset (guest only) |
+| `GET /register` | `app/Livewire/Auth/Register.php` | Registration (guest only) with required policy acceptance, required 18+ confirmation, and optional newsletter/update opt-in |
+| `GET /reset-password` | `app/Livewire/Auth/PasswordReset.php` | Sends password reset email link (guest only) |
+| `GET /reset-password/{token}` | `app/Livewire/Auth/PasswordReset.php` | Password reset form from emailed token (guest only) |
 | `POST /language` | `app/Http/Controllers/LanguageController.php` | Switches the active UI locale for guests via session and authenticated users via `users.locale` |
 | `POST /stripe/webhook` | `app/Http/Controllers/StripeWebhookController.php` | Stripe webhook receiver for sandbox/staging deposit fulfillment |
 
@@ -51,7 +53,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /wallet` | `app/Livewire/Wallet/WalletDashboard.php` | Wallet balance, Stripe Checkout deposits, withdrawal requests, and transaction history |
 | `GET /profile` | `app/Livewire/Profile/ProfileDashboard.php` | Game-style player profile with Alpine tabs/drawer, avatar, account/profile/password updates, email verification, KYC status, Redis-cached support data, notification prefs |
 | `GET /teams` | `app/Livewire/Team/TeamDashboard.php` | Team management: create, invite, roster, captaincy |
-| `GET /verify-email` | `app/Livewire/Auth/EmailVerification.php` | Email verification notice |
+| `GET /verify-email` | `app/Livewire/Auth/EmailVerification.php` | Email verification notice + resend verification email |
+| `GET /email/verify/{id}/{hash}` | signed route closure | Signed email verification link; marks email verified and unlocks verified player routes |
 | `POST /logout` | inline route closure | Invalidates session and redirects to `/` |
 
 ### Admin Routes (auth + ADMIN/SUPER_ADMIN role)
@@ -73,6 +76,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/translations` | `app/Livewire/Admin/TranslationAdmin.php` | Translation manager for UI phrase keys; imports `lang/*.json`, edits `translation_strings`, fills missing values, and exports JSON runtime files |
 | `GET /admin/policies` | `app/Livewire/Admin/PolicyAdmin.php` | Dedicated policy editor for Terms and Conditions, Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer |
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
+| `GET /admin/contact-inquiries` | `app/Livewire/Admin/ContactInquiryAdmin.php` | Contact inquiry inbox: search/filter, review, internal notes, resolve, archive |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
 
 ### REST API Routes (`/api/v1`)
@@ -107,6 +111,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Player loading states | `resources/js/app.js`, `resources/css/app.css`, `resources/views/components/layouts/dashboard.blade.php` | Disables Livewire submit buttons during submit and shows a game-style full-page loader for uncached player `wire:navigate` route changes; tab links are excluded and visited routes are cached in `sessionStorage` |
 | Player upload feedback | `resources/views/livewire/profile/profile-dashboard.blade.php` | Shows immediate selected-file feedback and Livewire upload progress for avatar and KYC document uploads |
 | Language switcher | `resources/views/components/localization/language-switcher.blade.php` | Reusable locale dropdown shown in guest/public, player, and admin shells; posts to `/language` and reads supported languages from `config/localization.php` |
+| Auth emails | `app/Notifications/Auth/*`, `resources/views/emails/auth/*` | Lightweight PlayerSaloons-branded verification and password reset emails with direct CTA and fallback URL |
+| Contact support | `app/Livewire/Community/ContactPage.php` | Guest/player support form linked from public footer and player navigation; stores account-linked inquiries when authenticated |
 
 ### Shared Public Layout Components
 
@@ -227,6 +233,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Feature | Component/Service | Event | Listener/Frontend |
 |---|---|---|---|
 | Player notification bell | `NotificationBell` + `NotificationService` | `BroadcastNotification` (`user.{uuid}`) | Laravel Echo/Reverb listener dispatches `notification.received` to refresh Livewire |
+| Contact inquiry staff alert | `ContactPage` + `NotificationService` | — | Creates in-app notifications for SUPER_ADMIN, ADMIN, and SUPPORT_AGENT users |
 
 ---
 
