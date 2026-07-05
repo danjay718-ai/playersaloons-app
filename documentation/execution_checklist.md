@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-06-29 (v1.68)
+**Status**: Active Backlog | **Last Updated**: 2026-07-05 (v1.81)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -90,7 +90,7 @@ These tests are identified but not yet implemented. Priority order within each s
 
 ### Compliance & User Management
 - [ ] Compliance/Blacklisting (Middleware + Admin Page)
-- [x] Contact Inquiries (Public/player form + Admin Page) *(done v1.78)*
+- [x] Contact Inquiries (Public/player form + Admin Page) *(done v1.78; resolve/archive UX tightened v1.81)*
 - [ ] Newsletter Management (Admin Page). **Deferred**: registration now records newsletter/update opt-in, but actual newsletter sending, audience management, campaign tools, and unsubscribe flows are deferred until the newsletter provider/workflow is selected.
 
 ### Identity

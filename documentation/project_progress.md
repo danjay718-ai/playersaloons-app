@@ -24,6 +24,14 @@
 
 ---
 
+## ✅ Landing Footer Contact Link Correction (v1.79)
+
+- **Landing page footer**: Added Contact visibility coverage after discovering the landing page did not use the shared guest footer yet.
+- **Follow-up**: Superseded by v1.80, which moved footer ownership to the shared layout instead of keeping a landing-specific footer patch.
+- **Tests**: Landing page coverage asserts the Contact link renders on `/`.
+
+---
+
 ## ✅ Contact Inquiries Public Form and Admin Inbox (v1.78)
 
 - **`ContactPage`**: Added `/contact` support form for guests and players. Verified players get the player dashboard layout and automatic account linking; guests get the public layout.

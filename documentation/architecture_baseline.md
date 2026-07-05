@@ -1,6 +1,6 @@
 # PlayerSaloons — Architecture Baseline
 
-**Last Updated**: 2026-06-29 (v1.69) | **Original Baseline**: 2026-06-14
+**Last Updated**: 2026-07-05 (v1.81) | **Original Baseline**: 2026-06-14
 
 ## 🏗️ Architectural Overview
 
@@ -42,6 +42,19 @@ PlayerSaloons is a modular monolithic Laravel application structured by domain-d
 ## 📐 Post-v1.14 Architectural Changes
 
 Changes here represent deviations or additions to the original baseline design. Each entry explains what changed, why it was changed, and which part of the baseline it relates to.
+
+---
+
+### [v1.80] Shared Guest Footer Ownership
+
+**Baseline reference**: Public shell components should keep guest navigation and footer behavior consistent across welcome, landing, policy, auth, and other public pages.
+
+**What changed**:
+- `components.layouts.landing` now includes `components.layouts.partials.public-footer` directly, matching `components.layouts.app`.
+- Landing and policy page views no longer render or include their own footer markup.
+- The shared `public-footer` partial remains the single place for guest footer links such as Policies and Contact.
+
+**Why**: The landing page had a custom footer inside the page view while other guest pages used the shared footer partial. That caused footer links and styling to drift. Moving footer ownership to the layout layer keeps all public pages aligned while still allowing the landing page to keep its full-bleed content layout.
 
 ---
 

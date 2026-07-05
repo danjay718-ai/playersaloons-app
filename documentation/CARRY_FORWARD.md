@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-06-29 | **Current version**: v1.68 | **Branch**: `main`
+**As of**: 2026-07-05 | **Current version**: v1.81 | **Branch**: `main`
 
 ---
 
@@ -7,7 +7,7 @@
 
 - Production deployed sa `https://app-testing.website` via Docker Compose + Coolify (Linode)
 - SSL active (HTTPS via Let's Encrypt), login working, Horizon active
-- PHPStan Level 5 was previously clean on feature work; later environment runs exited with code 1 without diagnostics/output, and v1.66 was documentation-only
+- PHPStan Level 5 was previously clean on feature work; later environment runs exited with code 1 without diagnostics/output
 - `predis/predis` installed — local dev gumagamit ng `REDIS_CLIENT=predis`
 - Match confirmation flow now uses canonical `WAITING_FOR_CONFIRMATION`; `RESULT_SUBMITTED` remains legacy-compatible only
 - Welcome page header now shows logo image only, without adjacent `PLAYERSALOONS` text
@@ -23,6 +23,12 @@
 - Player avatar/KYC uploads now show immediate selected-file feedback and upload progress before the Livewire request completes
 - The PWA service worker no longer cache-first serves HTML/navigation requests, preventing stale unstyled landing-page HTML after logout/logo navigation
 - Public/guest pages now share one navbar/footer shell with welcome (`public-navigation`, `public-footer`)
+- Guest/public layouts now keep the shared footer in the layout layer, including landing and policy pages, so footer links do not drift between pages
+- Registration now requires policy acceptance and 18+ confirmation, records consent timestamps/IP/user agent, and stores optional newsletter/update opt-in without sending newsletters yet
+- New registrations must verify email through a signed email link before entering verified player routes; forgot password now sends real reset email links
+- Auth emails use lightweight PlayerSaloons-branded verification and password reset templates instead of Laravel defaults
+- Login, registration, password reset, and verification resend actions disable their buttons during submit to prevent repeated clicks
+- Contact inquiries are now live at `/contact` for guests/players and `/admin/contact-inquiries` for staff review, notes, resolve, and archive
 - Landing page is now DB-backed through `landing_sections` and `landing_section_items`, with admin editing in `/admin/cms`, a `/compressed_v1.mp4` video hero, active game cards, editable cards/reviews/footer, live computed stats, and weekly top-player spotlight
 - Landing games now render as a horizontal snap-scroll carousel; `games.banner_path` stores optional per-game card banners, and the landing background uses lightweight CSS-only game patterns
 - Landing page has a mobile responsiveness pass for player-heavy mobile traffic: tighter hero/CTA spacing, smaller carousel cards, touch-friendly sections, wrapped footer text, and a compact public mobile nav
@@ -34,7 +40,7 @@
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.68)
+## ✅ Natapos ngayong session (v1.30–v1.81)
 
 | Version | Item |
 |---|---|
@@ -77,6 +83,19 @@
 | v1.66 | Documentation synchronization pass for routes, versions, stale references, and wallet/withdrawal flow docs |
 | v1.67 | Dedicated database-backed policy pages with admin editor and public guest views |
 | v1.68 | Added Terms and Conditions to the dedicated policy pages |
+| v1.69 | Admin translation manager and runtime localization |
+| v1.70 | Related CMS seed flow |
+| v1.71 | Production Composer build fix |
+| v1.72 | Production startup CMS seeding fix |
+| v1.73 | Registration consent and Join Now form redesign |
+| v1.74 | Email verification, forgot password email, and newsletter deferral |
+| v1.75 | Local registration migration and auth icon refresh fix |
+| v1.76 | Auth form double-submit guard |
+| v1.77 | Branded lightweight auth email templates |
+| v1.78 | Contact inquiries public form and admin inbox |
+| v1.79 | Landing footer Contact link correction, later superseded by shared footer consolidation |
+| v1.80 | Shared guest footer consolidation |
+| v1.81 | Contact inquiry resolve/archive UX fix |
 
 ---
 
@@ -119,6 +138,8 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - Landing page stale/unstyled after logout/logo click — fixed by removing HTML from service worker cache-first handling v1.55
 - Mobile bottom navigation felt too small — restored larger tap target/icon/label sizing v1.55
 - Public/guest nav/footer mismatch with welcome — fixed v1.51
+- Landing/policy footer drift from shared guest footer — consolidated through layout-level shared footer v1.80
+- Contact inquiry resolve/archive state looked unchanged in admin after action — fixed v1.81
 - Static landing page requiring code edits for content changes — replaced with DB-backed landing CMS v1.60
 - Landing games grid without visual game banners — improved with horizontal carousel and `games.banner_path` v1.61
 - PWA install CTA placement and mobile duplication — fixed v1.50/v1.51
