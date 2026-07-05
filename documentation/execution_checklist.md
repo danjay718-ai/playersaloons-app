@@ -50,6 +50,9 @@
 
 These tests are identified but not yet implemented. Priority order within each section.
 
+### Manual UI QA
+- [ ] Phase 2 guest/auth/contact/admin manual UI QA pass — landing, register, email verification, login, forgot password, contact page, player support link, and admin contact inbox. **Deferred**: automated coverage and focused fixes are in place; full browser walkthrough will be scheduled after the next Phase 2 feature priorities.
+
 ### Tournament & Admin
 - [ ] `test_admin_tournament_filter_persistence` — search/status filters survive page refresh.
 - [ ] `test_admin_frequency_tab_functionality` — Daily/Weekly/Monthly filter in admin tournament list.
@@ -91,6 +94,7 @@ These tests are identified but not yet implemented. Priority order within each s
 ### Compliance & User Management
 - [ ] Compliance/Blacklisting (Middleware + Admin Page)
 - [x] Contact Inquiries (Public/player form + Admin Page) *(done v1.78; resolve/archive UX tightened v1.81)*
+- [ ] Contact Inquiry Support Polish — status counters, reply-by-email shortcut, clearer category/status badges, and admin dashboard inquiry summary. **Deferred**: contact inbox is functional now; these are follow-up support workflow enhancements to do after the next Phase 2 priorities.
 - [ ] Newsletter Management (Admin Page). **Deferred**: registration now records newsletter/update opt-in, but actual newsletter sending, audience management, campaign tools, and unsubscribe flows are deferred until the newsletter provider/workflow is selected.
 
 ### Identity
