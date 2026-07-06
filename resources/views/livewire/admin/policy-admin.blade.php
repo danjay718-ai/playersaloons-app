@@ -62,24 +62,38 @@
 
                 <div wire:ignore
                      x-data="{ quill: null }"
-                     @sync-policy-quill.window="$wire.content = quill.root.innerHTML"
+                     @sync-policy-quill.window="if (quill) { $wire.content = quill.root.innerHTML }"
                      @policy-content-selected.window="
                         if (quill) {
                             quill.root.innerHTML = $event.detail.content || '';
                         }
                      "
                      x-init="
-                        quill = new Quill($refs.editor, {
-                            theme: 'snow',
-                            placeholder: 'Write policy content...',
-                            modules: {
-                                toolbar: [['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link'], ['clean']]
+                        const bootEditor = () => {
+                            if (quill) {
+                                return;
                             }
-                        });
-                        quill.root.innerHTML = $wire.content;
-                        quill.on('text-change', () => {
-                            $wire.content = quill.root.innerHTML;
-                        });
+
+                            if (typeof window.Quill === 'undefined') {
+                                window.setTimeout(bootEditor, 75);
+
+                                return;
+                            }
+
+                            quill = new Quill($refs.editor, {
+                                theme: 'snow',
+                                placeholder: 'Write policy content...',
+                                modules: {
+                                    toolbar: [['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link'], ['clean']]
+                                }
+                            });
+                            quill.root.innerHTML = $wire.content;
+                            quill.on('text-change', () => {
+                                $wire.content = quill.root.innerHTML;
+                            });
+                        };
+
+                        bootEditor();
                      ">
                     <label class="mb-1 block text-[10px] font-bold uppercase text-slate-400">Body Content</label>
                     <div class="rounded-lg border border-slate-800 bg-slate-900">

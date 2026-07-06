@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Livewire\Admin\AdminDashboard;
 use App\Livewire\Admin\AdminProfile;
 use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\BroadcastNotificationAdmin;
-use App\Livewire\Admin\ContactInquiryAdmin;
 use App\Livewire\Admin\CmsAdmin;
+use App\Livewire\Admin\CmsContentAdmin;
+use App\Livewire\Admin\ContactInquiryAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\PolicyAdmin;
@@ -23,6 +24,10 @@ use App\Livewire\Auth\EmailVerification;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\PasswordReset;
 use App\Livewire\Auth\Register;
+use App\Livewire\CMS\BlogArticleView;
+use App\Livewire\CMS\BlogIndex;
+use App\Livewire\CMS\NewsArticleView;
+use App\Livewire\CMS\NewsIndex;
 use App\Livewire\Community\ContactPage;
 use App\Livewire\Community\GlobalChat;
 use App\Livewire\Dashboard\PlayerDashboard;
@@ -49,6 +54,10 @@ use Illuminate\Support\Facades\Storage;
 Route::get('/', LandingPage::class);
 
 Route::get('/tournaments', PublicTournamentList::class);
+Route::get('/blog', BlogIndex::class)->name('blog.index');
+Route::get('/blog/{slug}', BlogArticleView::class)->name('blog.show');
+Route::get('/news', NewsIndex::class)->name('news.index');
+Route::get('/news/{slug}', NewsArticleView::class)->name('news.show');
 Route::get('/policies', PolicyIndex::class)->name('policies.index');
 Route::get('/policies/{slug}', PolicyPageView::class)->name('policies.show');
 Route::get('/contact', ContactPage::class)->name('contact');
@@ -122,7 +131,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/withdrawals', WithdrawalAdmin::class);
         Route::get('/users', UserAdmin::class);
         Route::get('/audit-logs', AuditLogAdmin::class);
-        Route::get('/cms', CmsAdmin::class);
+        Route::get('/cms/content', CmsContentAdmin::class)->name('admin.cms.content');
+        Route::get('/cms/{section?}', CmsAdmin::class)
+            ->whereIn('section', ['landing', 'games', 'platforms', 'navigation'])
+            ->name('admin.cms');
         Route::get('/translations', TranslationAdmin::class)->name('admin.translations');
         Route::get('/policies', PolicyAdmin::class);
         Route::get('/notifications', BroadcastNotificationAdmin::class)->name('admin.notifications');

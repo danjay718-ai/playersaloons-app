@@ -61,34 +61,64 @@
             <!-- Navigation Links -->
             <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
                 @php
-                    $adminNavItems = [
-                        ['label' => __('Dashboard'), 'icon' => 'layout-dashboard', 'url' => '/admin'],
-                        ['label' => __('Tournaments'), 'icon' => 'trophy', 'url' => '/admin/tournaments'],
-                        ['label' => __('Matches & Disputes'), 'icon' => 'swords', 'url' => '/admin/matches'],
-                        ['label' => __('KYC Submissions'), 'icon' => 'file-check', 'url' => '/admin/kyc'],
-                        ['label' => __('Withdrawals'), 'icon' => 'wallet', 'url' => '/admin/withdrawals'],
-                        ['label' => __('User Directory'), 'icon' => 'users', 'url' => '/admin/users'],
-                        ['label' => __('Audit Logs'), 'icon' => 'file-text', 'url' => '/admin/audit-logs'],
-                        ['label' => __('CMS & Games'), 'icon' => 'database', 'url' => '/admin/cms'],
-                        ['label' => __('Translations'), 'icon' => 'languages', 'url' => '/admin/translations'],
-                        ['label' => __('Policies'), 'icon' => 'scroll-text', 'url' => '/admin/policies'],
-                        ['label' => __('Notifications'), 'icon' => 'megaphone', 'url' => '/admin/notifications'],
-                        ['label' => __('Contact Inquiries'), 'icon' => 'inbox', 'url' => '/admin/contact-inquiries'],
+                    $adminNavSections = [
+                        [
+                            'label' => 'Operations',
+                            'items' => [
+                                ['label' => 'Dashboard', 'icon' => 'layout-dashboard', 'url' => '/admin'],
+                                ['label' => 'Tournaments', 'icon' => 'trophy', 'url' => '/admin/tournaments'],
+                                ['label' => 'Matches & Disputes', 'icon' => 'swords', 'url' => '/admin/matches'],
+                                ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc'],
+                                ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals'],
+                                ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users'],
+                            ],
+                        ],
+                        [
+                            'label' => 'CMS',
+                            'items' => [
+                                ['label' => 'Blog & News', 'icon' => 'newspaper', 'url' => '/admin/cms/content'],
+                                ['label' => 'Landing Page', 'icon' => 'layout-template', 'url' => '/admin/cms/landing'],
+                                ['label' => 'Games', 'icon' => 'gamepad-2', 'url' => '/admin/cms/games'],
+                                ['label' => 'Platforms', 'icon' => 'monitor-smartphone', 'url' => '/admin/cms/platforms'],
+                                ['label' => 'Navigation', 'icon' => 'menu', 'url' => '/admin/cms/navigation'],
+                                ['label' => 'Policies', 'icon' => 'scroll-text', 'url' => '/admin/policies'],
+                                ['label' => 'Translations', 'icon' => 'languages', 'url' => '/admin/translations'],
+                            ],
+                        ],
+                        [
+                            'label' => 'System',
+                            'items' => [
+                                ['label' => 'Audit Logs', 'icon' => 'file-text', 'url' => '/admin/audit-logs'],
+                                ['label' => 'Notifications', 'icon' => 'megaphone', 'url' => '/admin/notifications'],
+                                ['label' => 'Contact Inquiries', 'icon' => 'inbox', 'url' => '/admin/contact-inquiries'],
+                            ],
+                        ],
                     ];
                 @endphp
 
-                @foreach($adminNavItems as $item)
-                    @php
-                        $isActive = request()->is(ltrim($item['url'], '/')) || (request()->is('admin') && $item['url'] === '/admin');
-                    @endphp
-                    <a href="{{ $item['url'] }}" wire:navigate 
-                       class="flex items-center px-4 py-2.5 rounded-lg border text-sm transition-all duration-150 group
-                       {{ $isActive 
-                          ? 'bg-indigo-600/15 border-indigo-500/20 text-indigo-300 font-semibold shadow-[inset_0_0_8px_rgba(99,102,241,0.05)]' 
-                          : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 hover:border-slate-800' }}">
-                        <i data-lucide="{{ $item['icon'] }}" class="w-4 h-4 mr-3 transition-colors {{ $isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-300' }}"></i>
-                        <span>{{ $item['label'] }}</span>
-                    </a>
+                @foreach($adminNavSections as $section)
+                    <div class="{{ $loop->first ? '' : 'pt-4' }}">
+                        <p class="px-4 pb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600">{{ $section['label'] }}</p>
+                        <div class="space-y-1.5">
+                            @foreach($section['items'] as $item)
+                                @php
+                                    $itemPath = parse_url($item['url'], PHP_URL_PATH) ?: $item['url'];
+                                    $isActive = request()->is(ltrim($itemPath, '/')) || (request()->is('admin') && $itemPath === '/admin');
+                                    if ($itemPath === '/admin/cms') {
+                                        $isActive = request()->is('admin/cms');
+                                    }
+                                @endphp
+                                <a href="{{ $item['url'] }}" wire:navigate
+                                   class="flex items-center px-4 py-2.5 rounded-lg border text-sm transition-all duration-150 group
+                                   {{ $isActive
+                                      ? 'bg-indigo-600/15 border-indigo-500/20 text-indigo-300 font-semibold shadow-[inset_0_0_8px_rgba(99,102,241,0.05)]'
+                                      : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 hover:border-slate-800' }}">
+                                    <i data-lucide="{{ $item['icon'] }}" class="w-4 h-4 mr-3 transition-colors {{ $isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-300' }}"></i>
+                                    <span>{{ $item['label'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
                 @endforeach
             </nav>
 
@@ -208,19 +238,30 @@
                 </button>
             </div>
             
-            <nav class="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto">
-                @foreach($adminNavItems as $item)
-                    @php
-                        $isActive = request()->is(ltrim($item['url'], '/')) || (request()->is('admin') && $item['url'] === '/admin');
-                    @endphp
-                    <a href="{{ $item['url'] }}" wire:navigate 
-                       class="flex items-center px-4 py-2.5 rounded-lg border text-sm transition-all duration-150
-                       {{ $isActive 
-                          ? 'bg-indigo-600/15 border-indigo-500/20 text-indigo-300 font-semibold' 
-                          : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 hover:border-slate-800' }}">
-                        <i data-lucide="{{ $item['icon'] }}" class="w-4 h-4 mr-3"></i>
-                        <span>{{ $item['label'] }}</span>
-                    </a>
+            <nav class="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
+                @foreach($adminNavSections as $section)
+                    <div>
+                        <p class="px-4 pb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600">{{ $section['label'] }}</p>
+                        <div class="space-y-1.5">
+                            @foreach($section['items'] as $item)
+                                @php
+                                    $itemPath = parse_url($item['url'], PHP_URL_PATH) ?: $item['url'];
+                                    $isActive = request()->is(ltrim($itemPath, '/')) || (request()->is('admin') && $itemPath === '/admin');
+                                    if ($itemPath === '/admin/cms') {
+                                        $isActive = request()->is('admin/cms');
+                                    }
+                                @endphp
+                                <a href="{{ $item['url'] }}" wire:navigate
+                                   class="flex items-center px-4 py-2.5 rounded-lg border text-sm transition-all duration-150
+                                   {{ $isActive
+                                      ? 'bg-indigo-600/15 border-indigo-500/20 text-indigo-300 font-semibold'
+                                      : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 hover:border-slate-800' }}">
+                                    <i data-lucide="{{ $item['icon'] }}" class="w-4 h-4 mr-3"></i>
+                                    <span>{{ $item['label'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
                 @endforeach
             </nav>
 

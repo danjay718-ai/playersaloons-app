@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
-use App\Modules\CMS\Models\CmsPage;
-use App\Modules\CMS\Models\CmsPageTranslation;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Models\LandingSectionItem;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\CMS\Models\PublicNavigationItem;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\WithPagination;
@@ -22,6 +19,18 @@ class CmsAdmin extends AdminComponent
     use WithPagination;
 
     public string $tab = 'games'; // games | pages | platforms | landing | navigation
+
+    public function mount(?string $section = null): void
+    {
+        $this->tab = $this->resolveTab($section);
+
+        if ($this->tab === 'landing') {
+            $firstSection = LandingSection::query()->orderBy('sort_order')->first();
+            if ($firstSection) {
+                $this->selectLandingSection((int) $firstSection->id);
+            }
+        }
+    }
 
     // Game modals / forms
     public bool $showGameModal = false;
@@ -47,23 +56,10 @@ class CmsAdmin extends AdminComponent
 
     // Delete confirmation modal
     public bool $showDeleteModal = false;
+
     public ?int $deleteTargetId = null;
+
     public string $deleteTargetType = ''; // 'platform' or 'page'
-
-    // Page modals / forms
-    public bool $showPageModal = false;
-
-    public ?int $selectedPageId = null;
-
-    public bool $isPageEdit = false;
-
-    public string $pageSlug = '';
-
-    public string $pageTitle = '';
-
-    public string $pageContent = '';
-
-    public string $pageLocale = 'en';
 
     // Landing page forms
     public ?int $selectedLandingSectionId = null;
@@ -144,6 +140,17 @@ class CmsAdmin extends AdminComponent
         }
     }
 
+    private function resolveTab(?string $section): string
+    {
+        return match ($section) {
+            'landing' => 'landing',
+            'games' => 'games',
+            'platforms' => 'platforms',
+            'navigation' => 'navigation',
+            default => 'games',
+        };
+    }
+
     public function confirmDelete(string $type, int $id): void
     {
         $this->deleteTargetType = $type;
@@ -153,12 +160,12 @@ class CmsAdmin extends AdminComponent
 
     public function executeDelete(): void
     {
-        if (!$this->deleteTargetId) return;
+        if (! $this->deleteTargetId) {
+            return;
+        }
 
         if ($this->deleteTargetType === 'platform') {
             $this->deletePlatform($this->deleteTargetId);
-        } elseif ($this->deleteTargetType === 'page') {
-            $this->deletePage($this->deleteTargetId);
         } elseif ($this->deleteTargetType === 'navigation') {
             $this->deleteNavigationItem($this->deleteTargetId);
         }
@@ -253,7 +260,7 @@ class CmsAdmin extends AdminComponent
     {
         $this->selectedGameId = $gameId;
         $game = Game::findOrFail($gameId);
-        /** @var \App\Modules\CMS\Models\GameTranslation|null $translation */
+        /** @var GameTranslation|null $translation */
         $translation = $game->translations()->where('locale', $this->gameLocale)->first();
 
         $this->gameName = $translation !== null ? $translation->name : '';
@@ -290,89 +297,6 @@ class CmsAdmin extends AdminComponent
 
         session()->flash('success', 'Game translation saved successfully.');
         $this->showGameModal = false;
-    }
-
-    // --- CMS PAGE ACTIONS ---
-    public function openCreatePageModal(): void
-    {
-        $this->selectedPageId = null;
-        $this->isPageEdit = false;
-        $this->pageSlug = '';
-        $this->pageTitle = '';
-        $this->pageContent = '';
-        $this->pageLocale = 'en';
-        $this->showPageModal = true;
-    }
-
-    public function openEditPageModal(int $id): void
-    {
-        $this->selectedPageId = $id;
-        $this->isPageEdit = true;
-        $page = CmsPage::findOrFail($id);
-        /** @var \App\Modules\CMS\Models\CmsPageTranslation|null $translation */
-        $translation = $page->translations()->where('locale', $this->pageLocale)->first();
-
-        $this->pageSlug = $page->slug;
-        $this->pageTitle = $translation !== null ? $translation->title : '';
-        $this->pageContent = $translation !== null ? $translation->content : '';
-        $this->showPageModal = true;
-    }
-
-    public function saveCmsPage(): void
-    {
-        $this->validate([
-            'pageSlug' => 'required|string|max:150|alpha_dash',
-            'pageTitle' => 'required|string|max:255',
-            'pageContent' => 'required|string',
-        ]);
-
-        $actor = Auth::user();
-        if (! $actor) {
-            return;
-        }
-
-        DB::transaction(function () use ($actor): void {
-            if ($this->isPageEdit && $this->selectedPageId) {
-                $page = CmsPage::findOrFail($this->selectedPageId);
-                $page->update([
-                    'slug' => $this->pageSlug,
-                ]);
-            } else {
-                $page = CmsPage::create([
-                    'uuid' => Str::uuid()->toString(),
-                    'slug' => $this->pageSlug,
-                    'created_by' => $actor->id,
-                ]);
-                $this->selectedPageId = (int) $page->id;
-            }
-
-            CmsPageTranslation::updateOrCreate([
-                'page_id' => $this->selectedPageId,
-                'locale' => $this->pageLocale,
-            ], [
-                'title' => $this->pageTitle,
-                'content' => $this->pageContent,
-            ]);
-        });
-
-        session()->flash('success', 'CMS page saved successfully.');
-        $this->showPageModal = false;
-    }
-
-    public function publishPage(int $id): void
-    {
-        $page = CmsPage::findOrFail($id);
-        $page->update(['published_at' => now()]);
-
-        session()->flash('success', 'CMS page published successfully.');
-    }
-
-    public function deletePage(int $id): void
-    {
-        $page = CmsPage::findOrFail($id);
-        $page->delete();
-
-        session()->flash('success', 'CMS page deleted.');
     }
 
     public function selectLandingSection(int $sectionId): void
@@ -593,25 +517,33 @@ class CmsAdmin extends AdminComponent
 
     public function render()
     {
-        $games = Game::with('translations')->paginate(10, ['*'], 'games_page');
-        $pages = CmsPage::with('translations')->paginate(10, ['*'], 'pages_page');
-        $platforms = Platform::paginate(10, ['*'], 'platforms_page');
-        $landingSections = LandingSection::query()
-            ->with('items')
-            ->orderBy('sort_order')
-            ->get();
-        $publicNavigationItems = PublicNavigationItem::query()
-            ->orderBy('sort_order')
-            ->get();
+        $data = match ($this->tab) {
+            'platforms' => [
+                'platforms' => Platform::paginate(10, ['*'], 'platforms_page'),
+            ],
+            'landing' => [
+                'landingSections' => LandingSection::query()
+                    ->with('items')
+                    ->orderBy('sort_order')
+                    ->get(),
+            ],
+            'navigation' => [
+                'publicNavigationItems' => PublicNavigationItem::query()
+                    ->orderBy('sort_order')
+                    ->get(),
+            ],
+            default => [
+                'games' => Game::with('translations')->paginate(10, ['*'], 'games_page'),
+            ],
+        };
 
-        return view('livewire.admin.cms-admin', [
-            'games' => $games,
-            'pages' => $pages,
-            'platforms' => $platforms,
-            'landingSections' => $landingSections,
-            'publicNavigationItems' => $publicNavigationItems,
-        ])->layout('components.layouts.admin', [
-            'admin_title' => 'Games & Content Management System (CMS)',
+        return view('livewire.admin.cms-admin', $data)->layout('components.layouts.admin', [
+            'admin_title' => match ($this->tab) {
+                'platforms' => 'Platforms',
+                'landing' => 'Landing Page',
+                'navigation' => 'Public Navigation',
+                default => 'Games Catalog',
+            },
         ]);
     }
 }

@@ -173,16 +173,30 @@
                              x-data="{ 
                                 quill: null 
                              }" 
-                             @sync-quill.window="$wire.description = quill.root.innerHTML"
+                             @sync-quill.window="if (quill) { $wire.description = quill.root.innerHTML }"
                              x-init="
-                                quill = new Quill($refs.editor, {
-                                    theme: 'snow',
-                                    placeholder: 'Write a compelling description...',
-                                    modules: {
-                                        toolbar: [['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']]
+                                const bootDescriptionEditor = () => {
+                                    if (quill) {
+                                        return;
                                     }
-                                });
-                                quill.root.innerHTML = $wire.description;
+
+                                    if (typeof window.Quill === 'undefined') {
+                                        window.setTimeout(bootDescriptionEditor, 75);
+
+                                        return;
+                                    }
+
+                                    quill = new Quill($refs.editor, {
+                                        theme: 'snow',
+                                        placeholder: 'Write a compelling description...',
+                                        modules: {
+                                            toolbar: [['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']]
+                                        }
+                                    });
+                                    quill.root.innerHTML = $wire.description;
+                                };
+
+                                bootDescriptionEditor();
                              ">
                             <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Description <span class="text-red-500">*</span></label>
                             <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
@@ -195,16 +209,30 @@
                              x-data="{ 
                                 quill: null 
                              }" 
-                             @sync-quill.window="$wire.rules = quill.root.innerHTML"
+                             @sync-quill.window="if (quill) { $wire.rules = quill.root.innerHTML }"
                              x-init="
-                                quill = new Quill($refs.editor, {
-                                    theme: 'snow',
-                                    placeholder: 'Define tournament rules...',
-                                    modules: {
-                                        toolbar: [['bold', 'italic'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']]
+                                const bootRulesEditor = () => {
+                                    if (quill) {
+                                        return;
                                     }
-                                });
-                                quill.root.innerHTML = $wire.rules;
+
+                                    if (typeof window.Quill === 'undefined') {
+                                        window.setTimeout(bootRulesEditor, 75);
+
+                                        return;
+                                    }
+
+                                    quill = new Quill($refs.editor, {
+                                        theme: 'snow',
+                                        placeholder: 'Define tournament rules...',
+                                        modules: {
+                                            toolbar: [['bold', 'italic'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']]
+                                        }
+                                    });
+                                    quill.root.innerHTML = $wire.rules;
+                                };
+
+                                bootRulesEditor();
                              ">
                             <label class="block text-xs font-bold text-slate-400 uppercase mb-1 flex justify-between">
                                 <span>Rules <span class="text-red-500">*</span></span>
