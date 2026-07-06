@@ -99,7 +99,9 @@ services:
         value: public
 
       - key: MAIL_MAILER
-        value: smtp
+        value: failover
+      - key: RESEND_API_KEY
+        sync: false
       - key: MAIL_HOST
         sync: false
       - key: MAIL_PORT

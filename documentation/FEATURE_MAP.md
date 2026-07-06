@@ -115,7 +115,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Player loading states | `resources/js/app.js`, `resources/css/app.css`, `resources/views/components/layouts/dashboard.blade.php` | Disables Livewire submit buttons during submit and shows a game-style full-page loader for uncached player `wire:navigate` route changes; tab links are excluded and visited routes are cached in `sessionStorage` |
 | Player upload feedback | `resources/views/livewire/profile/profile-dashboard.blade.php` | Shows immediate selected-file feedback and Livewire upload progress for avatar and KYC document uploads |
 | Language switcher | `resources/views/components/localization/language-switcher.blade.php` | Reusable locale dropdown shown in guest/public, player, and admin shells; posts to `/language` and reads supported languages from `config/localization.php` |
-| Auth emails | `app/Notifications/Auth/*`, `resources/views/emails/auth/*` | Lightweight PlayerSaloons-branded verification and password reset emails with direct CTA and fallback URL |
+| Auth emails | `app/Notifications/Auth/*`, `resources/views/emails/auth/*`, `config/mail.php` | Lightweight PlayerSaloons-branded verification and password reset emails with direct CTA and fallback URL; delivered through Laravel `failover` using Resend, SMTP, then `log` |
 | Contact support | `app/Livewire/Community/ContactPage.php` | Guest/player support form linked from public footer and player navigation; stores account-linked inquiries when authenticated |
 
 ### Shared Public Layout Components

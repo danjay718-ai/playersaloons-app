@@ -1,6 +1,15 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-06 (v1.89) | **Branch**: `main`
+**Last Updated**: 2026-07-06 (v1.90) | **Branch**: `main`
+
+---
+
+## ✅ Resend Transactional Mail Failover (v1.90)
+
+- **Mail transport**: Added `resend/resend-php` and configured Laravel's `failover` mailer to try Resend first, then SMTP, then `log`.
+- **Environment config**: Added `RESEND_API_KEY` to local/production env examples and Render environment provisioning; production now defaults `MAIL_MAILER` to `failover`.
+- **Sender requirements**: Resend requires `MAIL_FROM_ADDRESS` to be a full email address on a verified domain, such as `noreply@mail.app-testing.website`.
+- **Verification**: `php artisan test tests/Feature/Auth/EmailDeliveryTest.php` passes, and a direct `Mail::mailer('resend')` test sent successfully using the verified domain sender.
 
 ---
 

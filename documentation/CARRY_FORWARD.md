@@ -27,6 +27,7 @@
 - Registration now requires policy acceptance and 18+ confirmation, records consent timestamps/IP/user agent, and stores optional newsletter/update opt-in without sending newsletters yet
 - New registrations must verify email through a signed email link before entering verified player routes; forgot password now sends real reset email links
 - Auth emails use lightweight PlayerSaloons-branded verification and password reset templates instead of Laravel defaults
+- Transactional mail now uses Laravel `failover` with Resend first, SMTP second, and `log` last; set `RESEND_API_KEY` and use a verified-domain `MAIL_FROM_ADDRESS`
 - Login, registration, password reset, and verification resend actions disable their buttons during submit to prevent repeated clicks
 - Contact inquiries are now live at `/contact` for guests/players and `/admin/contact-inquiries` for staff review, notes, resolve, and archive
 - Admin sidebar is grouped into Operations, CMS, and System; the CMS section contains Blog & News, Landing Page, Games, Platforms, Navigation, Policies, and Translations
@@ -45,7 +46,7 @@
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.89)
+## ✅ Natapos ngayong session (v1.30–v1.90)
 
 | Version | Item |
 |---|---|
@@ -109,6 +110,7 @@
 | v1.87 | WordPress-style Blog/News editor and dedicated content Livewire component |
 | v1.88 | CMS Body rich editor typing fix with guarded Quill initialization |
 | v1.89 | Restored Quill 1.3 admin editor compatibility and kept CMS Body fallback textarea |
+| v1.90 | Resend transactional mail failover |
 
 ---
 
