@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             PlatformSeeder::class,
             GamesTableSeeder::class,
+            GameTrailerStreamSeeder::class,
             PolicyPageSeeder::class,
             LandingPageSeeder::class,
             PublicNavigationSeeder::class,

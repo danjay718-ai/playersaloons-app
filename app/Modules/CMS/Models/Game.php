@@ -2,6 +2,8 @@
 
 namespace App\Modules\CMS\Models;
 
+use App\Modules\Stream\Models\StreamChannel;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -11,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $slug
  * @property string|null $banner_path
  * @property bool $is_active
+ * @property-read Collection<int, StreamChannel> $streamChannels
  */
 class Game extends Model
 {
@@ -46,6 +49,16 @@ class Game extends Model
     public function translations(): HasMany
     {
         return $this->hasMany(GameTranslation::class);
+    }
+
+    /**
+     * Get trailer/embed stream channels for the game.
+     *
+     * @return HasMany<StreamChannel, Game>
+     */
+    public function streamChannels(): HasMany
+    {
+        return $this->hasMany(StreamChannel::class);
     }
 
     public function translation(?string $locale = null): ?GameTranslation

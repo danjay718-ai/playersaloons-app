@@ -15,6 +15,9 @@
                 $wire.platform_id = data.platform_id || 0;
                 $wire.frequency = data.frequency || 'one-time';
                 $wire.team_size = data.team_size || 1;
+                $wire.youtube_stream_url = data.youtube_stream_url || null;
+                $wire.twitch_stream_url = data.twitch_stream_url || null;
+                $wire.facebook_stream_url = data.facebook_stream_url || null;
                 // Rich text will be handled by their respective components
             }
         }
@@ -29,7 +32,10 @@
             frequency: $wire.frequency,
             team_size: $wire.team_size,
             description: $wire.description,
-            rules: $wire.rules
+            rules: $wire.rules,
+            youtube_stream_url: $wire.youtube_stream_url,
+            twitch_stream_url: $wire.twitch_stream_url,
+            facebook_stream_url: $wire.facebook_stream_url
         };
         localStorage.setItem('tournament_draft', JSON.stringify(data));
     },
@@ -322,6 +328,32 @@
                             <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
                                 <i data-lucide="info" class="w-3 h-3 inline mr-1"></i>
                                 Acceptance wait is the time players have to join a match after it's ready. Result wait is the time allowed to submit scores.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-950/60 border border-slate-800 p-4 rounded-lg">
+                            <h4 class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-4 flex items-center">
+                                <i data-lucide="broadcast" class="w-4 h-4 mr-2"></i> Broadcast Embeds
+                            </h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">YouTube Stream URL</label>
+                                    <input type="url" wire:model="youtube_stream_url" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+                                    @error('youtube_stream_url') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Twitch Stream URL</label>
+                                    <input type="url" wire:model="twitch_stream_url" placeholder="https://www.twitch.tv/channelname" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+                                    @error('twitch_stream_url') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Facebook Live URL</label>
+                                    <input type="url" wire:model="facebook_stream_url" placeholder="https://www.facebook.com/.../videos/..." class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+                                    @error('facebook_stream_url') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
+                                Use public HTTPS stream URLs. PlayerSaloons embeds the provider player and keeps an external fallback link.
                             </p>
                         </div>
                     </div>

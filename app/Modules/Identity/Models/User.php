@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Models;
 
 use App\Modules\Community\Models\Notification;
+use App\Modules\Stream\Models\StreamChannel;
+use App\Modules\Wallet\Models\Wallet;
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
-use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
@@ -46,6 +47,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read UserProfile|null $profile
  * @property-read Collection<int, KycSubmission> $kycSubmissions
  * @property-read Collection<int, Notification> $notifications
+ * @property-read Collection<int, StreamChannel> $streamChannels
  */
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
@@ -147,6 +149,16 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Get the user's stream channels.
+     *
+     * @return HasMany<StreamChannel, $this>
+     */
+    public function streamChannels(): HasMany
+    {
+        return $this->hasMany(StreamChannel::class);
     }
 
     /**

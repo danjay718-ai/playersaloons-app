@@ -114,6 +114,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/tournaments/create', TournamentForm::class)->name('admin.tournaments.create');
         Route::get('/tournaments/{id}/edit', TournamentForm::class)->name('admin.tournaments.edit');
         Route::get('/matches', MatchAdmin::class);
+        Route::get('/streams', StreamList::class)->name('admin.streams');
         Route::get('/kyc', KycAdmin::class);
         Route::get('/kyc/document/{path}', function (string $path) {
             $user = Auth::user();

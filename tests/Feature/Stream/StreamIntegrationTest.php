@@ -1,0 +1,320 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Stream;
+
+use App\Livewire\Admin\TournamentForm;
+use App\Livewire\Stream\StreamList;
+use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\Platform;
+use App\Modules\Identity\Models\User;
+use App\Modules\Stream\Models\StreamChannel;
+use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\TournamentStatus;
+use App\Shared\Enums\UserStatus;
+use Database\Seeders\GamesTableSeeder;
+use Database\Seeders\GameTrailerStreamSeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Livewire\Livewire;
+use Tests\TestCase;
+
+class StreamIntegrationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $admin;
+
+    private User $player;
+
+    private Game $game;
+
+    private Platform $platform;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['app.url' => 'https://app-testing.website']);
+
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $this->admin = $this->createUserWithRole('ADMIN', 'stream-admin@example.com');
+        $this->player = $this->createUserWithRole('PLAYER', 'stream-player@example.com');
+
+        $this->game = Game::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'slug' => 'stream-game',
+            'is_active' => true,
+        ]);
+
+        $this->game->translations()->create([
+            'locale' => 'en',
+            'name' => 'Stream Game',
+            'description' => 'A game with tournament streams.',
+        ]);
+
+        $this->platform = Platform::query()->create([
+            'name' => 'PC',
+            'slug' => 'pc',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_admin_can_save_supported_stream_urls_on_tournament(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(TournamentForm::class)
+            ->set('name', 'Broadcast Cup')
+            ->set('game_id', $this->game->id)
+            ->set('platform_id', $this->platform->id)
+            ->set('description', 'A tournament with supported broadcast embeds.')
+            ->set('rules', '<ul><li>Follow the rules.</li></ul>')
+            ->set('frequency', 'one-time')
+            ->set('team_size', 1)
+            ->set('waiting_result_time', 10)
+            ->set('entry_fee', '0.00')
+            ->set('prize_pool', '150.00')
+            ->set('min_participants', 4)
+            ->set('max_participants', 16)
+            ->set('registration_open_at', now()->addMinutes(5)->format('Y-m-d\TH:i'))
+            ->set('registration_close_at', now()->addHours(1)->format('Y-m-d\TH:i'))
+            ->set('checkin_open_at', now()->addHours(2)->format('Y-m-d\TH:i'))
+            ->set('checkin_close_at', now()->addHours(3)->format('Y-m-d\TH:i'))
+            ->set('start_at', now()->addHours(4)->format('Y-m-d\TH:i'))
+            ->set('youtube_stream_url', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+            ->set('twitch_stream_url', 'https://www.twitch.tv/player_saloons')
+            ->set('facebook_stream_url', 'https://www.facebook.com/player.saloons/videos/123456789')
+            ->call('saveTournament')
+            ->assertHasNoErrors();
+
+        $tournament = Tournament::query()->where('name', 'Broadcast Cup')->firstOrFail();
+
+        $this->assertDatabaseHas('stream_channels', [
+            'tournament_id' => $tournament->id,
+            'user_id' => null,
+            'provider' => 'youtube',
+            'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        ]);
+        $this->assertDatabaseHas('stream_channels', [
+            'tournament_id' => $tournament->id,
+            'provider' => 'twitch',
+            'source_url' => 'https://www.twitch.tv/player_saloons',
+        ]);
+        $this->assertDatabaseHas('stream_channels', [
+            'tournament_id' => $tournament->id,
+            'provider' => 'facebook',
+            'source_url' => 'https://www.facebook.com/player.saloons/videos/123456789',
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'causer_id' => $this->admin->id,
+            'subject_type' => Tournament::class,
+            'subject_id' => $tournament->id,
+            'description' => 'tournament_stream_created',
+        ]);
+    }
+
+    public function test_admin_stream_url_validation_rejects_wrong_provider_urls(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(TournamentForm::class)
+            ->set('platform_id', $this->platform->id)
+            ->set('frequency', 'one-time')
+            ->set('team_size', 1)
+            ->set('waiting_result_time', 10)
+            ->set('youtube_stream_url', 'https://www.twitch.tv/player_saloons')
+            ->call('validateStep', 2)
+            ->assertHasErrors(['youtube_stream_url']);
+    }
+
+    public function test_streams_page_and_tournament_detail_render_embeds(): void
+    {
+        $tournament = $this->createStreamedTournament([
+            'status' => TournamentStatus::ONGOING,
+            'youtube_stream_url' => 'https://youtu.be/dQw4w9WgXcQ',
+            'twitch_stream_url' => 'https://www.twitch.tv/player_saloons',
+        ]);
+
+        $this->actingAs($this->player)
+            ->get('/streams')
+            ->assertOk()
+            ->assertSee('Player Streams')
+            ->assertSee('https://www.youtube.com/embed/dQw4w9WgXcQ', false)
+            ->assertSee('https://player.twitch.tv/?channel=player_saloons&amp;parent=app-testing.website', false)
+            ->assertSee($tournament->name);
+
+        $this->actingAs($this->player)
+            ->get('/tournaments/'.$tournament->uuid.'/view')
+            ->assertOk()
+            ->assertSee('LIVE BROADCAST')
+            ->assertSee('https://www.youtube.com/embed/dQw4w9WgXcQ', false);
+    }
+
+    public function test_player_can_publish_stream_and_other_players_can_view_it(): void
+    {
+        Livewire::actingAs($this->player)
+            ->test(StreamList::class)
+            ->set('streamTitle', 'Road to Finals')
+            ->set('twitch_stream_url', 'https://www.twitch.tv/player_saloons')
+            ->set('is_public', true)
+            ->call('savePlayerStream')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('stream_channels', [
+            'user_id' => $this->player->id,
+            'title' => 'Road to Finals',
+            'provider' => 'twitch',
+            'source_url' => 'https://www.twitch.tv/player_saloons',
+            'is_public' => true,
+            'taken_down_at' => null,
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'causer_id' => $this->player->id,
+            'subject_type' => StreamChannel::class,
+            'description' => 'stream_created',
+        ]);
+
+        $viewer = $this->createUserWithRole('PLAYER', 'viewer@example.com');
+
+        $this->actingAs($viewer)
+            ->get('/streams')
+            ->assertOk()
+            ->assertSee('Road to Finals')
+            ->assertSee($this->player->username)
+            ->assertSee('https://player.twitch.tv/?channel=player_saloons&amp;parent=app-testing.website', false);
+    }
+
+    public function test_admin_can_take_down_and_restore_player_streams(): void
+    {
+        $playerStream = StreamChannel::query()->create([
+            'user_id' => $this->player->id,
+            'title' => 'Community Scrims',
+            'provider' => 'youtube',
+            'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'is_public' => true,
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(StreamList::class)
+            ->set('takedownReason', 'Invalid stream content')
+            ->call('takeDownPlayerStream', $playerStream->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('stream_channels', [
+            'id' => $playerStream->id,
+            'taken_down_by' => $this->admin->id,
+            'takedown_reason' => 'Invalid stream content',
+        ]);
+        $this->assertDatabaseHas('activity_log', [
+            'causer_id' => $this->admin->id,
+            'subject_type' => StreamChannel::class,
+            'subject_id' => $playerStream->id,
+            'description' => 'stream_taken_down',
+        ]);
+
+        $viewer = $this->createUserWithRole('PLAYER', 'viewer-two@example.com');
+
+        $this->actingAs($viewer)
+            ->get('/streams')
+            ->assertOk()
+            ->assertDontSee('Community Scrims');
+
+        Livewire::actingAs($this->admin)
+            ->test(StreamList::class)
+            ->call('restorePlayerStream', $playerStream->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('stream_channels', [
+            'id' => $playerStream->id,
+            'taken_down_at' => null,
+            'taken_down_by' => null,
+            'takedown_reason' => null,
+        ]);
+    }
+
+    public function test_game_trailer_seeder_creates_sample_youtube_trailers(): void
+    {
+        $this->seed(GamesTableSeeder::class);
+        $this->seed(GameTrailerStreamSeeder::class);
+
+        $this->assertSame(5, StreamChannel::query()
+            ->whereNotNull('game_id')
+            ->where('provider', 'youtube')
+            ->count());
+
+        $this->assertDatabaseHas('stream_channels', [
+            'provider' => 'youtube',
+            'source_url' => 'https://www.youtube.com/watch?v=e_E9W2vsRbQ',
+        ]);
+
+        $this->actingAs($this->player)
+            ->get('/streams')
+            ->assertOk()
+            ->assertSee('Game Trailers')
+            ->assertSee('VALORANT Official Launch Cinematic Trailer');
+    }
+
+    private function createUserWithRole(string $role, string $email): User
+    {
+        $user = User::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'email' => $email,
+            'username' => Str::before($email, '@'),
+            'password' => bcrypt('password'),
+            'email_verified_at' => now(),
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $user->assignRole($role);
+
+        return $user;
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    private function createStreamedTournament(array $overrides = []): Tournament
+    {
+        $streamUrls = [
+            'youtube' => $overrides['youtube_stream_url'] ?? null,
+            'twitch' => $overrides['twitch_stream_url'] ?? null,
+            'facebook' => $overrides['facebook_stream_url'] ?? null,
+        ];
+
+        unset($overrides['youtube_stream_url'], $overrides['twitch_stream_url'], $overrides['facebook_stream_url']);
+
+        $tournament = Tournament::query()->create(array_merge([
+            'uuid' => Str::uuid()->toString(),
+            'game_id' => $this->game->id,
+            'name' => 'Live Stream Cup',
+            'slug' => 'live-stream-cup',
+            'status' => TournamentStatus::ONGOING,
+            'entry_fee' => '0.00',
+            'prize_pool' => '100.00',
+            'max_participants' => 16,
+            'min_participants' => 4,
+            'created_by' => $this->admin->id,
+            'registration_open_at' => now()->subDays(2),
+            'registration_close_at' => now()->subDay(),
+            'checkin_open_at' => now()->subHours(3),
+            'checkin_close_at' => now()->subHours(2),
+            'start_at' => now()->subHour(),
+        ], $overrides));
+
+        foreach ($streamUrls as $provider => $url) {
+            if (is_string($url)) {
+                StreamChannel::query()->create([
+                    'tournament_id' => $tournament->id,
+                    'provider' => $provider,
+                    'source_url' => $url,
+                    'title' => $tournament->name,
+                    'is_public' => true,
+                ]);
+            }
+        }
+
+        return $tournament;
+    }
+}

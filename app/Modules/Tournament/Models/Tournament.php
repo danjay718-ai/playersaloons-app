@@ -5,6 +5,7 @@ namespace App\Modules\Tournament\Models;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
+use App\Modules\Stream\Models\StreamChannel;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -47,6 +48,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property-read Collection|Bracket[] $brackets
  * @property-read TournamentCancellation|null $cancellation
  * @property-read Collection|TournamentRule[] $rules
+ * @property-read Collection<int, StreamChannel> $streamChannels
  * @property-read Collection|TournamentAnnouncement[] $announcements
  * @property-read User $creator
  */
@@ -160,6 +162,16 @@ class Tournament extends Model implements HasMedia
     public function registrations(): HasMany
     {
         return $this->hasMany(TournamentRegistration::class);
+    }
+
+    /**
+     * Get stream channels attached to this tournament.
+     *
+     * @return HasMany<StreamChannel, Tournament>
+     */
+    public function streamChannels(): HasMany
+    {
+        return $this->hasMany(StreamChannel::class);
     }
 
     /**

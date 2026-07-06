@@ -68,6 +68,7 @@
                                 ['label' => 'Dashboard', 'icon' => 'layout-dashboard', 'url' => '/admin'],
                                 ['label' => 'Tournaments', 'icon' => 'trophy', 'url' => '/admin/tournaments'],
                                 ['label' => 'Matches & Disputes', 'icon' => 'swords', 'url' => '/admin/matches'],
+                                ['label' => 'Streams', 'icon' => 'tv', 'url' => '/admin/streams'],
                                 ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc'],
                                 ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals'],
                                 ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users'],

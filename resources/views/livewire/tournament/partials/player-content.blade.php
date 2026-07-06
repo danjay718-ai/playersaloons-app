@@ -198,6 +198,57 @@
         <!-- Overview Tab -->
         <div x-show="activeTab === 'overview'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 lg:grid-cols-3 gap-10">
             <div class="lg:col-span-2 space-y-10">
+                @php
+                    $streamItems = $streamService->streamsForTournament($tournament);
+                    $streamStatus = $streamService->statusLabel($tournament);
+                @endphp
+
+                @if(count($streamItems) > 0)
+                    <section class="space-y-6">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
+                                <span class="w-1.5 h-8 bg-rose-500 rounded-full"></span>
+                                <span>LIVE BROADCAST</span>
+                            </h2>
+                            <span class="w-fit rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest {{ $streamStatus['class'] }}">
+                                {{ $streamStatus['label'] }}
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-6">
+                            @foreach($streamItems as $stream)
+                                <div class="overflow-hidden rounded-[2rem] border border-zinc-800/80 bg-zinc-950/70 shadow-2xl">
+                                    <div class="aspect-video bg-black">
+                                        <iframe
+                                            class="h-full w-full"
+                                            src="{{ $stream['embed_url'] }}"
+                                            title="{{ $tournament->name }} {{ $stream['label'] }} stream"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share; fullscreen"
+                                            allowfullscreen
+                                            loading="lazy"
+                                            referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                                    </div>
+                                    <div class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-cyan-300">
+                                                <i data-lucide="{{ $stream['icon'] }}" class="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500">Streaming on</p>
+                                                <p class="text-sm font-black uppercase tracking-widest text-white">{{ $stream['label'] }}</p>
+                                            </div>
+                                        </div>
+                                        <a href="{{ $stream['url'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-300 transition hover:border-zinc-600 hover:text-white">
+                                            <span>Open on {{ $stream['label'] }}</span>
+                                            <i data-lucide="external-link" class="w-4 h-4"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+
                 <section class="space-y-6">
                     <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
                         <span class="w-1.5 h-8 bg-cyan-500 rounded-full"></span>

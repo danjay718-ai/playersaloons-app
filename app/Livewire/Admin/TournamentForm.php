@@ -6,9 +6,12 @@ namespace App\Livewire\Admin;
 
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
+use App\Modules\Stream\Models\StreamChannel;
+use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Tournament\Actions\CreateTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
+use Closure;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithFileUploads;
 
@@ -17,34 +20,64 @@ class TournamentForm extends AdminComponent
     use WithFileUploads;
 
     public bool $isEditMode = false;
+
     public bool $isLocked = false;
+
     public ?int $tournamentId = null;
+
     public int $step = 1;
 
     // Form fields
     public string $name = '';
+
     public int $game_id = 0;
+
     public int $max_participants = 16;
+
     public int $min_participants = 4;
+
     public string $entry_fee = '0.00';
+
     public string $prize_pool = '0.00';
+
     public string $registration_open_at = '';
+
     public string $registration_close_at = '';
+
     public string $checkin_open_at = '';
+
     public string $checkin_close_at = '';
+
     public string $start_at = '';
 
     public string $description = '';
+
     public string $rules = '';
+
     public ?int $platform_id = null;
+
     public string $frequency = 'daily';
+
     public ?int $waiting_time = null;
+
     public ?int $waiting_result_time = null;
+
     public int $team_size = 1;
+
     public ?string $prize_1st = null;
+
     public ?string $prize_2nd = null;
+
     public ?string $prize_3rd = null;
+
     public ?int $winning_points = null;
+
+    public ?string $youtube_stream_url = null;
+
+    public ?string $twitch_stream_url = null;
+
+    public ?string $facebook_stream_url = null;
+
     public $banner;
 
     public function mount(?int $id = null): void
@@ -65,6 +98,7 @@ class TournamentForm extends AdminComponent
             if (in_array($tournament->status, [TournamentStatus::COMPLETED, TournamentStatus::CANCELLED, TournamentStatus::REFUNDED])) {
                 session()->flash('error', 'Completed or cancelled tournaments cannot be edited.');
                 $this->redirect('/admin/tournaments', navigate: true);
+
                 return;
             }
 
@@ -91,8 +125,12 @@ class TournamentForm extends AdminComponent
             $this->prize_2nd = $tournament->prize_2nd !== null ? (string) $tournament->prize_2nd : null;
             $this->prize_3rd = $tournament->prize_3rd !== null ? (string) $tournament->prize_3rd : null;
             $this->winning_points = $tournament->winning_points;
+            $streamChannels = $tournament->streamChannels()->get()->keyBy('provider');
+            $this->youtube_stream_url = $streamChannels->get('youtube')?->source_url;
+            $this->twitch_stream_url = $streamChannels->get('twitch')?->source_url;
+            $this->facebook_stream_url = $streamChannels->get('facebook')?->source_url;
         } else {
-            /** @var \App\Modules\CMS\Models\Game|null $firstGame */
+            /** @var Game|null $firstGame */
             $firstGame = Game::first();
             $this->game_id = $firstGame !== null ? $firstGame->id : 0;
             $this->frequency = 'one-time';
@@ -101,12 +139,12 @@ class TournamentForm extends AdminComponent
 
     protected function getDefaultRules(): string
     {
-        return "<ul><li>Respect all players and admins.</li><li>Ensure a stable internet connection.</li><li>Check-in is required 15 mins before start.</li><li>Disputes must be submitted with screenshots.</li><li>Unsportsmanlike behavior will result in disqualification.</li></ul>";
+        return '<ul><li>Respect all players and admins.</li><li>Ensure a stable internet connection.</li><li>Check-in is required 15 mins before start.</li><li>Disputes must be submitted with screenshots.</li><li>Unsportsmanlike behavior will result in disqualification.</li></ul>';
     }
 
     public function validateStep(int $step): bool
     {
-        $rules = match($step) {
+        $rules = match ($step) {
             1 => [
                 'name' => 'required|string|max:255',
                 'game_id' => 'required|exists:games,id',
@@ -119,6 +157,9 @@ class TournamentForm extends AdminComponent
                 'team_size' => 'required|integer|min:1',
                 'winning_points' => 'nullable|integer|min:0',
                 'waiting_result_time' => 'required|integer|min:1',
+                'youtube_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('youtube')],
+                'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
+                'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
             ],
             3 => [
                 'registration_open_at' => 'required|date',
@@ -168,6 +209,9 @@ class TournamentForm extends AdminComponent
             'prize_2nd' => 'nullable|numeric|min:0',
             'prize_3rd' => 'nullable|numeric|min:0',
             'winning_points' => 'nullable|integer|min:0',
+            'youtube_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('youtube')],
+            'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
+            'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
             'banner' => 'nullable|image|max:2048', // Max 2MB image
         ]);
 
@@ -203,41 +247,128 @@ class TournamentForm extends AdminComponent
 
         if ($this->banner) {
             $path = $this->banner->store('tournaments', 'public');
-            $data['banner_url'] = '/storage/' . $path;
+            $data['banner_url'] = '/storage/'.$path;
         }
 
         if ($this->isEditMode && $this->tournamentId) {
             $tournament = Tournament::findOrFail($this->tournamentId);
-            
+
             // Re-verify strictly final statuses
             if (in_array($tournament->status, [TournamentStatus::COMPLETED, TournamentStatus::CANCELLED, TournamentStatus::REFUNDED])) {
                 session()->flash('error', 'Completed or cancelled tournaments cannot be edited.');
+
                 return;
             }
 
             // If locked, filter out sensitive fields to ensure they are NOT updated
             if ($tournament->status !== TournamentStatus::DRAFT) {
                 unset(
-                    $data['game_id'], 
-                    $data['entry_fee'], 
-                    $data['prize_pool'], 
-                    $data['max_participants'], 
-                    $data['min_participants'], 
-                    $data['team_size'], 
-                    $data['platform_id'], 
+                    $data['game_id'],
+                    $data['entry_fee'],
+                    $data['prize_pool'],
+                    $data['max_participants'],
+                    $data['min_participants'],
+                    $data['team_size'],
+                    $data['platform_id'],
                     $data['frequency'],
                     $data['winning_points']
                 );
             }
 
             $tournament->update($data);
+            $this->syncTournamentStreamChannels($tournament);
             session()->flash('success', 'Tournament updated successfully.');
         } else {
-            $createAction->execute($data, $creator);
+            $tournament = $createAction->execute($data, $creator);
+            $this->syncTournamentStreamChannels($tournament);
             session()->flash('success', 'Tournament created successfully.');
         }
 
         $this->redirect('/admin/tournaments', navigate: true);
+    }
+
+    private function streamUrlRule(string $provider): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($provider): void {
+            if (! app(StreamEmbedService::class)->isValidProviderUrl($provider, is_string($value) ? $value : null)) {
+                $fail('The '.$attribute.' must be a valid supported '.$provider.' stream URL.');
+            }
+        };
+    }
+
+    private function nullableUrl(?string $url): ?string
+    {
+        $url = is_string($url) ? trim($url) : '';
+
+        return $url === '' ? null : $url;
+    }
+
+    private function syncTournamentStreamChannels(Tournament $tournament): void
+    {
+        $this->syncTournamentStreamChannel($tournament, 'youtube', $this->youtube_stream_url);
+        $this->syncTournamentStreamChannel($tournament, 'twitch', $this->twitch_stream_url);
+        $this->syncTournamentStreamChannel($tournament, 'facebook', $this->facebook_stream_url);
+    }
+
+    private function syncTournamentStreamChannel(Tournament $tournament, string $provider, ?string $url): void
+    {
+        $actor = Auth::user();
+        $url = $this->nullableUrl($url);
+        $existing = StreamChannel::query()
+            ->where('tournament_id', $tournament->getKey())
+            ->whereNull('user_id')
+            ->where('provider', $provider)
+            ->first();
+
+        if ($url === null) {
+            if ($existing !== null) {
+                $properties = [
+                    'provider' => $existing->provider,
+                    'source_url' => $existing->source_url,
+                    'tournament_id' => $tournament->getKey(),
+                ];
+
+                $existing->delete();
+
+                activity()
+                    ->causedBy($actor)
+                    ->performedOn($tournament)
+                    ->withProperties($properties)
+                    ->log('tournament_stream_removed');
+            }
+
+            return;
+        }
+
+        $streamChannel = $existing ?? new StreamChannel([
+            'tournament_id' => $tournament->getKey(),
+            'provider' => $provider,
+        ]);
+
+        $streamChannel->fill([
+            'source_url' => $url,
+            'title' => $tournament->name,
+            'is_public' => true,
+        ]);
+
+        $changes = $streamChannel->getDirty();
+
+        if ($changes === []) {
+            return;
+        }
+
+        $isNew = ! $streamChannel->exists;
+        $streamChannel->save();
+
+        activity()
+            ->causedBy($actor)
+            ->performedOn($tournament)
+            ->withProperties([
+                'provider' => $provider,
+                'stream_channel_id' => $streamChannel->getKey(),
+                'changes' => $changes,
+            ])
+            ->log($isNew ? 'tournament_stream_created' : 'tournament_stream_updated');
     }
 
     public function render()

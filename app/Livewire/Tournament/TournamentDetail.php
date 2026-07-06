@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Livewire\Tournament;
 
+use App\Modules\Match\Models\GameMatch;
+use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentCheckin;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Shared\Enums\CheckinStatus;
+use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
@@ -29,7 +32,7 @@ class TournamentDetail extends Component
     public function mount(string $uuid): void
     {
         $this->uuid = $uuid;
-        
+
         $user = Auth::user();
         if ($user && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
             $this->layout = 'components.layouts.admin';
@@ -55,6 +58,7 @@ class TournamentDetail extends Component
 
         if (! Auth::user()->hasRole('PLAYER')) {
             session()->flash('error', 'Only players can join tournaments.');
+
             return;
         }
 
@@ -86,7 +90,7 @@ class TournamentDetail extends Component
         }
     }
 
-    public function render()
+    public function render(StreamEmbedService $streamService)
     {
         $tournament = $this->getTournamentQuery()
             ->where('uuid', $this->uuid)
@@ -99,6 +103,7 @@ class TournamentDetail extends Component
                 'brackets.rounds.matches.playerARegistration.user',
                 'brackets.rounds.matches.playerBRegistration.user',
                 'brackets.rounds.matches.winnerRegistration.user',
+                'streamChannels',
             ])
             ->firstOrFail();
 
@@ -126,12 +131,12 @@ class TournamentDetail extends Component
 
         $hasLost = false;
         if ($user && $userRegistration) {
-            $hasLost = \App\Modules\Match\Models\GameMatch::where('tournament_id', $tournament->id)
+            $hasLost = GameMatch::where('tournament_id', $tournament->id)
                 ->where(function ($query) use ($userRegistration) {
                     $query->where('player_a_registration_id', $userRegistration->id)
-                          ->orWhere('player_b_registration_id', $userRegistration->id);
+                        ->orWhere('player_b_registration_id', $userRegistration->id);
                 })
-                ->whereIn('status', [\App\Shared\Enums\MatchStatus::COMPLETED, \App\Shared\Enums\MatchStatus::FORFEITED])
+                ->whereIn('status', [MatchStatus::COMPLETED, MatchStatus::FORFEITED])
                 ->whereNotNull('winner_registration_id')
                 ->where('winner_registration_id', '!=', $userRegistration->id)
                 ->exists();
@@ -157,6 +162,7 @@ class TournamentDetail extends Component
             'rounds' => $rounds,
             'activityLogs' => $activityLogs,
             'hasLost' => $hasLost,
+            'streamService' => $streamService,
         ])->layout($this->layout, ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
     }
 }
