@@ -20,6 +20,9 @@ class CmsPage extends Model
     protected $fillable = [
         'uuid',
         'slug',
+        'type',
+        'featured_image_path',
+        'is_featured',
         'published_at',
         'created_by',
     ];
@@ -32,6 +35,7 @@ class CmsPage extends Model
     protected function casts(): array
     {
         return [
+            'is_featured' => 'boolean',
             'published_at' => 'datetime',
         ];
     }
@@ -62,6 +66,16 @@ class CmsPage extends Model
     public function localizedTitle(?string $locale = null): string
     {
         return $this->translation($locale)?->title ?? __('Untitled Page');
+    }
+
+    public function localizedExcerpt(?string $locale = null): ?string
+    {
+        return $this->translation($locale)?->excerpt;
+    }
+
+    public function isPublishedArticle(string $type): bool
+    {
+        return $this->type === $type && $this->published_at !== null;
     }
 
     /**

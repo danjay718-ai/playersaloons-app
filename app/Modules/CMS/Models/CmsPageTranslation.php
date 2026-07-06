@@ -16,6 +16,7 @@ class CmsPageTranslation extends Model
         'page_id',
         'locale',
         'title',
+        'excerpt',
         'content',
     ];
 
