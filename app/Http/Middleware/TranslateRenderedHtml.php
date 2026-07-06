@@ -65,10 +65,6 @@ final class TranslateRenderedHtml
         return str_contains(strtolower((string) $response->headers->get('Content-Type')), 'application/json');
     }
 
-    /**
-     * @param mixed $payload
-     * @return mixed
-     */
     private function translateLivewirePayload(mixed $payload): mixed
     {
         if (is_array($payload)) {
@@ -112,7 +108,7 @@ final class TranslateRenderedHtml
         return (string) preg_replace_callback(
             '/\b(placeholder|aria-label|title|alt)="([^"]*[[:alpha:]][^"]*)"/u',
             function (array $matches): string {
-                return $matches[1].'="'.e(__($matches[2]), false).'"';
+                return $matches[1].'="'.e($this->translateString($matches[2]), false).'"';
             },
             $content
         );
@@ -121,9 +117,20 @@ final class TranslateRenderedHtml
     private function translateTextNodes(string $content): string
     {
         return (string) preg_replace_callback(
-            '/>([^<]*[[:alpha:]][^<]*)</u',
+            '/(<(?:"[^"]*"|\'[^\']*\'|[^><])*>)|([^<]+)/u',
             function (array $matches): string {
-                $text = $matches[1];
+                // If it matched an HTML tag, return it untouched
+                if (!empty($matches[1])) {
+                    return $matches[1];
+                }
+
+                $text = $matches[2];
+                
+                // If there are no alphabetic characters, no need to translate
+                if (! preg_match('/[[:alpha:]]/u', $text)) {
+                    return $text;
+                }
+
                 preg_match('/^\s*/u', $text, $leadingMatch);
                 preg_match('/\s*$/u', $text, $trailingMatch);
                 $leading = $leadingMatch[0] ?? '';
@@ -134,9 +141,24 @@ final class TranslateRenderedHtml
                     return $matches[0];
                 }
 
-                return '>'.$leading.e(__($key), false).$trailing.'<';
+                return $leading.e($this->translateString($key), false).$trailing;
             },
             $content
         );
+    }
+
+    private function translateString(string $key): string
+    {
+        $translated = __($key);
+
+        if (is_string($translated)) {
+            return $translated;
+        }
+
+        if (is_scalar($translated)) {
+            return (string) $translated;
+        }
+
+        return $key;
     }
 }
