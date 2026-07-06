@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-05 (v1.81)
+**Status**: Active Backlog | **Last Updated**: 2026-07-05 (v1.82)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -86,7 +86,7 @@ These tests are identified but not yet implemented. Priority order within each s
 - [ ] Update file URL helpers from `/storage/{{ $path }}` → `Storage::disk('r2')->url($path)`
 
 ### CMS & Content
-- [ ] CMS Module — Blog/News pages
+- [x] CMS Module — Blog/News pages *(done v1.82)*
 - [ ] Translation Management Panel
 - [x] Notification Broadcast Panel (UI for `broadcast_messages` table — schema exists, UI missing) *(done v1.35)*
 - [x] Player notification bell UI — database-backed dropdown with realtime refresh *(done v1.36)*
@@ -105,4 +105,4 @@ These tests are identified but not yet implemented. Priority order within each s
 
 ### Financial
 - [ ] External Payout Integration — `PROCESSED` state is currently manual; no PayPal/Stripe Connect. **Deferred**: sandbox mode will use the existing manual payout workflow; full integration depends on final payout provider, account onboarding, supported regions, and compliance requirements.
-- [ ] `deposits.fee_amount` — field exists in DB and `$fillable`, but fee deduction not yet implemented
+- [ ] Deposit fee implementation — `deposits.fee_amount` field exists but is not active. **Deferred**: sandbox mode will ignore/absorb fees for now. Recommended production policy is to charge the processing fee on top of the desired wallet credit, clearly showing wallet credit, processing fee, and total charge before checkout.

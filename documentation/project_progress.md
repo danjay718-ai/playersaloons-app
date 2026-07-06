@@ -1,6 +1,78 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-05 (v1.81) | **Branch**: `main`
+**Last Updated**: 2026-07-06 (v1.89) | **Branch**: `main`
+
+---
+
+## ✅ Admin Rich Editor Compatibility Restore (v1.89)
+
+- **Quill compatibility**: Restored the existing Quill 1.3 admin CDN assets after the local Quill 2 bundle broke the tournament wizard and existing rich editors.
+- **CMS Body fallback**: Kept a typeable textarea fallback for Blog/News/Page Body while Quill is not ready, so the field remains editable during script initialization.
+- **Existing editors**: Guarded Policy and Tournament Quill initialization without changing their editor version or markup contract.
+- **Tests/build**: `npm run build` and `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php tests/Feature/Localization/LanguageSwitchTest.php` pass.
+
+---
+
+## ✅ CMS Body Rich Editor Typing Fix (v1.88)
+
+- **CMS content editor**: Fixed the Blog/News/Page Body editor so Quill initializes reliably before event handlers read `quill.root`.
+- **Livewire sync**: Scoped `wire:ignore` to the editor surface only and moved content selection/save synchronization into guarded Quill listeners.
+- **Editor styling**: Added CMS-local dark Quill styling so the body field has a visible editable area even when other admin rich editor pages are not loaded.
+- **Tests**: `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php tests/Feature/Localization/LanguageSwitchTest.php` passes.
+
+---
+
+## ✅ WordPress-Style Blog and News Editor (v1.87)
+
+- **`CmsContentAdmin`**: Split Blog/News/Page authoring into a dedicated Livewire component separate from the generic CMS manager.
+- **Content UI**: Replaced the modal authoring flow with a WordPress-style two-column layout: content library/list on the left, inline editor on the right.
+- **Rich editor**: Added Quill rich text editing for article body content.
+- **Featured image**: Replaced manual featured image path entry with Livewire image upload to public `articles` storage.
+- **`CmsAdmin` cleanup**: Removed old Blog/Page modal state and save logic from the generic CMS component so it now owns only Games, Platforms, Landing, and Navigation.
+- **Tests**: `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
+
+---
+
+## ✅ CMS Section Page Split (v1.86)
+
+- **CMS routes**: Changed CMS sidebar links from query-string tabs to real section URLs: `/admin/cms/content`, `/admin/cms/landing`, `/admin/cms/games`, `/admin/cms/platforms`, and `/admin/cms/navigation`.
+- **CMS UI**: Removed the cross-CMS tab bar from section pages so each sidebar item shows only its own management surface.
+- **Livewire render load**: Updated `CmsAdmin::render()` to query only the active section data instead of loading games, pages, platforms, landing sections, and navigation items on every CMS request.
+- **Tests**: Updated CMS coverage to assert the content page exposes Blog & News controls without the old tab buttons. `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
+
+---
+
+## ✅ Admin Sidebar Translation Crash Fix (v1.85)
+
+- **Admin sidebar**: Kept grouped sidebar labels as plain strings in the nav config to avoid array-valued translation results being echoed by Blade.
+- **`TranslateRenderedHtml`**: Added a safe translation fallback so rendered HTML translation keeps the original key if `__()` returns a non-scalar value.
+- **Tests**: `php artisan test tests/Feature/Localization/LanguageSwitchTest.php tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
+
+---
+
+## ✅ CMS Sidebar Grouping (v1.84)
+
+- **Admin sidebar**: Grouped admin navigation into Operations, CMS, and System sections.
+- **CMS section**: Moved Blog & News, Landing Page, Games, Platforms, Navigation, Policies, and Translations under one CMS sidebar section, using direct `/admin/cms?tab=...` links for existing CMS subsections.
+- **Tests**: Added coverage that `/admin/cms?tab=pages` exposes Blog & News controls. `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
+
+---
+
+## ✅ Blog and News Admin Visibility Fix (v1.83)
+
+- **Admin navigation**: Added a dedicated Blog & News sidebar item that opens `/admin/cms?tab=pages` directly.
+- **`CmsAdmin` UI**: Renamed the generic CMS Pages tab to Blog & News and added explicit Add Blog Post / Add News Article buttons while keeping generic CMS Page creation available.
+- **Tests**: `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
+
+---
+
+## ✅ CMS Blog and News Pages (v1.82)
+
+- **`cms_pages` / `cms_page_translations`**: Added article metadata for CMS page type (`page`, `blog`, `news`), featured image path, featured flag, and localized excerpts.
+- **Public routes**: Added `/blog`, `/blog/{slug}`, `/news`, and `/news/{slug}` with published-only listing/detail pages using the shared public landing shell.
+- **`CmsAdmin`**: Extended the CMS Pages tab so staff can create/edit normal pages, blog posts, and news articles from the existing `/admin/cms` workflow.
+- **Navigation**: Seeded Blog and News links into the editable public navigation.
+- **Tests**: `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
 
 ---
 
@@ -952,7 +1024,7 @@ Items where schema or stub exists but logic is missing:
 | `UserKycSubmitted` listener | ❌ Not started | Event dispatched but no listener registered. |
 | `deposits.fee_amount` | ❌ Not started | Field in DB and `$fillable`, but fee deduction not implemented. |
 | Broadcast Messages UI | ❌ Not started | `broadcast_messages` table exists, no admin UI. |
-| CMS Blog/News | ❌ Not started | — |
+| CMS Blog/News | ✅ Done v1.82 | Public `/blog` and `/news` listing/detail routes backed by `cms_pages`; authoring lives in `/admin/cms`. |
 | Compliance/Blacklisting | ❌ Not started | — |
 | Translation Management | ❌ Not started | — |
 | Streaming Integration | ❌ Not started | `twitch_stream_url`/`youtube_stream_url` in schema, no live integration. |

@@ -103,10 +103,28 @@ Monitoring admin actions across the platform.
     *   Top-10 actions summary across all staff in the period.
 
 ## 8. CMS & Landing Page Management
-Managing public content, game catalog labels, and the editable landing page.
+Managing public content, Blog/News articles, game catalog labels, and the editable landing page.
 
-*   **Route**: `/admin/cms`
-*   **UI Component**: `app/Livewire/Admin/CmsAdmin.php`
+*   **Route**: `/admin/cms/{section?}`
+*   **UI Components**:
+    *   `app/Livewire/Admin/CmsContentAdmin.php`: Blog, News, and static page authoring.
+    *   `app/Livewire/Admin/CmsAdmin.php`: Landing, Games, Platforms, and Navigation management.
+*   **Admin Sidebar Group**: CMS section contains Blog & News, Landing Page, Games, Platforms, Navigation, Policies, and Translations.
+*   **Admin Section Routes**:
+    *   `/admin/cms/content`: Blog, News, and generic CMS page authoring with a WordPress-style editor.
+    *   `/admin/cms/landing`: Landing page sections and landing section items.
+    *   `/admin/cms/games`: Game catalog labels, descriptions, landing banners, and active status.
+    *   `/admin/cms/platforms`: Platform rows and active status.
+    *   `/admin/cms/navigation`: Public navigation items.
+*   **Render Scope**: `CmsAdmin::render()` only loads data for the active section route to avoid rendering all CMS management surfaces on every request.
+*   **Public Blog/News Routes**:
+    *   `/blog`: Published CMS blog post listing.
+    *   `/blog/{slug}`: Published CMS blog post detail.
+    *   `/news`: Published CMS news article listing.
+    *   `/news/{slug}`: Published CMS news article detail.
+*   **CMS Page Tables**:
+    *   `cms_pages`: Stores slug, content type (`page`, `blog`, `news`), featured image path, featured flag, published timestamp, creator, and soft-delete state.
+    *   `cms_page_translations`: Stores localized title, excerpt, and HTML content.
 *   **Navigation Tables**:
     *   `public_navigation_items`: Stores editable public navbar links, visibility rules, icons, active match patterns, sort order, and status.
 *   **Landing Tables**:
@@ -124,6 +142,13 @@ Managing public content, game catalog labels, and the editable landing page.
 *   **Game Catalog Landing Fields**:
     *   `games.banner_path`: Optional image path used by the landing game carousel.
     *   `game_translations.description`: Editable game description shown on landing game cards.
+*   **Blog/News Workflow**:
+    *   Staff create or edit entries from `/admin/cms/content`.
+    *   Content type controls whether a published record appears under `/blog` or `/news`.
+    *   Draft records (`published_at = null`) and records of the wrong type are hidden from public article routes.
+    *   Featured records sort ahead of regular posts in public listings.
+    *   The editor uses Quill rich text and stores formatted HTML.
+    *   Featured images are uploaded through Livewire to the public `articles` storage path; admins no longer paste image paths manually.
 *   **Public Navigation Areas**:
     *   Desktop nav links come from active `public_navigation_items`.
     *   Mobile burger menu shows the same nav items plus the install action; guest Sign In / Join Now remain visible in the mobile topbar.
@@ -222,6 +247,8 @@ Managing support/contact messages submitted by guests and signed-in players.
     *   Assert admin can update section content and add landing cards/items.
 *   **Navigation CMS**: `test_admin_can_manage_public_navigation_items`
     *   Assert admin can create and toggle public navbar items.
+*   **Blog/News CMS**: `CMS/BlogNewsPageTest`
+    *   Assert admin can create a blog post with excerpt/featured metadata and public Blog/News routes show only published records of the correct type.
 *   **Dynamic Landing Render**: `test_landing_page_renders_seeded_content_video_and_games`
     *   Assert `/` renders seeded content, the video path, game catalog cards, and dynamic sections.
 *   **Policy Pages**: `CMS/PolicyPageTest`

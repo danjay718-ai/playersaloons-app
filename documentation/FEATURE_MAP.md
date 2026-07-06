@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-05 (v1.81)
+**Last Updated**: 2026-07-06 (v1.89)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -27,6 +27,10 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|---|
 | `GET /` | `app/Livewire/Landing/LandingPage.php` | Dynamic landing page backed by editable landing sections/items, horizontal active-game carousel with optional `games.banner_path` banners, live stats, and weekly top players |
 | `GET /tournaments` | `app/Livewire/Tournament/PublicTournamentList.php` | Public tournament listing |
+| `GET /blog` | `app/Livewire/CMS/BlogIndex.php` | Public Blog listing for published CMS blog posts |
+| `GET /blog/{slug}` | `app/Livewire/CMS/BlogArticleView.php` | Public Blog detail page for one published CMS blog post |
+| `GET /news` | `app/Livewire/CMS/NewsIndex.php` | Public News listing for published CMS news articles |
+| `GET /news/{slug}` | `app/Livewire/CMS/NewsArticleView.php` | Public News detail page for one published CMS news article |
 | `GET /policies` | `app/Livewire/Policies/PolicyIndex.php` | Public legal/policy index backed by `policy_pages` |
 | `GET /policies/{slug}` | `app/Livewire/Policies/PolicyPageView.php` | Public legal/policy detail page for active, published policy pages |
 | `GET /contact` | `app/Livewire/Community/ContactPage.php` | Public/player contact support form; guests use public layout and verified players use the player dashboard layout |
@@ -72,7 +76,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/withdrawals` | `app/Livewire/Admin/WithdrawalAdmin.php` | Review withdrawals + Four-eyes approval process |
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
 | `GET /admin/audit-logs` | `app/Livewire/Admin/AuditLogAdmin.php` | Spatie activity log viewer with filters |
-| `GET /admin/cms` | `app/Livewire/Admin/CmsAdmin.php` | Games, game banner/description editing, Platforms, CMS Pages, Landing Page content, and public Navigation management |
+| `GET /admin/cms/{section?}` | `app/Livewire/Admin/CmsAdmin.php` | CMS section pages for Blog & News (`content`), Landing Page (`landing`), Games (`games`), Platforms (`platforms`), and Navigation (`navigation`); renders only the active section data |
 | `GET /admin/translations` | `app/Livewire/Admin/TranslationAdmin.php` | Translation manager for UI phrase keys; imports `lang/*.json`, edits `translation_strings`, fills missing values, and exports JSON runtime files |
 | `GET /admin/policies` | `app/Livewire/Admin/PolicyAdmin.php` | Dedicated policy editor for Terms and Conditions, Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer |
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
@@ -169,6 +173,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Live landing stats | `GameMatch`, `HeadToHeadMatch`, `LedgerEntry`, `User`, `Game` aggregate queries | — | — |
 | Public policy rendering | `PolicyPage` + `PolicyIndex` / `PolicyPageView` | — | — |
 | Policy editing | `PolicyAdmin::savePolicy()` | — | — |
+| Blog/news rendering | `CmsPage` + `BlogIndex` / `BlogArticleView` / `NewsIndex` / `NewsArticleView` | — | Filters to published posts by CMS page type |
+| Blog/news authoring | `CmsContentAdmin::saveContent()` | — | WordPress-style inline editor for type, uploaded featured image, featured flag, localized title/excerpt/content |
 | UI translation management | `TranslationAdmin` + `TranslationCatalogService` | — | `TranslationStringSeeder` and admin actions sync `lang/*.json` into `translation_strings`, fill missing values from English fallback, and export JSON runtime files |
 
 ### Tournament Lifecycle

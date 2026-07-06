@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-05 | **Current version**: v1.81 | **Branch**: `main`
+**As of**: 2026-07-06 | **Current version**: v1.89 | **Branch**: `main`
 
 ---
 
@@ -29,6 +29,11 @@
 - Auth emails use lightweight PlayerSaloons-branded verification and password reset templates instead of Laravel defaults
 - Login, registration, password reset, and verification resend actions disable their buttons during submit to prevent repeated clicks
 - Contact inquiries are now live at `/contact` for guests/players and `/admin/contact-inquiries` for staff review, notes, resolve, and archive
+- Admin sidebar is grouped into Operations, CMS, and System; the CMS section contains Blog & News, Landing Page, Games, Platforms, Navigation, Policies, and Translations
+- CMS section links are real section URLs (`/admin/cms/content`, `/admin/cms/landing`, `/admin/cms/games`, `/admin/cms/platforms`, `/admin/cms/navigation`) and `CmsAdmin::render()` only loads the active section data
+- Blog/News/Page authoring is handled by dedicated `CmsContentAdmin` with a WordPress-style left content list, right inline Quill editor, uploaded featured images, and a fallback textarea so the Body field remains editable while Quill initializes
+- Rendered HTML translation now falls back to the original text if a translation lookup returns a non-scalar value, preventing `htmlspecialchars()` array crashes
+- CMS Blog and News pages are live at `/blog` and `/news`, with article authoring handled through the Blog & News admin sidebar item (`/admin/cms/content`) using the existing `cms_pages` tables
 - Landing page is now DB-backed through `landing_sections` and `landing_section_items`, with admin editing in `/admin/cms`, a `/compressed_v1.mp4` video hero, active game cards, editable cards/reviews/footer, live computed stats, and weekly top-player spotlight
 - Landing games now render as a horizontal snap-scroll carousel; `games.banner_path` stores optional per-game card banners, and the landing background uses lightweight CSS-only game patterns
 - Landing page has a mobile responsiveness pass for player-heavy mobile traffic: tighter hero/CTA spacing, smaller carousel cards, touch-friendly sections, wrapped footer text, and a compact public mobile nav
@@ -40,7 +45,7 @@
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.81)
+## ✅ Natapos ngayong session (v1.30–v1.89)
 
 | Version | Item |
 |---|---|
@@ -96,6 +101,14 @@
 | v1.79 | Landing footer Contact link correction, later superseded by shared footer consolidation |
 | v1.80 | Shared guest footer consolidation |
 | v1.81 | Contact inquiry resolve/archive UX fix |
+| v1.82 | CMS Blog/News public pages and article authoring |
+| v1.83 | Blog & News admin sidebar visibility fix |
+| v1.84 | CMS admin sidebar grouping |
+| v1.85 | Admin sidebar translation crash fix |
+| v1.86 | CMS section pages and active-section-only rendering |
+| v1.87 | WordPress-style Blog/News editor and dedicated content Livewire component |
+| v1.88 | CMS Body rich editor typing fix with guarded Quill initialization |
+| v1.89 | Restored Quill 1.3 admin editor compatibility and kept CMS Body fallback textarea |
 
 ---
 
@@ -111,7 +124,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 | ⚪ | External payout integration | Deferred; sandbox continues with manual payout workflow until payout provider/compliance path is confirmed |
 | 🔵 | Compliance/blacklisting | Medium/Large |
 | ⚪ | Newsletter management/sending | Deferred; registration stores opt-in only until newsletter provider/workflow is selected |
-| 🔵 | CMS Blog/News + translation management | Medium |
+| 🔵 | Translation management checklist cleanup | Small |
 | 🟡 | Remaining testing debt | Tournament filters, pagination, elimination modal, N+1 checks |
 | ⚪ | R2 storage migration | Deferred during testing; Docker volumes are acceptable until full launch |
 
