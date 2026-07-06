@@ -195,6 +195,7 @@ If information exists in two places, the more specific file wins (e.g., module d
 | Public navigation | `public_navigation_items` | Editable public navbar labels, URLs, icons, visibility rules, order, and active state |
 | Policy pages | `policy_pages` | Terms, cookie, privacy, refund/cancellation, and disclaimer content editable from `/admin/policies`; landing footer policy links are generated from these rows during seeding |
 | Contact inquiries | `contact_inquiries` | Guest/player support submissions from `/contact`, reviewed from `/admin/contact-inquiries` with status, internal notes, resolver, and resolution timestamp |
+| Stream channels | `stream_channels` | Normalized YouTube/Twitch/Facebook embed records for player streams (`user_id`), tournament broadcasts (`tournament_id`), and seeded game trailers (`game_id`); write actions are activity-logged, reads are not |
 | Platforms | `platforms` | Seeded by `PlatformSeeder`; tournament/H2H forms and seeded tournaments resolve platform references from these rows |
 | UI translations | `translation_strings` + `lang/*.json` | Admin-managed from `/admin/translations`; database is the editing source, JSON files are the runtime/export cache |
 | Public file access | `public/storage` symlink | Created by `php artisan storage:link` |

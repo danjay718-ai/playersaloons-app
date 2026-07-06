@@ -225,6 +225,23 @@ Managing support/contact messages submitted by guests and signed-in players.
 *   **Statuses**: `new`, `in_review`, `resolved`, `archived`.
 *   **Tests**: `tests/Feature/Community/ContactInquiryTest.php`
 
+## 12. Stream Moderation
+Managing player-created stream embeds and tournament broadcast URLs.
+
+*   **Player Route**: `/streams`
+*   **Admin Route**: `/admin/streams`
+*   **Shared UI Component**: `app/Livewire/Stream/StreamList.php`
+*   **Data Model**: `app/Modules/Stream/Models/StreamChannel.php`
+*   **Embed Service**: `app/Modules/Stream/Support/StreamEmbedService.php`
+*   **Features**:
+    *   Players can publish their own YouTube, Twitch, or Facebook Live stream URL from `/streams`.
+    *   Admins can view player streams from `/admin/streams`, take down invalid/abusive streams with a reason, and restore streams.
+    *   Tournament admins can add YouTube, Twitch, and Facebook broadcast URLs in the tournament wizard; these render on `/streams` and tournament detail pages.
+    *   The five default seeded games have sample YouTube trailer channels from `GameTrailerStreamSeeder`, rendered under `/streams` → Game Trailers.
+    *   Streams are normalized in `stream_channels` using nullable ownership columns: `user_id`, `tournament_id`, or `game_id`.
+    *   Stream create/update/delete writes are activity-logged by the model; admin takedown/restore actions add explicit activity entries. Viewing streams is not logged.
+*   **Tests**: `tests/Feature/Stream/StreamIntegrationTest.php`
+
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
 *   **Role Protection**: `test_non_admin_cannot_access_admin_dashboard` / `test_player_cannot_access_staff_activity_dashboard`

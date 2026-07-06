@@ -1,6 +1,20 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-06 (v1.90) | **Branch**: `main`
+**Last Updated**: 2026-07-07 (v1.91) | **Branch**: `main`
+
+---
+
+## ✅ Player and Tournament Stream Embed Integration (v1.91)
+
+- **Normalized stream storage**: Added `stream_channels` as the shared stream model for player-owned and tournament-owned broadcasts, keeping providers extensible for future embeds and rewards.
+- **Player streams**: Players can publish YouTube, Twitch, or Facebook Live stream channels directly from `/streams` without attaching them to H2H or tournament flow.
+- **Game trailers**: Added sample YouTube trailer stream channels for the five default seeded games and a Game Trailers section on `/streams`.
+- **Admin moderation**: Added `/admin/streams` for staff to view player streams, take down invalid/abusive streams with a reason, and restore streams after review.
+- **Tournament stream fields**: Added optional YouTube, Twitch, and Facebook stream URLs to tournaments and wired them into the admin tournament wizard with provider-specific HTTPS validation.
+- **Audit logging**: `StreamChannel` uses model-level activity logging for create/update/delete writes, with extra action context for admin takedown/restore. Stream reads are not logged.
+- **Embedded viewing**: Replaced the `/streams` stub with community player streams and tournament stream cards that embed supported provider players directly and keep external fallback links.
+- **Tournament detail**: Added a Live Broadcast section on tournament detail pages when a stream URL is configured, using status-based labels such as Scheduled, Live, and Replay.
+- **Tests/build**: Added `tests/Feature/Stream/StreamIntegrationTest.php` for player stream publishing, admin takedown/restore, sample game trailer seeding, stream URL validation, `/streams` rendering, and tournament detail embeds. Focused stream tests pass, and `npm run build` passes. PHPStan still exits with code 1 and no diagnostics/output in this environment.
 
 ---
 
@@ -1036,7 +1050,7 @@ Items where schema or stub exists but logic is missing:
 | CMS Blog/News | ✅ Done v1.82 | Public `/blog` and `/news` listing/detail routes backed by `cms_pages`; authoring lives in `/admin/cms`. |
 | Compliance/Blacklisting | ❌ Not started | — |
 | Translation Management | ❌ Not started | — |
-| Streaming Integration | ❌ Not started | `twitch_stream_url`/`youtube_stream_url` in schema, no live integration. |
+| Streaming Integration | ✅ Done v1.91 | Player-created streams and tournament stream URLs support YouTube, Twitch, and Facebook embeds on `/streams`; admins can take down/restore player streams. Provider API live detection remains separate backlog. |
 | Team Tournaments | ❌ Not started | `tournament_registrations.team_id` placeholder unused. |
 | Auto-Forfeit timeout config | ⚠️ Partial | `AutoForfeitJob` uses `waiting_result_time` but not exposed in `SystemSettings` UI. |
 

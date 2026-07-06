@@ -48,11 +48,11 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /dashboard` | `app/Livewire/Dashboard/PlayerDashboard.php` | Cockpit overview: balance, recent matches, upcoming tournaments |
 | `GET /my-tournaments` | `app/Livewire/Tournament/MyTournamentsList.php` | Player's active + history tournaments with stats banner |
 | `GET /tournaments/browse` | `app/Livewire/Tournament/PlayerTournamentList.php` | Browse & filter all active tournaments |
-| `GET /tournaments/{uuid}/view` | `app/Livewire/Tournament/TournamentDetail.php` | Tournament detail, registration, check-in, bracket, matches |
+| `GET /tournaments/{uuid}/view` | `app/Livewire/Tournament/TournamentDetail.php` | Tournament detail, registration, check-in, bracket, matches, and embedded tournament broadcasts when stream URLs are configured |
 | `GET /matches/{uuid}` | `app/Livewire/Match/MatchDetail.php` | Match lobby: result submission, evidence, dispute |
 | `GET /head-to-head` | `app/Livewire/Match/HeadToHeadList.php` | DB-backed H2H tabs for initiate challenge, game-filtered open challenges, active duels, history, stake lock, proof-backed result submit/confirm/dispute flow |
 | `GET /leaderboards` | `app/Livewire/Match/LeaderboardList.php` | Leaderboard (stub) |
-| `GET /streams` | `app/Livewire/Stream/StreamList.php` | Streams (stub) |
+| `GET /streams` | `app/Livewire/Stream/StreamList.php` | Player stream hub where players publish normalized `stream_channels` for YouTube, Twitch, or Facebook and watch other player/tournament embeds |
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` | Global chat (mock) |
 | `GET /wallet` | `app/Livewire/Wallet/WalletDashboard.php` | Wallet balance, Stripe Checkout deposits, withdrawal requests, and transaction history |
 | `GET /profile` | `app/Livewire/Profile/ProfileDashboard.php` | Game-style player profile with Alpine tabs/drawer, avatar, account/profile/password updates, email verification, KYC status, Redis-cached support data, notification prefs |
@@ -71,6 +71,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/tournaments/create` | `app/Livewire/Admin/TournamentForm.php` | 4-step creation wizard |
 | `GET /admin/tournaments/{id}/edit` | `app/Livewire/Admin/TournamentForm.php` | Edit existing tournament |
 | `GET /admin/matches` | `app/Livewire/Admin/MatchAdmin.php` | Dispute queue + Match monitoring |
+| `GET /admin/streams` | `app/Livewire/Stream/StreamList.php` | Stream moderation surface for viewing player streams, taking down invalid/abusive streams, and restoring streams |
 | `GET /admin/kyc` | `app/Livewire/Admin/KycAdmin.php` | Review KYC submissions (approve/reject) |
 | `GET /admin/kyc/document/{path}` | inline route closure | Secure file stream for viewing private KYC ID images |
 | `GET /admin/withdrawals` | `app/Livewire/Admin/WithdrawalAdmin.php` | Review withdrawals + Four-eyes approval process |
@@ -170,12 +171,14 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Policy page defaults | `PolicyPageSeeder` | — | — |
 | Platform defaults | `PlatformSeeder` | — | Seeds PC, Console, Mobile, and Cross-Platform platform rows used by tournament/H2H forms and demo tournaments |
 | Active games on landing | `Game` + `GameTranslation` query, optional `games.banner_path` | — | — |
+| Game trailer seed embeds | `GameTrailerStreamSeeder` + `StreamChannel` | — | Seeds sample YouTube trailer channels for the five default games; rendered under `/streams` → Game Trailers |
 | Live landing stats | `GameMatch`, `HeadToHeadMatch`, `LedgerEntry`, `User`, `Game` aggregate queries | — | — |
 | Public policy rendering | `PolicyPage` + `PolicyIndex` / `PolicyPageView` | — | — |
 | Policy editing | `PolicyAdmin::savePolicy()` | — | — |
 | Blog/news rendering | `CmsPage` + `BlogIndex` / `BlogArticleView` / `NewsIndex` / `NewsArticleView` | — | Filters to published posts by CMS page type |
 | Blog/news authoring | `CmsContentAdmin::saveContent()` | — | WordPress-style inline editor for type, uploaded featured image, featured flag, localized title/excerpt/content |
 | UI translation management | `TranslationAdmin` + `TranslationCatalogService` | — | `TranslationStringSeeder` and admin actions sync `lang/*.json` into `translation_strings`, fill missing values from English fallback, and export JSON runtime files |
+| Player/tournament stream embeds | `StreamList`, `TournamentForm`, `StreamEmbedService`, `StreamChannel` | — | Player streams, tournament broadcasts, and game trailers are normalized in `stream_channels`; create/update/delete writes are activity-logged while reads are not |
 
 ### Tournament Lifecycle
 | Feature | Action/Service | Event | Listener/Job |

@@ -85,6 +85,10 @@ These tests are identified but not yet implemented. Priority order within each s
 - [ ] `SubmitMatchResultAction` — change disk from `public` → `r2`
 - [ ] Update file URL helpers from `/storage/{{ $path }}` → `Storage::disk('r2')->url($path)`
 
+### Tournament Broadcasts
+- [x] Streaming Integration — player-created YouTube, Twitch, and Facebook streams, admin takedown/restore moderation, tournament stream URL validation, and embedded `/streams` plus tournament detail playback *(done v1.91)*
+- [ ] Provider Live Status Detection — optional YouTube/Twitch/Facebook API polling for true live/offline state.
+
 ### CMS & Content
 - [x] CMS Module — Blog/News pages *(done v1.82)*
 - [x] Translation Management Panel *(done v1.69)*
