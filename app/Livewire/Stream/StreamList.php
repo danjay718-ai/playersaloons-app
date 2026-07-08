@@ -11,12 +11,16 @@ use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
 use Closure;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class StreamList extends Component
 {
+    // ── Player stream form ──────────────────────────────────────────────
     public ?string $streamTitle = null;
+
+    public ?string $streamDescription = null;
 
     public ?string $youtube_stream_url = null;
 
@@ -26,7 +30,13 @@ class StreamList extends Component
 
     public bool $is_public = true;
 
+    public ?int $game_id = null;
+
     public ?string $takedownReason = null;
+
+    // ── Browse tab state ────────────────────────────────────────────────
+    /** 'all' | 'game:{id}' | 'tournaments' */
+    public string $activeTab = 'all';
 
     public function mount(): void
     {
@@ -49,10 +59,17 @@ class StreamList extends Component
         /** @var StreamChannel|null $firstStream */
         $firstStream = $playerStreams->first();
         $this->streamTitle = $firstStream?->title;
+        $this->streamDescription = $firstStream?->description;
+        $this->game_id = $firstStream?->game_id;
         $this->is_public = (bool) ($firstStream?->is_public ?? true);
         $this->youtube_stream_url = $playerStreams->get('youtube')?->source_url;
         $this->twitch_stream_url = $playerStreams->get('twitch')?->source_url;
         $this->facebook_stream_url = $playerStreams->get('facebook')?->source_url;
+    }
+
+    public function setTab(string $tab): void
+    {
+        $this->activeTab = $tab;
     }
 
     public function savePlayerStream(): void
@@ -65,6 +82,8 @@ class StreamList extends Component
 
         $this->validate([
             'streamTitle' => 'nullable|string|max:80',
+            'streamDescription' => 'nullable|string|max:500',
+            'game_id' => 'nullable|integer|exists:games,id',
             'youtube_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('youtube')],
             'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
             'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
@@ -126,7 +145,6 @@ class StreamList extends Component
             ->log('stream_taken_down');
 
         $this->takedownReason = null;
-
         session()->flash('success', 'Player stream taken down.');
     }
 
@@ -157,6 +175,46 @@ class StreamList extends Component
         session()->flash('success', 'Player stream restored.');
     }
 
+    public function toggleFeature(int $streamChannelId): void
+    {
+        $admin = Auth::user();
+
+        if (! $admin || ! $admin->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR'])) {
+            abort(403);
+        }
+
+        $streamChannel = StreamChannel::query()->whereNotNull('user_id')->findOrFail($streamChannelId);
+        $streamChannel->update(['is_featured' => ! $streamChannel->is_featured]);
+
+        activity()
+            ->causedBy($admin)
+            ->performedOn($streamChannel)
+            ->withProperties(['is_featured' => $streamChannel->fresh()?->is_featured])
+            ->log('stream_feature_toggled');
+
+        session()->flash('success', $streamChannel->fresh()?->is_featured ? 'Stream featured.' : 'Stream unfeatured.');
+    }
+
+    public function toggleLive(int $streamChannelId): void
+    {
+        $admin = Auth::user();
+
+        if (! $admin || ! $admin->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR'])) {
+            abort(403);
+        }
+
+        $streamChannel = StreamChannel::query()->whereNotNull('user_id')->findOrFail($streamChannelId);
+        $streamChannel->update(['is_live' => ! $streamChannel->is_live]);
+
+        activity()
+            ->causedBy($admin)
+            ->performedOn($streamChannel)
+            ->withProperties(['is_live' => $streamChannel->fresh()?->is_live])
+            ->log('stream_live_toggled');
+
+        session()->flash('success', $streamChannel->fresh()?->is_live ? 'Stream marked as LIVE.' : 'Stream marked as offline.');
+    }
+
     public function render(StreamEmbedService $streams)
     {
         $user = Auth::user();
@@ -167,8 +225,35 @@ class StreamList extends Component
             abort(403);
         }
 
+        // ── Featured streams (public, not taken down, marked featured) ──────
+        $featuredStreams = StreamChannel::query()
+            ->with(['user.profile', 'game.translations'])
+            ->whereNotNull('user_id')
+            ->whereNull('tournament_id')
+            ->where('is_public', true)
+            ->whereNull('taken_down_at')
+            ->where('is_featured', true)
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        // If no featured, fall back to most-viewed
+        if ($featuredStreams->isEmpty()) {
+            $featuredStreams = StreamChannel::query()
+                ->with(['user.profile', 'game.translations'])
+                ->whereNotNull('user_id')
+                ->whereNull('tournament_id')
+                ->where('is_public', true)
+                ->whereNull('taken_down_at')
+                ->orderByDesc('viewer_count')
+                ->latest()
+                ->limit(5)
+                ->get();
+        }
+
+        // ── All public player streams for browse ────────────────────────────
         $playerStreams = StreamChannel::query()
-            ->with('user.profile', 'takenDownBy')
+            ->with(['user.profile', 'takenDownBy', 'game.translations'])
             ->whereNotNull('user_id')
             ->whereNull('tournament_id')
             ->when(! $canModerate, function ($query) use ($user) {
@@ -183,9 +268,30 @@ class StreamList extends Component
                 });
             })
             ->orderByRaw('case when taken_down_at is null then 0 else 1 end')
+            ->orderByDesc('viewer_count')
             ->latest()
             ->get();
 
+        // ── Games with active streams ────────────────────────────────────────
+        $games = Game::query()
+            ->with('translations')
+            ->where('is_active', true)
+            ->whereHas('streamChannels', function ($q) {
+                $q->whereNotNull('user_id')
+                    ->where('is_public', true)
+                    ->whereNull('taken_down_at');
+            })
+            ->orderBy('slug')
+            ->get();
+
+        // ── Streams filtered by active game tab ─────────────────────────────
+        $browsedStreams = $playerStreams;
+        if (str_starts_with($this->activeTab, 'game:')) {
+            $gameId = (int) substr($this->activeTab, 5);
+            $browsedStreams = $playerStreams->filter(fn ($s) => (int) $s->game_id === $gameId)->values();
+        }
+
+        // ── Tournament broadcasts ───────────────────────────────────────────
         $tournaments = Tournament::query()
             ->with('game.translations')
             ->whereNotIn('status', [
@@ -199,30 +305,26 @@ class StreamList extends Component
             ->orderBy('start_at')
             ->get();
 
-        $gameTrailers = Game::query()
-            ->with(['translations', 'streamChannels' => function ($query) {
-                $query->where('provider', 'youtube')
-                    ->where('is_public', true)
-                    ->whereNull('taken_down_at');
-            }])
-            ->whereHas('streamChannels', function ($query) {
-                $query->where('provider', 'youtube')
-                    ->where('is_public', true)
-                    ->whereNull('taken_down_at');
-            })
+        // ── Games with translations for form dropdown ───────────────────────
+        $allGames = Game::query()
+            ->with('translations')
+            ->where('is_active', true)
             ->orderBy('slug')
             ->get();
 
         return view('livewire.stream.stream-list', [
-            'tournaments' => $tournaments,
+            'featuredStreams' => $featuredStreams,
             'playerStreams' => $playerStreams,
-            'gameTrailers' => $gameTrailers,
+            'browsedStreams' => $browsedStreams,
+            'tournaments' => $tournaments,
+            'games' => $games,
+            'allGames' => $allGames,
             'streamService' => $streams,
             'canModerateStreams' => $canModerate,
             'isAdminView' => $isAdminView,
         ])->layout($isAdminView ? 'components.layouts.admin' : 'components.layouts.dashboard', [
             'title' => 'Streams | PlayerSaloons',
-            'dashboard_title' => 'LIVE BROADCASTS',
+            'dashboard_title' => 'LIVE STREAMS',
             'admin_title' => 'Stream Moderation',
         ]);
     }
@@ -288,6 +390,8 @@ class StreamList extends Component
         $streamChannel->fill([
             'source_url' => $url,
             'title' => $this->nullableText($this->streamTitle),
+            'description' => $this->nullableText($this->streamDescription),
+            'game_id' => $this->game_id,
             'is_public' => $this->is_public,
         ]);
 

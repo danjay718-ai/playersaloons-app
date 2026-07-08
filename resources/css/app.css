@@ -1000,3 +1000,16 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     color: #a5b4fc !important;
     border-color: rgba(99, 102, 241, 0.3) !important;
 }
+
+
+/* ── Stream page utilities ── */
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Stream hero padding fix */
+[x-cloak] { display: none !important; }
