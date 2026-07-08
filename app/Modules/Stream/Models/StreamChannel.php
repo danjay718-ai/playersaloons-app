@@ -9,6 +9,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,7 +21,13 @@ use Illuminate\Support\Facades\Auth;
  * @property string $provider
  * @property string $source_url
  * @property string|null $title
+ * @property string|null $description
+ * @property int $viewer_count
+ * @property int $total_views
  * @property bool $is_public
+ * @property bool $is_featured
+ * @property bool $is_live
+ * @property string|null $thumbnail_url
  * @property Carbon|null $taken_down_at
  * @property int|null $taken_down_by
  * @property string|null $takedown_reason
@@ -41,7 +48,13 @@ class StreamChannel extends Model
         'provider',
         'source_url',
         'title',
+        'description',
+        'viewer_count',
+        'total_views',
         'is_public',
+        'is_featured',
+        'is_live',
+        'thumbnail_url',
         'taken_down_at',
         'taken_down_by',
         'takedown_reason',
@@ -93,6 +106,8 @@ class StreamChannel extends Model
     {
         return [
             'is_public' => 'boolean',
+            'is_featured' => 'boolean',
+            'is_live' => 'boolean',
             'taken_down_at' => 'datetime',
             'metadata' => 'array',
         ];
@@ -128,5 +143,65 @@ class StreamChannel extends Model
     public function takenDownBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'taken_down_by');
+    }
+
+    /**
+     * @return HasMany<StreamChatMessage, StreamChannel>
+     */
+    public function chatMessages(): HasMany
+    {
+        return $this->hasMany(StreamChatMessage::class);
+    }
+
+    /**
+     * @return HasMany<StreamViewer, StreamChannel>
+     */
+    public function viewers(): HasMany
+    {
+        return $this->hasMany(StreamViewer::class);
+    }
+
+    /**
+     * Sync viewer_count from actual active viewers (last 2 min).
+     */
+    public function syncViewerCount(): void
+    {
+        $count = $this->viewers()
+            ->where('last_seen_at', '>=', now()->subMinutes(2))
+            ->count();
+
+        $this->update(['viewer_count' => $count]);
+    }
+
+    /**
+     * Format viewer count for display (e.g. 1.2K).
+     */
+    public function formattedViewers(): string
+    {
+        $count = (int) $this->viewer_count;
+        if ($count >= 1000000) {
+            return round($count / 1000000, 1) . 'M';
+        }
+        if ($count >= 1000) {
+            return round($count / 1000, 1) . 'K';
+        }
+
+        return (string) $count;
+    }
+
+    /**
+     * Format total views for display.
+     */
+    public function formattedTotalViews(): string
+    {
+        $count = (int) $this->total_views;
+        if ($count >= 1000000) {
+            return round($count / 1000000, 1) . 'M';
+        }
+        if ($count >= 1000) {
+            return round($count / 1000, 1) . 'K';
+        }
+
+        return (string) $count;
     }
 }
