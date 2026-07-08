@@ -96,7 +96,7 @@
     <div class="relative z-10 flex min-h-screen w-full">
 
         <!-- Desktop Sidebar Panel (Hidden on mobile, sticky on desktop) -->
-        <aside id="desktop-sidebar" class="group/sidebar hidden md:flex sticky top-0 left-0 h-screen bg-[#0a0718]/90 border-r border-purple-500/15 backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden shadow-[5px_0_25px_rgba(0,0,0,0.6)]">
+        <aside id="desktop-sidebar" class="group/sidebar hidden md:flex fixed top-0 left-0 h-screen bg-[#0a0718]/90 border-r border-purple-500/15 backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden shadow-[5px_0_25px_rgba(0,0,0,0.6)]">
             
             <!-- Sidebar Header / Logo -->
             <div class="px-4 flex items-center justify-center">
@@ -169,7 +169,7 @@
         </aside>
 
         <!-- Right Side: Header + Content Pane -->
-        <div class="flex-1 flex flex-col min-w-0 relative">
+        <div class="flex-1 flex flex-col min-w-0 relative md:pl-20">
             
             <!-- Topbar sticky header -->
             <header class="sticky top-0 z-40 h-16 md:h-20 border-b border-purple-500/15 bg-[#0a0718]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.5)]">

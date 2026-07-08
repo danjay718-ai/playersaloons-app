@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-06 | **Current version**: v1.89 | **Branch**: `main`
+**As of**: 2026-07-08 | **Current version**: v1.94 | **Branch**: `main`
 
 ---
 
@@ -41,6 +41,7 @@
 - Public navbar items are now editable through `/admin/cms` → Navigation, backed by `public_navigation_items`; mobile burger contains nav items and install action while the mobile topbar stays focused on auth actions
 - Legal/policy content now lives in dedicated `policy_pages`, edited at `/admin/policies`, and rendered publicly at `/policies` and `/policies/{slug}`
 - Landing page now has a fixed, scroll-aware public navbar over the hero video, horizontal overflow containment, and a JS replay fallback for the hero video loop (`#hero-video`)
+- Player dashboard desktop sidebar is viewport-fixed and the main content reserves the collapsed sidebar width, so the sidebar bottom actions remain pinned while long content scrolls
 - PWA install support is present through manifest/service worker/icons and native browser install prompt handling
 - Echo/Reverb frontend setup is lazy-loaded only for authenticated pages with `meta[name="user-uuid"]`, preventing guest-page WebSocket console errors
 
@@ -111,6 +112,10 @@
 | v1.88 | CMS Body rich editor typing fix with guarded Quill initialization |
 | v1.89 | Restored Quill 1.3 admin editor compatibility and kept CMS Body fallback textarea |
 | v1.90 | Resend transactional mail failover |
+| v1.91 | Player/tournament stream embed integration with normalized stream channels |
+| v1.92 | Real-time stream chat and Twitch-style streams redesign |
+| v1.93 | Realtime global, direct, and team chat |
+| v1.94 | Player desktop sidebar viewport pinning fix |
 
 ---
 
@@ -152,6 +157,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - Generic player button preloaders — replaced with submit-button disable-only behavior and cached full-page navigation loader v1.55
 - Landing page stale/unstyled after logout/logo click — fixed by removing HTML from service worker cache-first handling v1.55
 - Mobile bottom navigation felt too small — restored larger tap target/icon/label sizing v1.55
+- Desktop player sidebar bottom created whitespace on long content scroll — fixed with viewport pinning and content offset v1.94
 - Public/guest nav/footer mismatch with welcome — fixed v1.51
 - Landing/policy footer drift from shared guest footer — consolidated through layout-level shared footer v1.80
 - Contact inquiry resolve/archive state looked unchanged in admin after action — fixed v1.81

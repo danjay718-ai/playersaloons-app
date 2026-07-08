@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-06 (v1.89)
+**Last Updated**: 2026-07-08 (v1.94)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -113,6 +113,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Player dashboard topbar | `app/Livewire/Notification/NotificationBell.php` | Shows latest 10 user notifications, unread count, single/all mark-as-read actions, and refreshes from realtime Reverb broadcasts |
 | Player toast notifications | `resources/views/components/ui/toasts.blade.php` | Shared toast surface for player-facing `session()->flash()` feedback (`message`, `success`, `info`, `error`, `h2h_status`, `h2h_error`) |
 | H2H duel prompt | `app/Livewire/Match/HeadToHeadDuelPrompt.php` | Dashboard-wide polling modal that alerts players when a duel is active or when an open duel invite is available |
+| Player dashboard shell | `resources/views/components/layouts/dashboard.blade.php` | Desktop player shell with a viewport-fixed hover-expand sidebar (`#desktop-sidebar`) and a desktop content offset matching the collapsed sidebar width; mobile uses the fixed bottom navigation and More panel |
 | Player loading states | `resources/js/app.js`, `resources/css/app.css`, `resources/views/components/layouts/dashboard.blade.php` | Disables Livewire submit buttons during submit and shows a game-style full-page loader for uncached player `wire:navigate` route changes; tab links are excluded and visited routes are cached in `sessionStorage` |
 | Player upload feedback | `resources/views/livewire/profile/profile-dashboard.blade.php` | Shows immediate selected-file feedback and Livewire upload progress for avatar and KYC document uploads |
 | Language switcher | `resources/views/components/localization/language-switcher.blade.php` | Reusable locale dropdown shown in guest/public, player, and admin shells; posts to `/language` and reads supported languages from `config/localization.php` |

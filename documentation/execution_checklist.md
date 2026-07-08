@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-05 (v1.82)
+**Status**: Active Backlog | **Last Updated**: 2026-07-08 (v1.94)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -52,6 +52,7 @@ These tests are identified but not yet implemented. Priority order within each s
 
 ### Manual UI QA
 - [ ] Phase 2 guest/auth/contact/admin manual UI QA pass — landing, register, email verification, login, forgot password, contact page, player support link, and admin contact inbox. **Deferred**: automated coverage and focused fixes are in place; full browser walkthrough will be scheduled after the next Phase 2 feature priorities.
+- [x] Desktop player sidebar bottom spacing on long pages — sidebar is viewport-fixed and the content pane reserves collapsed sidebar width *(fixed v1.94)*
 
 ### Tournament & Admin
 - [ ] `test_admin_tournament_filter_persistence` — search/status filters survive page refresh.

@@ -1,8 +1,16 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-08 (v1.92) | **Branch**: `main`
+**Last Updated**: 2026-07-08 (v1.94) | **Branch**: `main`
 
 ---
+## ✅ Player Sidebar Viewport Pinning Fix (v1.94)
+
+- **`resources/views/components/layouts/dashboard.blade.php`**: Changed the desktop player sidebar from `sticky` to viewport `fixed` positioning so its bottom action area stays pinned to the viewport while long player content scrolls.
+- **Content offset**: Added a desktop-only `md:pl-20` offset to the player content pane, matching the collapsed sidebar width and preventing content from sliding underneath the fixed sidebar.
+- **Build**: `npm run build` passes.
+
+---
+
 ## ✅ Real-time Stream Chat & Twitch-Style Redesign (v1.92)
 
 - **Twitch-Style Redesign:** Overhauled the `/streams` page with a Twitch-inspired UI. Added an Alpine.js carousel for featured streams and a browse section with game categories.
