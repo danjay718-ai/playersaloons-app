@@ -1,8 +1,20 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-07 (v1.91) | **Branch**: `main`
+**Last Updated**: 2026-07-08 (v1.92) | **Branch**: `main`
 
 ---
+## ✅ Real-time Stream Chat & Twitch-Style Redesign (v1.92)
+
+- **Twitch-Style Redesign:** Overhauled the `/streams` page with a Twitch-inspired UI. Added an Alpine.js carousel for featured streams and a browse section with game categories.
+- **YouTube-Style Watch Page:** Redesigned the `/streams/{id}` watch page to match a YouTube/Twitch viewing experience, handling mobile responsiveness cleanly.
+- **Admin Isolation:** Secured the admin viewing experience via a dedicated `/admin/streams/{id}` route, preventing player sidebars from bleeding into the admin UI.
+- **Real-Time WebSockets (Reverb):** Migrated stream chat and viewer counts from `wire:poll` to **Laravel Reverb**. Implemented `StreamMessageSent`, `StreamMessageDeleted`, and `StreamViewerCountUpdated` broadcast events for instant updates.
+- **Advanced Admin Moderation:** Expanded admin stream controls to include View Stream, Take Down, Restore, Feature, Mark Live, Delete Stream, Delete Chat Messages, and **Mute User**.
+- **Moderator Chat Experience:** Allowed moderators to chat while maintaining moderation abilities. Added "Emerald Green" moderator badges and message highlighting.
+- **Fixes:** Addressed an `ArgumentCountError` caused by malformed Blade directives (`@livewire-event`) and cleaned up duplicate login prompts in the chat.
+
+---
+
 
 ## ✅ Player and Tournament Stream Embed Integration (v1.91)
 
