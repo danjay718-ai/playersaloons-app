@@ -39,6 +39,7 @@ use App\Livewire\Policies\PolicyIndex;
 use App\Livewire\Policies\PolicyPageView;
 use App\Livewire\Profile\ProfileDashboard;
 use App\Livewire\Stream\StreamList;
+use App\Livewire\Stream\StreamWatch;
 use App\Livewire\Team\TeamDashboard;
 use App\Livewire\Tournament\MyTournamentsList;
 use App\Livewire\Tournament\PlayerTournamentList;
@@ -89,6 +90,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/head-to-head', HeadToHeadList::class)->name('head-to-head');
         Route::get('/leaderboards', LeaderboardList::class)->name('leaderboards');
         Route::get('/streams', StreamList::class)->name('streams');
+        Route::get('/streams/{id}', StreamWatch::class)->name('streams.watch');
         Route::get('/chat', GlobalChat::class)->name('chat');
         Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
         Route::get('/matches/{uuid}', MatchDetail::class);
@@ -115,6 +117,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/tournaments/{id}/edit', TournamentForm::class)->name('admin.tournaments.edit');
         Route::get('/matches', MatchAdmin::class);
         Route::get('/streams', StreamList::class)->name('admin.streams');
+        Route::get('/streams/{id}', StreamWatch::class)->name('admin.streams.watch');
         Route::get('/kyc', KycAdmin::class);
         Route::get('/kyc/document/{path}', function (string $path) {
             $user = Auth::user();
