@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-08 (v1.94)
+**Status**: Active Backlog | **Last Updated**: 2026-07-08 (v1.95)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -95,6 +95,11 @@ These tests are identified but not yet implemented. Priority order within each s
 - [x] Translation Management Panel *(done v1.69)*
 - [x] Notification Broadcast Panel (UI for `broadcast_messages` table — schema exists, UI missing) *(done v1.35)*
 - [x] Player notification bell UI — database-backed dropdown with realtime refresh *(done v1.36)*
+
+### Community & Chat
+- [x] Global Chat — replace mock Livewire session messages with persisted `chat_conversations` / `chat_messages` and Reverb delivery *(done v1.95)*
+- [x] Player-to-Player Chat — direct conversation creation by username, participant-only access, persisted messages, and private Reverb channel delivery *(done v1.95)*
+- [x] Team Chat — active team member channels backed by the shared chat pipeline and private Reverb authorization *(done v1.95)*
 
 ### Compliance & User Management
 - [ ] Compliance/Blacklisting (Middleware + Admin Page)

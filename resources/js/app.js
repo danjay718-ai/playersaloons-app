@@ -6,6 +6,291 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
+window.ensurePlayerSaloonsEcho = function () {
+    const userUuid = document.querySelector('meta[name="user-uuid"]')?.getAttribute('content');
+    const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
+    const reverbHost = import.meta.env.VITE_REVERB_HOST;
+
+    if (!userUuid || !reverbKey || !reverbHost) return null;
+
+    window.Echo ??= new Echo({
+        broadcaster: 'reverb',
+        key: reverbKey,
+        wsHost: reverbHost,
+        wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+        wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+        enabledTransports: ['ws', 'wss'],
+    });
+
+    return window.Echo;
+};
+
+window.chatConsole = function (config) {
+    return {
+        endpoints: config.endpoints,
+        csrf: config.csrf,
+        currentUserUuid: config.currentUserUuid,
+        conversations: [],
+        teams: [],
+        currentTeam: null,
+        pendingTeamJoin: null,
+        teamJoinModalOpen: false,
+        selected: null,
+        messages: [],
+        draft: '',
+        playerSearch: '',
+        playerResults: [],
+        searchError: '',
+        error: '',
+        unread: {},
+        filter: 'all',
+        loadingMessages: true,
+        bootError: '',
+        sending: false,
+        connected: false,
+        subscriptions: new Set(),
+        selectedPlayer: null,
+        playerModalOpen: false,
+        playerLoading: false,
+        activeFilterClass: 'rounded-lg border border-fuchsia-400/40 bg-fuchsia-600/20 px-3 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-fuchsia-100',
+        idleFilterClass: 'rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-200',
+
+        async init() {
+            try {
+                await this.loadConversations();
+                this.connected = Boolean(window.ensurePlayerSaloonsEcho?.());
+            } catch (error) {
+                this.loadingMessages = false;
+                this.bootError = error?.message || 'Chat could not sync. Refresh the page or try again.';
+            }
+        },
+
+        async request(url, options = {}) {
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrf,
+                    ...(options.headers || {})
+                },
+                credentials: 'same-origin',
+                ...options
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw data;
+            }
+
+            return data;
+        },
+
+        async loadConversations() {
+            const data = await this.request(this.endpoints.conversations);
+            this.conversations = data.conversations || [];
+            this.teams = data.teams || [];
+            this.currentTeam = data.current_team || null;
+
+            for (const conversation of this.conversations) {
+                if (conversation.is_unread) {
+                    this.unread[conversation.uuid] = true;
+                }
+                this.subscribe(conversation.uuid);
+            }
+
+            if (!this.selected && this.conversations.length > 0) {
+                await this.selectConversation(this.conversations[0]);
+                return;
+            }
+
+            this.loadingMessages = false;
+        },
+
+        filteredConversations() {
+            if (this.filter === 'all') return this.conversations;
+            return this.conversations.filter((conversation) => conversation.type === this.filter);
+        },
+
+        async selectConversation(conversation) {
+            this.selected = conversation;
+            this.unread[conversation.uuid] = false;
+            conversation.is_unread = false;
+            this.loadingMessages = true;
+            this.error = '';
+
+            try {
+                const data = await this.request(`${this.endpoints.messages}/${conversation.uuid}/messages`);
+                this.messages = data.messages || [];
+                this.subscribe(conversation.uuid);
+                this.scrollToBottom();
+            } catch (error) {
+                this.error = error?.message || 'Could not load messages.';
+            } finally {
+                this.loadingMessages = false;
+            }
+        },
+
+        subscribe(uuid) {
+            if (this.subscriptions.has(uuid)) return;
+
+            const echo = window.ensurePlayerSaloonsEcho?.();
+            if (!echo) return;
+
+            echo.private(`chat.${uuid}`)
+                .listen('.chat.message.sent', (event) => {
+                    if (this.selected?.uuid === uuid) {
+                        this.pushMessage(event.message);
+                        return;
+                    }
+
+                    this.unread[uuid] = true;
+                    const conversation = this.conversations.find((item) => item.uuid === uuid);
+                    if (conversation) {
+                        conversation.is_unread = true;
+                    }
+                });
+
+            this.subscriptions.add(uuid);
+            this.connected = true;
+        },
+
+        pushMessage(message) {
+            if (this.messages.some((existing) => existing.uuid === message.uuid)) return;
+            this.messages.push(message);
+            this.scrollToBottom();
+        },
+
+        async sendMessage() {
+            if (!this.selected || this.sending || this.draft.trim().length === 0) return;
+
+            this.sending = true;
+            this.error = '';
+
+            try {
+                const data = await this.request(`${this.endpoints.messages}/${this.selected.uuid}/messages`, {
+                    method: 'POST',
+                    body: JSON.stringify({ message: this.draft })
+                });
+                this.pushMessage(data.message);
+                this.draft = '';
+            } catch (error) {
+                this.error = error?.errors?.message?.[0] || error?.message || 'Message failed.';
+            } finally {
+                this.sending = false;
+            }
+        },
+
+        async searchPlayers() {
+            this.searchError = '';
+            if (this.playerSearch.trim().length < 2) {
+                this.playerResults = [];
+                return;
+            }
+
+            try {
+                const query = encodeURIComponent(this.playerSearch.trim());
+                const data = await this.request(`${this.endpoints.users}?search=${query}`);
+                this.playerResults = data.users || [];
+            } catch (error) {
+                this.searchError = error?.message || 'Player search failed.';
+            }
+        },
+
+        async openDirect(username = null) {
+            const target = (username || this.playerSearch).trim();
+            this.searchError = '';
+            if (target.length === 0) return;
+
+            try {
+                const data = await this.request(this.endpoints.direct, {
+                    method: 'POST',
+                    body: JSON.stringify({ username: target })
+                });
+                await this.upsertAndSelect(data.conversation);
+                this.playerSearch = '';
+                this.playerResults = [];
+                this.playerModalOpen = false;
+            } catch (error) {
+                this.searchError = error?.errors?.username?.[0] || error?.message || 'Could not open player chat.';
+            }
+        },
+
+        async openTeam(uuid) {
+            const data = await this.request(`${this.endpoints.team}/${uuid}`, { method: 'POST', body: '{}' });
+            await this.upsertAndSelect(data.conversation);
+        },
+
+        requestJoinTeam(team) {
+            this.pendingTeamJoin = team;
+            this.teamJoinModalOpen = true;
+        },
+
+        async confirmJoinTeam() {
+            if (!this.pendingTeamJoin) return;
+
+            const data = await this.request(`${this.endpoints.team}/${this.pendingTeamJoin.uuid}/join`, {
+                method: 'POST',
+                body: '{}'
+            });
+
+            this.teamJoinModalOpen = false;
+            this.pendingTeamJoin = null;
+            await this.loadConversations();
+            await this.upsertAndSelect(data.conversation);
+        },
+
+        async openPlayerProfile(uuid) {
+            this.playerLoading = true;
+            this.playerModalOpen = true;
+            this.selectedPlayer = null;
+
+            try {
+                const data = await this.request(`${this.endpoints.players}/${uuid}`);
+                this.selectedPlayer = data.player;
+            } catch (error) {
+                this.selectedPlayer = { error: error?.message || 'Could not load player.' };
+            } finally {
+                this.playerLoading = false;
+            }
+        },
+
+        async followSelectedPlayer() {
+            if (!this.selectedPlayer || this.selectedPlayer.is_self) return;
+
+            const data = await this.request(`${this.endpoints.players}/${this.selectedPlayer.uuid}/follow`, {
+                method: 'POST',
+                body: '{}'
+            });
+            this.selectedPlayer = data.player;
+        },
+
+        async messageSelectedPlayer() {
+            if (!this.selectedPlayer || this.selectedPlayer.is_self) return;
+            await this.openDirect(this.selectedPlayer.username);
+        },
+
+        async upsertAndSelect(conversation) {
+            const index = this.conversations.findIndex((item) => item.uuid === conversation.uuid);
+            if (index >= 0) {
+                this.conversations[index] = conversation;
+            } else {
+                this.conversations.unshift(conversation);
+            }
+            this.subscribe(conversation.uuid);
+            await this.selectConversation(conversation);
+        },
+
+        scrollToBottom() {
+            this.$nextTick(() => {
+                if (!this.$refs.messagePane) return;
+                this.$refs.messagePane.scrollTop = this.$refs.messagePane.scrollHeight;
+                window.lucide?.createIcons();
+            });
+        }
+    };
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide icons on first load
     refreshLucideIcons();
@@ -60,22 +345,11 @@ document.addEventListener('livewire:navigated', () => {
  */
 document.addEventListener('livewire:init', () => {
     const userUuid = document.querySelector('meta[name="user-uuid"]')?.getAttribute('content');
-    const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
-    const reverbHost = import.meta.env.VITE_REVERB_HOST;
+    const echo = window.ensurePlayerSaloonsEcho();
 
-    if (!userUuid || !reverbKey || !reverbHost) return;
+    if (!userUuid || !echo) return;
 
-    window.Echo ??= new Echo({
-        broadcaster: 'reverb',
-        key: reverbKey,
-        wsHost: reverbHost,
-        wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
-        wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-        enabledTransports: ['ws', 'wss'],
-    });
-
-    window.Echo.private(`user.${userUuid}`)
+    echo.private(`user.${userUuid}`)
         .listen('.notification.received', () => {
             Livewire.dispatch('notification.received');
         });

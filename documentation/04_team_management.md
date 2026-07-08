@@ -51,6 +51,17 @@ Captain-specific controls for the team.
     *   `app/Modules/Team/Policies/TeamPolicy.php`: Restricts management actions to the captain.
     *   `app/Modules/Team/Jobs/ExpireTeamInvitationsJob.php`: Automatically cleans up stale invites via the scheduler.
 
+## 5. Team Chat
+Team members coordinate inside the shared player comms hub.
+
+*   **Route**: `/chat`
+*   **UI Component**: `app/Livewire/Community/GlobalChat.php`
+*   **Controller**: `app/Http/Controllers/Community/ChatController.php`
+*   **Logic**:
+    *   `app/Modules/Community/Actions/ChatService.php`: Creates one `team:{team_id}` conversation per team and syncs active members as chat participants.
+    *   `app/Modules/Community/Events/ChatMessageSent.php`: Broadcasts new messages over private Reverb channel `chat.{conversationUuid}`.
+*   **Security**: Only active `team_members` can open the team channel, fetch history, send messages, or subscribe to the Reverb channel.
+
 ## 🧪 Isolated Test Cases
 ### 1. Membership & Permissions
 *   **Success**: `test_can_invite_user`

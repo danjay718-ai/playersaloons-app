@@ -1,8 +1,21 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-08 (v1.94) | **Branch**: `main`
+**Last Updated**: 2026-07-08 (v1.95) | **Branch**: `main`
 
 ---
+## ✅ Realtime Global, Direct, and Team Chat (v1.95)
+
+- **Persisted chat pipeline**: Replaced the `/chat` mock with `chat_conversations`, `chat_participants`, and `chat_messages` for global, player-to-player, and team conversations.
+- **Realtime delivery**: Added private Reverb broadcasting through `ChatMessageSent` on `chat.{conversationUuid}`, authorized by verified global access, direct participants, or active team membership.
+- **Optimized UI**: Rebuilt `/chat` as an Alpine-driven game-style comms console that uses small JSON endpoints for message history/send actions instead of Livewire polling; chat JS now lives in the compiled app bundle so Livewire navigation does not leave the page stuck syncing.
+- **Direct and team channels**: Players can search usernames, open profile stat modals from search or chat messages, follow players, start direct chats, and open team channels for teams they actively belong to.
+- **Unread/team UX**: Chat channels now show a New badge while unread, messages render player avatars/initials, and team channels can be joined from chat with a warning that switching channels changes the player's active team membership.
+- **Global retention**: Global chat automatically prunes older messages after the latest 100, keeping the public channel bounded.
+- **Security**: Message APIs expose player-safe fields only, enforce participant/team membership access, validate message length, and keep unauthenticated/unverified users behind existing route middleware.
+- **Tests/build**: Added `tests/Feature/Community/ChatIntegrationTest.php`; focused chat tests and `npm run build` pass.
+
+---
+
 ## ✅ Player Sidebar Viewport Pinning Fix (v1.94)
 
 - **`resources/views/components/layouts/dashboard.blade.php`**: Changed the desktop player sidebar from `sticky` to viewport `fixed` positioning so its bottom action area stays pinned to the viewport while long player content scrolls.
@@ -694,7 +707,7 @@ Designed and implemented premium dark neon frontend pages using Tailwind CSS and
 - **Player Dashboard (`app/Livewire/Dashboard/PlayerDashboard.php` & `resources/views/livewire/dashboard/player-dashboard.blade.php`)**:
   - **Overview**: Real-time view of active matches and registered tournaments.
   - **Head-to-Head (H2H)**: Integrated matchmaking interface with stake selection and simulated opponent matching.
-  - **Global Chat**: Interactive mock chat system with auto-replies to simulate platform activity.
+  - **Comms Hub**: Persisted Reverb-backed global, direct, and team chat with player search/profile actions.
   - **Tournaments**: Compact views for browsing and managing current registrations.
 - **Profile Dashboard (`app/Livewire/Profile/ProfileDashboard.php` & `resources/views/livewire/profile/profile-dashboard.blade.php`)**:
   - Game-style player card for avatar, display name, region, timezone, KYC status, verified email status, and referral link.

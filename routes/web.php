@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Community\ChatController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Livewire\Admin\AdminDashboard;
@@ -92,6 +93,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/streams', StreamList::class)->name('streams');
         Route::get('/streams/{id}', StreamWatch::class)->name('streams.watch');
         Route::get('/chat', GlobalChat::class)->name('chat');
+        Route::get('/chat/api/conversations', [ChatController::class, 'conversations'])->name('chat.conversations');
+        Route::get('/chat/api/conversations/{uuid}/messages', [ChatController::class, 'messages'])->name('chat.messages');
+        Route::post('/chat/api/conversations/{uuid}/messages', [ChatController::class, 'send'])->name('chat.messages.send');
+        Route::post('/chat/api/direct', [ChatController::class, 'openDirect'])->name('chat.direct.open');
+        Route::post('/chat/api/teams/{uuid}', [ChatController::class, 'openTeam'])->name('chat.teams.open');
+        Route::post('/chat/api/teams/{uuid}/join', [ChatController::class, 'joinTeam'])->name('chat.teams.join');
+        Route::get('/chat/api/users', [ChatController::class, 'users'])->name('chat.users');
+        Route::get('/chat/api/players/{uuid}', [ChatController::class, 'playerProfile'])->name('chat.players.show');
+        Route::post('/chat/api/players/{uuid}/follow', [ChatController::class, 'followPlayer'])->name('chat.players.follow');
         Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
         Route::get('/matches/{uuid}', MatchDetail::class);
 
