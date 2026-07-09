@@ -1,8 +1,15 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-08 (v1.95) | **Branch**: `main`
+**Last Updated**: 2026-07-09 (v1.96) | **Branch**: `main`
 
 ---
+## ✅ Chat Broadcast Failure Resilience (v1.96)
+
+- **`ChatService`**: Moved realtime broadcast dispatch outside the chat message database transaction and guarded it with warning-level logging, so a down Reverb/Pusher service no longer makes `/chat` sends fail after the message is saved.
+- **Regression coverage**: Added a chat integration test that forces the realtime broadcaster to be unavailable and verifies the send endpoint still returns `201 Created` and persists the message.
+
+---
+
 ## ✅ Realtime Global, Direct, and Team Chat (v1.95)
 
 - **Persisted chat pipeline**: Replaced the `/chat` mock with `chat_conversations`, `chat_participants`, and `chat_messages` for global, player-to-player, and team conversations.

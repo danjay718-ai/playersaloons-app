@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-08 (v1.95)
+**Last Updated**: 2026-07-09 (v1.96)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -119,7 +119,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Language switcher | `resources/views/components/localization/language-switcher.blade.php` | Reusable locale dropdown shown in guest/public, player, and admin shells; posts to `/language` and reads supported languages from `config/localization.php` |
 | Auth emails | `app/Notifications/Auth/*`, `resources/views/emails/auth/*`, `config/mail.php` | Lightweight PlayerSaloons-branded verification and password reset emails with direct CTA and fallback URL; delivered through Laravel `failover` using Resend, SMTP, then `log` |
 | Contact support | `app/Livewire/Community/ContactPage.php` | Guest/player support form linked from public footer and player navigation; stores account-linked inquiries when authenticated |
-| Realtime comms hub | `app/Livewire/Community/GlobalChat.php`, `ChatController`, `ChatService`, `ChatMessageSent`, `PlayerFollow` | Alpine-driven `/chat` UI with JSON message endpoints, private Reverb channels for global/direct/team conversations, unread state from `chat_participants.last_read_at`, avatars, player profile stats, follow, and message entry points |
+| Realtime comms hub | `app/Livewire/Community/GlobalChat.php`, `ChatController`, `ChatService`, `ChatMessageSent`, `PlayerFollow` | Alpine-driven `/chat` UI with JSON message endpoints, private Reverb channels for global/direct/team conversations, unread state from `chat_participants.last_read_at`, avatars, player profile stats, follow, and message entry points; message persistence succeeds even if the realtime broadcaster is temporarily unavailable |
 
 ### Shared Public Layout Components
 
@@ -263,7 +263,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `Api/ApiEndpointsTest.php` | 401/403 gates, pagination, status filters, referral URL format |
 | `Community/NotificationServiceTest.php` | Preference-aware delivery (in-app, realtime, email) |
 | `Community/NotificationBellTest.php` | Player notification bell list, unread count, single/all mark-as-read, ownership guard, realtime refresh event |
-| `Community/ChatIntegrationTest.php` | Persisted global chat, direct player chat participant isolation, team chat membership guard, player-safe search/profile/follow, and Reverb broadcast dispatch |
+| `Community/ChatIntegrationTest.php` | Persisted global chat, direct player chat participant isolation, team chat membership guard, player-safe search/profile/follow, Reverb broadcast dispatch, and send resilience when broadcasting is unavailable |
 | `Admin/AdminPanelTest.php` | Admin access guards, KYC approve/reject, match override, tournament create (TournamentForm), staff activity |
 | `Admin/BroadcastNotificationAdminTest.php` | Access guards, create/edit/expire/delete broadcasts, SUPER_ADMIN delete restriction, search filter |
 | `Admin/TranslationAdminTest.php` | Translation manager access, JSON key sync into `translation_strings`, missing-locale filtering |

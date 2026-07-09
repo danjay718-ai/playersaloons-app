@@ -13,7 +13,9 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Team\Actions\CreateTeamAction;
 use App\Modules\Team\Models\TeamMember;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -94,6 +96,39 @@ class ChatIntegrationTest extends TestCase
             ->assertOk()
             ->assertJsonMissing(['body' => 'Global message 1'])
             ->assertJsonPath('messages.49.body', 'Global message 101');
+    }
+
+    public function test_message_send_succeeds_when_realtime_broadcast_is_unavailable(): void
+    {
+        Config::set('broadcasting.default', 'reverb');
+        Config::set('broadcasting.connections.reverb.options.host', '127.0.0.1');
+        Config::set('broadcasting.connections.reverb.options.port', 1);
+        Log::spy();
+
+        $user = User::factory()->create(['username' => 'offline_broadcast']);
+        $conversationUuid = $this->actingAs($user)
+            ->getJson(route('chat.conversations'))
+            ->assertOk()
+            ->json('conversations.0.uuid');
+
+        $this->actingAs($user)
+            ->postJson(route('chat.messages.send', ['uuid' => $conversationUuid]), [
+                'message' => 'This should still save.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('message.body', 'This should still save.');
+
+        $this->assertDatabaseHas('chat_messages', [
+            'body' => 'This should still save.',
+            'user_id' => $user->id,
+        ]);
+
+        Log::shouldHaveReceived('warning')
+            ->once()
+            ->with('Chat message broadcast failed.', \Mockery::on(
+                fn (array $context): bool => $context['conversation_uuid'] === $conversationUuid
+                    && isset($context['message_uuid'], $context['exception'])
+            ));
     }
 
     public function test_direct_chat_is_limited_to_participants(): void

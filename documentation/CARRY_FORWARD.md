@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-08 | **Current version**: v1.95 | **Branch**: `main`
+**As of**: 2026-07-09 | **Current version**: v1.96 | **Branch**: `main`
 
 ---
 
@@ -42,7 +42,7 @@
 - Legal/policy content now lives in dedicated `policy_pages`, edited at `/admin/policies`, and rendered publicly at `/policies` and `/policies/{slug}`
 - Landing page now has a fixed, scroll-aware public navbar over the hero video, horizontal overflow containment, and a JS replay fallback for the hero video loop (`#hero-video`)
 - Player dashboard desktop sidebar is viewport-fixed and the main content reserves the collapsed sidebar width, so the sidebar bottom actions remain pinned while long content scrolls
-- `/chat` is now a persisted Reverb-backed comms hub for global, direct player-to-player, and active team channels, with unread state, player search/profile/follow actions, and global retention capped to the latest 100 messages
+- `/chat` is now a persisted Reverb-backed comms hub for global, direct player-to-player, and active team channels, with unread state, player search/profile/follow actions, global retention capped to the latest 100 messages, and resilient message saves when realtime broadcasting is unavailable
 - PWA install support is present through manifest/service worker/icons and native browser install prompt handling
 - Echo/Reverb frontend setup is lazy-loaded only for authenticated pages with `meta[name="user-uuid"]`, preventing guest-page WebSocket console errors
 
@@ -117,6 +117,7 @@
 | v1.92 | Real-time stream chat and Twitch-style streams redesign |
 | v1.94 | Player desktop sidebar viewport pinning fix |
 | v1.95 | Realtime global, direct, and team chat |
+| v1.96 | Chat send resilience when realtime broadcasting is unavailable |
 
 ---
 
@@ -163,6 +164,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - Landing/policy footer drift from shared guest footer — consolidated through layout-level shared footer v1.80
 - Contact inquiry resolve/archive state looked unchanged in admin after action — fixed v1.81
 - `/chat` mock-only session messages — replaced with persisted Reverb-backed comms hub v1.95
+- `/chat` message send failed when Reverb/Pusher was unavailable — fixed v1.96
 - Static landing page requiring code edits for content changes — replaced with DB-backed landing CMS v1.60
 - Landing games grid without visual game banners — improved with horizontal carousel and `games.banner_path` v1.61
 - PWA install CTA placement and mobile duplication — fixed v1.50/v1.51

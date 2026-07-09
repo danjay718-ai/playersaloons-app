@@ -13,8 +13,10 @@ use App\Modules\Team\Models\Team;
 use App\Modules\Team\Models\TeamMember;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ChatService
 {
@@ -141,7 +143,7 @@ class ChatService
             abort(403, 'You cannot send messages to this channel.');
         }
 
-        return DB::transaction(function () use ($conversation, $user, $body): ChatMessage {
+        $message = DB::transaction(function () use ($conversation, $user, $body): ChatMessage {
             $this->ensureParticipant($conversation, $user, 'member');
 
             /** @var ChatParticipant|null $participant */
@@ -166,10 +168,22 @@ class ChatService
             $this->pruneGlobalMessages($conversation);
 
             $message->load('user');
-            broadcast(new ChatMessageSent($conversation->uuid, $this->messagePayload($message)))->toOthers();
 
             return $message;
         });
+
+        try {
+            $pendingBroadcast = broadcast(new ChatMessageSent($conversation->uuid, $this->messagePayload($message)))->toOthers();
+            unset($pendingBroadcast);
+        } catch (Throwable $exception) {
+            Log::warning('Chat message broadcast failed.', [
+                'conversation_uuid' => $conversation->uuid,
+                'message_uuid' => $message->uuid,
+                'exception' => $exception->getMessage(),
+            ]);
+        }
+
+        return $message;
     }
 
     public function canAccessConversation(ChatConversation $conversation, User $user): bool
