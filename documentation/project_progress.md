@@ -1,6 +1,14 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-09 (v1.96) | **Branch**: `main`
+**Last Updated**: 2026-07-10 (v1.97) | **Branch**: `main`
+
+---
+## ✅ Broadcast Socket ID Hardening (v1.97)
+
+- **`SanitizeBroadcastSocketId`**: Added web middleware that removes malformed `X-Socket-ID` headers such as `undefined` before Laravel/Reverb/Pusher broadcast code reads them, preventing `Invalid socket ID undefined` 500 errors after Echo is initialized but not connected yet.
+- **Chat broadcasts**: Removed `toOthers()` from global chat and stream chat broadcast dispatches so sending messages no longer depends on the browser providing a valid socket id. Global chat already deduplicates messages by UUID; stream chat now ignores duplicate message ids on the client.
+- **`StreamWatch`**: Wrapped stream chat, stream message deletion, and viewer-count broadcasts with warning-level logging so realtime broadcast failures no longer block stream chat persistence or moderation actions.
+- **Regression coverage**: Added a stream chat integration test that sends through Livewire with `X-Socket-ID: undefined` and verifies the message persists without Livewire errors. Focused chat tests and the new socket regression pass. PHPStan still exits with code 1 and no diagnostics/output in this environment.
 
 ---
 ## ✅ Chat Broadcast Failure Resilience (v1.96)

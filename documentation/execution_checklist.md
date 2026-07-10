@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-09 (v1.96)
+**Status**: Active Backlog | **Last Updated**: 2026-07-10 (v1.97)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -11,6 +11,7 @@
 *None currently tracked. Add here as discovered.*
 
 ### Recently Fixed
+- [x] Livewire/Reverb requests could send `X-Socket-ID: undefined`, causing `Invalid socket ID undefined` 500 errors in global/stream chat broadcasts *(fixed v1.97)*
 - [x] `/chat` global message send failed when Reverb/Pusher was unavailable; messages now persist and broadcast failures are logged *(fixed v1.96)*
 
 ---
