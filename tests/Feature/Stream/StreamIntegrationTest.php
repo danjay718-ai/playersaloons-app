@@ -6,10 +6,12 @@ namespace Tests\Feature\Stream;
 
 use App\Livewire\Admin\TournamentForm;
 use App\Livewire\Stream\StreamList;
+use App\Livewire\Stream\StreamWatch;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Modules\Stream\Models\StreamChannel;
+use App\Modules\Stream\Models\StreamChatMessage;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Enums\UserStatus;
@@ -17,6 +19,7 @@ use Database\Seeders\GamesTableSeeder;
 use Database\Seeders\GameTrailerStreamSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -254,6 +257,34 @@ class StreamIntegrationTest extends TestCase
             ->assertOk()
             ->assertSee('Game Trailers')
             ->assertSee('VALORANT Official Launch Cinematic Trailer');
+    }
+
+    public function test_stream_chat_send_ignores_invalid_livewire_socket_id(): void
+    {
+        Config::set('broadcasting.default', 'reverb');
+
+        $stream = StreamChannel::query()->create([
+            'user_id' => $this->player->id,
+            'title' => 'Socket Guard Stream',
+            'provider' => 'youtube',
+            'source_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'is_public' => true,
+        ]);
+
+        Livewire::withHeaders(['X-Socket-ID' => 'undefined'])
+            ->actingAs($this->player)
+            ->test(StreamWatch::class, ['id' => $stream->id])
+            ->set('chatMessage', 'Socket should not crash this send.')
+            ->call('sendMessage')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('stream_chat_messages', [
+            'stream_channel_id' => $stream->id,
+            'user_id' => $this->player->id,
+            'message' => 'Socket should not crash this send.',
+        ]);
+
+        $this->assertSame(1, StreamChatMessage::query()->count());
     }
 
     private function createUserWithRole(string $role, string $email): User
