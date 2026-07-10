@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\SanitizeBroadcastSocketId;
 use App\Http\Middleware\TranslateRenderedHtml;
 use App\Http\Middleware\UpdateUserOnlineStatus;
 use Illuminate\Foundation\Application;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+        $middleware->appendToGroup('web', SanitizeBroadcastSocketId::class);
         $middleware->appendToGroup('web', SetLocale::class);
         $middleware->appendToGroup('web', UpdateUserOnlineStatus::class);
         $middleware->appendToGroup('web', TranslateRenderedHtml::class);

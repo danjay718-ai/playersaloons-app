@@ -7,9 +7,14 @@ namespace App\Livewire\Stream;
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Stream\Models\StreamChatMessage;
 use App\Modules\Stream\Models\StreamViewer;
+use App\Modules\Stream\Events\StreamMessageDeleted;
+use App\Modules\Stream\Events\StreamMessageSent;
+use App\Modules\Stream\Events\StreamViewerCountUpdated;
 use App\Modules\Stream\Support\StreamEmbedService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
+use Throwable;
 
 class StreamWatch extends Component
 {
@@ -85,7 +90,7 @@ class StreamWatch extends Component
         $this->streamChannel->update(['viewer_count' => $this->viewerCount]);
 
         if ($oldCount !== $this->viewerCount) {
-            broadcast(new \App\Modules\Stream\Events\StreamViewerCountUpdated($this->streamChannel->id, $this->viewerCount))->toOthers();
+            $this->broadcastSafely(new StreamViewerCountUpdated($this->streamChannel->id, $this->viewerCount), 'viewer_count');
         }
     }
 
@@ -155,7 +160,7 @@ class StreamWatch extends Component
             'time'     => $msg->created_at?->format('H:i'),
         ];
 
-        broadcast(new \App\Modules\Stream\Events\StreamMessageSent($this->streamChannel->id, $messageData))->toOthers();
+        $this->broadcastSafely(new StreamMessageSent($this->streamChannel->id, $messageData), 'message_sent');
 
         $this->chatMessage = '';
         $this->recentMessages[] = $messageData;
@@ -196,7 +201,7 @@ class StreamWatch extends Component
         $this->deleteMessageId = null;
         $this->loadMessages();
 
-        broadcast(new \App\Modules\Stream\Events\StreamMessageDeleted($this->streamChannel->id, $messageId))->toOthers();
+        $this->broadcastSafely(new StreamMessageDeleted($this->streamChannel->id, $messageId), 'message_deleted');
 
         session()->flash('success', 'Message deleted.');
     }
@@ -296,6 +301,20 @@ class StreamWatch extends Component
                 ['stream_channel_id' => $this->streamChannel->id, 'user_id' => $user->id],
                 ['last_seen_at' => now()]
             );
+        }
+    }
+
+    private function broadcastSafely(object $event, string $action): void
+    {
+        try {
+            $pendingBroadcast = broadcast($event);
+            unset($pendingBroadcast);
+        } catch (Throwable $exception) {
+            Log::warning('Stream realtime broadcast failed.', [
+                'stream_channel_id' => $this->streamChannel->id,
+                'action' => $action,
+                'exception' => $exception->getMessage(),
+            ]);
         }
     }
 

@@ -173,7 +173,7 @@ class ChatService
         });
 
         try {
-            $pendingBroadcast = broadcast(new ChatMessageSent($conversation->uuid, $this->messagePayload($message)))->toOthers();
+            $pendingBroadcast = broadcast(new ChatMessageSent($conversation->uuid, $this->messagePayload($message)));
             unset($pendingBroadcast);
         } catch (Throwable $exception) {
             Log::warning('Chat message broadcast failed.', [

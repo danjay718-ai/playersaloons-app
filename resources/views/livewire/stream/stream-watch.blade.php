@@ -18,6 +18,7 @@
             if (typeof window.Echo !== 'undefined') {
                 window.Echo.channel('stream.{{ $streamChannel->id }}')
                     .listen('.StreamMessageSent', (e) => {
+                        if (this.messages.some(message => message.id === e.message.id)) return;
                         this.messages.push(e.message);
                         this.$nextTick(() => this.scrollChat());
                     })
