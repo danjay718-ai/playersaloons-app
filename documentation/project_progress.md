@@ -1,6 +1,15 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-12 (v1.104) | **Branch**: `main`
+**Last Updated**: 2026-07-12 (v1.105) | **Branch**: `main`
+
+---
+## ✅ Dynamic Deposit Processing Fees (v1.105)
+
+- **Admin settings**: Added clearly described enable, fixed-fee, and percentage-fee controls under `/admin/system-settings`.
+- **Player transparency**: Wallet deposits show wallet credit, processing fee, and total Stripe charge before checkout.
+- **Stripe**: Checkout charges credit plus fee; signed Stripe metadata preserves the intended wallet credit and fee separately.
+- **Webhook security**: Fulfillment verifies charged total equals credit plus fee, credits only the requested wallet amount, and persists `deposits.fee_amount`.
+- **Tests**: 35 focused wallet tests pass with 79 assertions.
 
 ---
 ## ✅ Referral Deposit Qualification (v1.104)
@@ -1145,7 +1154,7 @@ Items where schema or stub exists but logic is missing:
 | 2FA | ✅ Done v1.99 | TOTP setup, login challenge, recovery codes, and disable flow are implemented. |
 | `last_login_at` | ✅ Done v1.29/v1.34 | Successful login updates the timestamp and the migration is present. |
 | `UserKycSubmitted` listener | ✅ Done v1.31 | Admin notification listener is registered. |
-| `deposits.fee_amount` | ❌ Not started | Field in DB and `$fillable`, but fee deduction not implemented. |
+| `deposits.fee_amount` | ✅ Done v1.105 | Dynamic fixed/percentage fees are charged on top and persisted separately from wallet credit. |
 | Broadcast Messages UI | ✅ Done v1.35 | Admin broadcast notification panel is live. |
 | CMS Blog/News | ✅ Done v1.82 | Public `/blog` and `/news` listing/detail routes backed by `cms_pages`; authoring lives in `/admin/cms`. |
 | Compliance/Blacklisting | ✅ Done v1.99 | Auditable blocks, middleware enforcement, expiry/revocation, and admin UI are implemented. |

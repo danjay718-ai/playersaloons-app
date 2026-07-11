@@ -67,6 +67,9 @@ class SystemSettingsSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            ['key' => 'deposit_fee.enabled', 'value' => 'false', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'deposit_fee.fixed', 'value' => '0.00', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'deposit_fee.percentage', 'value' => '0.00', 'created_at' => now(), 'updated_at' => now()],
         ];
 
         foreach ($settings as $setting) {

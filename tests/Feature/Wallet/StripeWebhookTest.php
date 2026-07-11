@@ -68,6 +68,34 @@ class StripeWebhookTest extends TestCase
         $this->assertSame(1, Deposit::query()->where('provider_reference', 'cs_test_idempotent_123')->count());
     }
 
+    public function test_webhook_credits_wallet_amount_and_persists_processing_fee(): void
+    {
+        $wallet = $this->createWallet('0.00');
+        $payload = $this->checkoutSessionPayload('cs_test_fee_123', 5200, [
+            'wallet_id' => (string) $wallet->getKey(),
+            'wallet_credit_amount' => '50.00',
+            'processing_fee_amount' => '2.00',
+        ]);
+
+        $this->postStripeWebhook($payload)->assertOk();
+
+        $this->assertSame('50.00', $wallet->fresh()?->cached_balance);
+        $this->assertDatabaseHas('deposits', ['provider_reference' => 'cs_test_fee_123', 'amount' => '50.00', 'fee_amount' => '2.00']);
+    }
+
+    public function test_webhook_rejects_mismatched_fee_metadata(): void
+    {
+        $wallet = $this->createWallet('0.00');
+        $payload = $this->checkoutSessionPayload('cs_test_fee_tampered', 5000, [
+            'wallet_id' => (string) $wallet->getKey(),
+            'wallet_credit_amount' => '50.00',
+            'processing_fee_amount' => '2.00',
+        ]);
+
+        $this->postStripeWebhook($payload)->assertStatus(422);
+        $this->assertSame('0.00', $wallet->fresh()?->cached_balance);
+    }
+
     public function test_invalid_signature_is_rejected(): void
     {
         $payload = $this->checkoutSessionPayload('cs_test_bad_signature', 1000, [

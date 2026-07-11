@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Wallet;
 
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
+use App\Modules\Wallet\Services\DepositFeeCalculator;
 use App\Modules\Wallet\Services\StripeCheckoutService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -80,7 +81,7 @@ class WalletDashboard extends Component
         }
     }
 
-    public function render()
+    public function render(DepositFeeCalculator $feeCalculator)
     {
         $user = Auth::user();
         if (! $user) {
@@ -99,6 +100,7 @@ class WalletDashboard extends Component
         return view('livewire.wallet.wallet-dashboard', [
             'wallet' => $wallet,
             'ledgerEntries' => $ledgerEntries,
+            'depositBreakdown' => $feeCalculator->calculate(is_numeric($this->depositAmount) ? (float) $this->depositAmount : 0),
         ])->layout('components.layouts.dashboard', [
             'title' => 'Financial Terminal | PlayerSaloons',
             'dashboard_title' => 'FINANCIAL TERMINAL',

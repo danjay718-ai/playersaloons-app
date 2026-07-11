@@ -58,16 +58,25 @@ class StripeWebhookController extends Controller
             return response()->json(['message' => 'Wallet metadata is missing or invalid.'], 422);
         }
 
-        $amount = $this->amountFromSession($session);
-        if ($amount <= 0) {
+        $chargedTotal = $this->amountFromSession($session);
+        $metadata = $this->metadata($session);
+        $creditAmount = isset($metadata['wallet_credit_amount']) && is_numeric($metadata['wallet_credit_amount'])
+            ? (float) $metadata['wallet_credit_amount']
+            : $chargedTotal;
+        $feeAmount = isset($metadata['processing_fee_amount']) && is_numeric($metadata['processing_fee_amount'])
+            ? (float) $metadata['processing_fee_amount']
+            : 0.0;
+
+        if ($creditAmount <= 0 || abs(($creditAmount + $feeAmount) - $chargedTotal) > 0.009) {
             return response()->json(['message' => 'Stripe checkout session amount is invalid.'], 422);
         }
 
         $processDeposit->execute(
             $wallet,
-            number_format($amount, 2, '.', ''),
+            number_format($creditAmount, 2, '.', ''),
             'stripe',
-            (string) $session->id
+            (string) $session->id,
+            number_format($feeAmount, 2, '.', '')
         );
 
         return response()->json(['received' => true, 'handled' => true]);

@@ -15,6 +15,12 @@ class SystemSettingsAdmin extends AdminComponent
 
     public string $referredReward = '2.00';
 
+    public bool $depositFeeEnabled = false;
+
+    public string $depositFeeFixed = '0.00';
+
+    public string $depositFeePercentage = '0.00';
+
     public function boot(): void
     {
         parent::boot();
@@ -29,6 +35,29 @@ class SystemSettingsAdmin extends AdminComponent
         $this->referralEnabled = filter_var($settings['referral.enabled'] ?? true, FILTER_VALIDATE_BOOL);
         $this->referrerReward = (string) ($settings['referral.referrer_reward'] ?? '5.00');
         $this->referredReward = (string) ($settings['referral.referred_reward'] ?? '2.00');
+        $feeSettings = SystemSetting::query()->whereIn('key', ['deposit_fee.enabled', 'deposit_fee.fixed', 'deposit_fee.percentage'])->pluck('value', 'key');
+        $this->depositFeeEnabled = filter_var($feeSettings['deposit_fee.enabled'] ?? false, FILTER_VALIDATE_BOOL);
+        $this->depositFeeFixed = (string) ($feeSettings['deposit_fee.fixed'] ?? '0.00');
+        $this->depositFeePercentage = (string) ($feeSettings['deposit_fee.percentage'] ?? '0.00');
+    }
+
+    public function saveDepositFeeSettings(): void
+    {
+        $this->validate([
+            'depositFeeEnabled' => ['boolean'],
+            'depositFeeFixed' => ['required', 'numeric', 'min:0', 'max:1000', 'decimal:0,2'],
+            'depositFeePercentage' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
+        ]);
+
+        foreach ([
+            'deposit_fee.enabled' => $this->depositFeeEnabled ? 'true' : 'false',
+            'deposit_fee.fixed' => number_format((float) $this->depositFeeFixed, 2, '.', ''),
+            'deposit_fee.percentage' => number_format((float) $this->depositFeePercentage, 2, '.', ''),
+        ] as $key => $value) {
+            SystemSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'updated_by' => Auth::id()]);
+        }
+
+        session()->flash('success', 'Deposit fee settings updated.');
     }
 
     public function saveReferralSettings(): void

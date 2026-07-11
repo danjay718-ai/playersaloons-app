@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-12 (v1.104)
+**Last Updated**: 2026-07-12 (v1.105)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -55,7 +55,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /leaderboards` | `app/Livewire/Match/LeaderboardList.php` | Leaderboard (stub) |
 | `GET /streams` | `app/Livewire/Stream/StreamList.php` | Player stream hub where players publish normalized `stream_channels` for YouTube, Twitch, or Facebook and watch other player/tournament embeds |
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` + `app/Http/Controllers/Community/ChatController.php` | Reverb-backed comms hub for persisted global chat, player-to-player direct chat, team chat with join/switch warning, unread badges, avatars, player search, profile stats modal, follow, and message actions. Global chat retains the latest 100 messages |
-| `GET /wallet` | `app/Livewire/Wallet/WalletDashboard.php` | Wallet balance, Stripe Checkout deposits, withdrawal requests, and transaction history |
+| `GET /wallet` | `app/Livewire/Wallet/WalletDashboard.php` | Wallet balance, transparent dynamic-fee Stripe deposits, withdrawal requests, and transaction history |
 | `GET /profile` | `app/Livewire/Profile/ProfileDashboard.php` | Game-style player profile with avatar, account/profile/password updates, email verification, KYC, notification preferences, and authenticator-based 2FA setup/disable controls |
 | `GET /two-factor-challenge` | `app/Livewire/Auth/TwoFactorChallenge.php` | Completes a pending password login with TOTP or a single-use recovery code |
 | `GET /teams` | `app/Livewire/Team/TeamDashboard.php` | Team management: create, invite, roster, captaincy |

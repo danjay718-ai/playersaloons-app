@@ -11,6 +11,8 @@ use Stripe\StripeClient;
 
 class StripeCheckoutService
 {
+    public function __construct(private DepositFeeCalculator $feeCalculator) {}
+
     public function createDepositSession(User $user, Wallet $wallet, float $amount): string
     {
         if ($amount <= 0) {
@@ -22,6 +24,7 @@ class StripeCheckoutService
             throw new LogicException('Stripe secret key is not configured.');
         }
 
+        $breakdown = $this->feeCalculator->calculate($amount);
         $stripe = new StripeClient($secret);
 
         $session = $stripe->checkout->sessions->create([
@@ -35,7 +38,7 @@ class StripeCheckoutService
                         'product_data' => [
                             'name' => 'PlayerSaloons Wallet Deposit',
                         ],
-                        'unit_amount' => (int) round($amount * 100),
+                        'unit_amount' => (int) round((float) $breakdown['total'] * 100),
                     ],
                     'quantity' => 1,
                 ],
@@ -46,6 +49,8 @@ class StripeCheckoutService
                 'user_uuid' => (string) $user->uuid,
                 'wallet_id' => (string) $wallet->getKey(),
                 'wallet_uuid' => (string) $wallet->uuid,
+                'wallet_credit_amount' => $breakdown['credit'],
+                'processing_fee_amount' => $breakdown['fee'],
             ],
             'success_url' => route('wallet', ['stripe_deposit' => 'success'], true),
             'cancel_url' => route('wallet', ['stripe_deposit' => 'cancelled'], true),

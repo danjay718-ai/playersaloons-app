@@ -73,12 +73,20 @@
                         <label for="depositAmount" class="mb-2 block font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Amount</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-emerald-300">$</span>
-                            <input wire:model="depositAmount" id="depositAmount" type="number" step="0.01" min="1" required
+                            <input wire:model.live.debounce.250ms="depositAmount" id="depositAmount" type="number" step="0.01" min="1" required
                                 class="h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900/70 pl-9 pr-4 font-orbitron text-sm font-bold text-white outline-none transition-colors placeholder:text-zinc-700 focus:border-emerald-400/60"
                                 placeholder="0.00">
                         </div>
                         @error('depositAmount') <span class="mt-2 block text-xs font-bold text-red-400">{{ $message }}</span> @enderror
                     </div>
+
+                    @if((float) $depositBreakdown['credit'] > 0)
+                        <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs">
+                            <div class="flex justify-between text-zinc-400"><span>Wallet credit</span><span class="font-bold text-white">${{ $depositBreakdown['credit'] }}</span></div>
+                            <div class="mt-2 flex justify-between text-zinc-400"><span>Processing fee</span><span class="font-bold text-amber-300">${{ $depositBreakdown['fee'] }}</span></div>
+                            <div class="mt-3 flex justify-between border-t border-zinc-800 pt-3 text-zinc-300"><span class="font-bold">Total Stripe charge</span><span class="font-black text-emerald-300">${{ $depositBreakdown['total'] }}</span></div>
+                        </div>
+                    @endif
 
                     <div class="grid grid-cols-4 gap-2">
                         @foreach([10, 25, 50, 100] as $suggestedAmount)

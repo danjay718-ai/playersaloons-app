@@ -22,13 +22,13 @@ class ProcessDepositAction
      *
      * @param  string|float  $amount
      */
-    public function execute(Wallet $wallet, $amount, string $provider, string $providerReference): Deposit
+    public function execute(Wallet $wallet, $amount, string $provider, string $providerReference, string|float $feeAmount = '0.00'): Deposit
     {
         if ((float) $amount <= 0) {
             throw new InvalidArgumentException('Deposit amount must be greater than zero.');
         }
 
-        return DB::transaction(function () use ($wallet, $amount, $provider, $providerReference): Deposit {
+        return DB::transaction(function () use ($wallet, $amount, $provider, $providerReference, $feeAmount): Deposit {
             // Check for duplicate reference (idempotency check)
             $existing = Deposit::query()
                 ->where('provider', $provider)
@@ -43,6 +43,7 @@ class ProcessDepositAction
                 'uuid' => Str::uuid()->toString(),
                 'wallet_id' => $wallet->getKey(),
                 'amount' => $amount,
+                'fee_amount' => number_format(max(0, (float) $feeAmount), 2, '.', ''),
                 'provider' => $provider,
                 'provider_reference' => $providerReference,
                 'status' => 'completed',
