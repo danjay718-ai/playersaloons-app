@@ -17,6 +17,7 @@ use App\Livewire\Admin\ContactInquiryAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\NewsletterAdmin;
+use App\Livewire\Admin\PlayerReviewAdmin;
 use App\Livewire\Admin\PolicyAdmin;
 use App\Livewire\Admin\StaffActivityDashboard;
 use App\Livewire\Admin\SystemSettingsAdmin;
@@ -36,6 +37,7 @@ use App\Livewire\CMS\NewsArticleView;
 use App\Livewire\CMS\NewsIndex;
 use App\Livewire\Community\ContactPage;
 use App\Livewire\Community\GlobalChat;
+use App\Livewire\Community\PlayerReviewPage;
 use App\Livewire\Dashboard\PlayerDashboard;
 use App\Livewire\Landing\LandingPage;
 use App\Livewire\Match\HeadToHeadList;
@@ -129,6 +131,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/wallet', WalletDashboard::class)->name('wallet');
         Route::get('/profile', ProfileDashboard::class);
+        Route::get('/reviews', PlayerReviewPage::class)->name('reviews');
         Route::get('/teams', TeamDashboard::class);
     });
 
@@ -179,6 +182,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/newsletters', NewsletterAdmin::class)->name('admin.newsletters');
         Route::get('/system-settings', SystemSettingsAdmin::class)->name('admin.system-settings');
         Route::get('/advertisements', AdvertisementAdmin::class)->name('admin.advertisements');
+        Route::get('/player-reviews', PlayerReviewAdmin::class)->name('admin.player-reviews');
         Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');
     });
 });

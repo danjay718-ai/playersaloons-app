@@ -296,6 +296,12 @@ Head-to-head results maintain a game-specific ELO rating used by automatic match
 *   **Controls**: Title, description, optional external image/destination URL, CTA label, activation, and start/end schedule.
 *   **Tracking**: Active promotion clicks are counted before redirecting to the configured destination.
 
+## 18. Player Review Moderation
+
+*   **Player Route**: `/reviews`; one editable 1–5 star review per player.
+*   **Admin Route**: `/admin/player-reviews` for ADMIN/SUPER_ADMIN approval or rejection.
+*   **Moderation Rule**: New submissions and edits are pending; only approved reviews render publicly on the landing page.
+
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
 *   **Role Protection**: `test_non_admin_cannot_access_admin_dashboard` / `test_player_cannot_access_staff_activity_dashboard`

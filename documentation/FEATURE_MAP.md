@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-12 (v1.106)
+**Last Updated**: 2026-07-12 (v1.107)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -58,6 +58,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` + `app/Http/Controllers/Community/ChatController.php` | Reverb-backed comms hub for persisted global chat, player-to-player direct chat, team chat with join/switch warning, unread badges, avatars, player search, profile stats modal, follow, and message actions. Global chat retains the latest 100 messages |
 | `GET /wallet` | `app/Livewire/Wallet/WalletDashboard.php` | Wallet balance, transparent dynamic-fee Stripe deposits, withdrawal requests, and transaction history |
 | `GET /profile` | `app/Livewire/Profile/ProfileDashboard.php` | Game-style player profile with avatar, account/profile/password updates, email verification, KYC, notification preferences, and authenticator-based 2FA setup/disable controls |
+| `GET /reviews` | `app/Livewire/Community/PlayerReviewPage.php` | Submit or edit one moderated 1–5 star platform review |
 | `GET /two-factor-challenge` | `app/Livewire/Auth/TwoFactorChallenge.php` | Completes a pending password login with TOTP or a single-use recovery code |
 | `GET /teams` | `app/Livewire/Team/TeamDashboard.php` | Team management: create, invite, roster, captaincy |
 | `GET /verify-email` | `app/Livewire/Auth/EmailVerification.php` | Email verification notice + resend verification email |
@@ -89,6 +90,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/newsletters` | `app/Livewire/Admin/NewsletterAdmin.php` | Subscriber audience search, campaign sending, delivery totals, and recent campaign history |
 | `GET /admin/system-settings` | `app/Livewire/Admin/SystemSettingsAdmin.php` | Admin-adjustable referral enablement and referrer/new-player reward amounts |
 | `GET /admin/advertisements` | `app/Livewire/Admin/AdvertisementAdmin.php` | Scheduled advertisement/promotion CRUD and click totals |
+| `GET /admin/player-reviews` | `app/Livewire/Admin/PlayerReviewAdmin.php` | Approve or reject player star reviews before public display |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
 
 ### REST API Routes (`/api/v1`)

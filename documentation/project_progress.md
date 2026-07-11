@@ -1,6 +1,15 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-12 (v1.106) | **Branch**: `main`
+**Last Updated**: 2026-07-12 (v1.107) | **Branch**: `main`
+
+---
+## ✅ Player Reviews & Star Ratings (v1.107)
+
+- **Player flow**: Added `/reviews` where each authenticated player can submit or edit one 1–5 star platform review.
+- **Moderation**: New and edited reviews remain pending until ADMIN/SUPER_ADMIN approves or rejects them at `/admin/player-reviews`.
+- **Public display**: Only approved player reviews appear in the landing-page reviews section with star ratings and player identity.
+- **Navigation**: Added Review Us to player navigation and Player Reviews to admin navigation.
+- **Tests**: Review and landing coverage passes with 8 tests and 35 assertions.
 
 ---
 ## ✅ Advertisement & Promotion Management (v1.106)

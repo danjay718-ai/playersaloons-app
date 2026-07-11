@@ -95,6 +95,7 @@
                                 ['label' => 'Contact Inquiries', 'icon' => 'inbox', 'url' => '/admin/contact-inquiries'],
                                 ['label' => 'Newsletters', 'icon' => 'mail', 'url' => '/admin/newsletters'],
                                 ['label' => 'Advertisements', 'icon' => 'badge-percent', 'url' => '/admin/advertisements'],
+                                ['label' => 'Player Reviews', 'icon' => 'star', 'url' => '/admin/player-reviews'],
                                 ['label' => 'System Settings', 'icon' => 'settings', 'url' => '/admin/system-settings'],
                             ],
                         ],

@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-12 (v1.106)
+**Status**: Active Backlog | **Last Updated**: 2026-07-12 (v1.107)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -92,12 +92,13 @@ Implement these next, in order:
 3. [x] Referral System Logic — added registration attribution, first-successful-deposit qualification, idempotent ledger credits, profile stats, and admin-adjustable reward settings. *(done v1.103; qualification updated v1.104)*
 4. [x] Deposit Processing Fee — added dynamic fixed/percentage settings, player cost breakdown, Stripe total charging, persisted fees, and webhook consistency validation. *(done v1.105)*
 5. [x] Advertisement & Promotion Management — added admin scheduling/CRUD, active player dashboard banners, dismiss controls, and click tracking. *(done v1.106)*
+6. [x] Player Review Management — added one editable star review per player, moderation, and approved public landing testimonials. *(done v1.107)*
 
 After the ordered feature queue:
 
-6. [ ] Team Tournaments — implement the currently unused `tournament_registrations.team_id` flow.
-7. [ ] Auto-Forfeit Timeout Setting — expose `waiting_result_time` in the System Settings UI.
-8. [ ] Rematch Voting — allow players to request and agree to a rematch before opening a dispute.
+7. [ ] Team Tournaments — implement the currently unused `tournament_registrations.team_id` flow.
+8. [ ] Auto-Forfeit Timeout Setting — expose `waiting_result_time` in the System Settings UI.
+9. [ ] Rematch Voting — allow players to request and agree to a rematch before opening a dispute.
 
 ### File Storage Migration (Required Before Full Production)
 - [ ] `composer require league/flysystem-aws-s3-v3`
