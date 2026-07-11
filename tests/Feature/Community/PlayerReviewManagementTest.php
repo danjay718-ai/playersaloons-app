@@ -42,6 +42,17 @@ class PlayerReviewManagementTest extends TestCase
         $this->assertDatabaseHas('player_reviews', ['user_id' => $player->id, 'rating' => 4, 'status' => 'pending']);
     }
 
+    public function test_player_review_page_renders_dashboard_mobile_navigation(): void
+    {
+        $player = $this->user('navigation-reviewer@example.com', 'PLAYER');
+
+        $this->actingAs($player)
+            ->get('/reviews')
+            ->assertOk()
+            ->assertSee('mobile-bottom-nav', escape: false)
+            ->assertSee('Review Us');
+    }
+
     public function test_editing_approved_review_returns_it_to_pending(): void
     {
         $player = $this->user('editor@example.com', 'PLAYER');

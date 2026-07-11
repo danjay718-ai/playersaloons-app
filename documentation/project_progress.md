@@ -1,6 +1,13 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-12 (v1.107) | **Branch**: `main`
+**Last Updated**: 2026-07-12 (v1.108) | **Branch**: `main`
+
+---
+## ✅ Player Mobile Navigation Variable Fix (v1.108)
+
+- **Dashboard layout**: Moved `$bottomNavItems` initialization to the top-level layout scope so cached Blade rendering always defines it before the mobile navigation loop.
+- **Regression coverage**: Added a direct authenticated `/reviews` request assertion for the mobile bottom navigation and Review Us entry.
+- **Verification**: Cleared and rebuilt the Blade view cache; all 5 player review/navigation tests pass with 12 assertions.
 
 ---
 ## ✅ Player Reviews & Star Ratings (v1.107)

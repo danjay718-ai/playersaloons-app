@@ -27,6 +27,15 @@
     @livewireStyles
 </head>
 <body class="bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-violet-600 selection:text-white relative cyber-grid">
+    @php
+        $bottomNavItems = [
+            ['label' => __('Overview'), 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'pattern' => 'dashboard'],
+            ['label' => __('Browse'), 'icon' => 'search', 'url' => '/tournaments/browse', 'pattern' => 'tournaments/browse*'],
+            ['label' => __('H2H'), 'icon' => 'swords', 'url' => '/head-to-head', 'pattern' => 'head-to-head'],
+            ['label' => __('My Games'), 'icon' => 'trophy', 'url' => '/my-tournaments', 'pattern' => 'my-tournaments'],
+            ['label' => __('More'), 'icon' => 'grid-3x3', 'url' => null, 'pattern' => null],
+        ];
+    @endphp
     <!-- Global Background FX -->
     <div class="fixed inset-0 pointer-events-none z-0">
         <!-- Neon Orbs -->
@@ -350,16 +359,6 @@
          (shown only on mobile, < md breakpoint)
     ───────────────────────────────────────── -->
     <nav id="mobile-bottom-nav" role="navigation" aria-label="Main navigation">
-        @php
-            $bottomNavItems = [
-                ['label' => __('Overview'),    'icon' => 'layout-dashboard', 'url' => '/dashboard',        'pattern' => 'dashboard'],
-                ['label' => __('Browse'),      'icon' => 'search',           'url' => '/tournaments/browse','pattern' => 'tournaments/browse*'],
-                ['label' => __('H2H'),         'icon' => 'swords',           'url' => '/head-to-head',     'pattern' => 'head-to-head'],
-                ['label' => __('My Games'),    'icon' => 'trophy',           'url' => '/my-tournaments',   'pattern' => 'my-tournaments'],
-                ['label' => __('More'),        'icon' => 'grid-3x3',         'url' => null,                'pattern' => null],
-            ];
-        @endphp
-
         <div class="mobile-nav-items">
             @foreach($bottomNavItems as $item)
                 @if($item['url'])

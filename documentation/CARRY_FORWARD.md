@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-12 | **Current version**: v1.107 | **Branch**: `main`
+**As of**: 2026-07-12 | **Current version**: v1.108 | **Branch**: `main`
 
 ---
 
