@@ -43,11 +43,15 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $policy_acceptance_ip
  * @property string|null $policy_acceptance_user_agent
  * @property UserStatus $status
+ * @property string|null $two_factor_secret
+ * @property array<int, string>|null $two_factor_recovery_codes
+ * @property Carbon|null $two_factor_confirmed_at
  * @property-read Wallet|null $wallet
  * @property-read UserProfile|null $profile
  * @property-read Collection<int, KycSubmission> $kycSubmissions
  * @property-read Collection<int, Notification> $notifications
  * @property-read Collection<int, StreamChannel> $streamChannels
+ * @property-read Collection<int, ComplianceBlock> $complianceBlocks
  */
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
@@ -84,6 +88,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'newsletter_subscribed_at',
         'policy_acceptance_ip',
         'policy_acceptance_user_agent',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
     ];
 
     /**
@@ -94,6 +101,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -114,6 +123,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             'newsletter_subscribed_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -159,6 +171,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function streamChannels(): HasMany
     {
         return $this->hasMany(StreamChannel::class);
+    }
+
+    public function complianceBlocks(): HasMany
+    {
+        return $this->hasMany(ComplianceBlock::class);
     }
 
     /**

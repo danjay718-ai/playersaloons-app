@@ -72,6 +72,7 @@
                                 ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc'],
                                 ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals'],
                                 ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users'],
+                                ['label' => 'Compliance', 'icon' => 'shield-alert', 'url' => '/admin/compliance'],
                             ],
                         ],
                         [
