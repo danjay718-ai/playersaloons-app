@@ -94,6 +94,7 @@
                                 ['label' => 'Notifications', 'icon' => 'megaphone', 'url' => '/admin/notifications'],
                                 ['label' => 'Contact Inquiries', 'icon' => 'inbox', 'url' => '/admin/contact-inquiries'],
                                 ['label' => 'Newsletters', 'icon' => 'mail', 'url' => '/admin/newsletters'],
+                                ['label' => 'System Settings', 'icon' => 'settings', 'url' => '/admin/system-settings'],
                             ],
                         ],
                     ];

@@ -119,7 +119,7 @@ Admins manage auditable player restrictions at `/admin/compliance`. A block reco
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
-    *   **Referral System Logic**: The referral integer ID is in the DB but reward logic is not yet implemented. It is third in the ordered feature queue, after contact inquiry workflow polish and newsletter management.
+    *   **Referral System Logic**: Registration captures valid active referrers from `?ref={user_id}`. The relationship remains pending until email verification, then credits the referrer and new player through idempotent wallet ledger entries. ADMIN/SUPER_ADMIN can enable the program and adjust both amounts in `/admin/system-settings`.
     *   **Social Login**: `provider_name` and `provider_id` are in some variations of the plan but not yet in the current migration.
 *   **Unused Schema Columns**:
     *   `user_profiles.metadata`: JSON field currently empty/not used by `UpdateProfileAction`.

@@ -1,6 +1,17 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-12 (v1.102) | **Branch**: `main`
+**Last Updated**: 2026-07-12 (v1.103) | **Branch**: `main`
+
+---
+## ✅ Dynamic Referral Rewards (v1.103)
+
+- **Attribution**: Registration captures valid active referrers from the existing integer `?ref={user_id}` links in an auditable, unique referral record.
+- **Qualification**: Rewards are issued only after the referred player verifies their email.
+- **Wallets**: Referrer and new-player bonuses use immutable `REFERRAL_BONUS` ledger entries with row locking and rewarded-state idempotency.
+- **Dynamic settings**: ADMIN/SUPER_ADMIN can enable referrals and adjust both reward amounts at `/admin/system-settings`; values are read at qualification time and store `updated_by`.
+- **Profile**: Referral cards show rewarded, pending, and total earned values.
+- **Tests**: All 5 focused referral tests pass with 12 assertions.
+- **PHPStan**: Focused referral analysis passes.
 
 ---
 ## ✅ Newsletter Management (v1.102)
@@ -1123,7 +1134,7 @@ Items where schema or stub exists but logic is missing:
 | H2H Admin Review / Proof Uploads | ✅ Done v1.40 | Proof uploads and admin dispute resolution are implemented. |
 | File Storage → R2/S3 | ⚠️ Deferred | Currently using local `public` disk. See deployment notes below. |
 | External Payout Integration | ⚪ Production deferred | Manual payouts remain during testing; provider integration is tracked in the production-readiness checklist. |
-| Referral System Logic | ❌ Not started | Integer ref ID in DB, no reward logic. |
+| Referral System Logic | ✅ Done v1.103 | Verified-email qualification, dynamic admin settings, and idempotent wallet rewards are implemented. |
 | 2FA | ✅ Done v1.99 | TOTP setup, login challenge, recovery codes, and disable flow are implemented. |
 | `last_login_at` | ✅ Done v1.29/v1.34 | Successful login updates the timestamp and the migration is present. |
 | `UserKycSubmitted` listener | ✅ Done v1.31 | Admin notification listener is registered. |

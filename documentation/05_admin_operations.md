@@ -283,6 +283,12 @@ Head-to-head results maintain a game-specific ELO rating used by automatic match
 *   **Auditability**: Each resolved match stores creator/opponent ratings before and after processing plus `rating_processed_at` for idempotency.
 *   **Matchmaking**: The initial acceptable difference is 100 rating points and expands by 25 points per waiting minute up to 400.
 
+## 16. System Settings
+
+*   **Admin Route**: `/admin/system-settings`
+*   **Authorization**: ADMIN and SUPER_ADMIN only.
+*   **Referral Settings**: Enable/disable rewards and adjust the referrer and new-player amounts. Values are read when email verification qualifies the referral, and updates record `updated_by`.
+
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
 *   **Role Protection**: `test_non_admin_cannot_access_admin_dashboard` / `test_player_cannot_access_staff_activity_dashboard`

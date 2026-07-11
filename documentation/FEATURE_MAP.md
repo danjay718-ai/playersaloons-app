@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-12 (v1.102)
+**Last Updated**: 2026-07-12 (v1.103)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -86,6 +86,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
 | `GET /admin/contact-inquiries` | `app/Livewire/Admin/ContactInquiryAdmin.php` | Contact inquiry inbox: status counters, search/filter, category/status badges, email reply shortcut, internal notes, resolve, archive |
 | `GET /admin/newsletters` | `app/Livewire/Admin/NewsletterAdmin.php` | Subscriber audience search, campaign sending, delivery totals, and recent campaign history |
+| `GET /admin/system-settings` | `app/Livewire/Admin/SystemSettingsAdmin.php` | Admin-adjustable referral enablement and referrer/new-player reward amounts |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
 
 ### REST API Routes (`/api/v1`)
@@ -157,6 +158,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Feature | Action/Service | Event | Listener |
 |---|---|---|---|
 | Register | `RegisterUserAction` | `UserRegistered` | `CreateWalletListener` |
+| Referral rewards | `RegisterUserAction`, `AwardReferralRewardsAction` | Laravel `Verified` | `AwardReferralRewardsListener` |
 | Online presence | `UpdateUserOnlineStatus` (middleware) | — | — |
 | KYC Submit | `SubmitKycAction` | `UserKycSubmitted` | `NotifyAdminsOfKycSubmissionListener` |
 | KYC Approve | `ApproveKycAction` | `UserKycApproved` | — |

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Actions;
 
 use App\Modules\Identity\Events\UserRegistered;
+use App\Modules\Identity\Models\Referral;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserProfile;
 use App\Shared\Enums\UserStatus;
@@ -20,7 +21,7 @@ class RegisterUserAction
      * Wallet creation is handled by the CreateWalletListener
      * reacting to the UserRegistered event.
      *
-     * @param  array{email: string, username: string, password: string, display_name?: string|null, accepted_terms_at?: mixed, accepted_privacy_policy_at?: mixed, accepted_cookie_policy_at?: mixed, age_confirmed_at?: mixed, newsletter_subscribed?: bool, newsletter_subscribed_at?: mixed, policy_acceptance_ip?: string|null, policy_acceptance_user_agent?: string|null}  $data
+     * @param  array{email: string, username: string, password: string, display_name?: string|null, accepted_terms_at?: mixed, accepted_privacy_policy_at?: mixed, accepted_cookie_policy_at?: mixed, age_confirmed_at?: mixed, newsletter_subscribed?: bool, newsletter_subscribed_at?: mixed, policy_acceptance_ip?: string|null, policy_acceptance_user_agent?: string|null, referrer_id?: int|null}  $data
      */
     public function execute(array $data): User
     {
@@ -52,6 +53,22 @@ class RegisterUserAction
             $profile->save();
 
             $user->assignRole('PLAYER');
+
+            if (! empty($data['referrer_id'])) {
+                $referrer = User::query()
+                    ->whereKey($data['referrer_id'])
+                    ->where('status', UserStatus::ACTIVE->value)
+                    ->first();
+
+                if ($referrer && $referrer->id !== $user->id) {
+                    Referral::query()->create([
+                        'uuid' => Str::uuid()->toString(),
+                        'referrer_id' => $referrer->id,
+                        'referred_user_id' => $user->id,
+                        'status' => 'pending',
+                    ]);
+                }
+            }
 
             return $user;
         });

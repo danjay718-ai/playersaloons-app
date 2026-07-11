@@ -18,6 +18,7 @@ use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\NewsletterAdmin;
 use App\Livewire\Admin\PolicyAdmin;
 use App\Livewire\Admin\StaffActivityDashboard;
+use App\Livewire\Admin\SystemSettingsAdmin;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Admin\TournamentForm;
 use App\Livewire\Admin\TranslationAdmin;
@@ -168,6 +169,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/notifications', BroadcastNotificationAdmin::class)->name('admin.notifications');
         Route::get('/contact-inquiries', ContactInquiryAdmin::class)->name('admin.contact-inquiries');
         Route::get('/newsletters', NewsletterAdmin::class)->name('admin.newsletters');
+        Route::get('/system-settings', SystemSettingsAdmin::class)->name('admin.system-settings');
         Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');
     });
 });

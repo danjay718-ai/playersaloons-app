@@ -26,6 +26,14 @@ class Register extends Component
 
     public bool $newsletter_subscribed = false;
 
+    public ?int $referrerId = null;
+
+    public function mount(): void
+    {
+        $ref = request()->query('ref');
+        $this->referrerId = is_numeric($ref) && (int) $ref > 0 ? (int) $ref : null;
+    }
+
     protected array $rules = [
         'username' => ['required', 'string', 'alpha_dash', 'min:3', 'max:30', 'unique:users,username'],
         'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -59,6 +67,7 @@ class Register extends Component
             'newsletter_subscribed_at' => $this->newsletter_subscribed ? $acceptedAt : null,
             'policy_acceptance_ip' => request()->ip(),
             'policy_acceptance_user_agent' => substr((string) request()->userAgent(), 0, 2000),
+            'referrer_id' => $this->referrerId,
         ]);
 
         Auth::login($user);

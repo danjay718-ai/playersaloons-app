@@ -8,6 +8,7 @@ use App\Modules\Identity\Events\UserKycSubmitted;
 use App\Modules\Identity\Events\UserRegistered;
 use App\Modules\Identity\Events\UserSuspended;
 use App\Modules\Identity\Events\UserUnsuspended;
+use App\Modules\Identity\Listeners\AwardReferralRewardsListener;
 use App\Modules\Identity\Listeners\NotifyAdminsOfKycSubmissionListener;
 use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Events\MatchCreated;
@@ -22,8 +23,8 @@ use App\Modules\Match\Listeners\NotifyParticipantsListener;
 use App\Modules\Tournament\Events\TournamentCancelled;
 use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Events\TournamentStarted;
-use App\Modules\Tournament\Listeners\AwardPrizesListener;
 use App\Modules\Tournament\Listeners\AutoStartMatchesListener;
+use App\Modules\Tournament\Listeners\AwardPrizesListener;
 use App\Modules\Tournament\Listeners\BroadcastTournamentLifecycleListener;
 use App\Modules\Tournament\Listeners\IssueRefundsListener;
 use App\Modules\Tournament\Listeners\TournamentNotificationListener;
@@ -39,6 +40,7 @@ use App\Modules\Wallet\Listeners\SendDepositNotificationListener;
 use App\Modules\Wallet\Listeners\SendNotificationListener;
 use App\Modules\Wallet\Listeners\SuspendWalletListener;
 use App\Modules\Wallet\Listeners\UnsuspendWalletListener;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -53,6 +55,9 @@ class EventServiceProvider extends ServiceProvider
      * @var array<class-string, list<class-string>>
      */
     protected array $listen = [
+        Verified::class => [
+            AwardReferralRewardsListener::class,
+        ],
         // ── Identity ────────────────────────────────────────────────────────
         UserRegistered::class => [
             CreateWalletListener::class,

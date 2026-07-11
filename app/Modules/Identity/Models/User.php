@@ -52,6 +52,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, Notification> $notifications
  * @property-read Collection<int, StreamChannel> $streamChannels
  * @property-read Collection<int, ComplianceBlock> $complianceBlocks
+ * @property-read Collection<int, Referral> $referrals
  */
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
@@ -176,6 +177,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function complianceBlocks(): HasMany
     {
         return $this->hasMany(ComplianceBlock::class);
+    }
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(Referral::class, 'referrer_id');
     }
 
     /**

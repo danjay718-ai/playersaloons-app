@@ -12,4 +12,5 @@ enum LedgerType: string
     case REFUND = 'REFUND';
     case PRIZE = 'PRIZE';
     case ADJUSTMENT = 'ADJUSTMENT';
+    case REFERRAL_BONUS = 'REFERRAL_BONUS';
 }

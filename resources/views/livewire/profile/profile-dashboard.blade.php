@@ -119,6 +119,11 @@
                                 <i x-show="copied" data-lucide="check" class="w-4 h-4 text-emerald-300" x-cloak></i>
                             </button>
                         </div>
+                        <div class="mt-3 flex gap-4 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                            <span><strong class="text-emerald-300">{{ $user->referrals()->where('status', 'rewarded')->count() }}</strong> rewarded</span>
+                            <span><strong class="text-amber-300">{{ $user->referrals()->where('status', 'pending')->count() }}</strong> pending</span>
+                            <span><strong class="text-fuchsia-300">${{ number_format((float) $user->referrals()->where('status', 'rewarded')->sum('referrer_reward'), 2) }}</strong> earned</span>
+                        </div>
                     </div>
                 </div>
 

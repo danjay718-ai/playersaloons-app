@@ -49,6 +49,24 @@ class SystemSettingsSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'key' => 'referral.enabled',
+                'value' => 'true',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'key' => 'referral.referrer_reward',
+                'value' => '5.00',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'key' => 'referral.referred_reward',
+                'value' => '2.00',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
         foreach ($settings as $setting) {
