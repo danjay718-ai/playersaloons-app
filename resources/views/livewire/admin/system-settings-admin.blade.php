@@ -5,7 +5,7 @@
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-300">Growth</p>
         <h2 class="mt-1 text-xl font-bold text-white">Referral rewards</h2>
-        <p class="mt-2 text-sm text-slate-500">Amounts are read when a referred player verifies their email.</p>
+        <p class="mt-2 text-sm text-slate-500">Amounts are read when a referred player completes their first successful deposit.</p>
         <form wire:submit="saveReferralSettings" class="mt-6 space-y-5">
             <label class="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-200">
                 Enable referral rewards

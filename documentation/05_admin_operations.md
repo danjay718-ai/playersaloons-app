@@ -287,7 +287,7 @@ Head-to-head results maintain a game-specific ELO rating used by automatic match
 
 *   **Admin Route**: `/admin/system-settings`
 *   **Authorization**: ADMIN and SUPER_ADMIN only.
-*   **Referral Settings**: Enable/disable rewards and adjust the referrer and new-player amounts. Values are read when email verification qualifies the referral, and updates record `updated_by`.
+*   **Referral Settings**: Enable/disable rewards and adjust the referrer and new-player amounts. Values are read when the referred player’s first successful deposit qualifies the referral, and updates record `updated_by`.
 
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards

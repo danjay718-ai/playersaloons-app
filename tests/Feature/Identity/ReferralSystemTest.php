@@ -10,11 +10,11 @@ use App\Modules\Identity\Events\UserRegistered;
 use App\Modules\Identity\Models\Referral;
 use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Wallet\Actions\ProcessDepositAction;
 use App\Modules\Wallet\Listeners\CreateWalletListener;
 use App\Shared\Enums\UserStatus;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
-use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -39,7 +39,7 @@ class ReferralSystemTest extends TestCase
         return $user;
     }
 
-    public function test_registration_records_valid_referrer(): void
+    public function test_registration_records_pending_referral_without_reward_before_deposit(): void
     {
         $referrer = $this->user('referrer@example.com');
 
@@ -48,9 +48,11 @@ class ReferralSystemTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('referrals', ['referrer_id' => $referrer->id, 'referred_user_id' => $referred->id, 'status' => 'pending']);
+        $this->assertSame('0.00', $referrer->wallet()->firstOrFail()->cached_balance);
+        $this->assertSame('0.00', $referred->wallet()->firstOrFail()->cached_balance);
     }
 
-    public function test_dynamic_rewards_are_credited_once_after_verification(): void
+    public function test_dynamic_rewards_are_credited_once_after_first_successful_deposit(): void
     {
         $referrer = $this->user('dynamic-referrer@example.com');
         $referred = $this->user('dynamic-new@example.com');
@@ -58,12 +60,13 @@ class ReferralSystemTest extends TestCase
         SystemSetting::query()->where('key', 'referral.referrer_reward')->update(['value' => '8.75']);
         SystemSetting::query()->where('key', 'referral.referred_reward')->update(['value' => '3.25']);
 
-        event(new Verified($referred));
-        event(new Verified($referred));
+        $deposits = app(ProcessDepositAction::class);
+        $deposits->execute($referred->wallet()->firstOrFail(), '10.00', 'stripe', 'referral-first-deposit');
+        $deposits->execute($referred->wallet()->firstOrFail(), '10.00', 'stripe', 'referral-first-deposit');
 
         $this->assertSame('8.75', $referrer->wallet()->firstOrFail()->cached_balance);
-        $this->assertSame('3.25', $referred->wallet()->firstOrFail()->cached_balance);
-        $this->assertDatabaseCount('ledger_entries', 2);
+        $this->assertSame('13.25', $referred->wallet()->firstOrFail()->cached_balance);
+        $this->assertDatabaseCount('ledger_entries', 3);
         $this->assertDatabaseHas('referrals', ['referred_user_id' => $referred->id, 'status' => 'rewarded', 'referrer_reward' => 8.75, 'referred_reward' => 3.25]);
     }
 
@@ -74,10 +77,10 @@ class ReferralSystemTest extends TestCase
         Referral::query()->create(['uuid' => Str::uuid(), 'referrer_id' => $referrer->id, 'referred_user_id' => $referred->id, 'status' => 'pending']);
         SystemSetting::query()->where('key', 'referral.enabled')->update(['value' => 'false']);
 
-        event(new Verified($referred));
+        app(ProcessDepositAction::class)->execute($referred->wallet()->firstOrFail(), '10.00', 'stripe', 'disabled-referral-deposit');
 
         $this->assertDatabaseHas('referrals', ['referred_user_id' => $referred->id, 'status' => 'pending']);
-        $this->assertDatabaseCount('ledger_entries', 0);
+        $this->assertDatabaseCount('ledger_entries', 1);
     }
 
     public function test_admin_can_update_dynamic_referral_settings(): void

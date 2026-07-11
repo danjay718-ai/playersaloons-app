@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-12 (v1.103)
+**Last Updated**: 2026-07-12 (v1.104)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -158,7 +158,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Feature | Action/Service | Event | Listener |
 |---|---|---|---|
 | Register | `RegisterUserAction` | `UserRegistered` | `CreateWalletListener` |
-| Referral rewards | `RegisterUserAction`, `AwardReferralRewardsAction` | Laravel `Verified` | `AwardReferralRewardsListener` |
+| Referral rewards | `RegisterUserAction`, `AwardReferralRewardsAction` | `WalletCredited` (`DEPOSIT`) | `QualifyReferralOnDepositListener` |
 | Online presence | `UpdateUserOnlineStatus` (middleware) | — | — |
 | KYC Submit | `SubmitKycAction` | `UserKycSubmitted` | `NotifyAdminsOfKycSubmissionListener` |
 | KYC Approve | `ApproveKycAction` | `UserKycApproved` | — |

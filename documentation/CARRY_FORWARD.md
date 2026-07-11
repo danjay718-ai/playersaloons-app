@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-12 | **Current version**: v1.103 | **Branch**: `main`
+**As of**: 2026-07-12 | **Current version**: v1.104 | **Branch**: `main`
 
 ---
 
@@ -132,7 +132,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 |---|---|---|
 | ✅ | Contact inquiry workflow polish | Done v1.101 |
 | ✅ | Newsletter management and sending | Done v1.102 |
-| ✅ | Referral system logic | Done v1.103 |
+| ✅ | Referral system logic | Done v1.103; first-deposit qualification v1.104 |
 | 4 | Deposit processing fee | Next |
 | 5–7 | Team tournaments, auto-forfeit setting, rematch voting | Follow-up feature gaps, in this order |
 | 🟡 | Remaining testing debt | Admin/player frequency filters, filter persistence, pagination, and admin navigation |

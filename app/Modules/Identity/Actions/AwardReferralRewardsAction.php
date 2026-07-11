@@ -20,7 +20,7 @@ class AwardReferralRewardsAction
     {
         DB::transaction(function () use ($referredUser): void {
             $referral = Referral::query()->where('referred_user_id', $referredUser->id)->lockForUpdate()->first();
-            if (! $referral || $referral->status !== 'pending' || ! $referredUser->hasVerifiedEmail()) {
+            if (! $referral || $referral->status !== 'pending') {
                 return;
             }
 
