@@ -11,6 +11,7 @@ use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\BroadcastNotificationAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\CmsContentAdmin;
+use App\Livewire\Admin\ComplianceAdmin;
 use App\Livewire\Admin\ContactInquiryAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
@@ -25,6 +26,7 @@ use App\Livewire\Auth\EmailVerification;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\PasswordReset;
 use App\Livewire\Auth\Register;
+use App\Livewire\Auth\TwoFactorChallenge;
 use App\Livewire\CMS\BlogArticleView;
 use App\Livewire\CMS\BlogIndex;
 use App\Livewire\CMS\NewsArticleView;
@@ -73,6 +75,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', Register::class)->name('register');
     Route::get('/reset-password', PasswordReset::class)->name('password.request');
     Route::get('/reset-password/{token}', PasswordReset::class)->name('password.reset');
+    Route::get('/two-factor-challenge', TwoFactorChallenge::class)->name('two-factor.challenge');
 });
 
 // Authenticated only routes
@@ -84,7 +87,7 @@ Route::middleware('auth')->group(function () {
         return redirect('/dashboard');
     })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
 
-    Route::middleware('verified')->group(function () {
+    Route::middleware(['verified', 'compliance.clear'])->group(function () {
         Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
         Route::get('/my-tournaments', MyTournamentsList::class)->name('my-tournaments');
         Route::get('/tournaments/browse', PlayerTournamentList::class)->name('tournaments.browse');
@@ -144,6 +147,7 @@ Route::middleware('auth')->group(function () {
         })->where('path', '.*')->name('admin.kyc.document');
         Route::get('/withdrawals', WithdrawalAdmin::class);
         Route::get('/users', UserAdmin::class);
+        Route::get('/compliance', ComplianceAdmin::class)->name('admin.compliance');
         Route::get('/audit-logs', AuditLogAdmin::class);
         Route::get('/cms/content', CmsContentAdmin::class)->name('admin.cms.content');
         Route::get('/cms/{section?}', CmsAdmin::class)
