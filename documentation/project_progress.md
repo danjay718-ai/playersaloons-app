@@ -1,6 +1,17 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-12 (v1.101) | **Branch**: `main`
+**Last Updated**: 2026-07-12 (v1.102) | **Branch**: `main`
+
+---
+## ✅ Newsletter Management (v1.102)
+
+- **Audience**: Added `/admin/newsletters` with searchable active, verified newsletter subscribers sourced from registration opt-ins.
+- **Campaigns**: Added persisted campaign records with creator, recipient, sent, failed, status, and sent-at audit fields.
+- **Sending**: Admins can send plain-text campaign content through the configured Laravel mail failover; delivery failures are isolated, counted, and logged.
+- **Unsubscribe**: Every campaign email includes a signed per-user unsubscribe link that removes the recipient from future audiences.
+- **Authorization**: Newsletter management is restricted to ADMIN and SUPER_ADMIN staff.
+- **Tests**: All 5 focused newsletter tests pass with 19 assertions.
+- **PHPStan**: Focused analysis passes for the newsletter component, model, mailable, and tests.
 
 ---
 ## ✅ Contact Inquiry Workflow Polish (v1.101)

@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-12 (v1.101)
+**Status**: Active Backlog | **Last Updated**: 2026-07-12 (v1.102)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -88,7 +88,7 @@ These tests are identified but not yet implemented. Priority order within each s
 Implement these next, in order:
 
 1. [x] Contact Inquiry Workflow Polish — added status counters, reply-by-email shortcut, clearer category/status badges, and an admin dashboard inquiry summary. *(done v1.101)*
-2. [ ] Newsletter Management — add admin audience management, campaign/sending workflow, and unsubscribe handling; registration opt-in is already stored.
+2. [x] Newsletter Management — added admin audience search, recorded campaign sending/delivery totals, campaign history, and signed unsubscribe handling. *(done v1.102)*
 3. [ ] Referral System Logic — implement referral attribution and reward rules using the existing integer referral ID.
 4. [ ] Deposit Processing Fee — activate `deposits.fee_amount` and show wallet credit, processing fee, and total charge before Stripe Checkout.
 

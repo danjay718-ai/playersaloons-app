@@ -227,7 +227,20 @@ Managing support/contact messages submitted by guests and signed-in players.
 *   **Statuses**: `new`, `in_review`, `resolved`, `archived`.
 *   **Tests**: `tests/Feature/Community/ContactInquiryTest.php`
 
-## 12. Stream Moderation
+## 12. Newsletter Management
+Managing the opted-in newsletter audience and sending auditable email campaigns.
+
+*   **Admin Route**: `/admin/newsletters`
+*   **Authorization**: ADMIN and SUPER_ADMIN only.
+*   **Unsubscribe Route**: signed `/newsletter/unsubscribe/{user}` link included in every campaign email.
+*   **Admin UI Component**: `app/Livewire/Admin/NewsletterAdmin.php`
+*   **Campaign Model**: `app/Modules/Community/Models/NewsletterCampaign.php`
+*   **Audience Rules**: Only active, email-verified users with `newsletter_subscribed = true` are included at send time.
+*   **Campaign Records**: Store creator, subject/content, recipient count, successful/failed deliveries, status, and send timestamp.
+*   **Failure Handling**: A failed recipient does not stop the remaining campaign; the failure is counted and logged.
+*   **Tests**: `tests/Feature/Community/NewsletterManagementTest.php`
+
+## 13. Stream Moderation
 Managing player-created stream embeds and tournament broadcast URLs.
 
 *   **Player Route**: `/streams`
@@ -245,7 +258,7 @@ Managing player-created stream embeds and tournament broadcast URLs.
     *   Provider status is refreshed every two minutes by `RefreshProviderLiveStatusesJob`. Missing credentials or provider errors retain the manual `is_live` value and persist `provider_status`, `provider_checked_at`, and `provider_status_error` for diagnosis.
 *   **Tests**: `tests/Feature/Stream/StreamIntegrationTest.php`
 
-## 13. Compliance & Blacklisting
+## 14. Compliance & Blacklisting
 Managing auditable player access restrictions independently from account suspension.
 
 *   **Admin Route**: `/admin/compliance`
@@ -261,7 +274,7 @@ Managing auditable player access restrictions independently from account suspens
     *   Every apply/revoke operation writes an activity-log record with the responsible administrator and reason.
 *   **Tests**: `tests/Feature/Identity/ComplianceBlockTest.php`
 
-## 14. H2H Rating Operations
+## 15. H2H Rating Operations
 Head-to-head results maintain a game-specific ELO rating used by automatic matchmaking.
 
 *   **Model**: `app/Modules/Match/Models/HeadToHeadRating.php`

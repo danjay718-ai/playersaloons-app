@@ -15,6 +15,7 @@ use App\Livewire\Admin\ComplianceAdmin;
 use App\Livewire\Admin\ContactInquiryAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Admin\NewsletterAdmin;
 use App\Livewire\Admin\PolicyAdmin;
 use App\Livewire\Admin\StaffActivityDashboard;
 use App\Livewire\Admin\TournamentAdmin;
@@ -49,6 +50,7 @@ use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Livewire\Wallet\WalletDashboard;
+use App\Modules\Identity\Models\User;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +70,14 @@ Route::get('/contact', ContactPage::class)->name('contact');
 
 Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
 Route::post('/language', [LanguageController::class, 'update'])->name('language.update');
+Route::get('/newsletter/unsubscribe/{user:uuid}', function (User $user) {
+    $user->update([
+        'newsletter_subscribed' => false,
+        'newsletter_subscribed_at' => null,
+    ]);
+
+    return view('newsletter.unsubscribed', ['email' => $user->email]);
+})->middleware('signed')->name('newsletter.unsubscribe');
 
 // Guest only routes
 Route::middleware('guest')->group(function () {
@@ -157,6 +167,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/policies', PolicyAdmin::class);
         Route::get('/notifications', BroadcastNotificationAdmin::class)->name('admin.notifications');
         Route::get('/contact-inquiries', ContactInquiryAdmin::class)->name('admin.contact-inquiries');
+        Route::get('/newsletters', NewsletterAdmin::class)->name('admin.newsletters');
         Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');
     });
 });

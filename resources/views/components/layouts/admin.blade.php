@@ -93,6 +93,7 @@
                                 ['label' => 'Audit Logs', 'icon' => 'file-text', 'url' => '/admin/audit-logs'],
                                 ['label' => 'Notifications', 'icon' => 'megaphone', 'url' => '/admin/notifications'],
                                 ['label' => 'Contact Inquiries', 'icon' => 'inbox', 'url' => '/admin/contact-inquiries'],
+                                ['label' => 'Newsletters', 'icon' => 'mail', 'url' => '/admin/newsletters'],
                             ],
                         ],
                     ];
