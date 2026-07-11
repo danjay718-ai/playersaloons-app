@@ -141,7 +141,12 @@ The following tests are identified in `project_progress.md` as necessary for ful
 *   **Missing Features**:
     *   **Auto-Forfeit Logic**: `AutoForfeitJob` exists but the specific timeout configuration (e.g., "forfeit after 15 mins of inactivity") needs to be exposed in `SystemSettings`.
     *   **Rematch Voting**: Flow for players to request a rematch before a dispute is filed.
-    *   **Provider Live Status Detection**: Stream embeds are supported through player-created streams and tournament YouTube, Twitch, and Facebook URLs, but automatic provider API detection of whether a stream is truly live is not implemented yet.
+    *   **Rematch Voting**: Flow for players to request a rematch before a dispute is filed.
+*   **Provider Live Status Detection (v1.99)**:
+    *   `ProviderLiveStatusService` checks YouTube, Twitch, and Facebook when provider credentials are configured.
+    *   `RefreshProviderLiveStatusesJob` runs every two minutes for public, non-taken-down channels.
+    *   Successful checks update `stream_channels.is_live` and `provider_status`; unavailable credentials or API errors preserve the previous manual live state.
+    *   Required optional environment keys: `YOUTUBE_API_KEY`, `TWITCH_CLIENT_ID`, `TWITCH_ACCESS_TOKEN`, and `FACEBOOK_ACCESS_TOKEN`.
 *   **Unused Schema Columns**:
     *   `tournaments.metadata`: JSON field for extended rules (e.g., "No items", "Final Destination only") not yet processed by the wizard.
     *   `matches.server_id`: Field for external game server integration (e.g., CS2/Dota2) currently null.

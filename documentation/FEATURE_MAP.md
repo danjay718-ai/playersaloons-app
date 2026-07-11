@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-09 (v1.96)
+**Last Updated**: 2026-07-11 (v1.99)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -55,7 +55,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /streams` | `app/Livewire/Stream/StreamList.php` | Player stream hub where players publish normalized `stream_channels` for YouTube, Twitch, or Facebook and watch other player/tournament embeds |
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` + `app/Http/Controllers/Community/ChatController.php` | Reverb-backed comms hub for persisted global chat, player-to-player direct chat, team chat with join/switch warning, unread badges, avatars, player search, profile stats modal, follow, and message actions. Global chat retains the latest 100 messages |
 | `GET /wallet` | `app/Livewire/Wallet/WalletDashboard.php` | Wallet balance, Stripe Checkout deposits, withdrawal requests, and transaction history |
-| `GET /profile` | `app/Livewire/Profile/ProfileDashboard.php` | Game-style player profile with Alpine tabs/drawer, avatar, account/profile/password updates, email verification, KYC status, Redis-cached support data, notification prefs |
+| `GET /profile` | `app/Livewire/Profile/ProfileDashboard.php` | Game-style player profile with avatar, account/profile/password updates, email verification, KYC, notification preferences, and authenticator-based 2FA setup/disable controls |
+| `GET /two-factor-challenge` | `app/Livewire/Auth/TwoFactorChallenge.php` | Completes a pending password login with TOTP or a single-use recovery code |
 | `GET /teams` | `app/Livewire/Team/TeamDashboard.php` | Team management: create, invite, roster, captaincy |
 | `GET /verify-email` | `app/Livewire/Auth/EmailVerification.php` | Email verification notice + resend verification email |
 | `GET /email/verify/{id}/{hash}` | signed route closure | Signed email verification link; marks email verified and unlocks verified player routes |
@@ -76,6 +77,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/kyc/document/{path}` | inline route closure | Secure file stream for viewing private KYC ID images |
 | `GET /admin/withdrawals` | `app/Livewire/Admin/WithdrawalAdmin.php` | Review withdrawals + Four-eyes approval process |
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
+| `GET /admin/compliance` | `app/Livewire/Admin/ComplianceAdmin.php` | Apply, search, inspect, expire, and revoke auditable player compliance blocks |
 | `GET /admin/audit-logs` | `app/Livewire/Admin/AuditLogAdmin.php` | Spatie activity log viewer with filters |
 | `GET /admin/cms/{section?}` | `app/Livewire/Admin/CmsAdmin.php` | CMS section pages for Blog & News (`content`), Landing Page (`landing`), Games (`games`), Platforms (`platforms`), and Navigation (`navigation`); renders only the active section data |
 | `GET /admin/translations` | `app/Livewire/Admin/TranslationAdmin.php` | Translation manager for UI phrase keys; imports `lang/*.json`, edits `translation_strings`, fills missing values, and exports JSON runtime files |
@@ -161,6 +163,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Update Profile | `UpdateProfileAction` | — | — |
 | Upload Avatar | `UploadAvatarAction` | — | — |
 | Verify Email from Profile | `ProfileDashboard::verifyEmail()` | `EmailVerified` | — |
+| Enable/disable 2FA | `EnableTwoFactorAction`, `DisableTwoFactorAction`, `TotpService` | — | Login completion handled by `TwoFactorChallenge` |
+| Compliance blocking | `ApplyComplianceBlockAction`, `RevokeComplianceBlockAction` | — | `EnsureNotComplianceBlocked` enforces active records on verified player routes |
 | KYC admin document compatibility | `KycSubmission::document_front_path`, `KycSubmission::document_back_path` accessors | — | — |
 
 ### CMS & Public Landing
@@ -181,6 +185,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Blog/news authoring | `CmsContentAdmin::saveContent()` | — | WordPress-style inline editor for type, uploaded featured image, featured flag, localized title/excerpt/content |
 | UI translation management | `TranslationAdmin` + `TranslationCatalogService` | — | `TranslationStringSeeder` and admin actions sync `lang/*.json` into `translation_strings`, fill missing values from English fallback, and export JSON runtime files |
 | Player/tournament stream embeds | `StreamList`, `TournamentForm`, `StreamEmbedService`, `StreamChannel` | — | Player streams, tournament broadcasts, and game trailers are normalized in `stream_channels`; create/update/delete writes are activity-logged while reads are not |
+| Provider live status | `ProviderLiveStatusService` | — | `RefreshProviderLiveStatusesJob` polls configured YouTube/Twitch/Facebook APIs every two minutes and preserves manual state on unavailable/error responses |
 
 ### Tournament Lifecycle
 | Feature | Action/Service | Event | Listener/Job |
@@ -206,6 +211,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Auto-forfeit timeout | — | — | `AutoForfeitJob` (scheduler, every minute) |
 
 ### Head-to-Head Duels
+Per-game `head_to_head_ratings` use a 1200 baseline and K-factor 32. `HeadToHeadRatingService` updates confirmed or adjudicated results once, stores before/after snapshots on the match, and `HeadToHeadMatchmakerService` prioritizes nearby ratings with a widening wait-time window.
 | Feature | Action/Service | Event | Listener/Job |
 |---|---|---|---|
 | Create H2H challenge | `CreateHeadToHeadChallengeAction` + `LockHeadToHeadStakeAction` | — | Prevents another same-game waiting challenge or active duel before locking stake |

@@ -240,7 +240,33 @@ Managing player-created stream embeds and tournament broadcast URLs.
     *   The five default seeded games have sample YouTube trailer channels from `GameTrailerStreamSeeder`, rendered under `/streams` → Game Trailers.
     *   Streams are normalized in `stream_channels` using nullable ownership columns: `user_id`, `tournament_id`, or `game_id`.
     *   Stream create/update/delete writes are activity-logged by the model; admin takedown/restore actions add explicit activity entries. Viewing streams is not logged.
+    *   Provider status is refreshed every two minutes by `RefreshProviderLiveStatusesJob`. Missing credentials or provider errors retain the manual `is_live` value and persist `provider_status`, `provider_checked_at`, and `provider_status_error` for diagnosis.
 *   **Tests**: `tests/Feature/Stream/StreamIntegrationTest.php`
+
+## 13. Compliance & Blacklisting
+Managing auditable player access restrictions independently from account suspension.
+
+*   **Admin Route**: `/admin/compliance`
+*   **UI Component**: `app/Livewire/Admin/ComplianceAdmin.php`
+*   **Model**: `app/Modules/Identity/Models/ComplianceBlock.php`
+*   **Actions**: `ApplyComplianceBlockAction`, `RevokeComplianceBlockAction`
+*   **Enforcement**: `EnsureNotComplianceBlocked` middleware protects verified player routes. Active records return HTTP 403; expired or revoked records do not block access.
+*   **Rules**:
+    *   Only ADMIN and SUPER_ADMIN can apply or revoke a block.
+    *   Administrator accounts cannot be blacklisted through the action.
+    *   A player can have only one active block at a time.
+    *   Categories are fraud, chargeback, platform abuse, identity risk, and legal restriction.
+    *   Every apply/revoke operation writes an activity-log record with the responsible administrator and reason.
+*   **Tests**: `tests/Feature/Identity/ComplianceBlockTest.php`
+
+## 14. H2H Rating Operations
+Head-to-head results maintain a game-specific ELO rating used by automatic matchmaking.
+
+*   **Model**: `app/Modules/Match/Models/HeadToHeadRating.php`
+*   **Service**: `app/Modules/Match/Services/HeadToHeadRatingService.php`
+*   **Rules**: New game ratings start at 1200 with K-factor 32. Confirmed and admin-adjudicated wins update ratings once; refunds do not affect ratings.
+*   **Auditability**: Each resolved match stores creator/opponent ratings before and after processing plus `rating_processed_at` for idempotency.
+*   **Matchmaking**: The initial acceptable difference is 100 rating points and expands by 25 points per waiting minute up to 400.
 
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards

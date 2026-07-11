@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-11 (v1.98)
+**Status**: Active Backlog | **Last Updated**: 2026-07-11 (v1.99)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -24,7 +24,7 @@
 
 ### Matchmaking Engine
 - [x] Implement `MatchmakerService` for querying waiting challenges. *(done v1.39)*
-- [ ] Implement ELO/Skill Level matching (optional for v1).
+- [x] Implement ELO/Skill Level matching — per-game ratings, idempotent result updates, and widening skill window. *(done v1.99)*
 - [x] Implement stake validation (check balance/lock amount in wallet). *(done v1.39)*
 - [x] Add H2H proof upload and admin dispute review flow. *(done v1.40)*
 - [x] Add H2H timeout/auto-expiry policy. *(done v1.43)*
@@ -92,7 +92,7 @@ These tests are identified but not yet implemented. Priority order within each s
 
 ### Tournament Broadcasts
 - [x] Streaming Integration — player-created YouTube, Twitch, and Facebook streams, admin takedown/restore moderation, tournament stream URL validation, and embedded `/streams` plus tournament detail playback *(done v1.91)*
-- [ ] Provider Live Status Detection — optional YouTube/Twitch/Facebook API polling for true live/offline state.
+- [x] Provider Live Status Detection — optional YouTube/Twitch/Facebook API polling for true live/offline state. *(done v1.99)*
 
 ### CMS & Content
 - [x] CMS Module — Blog/News pages *(done v1.82)*
@@ -106,14 +106,14 @@ These tests are identified but not yet implemented. Priority order within each s
 - [x] Team Chat — active team member channels backed by the shared chat pipeline and private Reverb authorization *(done v1.95)*
 
 ### Compliance & User Management
-- [ ] Compliance/Blacklisting (Middleware + Admin Page)
+- [x] Compliance/Blacklisting (Middleware + Admin Page) *(done v1.99)*
 - [x] Contact Inquiries (Public/player form + Admin Page) *(done v1.78; resolve/archive UX tightened v1.81)*
 - [ ] Contact Inquiry Support Polish — status counters, reply-by-email shortcut, clearer category/status badges, and admin dashboard inquiry summary. **Deferred**: contact inbox is functional now; these are follow-up support workflow enhancements to do after the next Phase 2 priorities.
 - [ ] Newsletter Management (Admin Page). **Deferred**: registration now records newsletter/update opt-in, but actual newsletter sending, audience management, campaign tools, and unsubscribe flows are deferred until the newsletter provider/workflow is selected.
 
 ### Identity
 - [ ] Referral System Logic — integer ref ID is in DB but reward logic not implemented. **Deferred**: not required for the current Phase 2 scope; can be revisited as a growth/marketing feature after launch priorities are stable.
-- [ ] 2FA — schema has `two_factor_secret` / `two_factor_recovery_codes` but no UI/Action
+- [x] 2FA — authenticator setup, login challenge, one-time recovery codes, and password-confirmed disable flow. *(done v1.99)*
 - [x] `last_login_at` update on successful login (column exists, now updated in `Login.php` — v1.29)
 - [x] `UserKycSubmitted` listener — event dispatched but no listener registered yet *(done v1.31 — `NotifyAdminsOfKycSubmissionListener`)*
 

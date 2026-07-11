@@ -112,11 +112,14 @@ To ensure flow integrity, the following tests must be implemented and passing:
 *   **Security**: Confirms password changes require the current password and persist through Laravel hashing.
 *   **KYC Drawer**: Confirms KYC verification UI opens only inside the drawer surface.
 *   **Comms**: Confirms Email, In-App, and Realtime preference toggles persist to `notification_preferences`.
+*   **Two-factor authentication**: The Security tab generates a TOTP setup key, requires a valid authenticator code before activation, displays eight recovery codes once, and requires the current password to disable 2FA. Login pauses in a guest-safe pending state at `/two-factor-challenge`; a valid TOTP or unused recovery code completes authentication.
+
+## 5. Compliance Access Controls
+Admins manage auditable player restrictions at `/admin/compliance`. A block records category, evidence/reason, creator, optional expiry, and revocation details. `EnsureNotComplianceBlocked` protects verified player routes; expired and revoked records do not restrict access, and administrator accounts cannot be blacklisted through the action.
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
     *   **Referral System Logic**: The referral integer ID is in the DB but the logic to reward referrers is not yet implemented. This is intentionally deferred from the current Phase 2 scope because it is a growth/marketing feature rather than a launch-critical player workflow.
-    *   **2FA Support**: Schema has `two_factor_secret` and `two_factor_recovery_codes` (via Laravel Fortify/standard) but UI/Action logic is missing.
     *   **Social Login**: `provider_name` and `provider_id` are in some variations of the plan but not yet in the current migration.
 *   **Unused Schema Columns**:
     *   `user_profiles.metadata`: JSON field currently empty/not used by `UpdateProfileAction`.

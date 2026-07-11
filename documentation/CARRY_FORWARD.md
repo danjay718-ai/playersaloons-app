@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-09 | **Current version**: v1.96 | **Branch**: `main`
+**As of**: 2026-07-11 | **Current version**: v1.99 | **Branch**: `main`
 
 ---
 
@@ -118,6 +118,9 @@
 | v1.94 | Player desktop sidebar viewport pinning fix |
 | v1.95 | Realtime global, direct, and team chat |
 | v1.96 | Chat send resilience when realtime broadcasting is unavailable |
+| v1.97 | Broadcast socket ID hardening and resilient stream chat broadcasts |
+| v1.98 | Player tournament Livewire coverage: elimination, stats/history, filtering, and N+1 guard |
+| v1.99 | Compliance/blacklisting, authenticator 2FA, per-game H2H ELO, and provider live-status polling |
 
 ---
 
@@ -127,14 +130,11 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 
 | Priority | Item | Effort |
 |---|---|---|
-| 🟡 | H2H ELO/skill matching | Optional for v1; matchmaker currently uses game/stake/platform/region |
 | ⚪ | Referral system logic | Deferred; growth/marketing feature, not required for current Phase 2 scope |
-| 🔵 | 2FA | Large |
 | ⚪ | External payout integration | Deferred; sandbox continues with manual payout workflow until payout provider/compliance path is confirmed |
-| 🔵 | Compliance/blacklisting | Medium/Large |
 | ⚪ | Newsletter management/sending | Deferred; registration stores opt-in only until newsletter provider/workflow is selected |
 | 🔵 | Translation management checklist cleanup | Small |
-| 🟡 | Remaining testing debt | Tournament filters, pagination, elimination modal, N+1 checks |
+| 🟡 | Remaining testing debt | Admin/player frequency filters, filter persistence, pagination, and admin navigation |
 | ⚪ | R2 storage migration | Deferred during testing; Docker volumes are acceptable until full launch |
 
 ### Already Done / Do Not Re-open
@@ -165,6 +165,11 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 - Contact inquiry resolve/archive state looked unchanged in admin after action — fixed v1.81
 - `/chat` mock-only session messages — replaced with persisted Reverb-backed comms hub v1.95
 - `/chat` message send failed when Reverb/Pusher was unavailable — fixed v1.96
+- Compliance/blacklisting middleware and admin page — done v1.99
+- Authenticator 2FA with recovery codes — done v1.99
+- Per-game H2H ELO and skill-aware matchmaking — done v1.99
+- Provider live-status polling — done v1.99
+- Player tournament elimination/stats/history/filter/N+1 tests — done v1.98
 - Static landing page requiring code edits for content changes — replaced with DB-backed landing CMS v1.60
 - Landing games grid without visual game banners — improved with horizontal carousel and `games.banner_path` v1.61
 - PWA install CTA placement and mobile duplication — fixed v1.50/v1.51
@@ -172,7 +177,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 
 ### H2H Follow-up Scope
 
-- Add optional ELO/skill matching after enough player history exists.
+- Monitor rating distribution and match wait times before tuning the 100-to-400 point widening window or K-factor.
 
 ---
 

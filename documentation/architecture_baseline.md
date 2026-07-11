@@ -280,6 +280,38 @@ Changes here represent deviations or additions to the original baseline design. 
 
 ---
 
+### [v1.99] Compliance Records Separate from Account Status
+
+**Baseline reference**: Identity administration originally used `users.status` suspension as the only account restriction.
+
+**What changed**: Compliance blocks now live in append-oriented `compliance_blocks` records with category, reason, creator, optional expiry, and revocation metadata. Middleware enforces only active records, while suspension remains an independent account-state operation.
+
+**Why**: Compliance decisions need history, expiry, revocation accountability, and evidence context that cannot be represented safely by overwriting one user status value.
+
+### [v1.99] Two-Stage 2FA Login
+
+**Baseline reference**: Session authentication previously completed immediately after password verification.
+
+**What changed**: Accounts with confirmed TOTP store an encrypted secret and hashed recovery codes. Password verification creates a pending session identity, logs the user out, and requires `/two-factor-challenge` before establishing the authenticated session.
+
+**Why**: A pending guest-safe state prevents password-only access and avoids treating a partially authenticated request as a full player session.
+
+### [v1.99] Idempotent Per-Game H2H Ratings
+
+**Baseline reference**: H2H matchmaking originally matched only game, stake, platform, and region.
+
+**What changed**: `head_to_head_ratings` stores one rating per user/game. Completed winner-bearing matches update both ratings transactionally and stamp rating snapshots plus `rating_processed_at`; matchmaking prioritizes nearby ratings with a widening wait window.
+
+**Why**: Per-game ratings avoid conflating skill across unrelated games, and match-level idempotency prevents queue retries or repeated result handling from applying rating changes twice.
+
+### [v1.99] Provider Detection Preserves Manual Stream State
+
+**Baseline reference**: `stream_channels.is_live` was controlled manually by staff.
+
+**What changed**: Optional provider polling updates live state only after a successful API response. Missing credentials and API failures record operational status without clearing the current manual value.
+
+**Why**: Third-party API availability should improve accuracy without making stream visibility dependent on provider credentials, quotas, or temporary outages.
+
 ## 🛠️ Pending Implementation (Post-MVP Checklist)
 
 *Refer to [execution_checklist.md] for detailed implementation tasks.*

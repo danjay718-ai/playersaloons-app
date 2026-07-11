@@ -1,6 +1,15 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-11 (v1.98) | **Branch**: `main`
+**Last Updated**: 2026-07-11 (v1.99) | **Branch**: `main`
+
+---
+## ✅ Compliance, 2FA, ELO, and Provider Status (v1.99)
+
+- **Compliance**: Added auditable expiring/revocable player blocks, self-authorizing apply/revoke actions, authenticated-route enforcement, and `/admin/compliance` management.
+- **Two-factor authentication**: Added encrypted TOTP secrets, hashed single-use recovery codes, profile setup/disable controls, and a pending-login challenge that prevents password-only session completion.
+- **H2H ELO**: Added per-game 1200-baseline ratings, K-factor 32 updates for confirmed/adjudicated winners, match-level idempotency and rating snapshots, plus a skill window that expands as challenges wait.
+- **Provider status**: Added optional YouTube, Twitch, and Facebook API detection, persisted check/error state, and a two-minute queued refresh schedule. Missing credentials and provider failures preserve manual status.
+- **Tests**: 36 focused tests pass with 125 assertions. PHPStan still exits with code 1 and no diagnostics/output in this environment.
 
 ---
 ## ✅ Player Tournament Livewire Coverage (v1.98)
@@ -1094,19 +1103,19 @@ Items where schema or stub exists but logic is missing:
 
 | Feature | Status | Notes |
 |---|---|---|
-| H2H Admin Review / Proof Uploads | ⚠️ Partial | H2H MVP is DB-backed with stake lock/payout; proof upload and admin dispute review still pending. |
+| H2H Admin Review / Proof Uploads | ✅ Done v1.40 | Proof uploads and admin dispute resolution are implemented. |
 | File Storage → R2/S3 | ⚠️ Deferred | Currently using local `public` disk. See deployment notes below. |
 | External Payout Integration | ❌ Not started | `PROCESSED` state is manual. No PayPal/Stripe Connect. |
 | Referral System Logic | ❌ Not started | Integer ref ID in DB, no reward logic. |
-| 2FA | ❌ Not started | Schema has `two_factor_secret` but no UI/Action. |
-| `last_login_at` | ❌ Not started | Column exists, not updated on login. |
-| `UserKycSubmitted` listener | ❌ Not started | Event dispatched but no listener registered. |
+| 2FA | ✅ Done v1.99 | TOTP setup, login challenge, recovery codes, and disable flow are implemented. |
+| `last_login_at` | ✅ Done v1.29/v1.34 | Successful login updates the timestamp and the migration is present. |
+| `UserKycSubmitted` listener | ✅ Done v1.31 | Admin notification listener is registered. |
 | `deposits.fee_amount` | ❌ Not started | Field in DB and `$fillable`, but fee deduction not implemented. |
-| Broadcast Messages UI | ❌ Not started | `broadcast_messages` table exists, no admin UI. |
+| Broadcast Messages UI | ✅ Done v1.35 | Admin broadcast notification panel is live. |
 | CMS Blog/News | ✅ Done v1.82 | Public `/blog` and `/news` listing/detail routes backed by `cms_pages`; authoring lives in `/admin/cms`. |
-| Compliance/Blacklisting | ❌ Not started | — |
-| Translation Management | ❌ Not started | — |
-| Streaming Integration | ✅ Done v1.91 | Player-created streams and tournament stream URLs support YouTube, Twitch, and Facebook embeds on `/streams`; admins can take down/restore player streams. Provider API live detection remains separate backlog. |
+| Compliance/Blacklisting | ✅ Done v1.99 | Auditable blocks, middleware enforcement, expiry/revocation, and admin UI are implemented. |
+| Translation Management | ✅ Done v1.69 | Admin translation catalog and JSON export workflow are implemented. |
+| Streaming Integration | ✅ Done v1.91/v1.99 | Stream embeds and moderation are live; optional provider API status polling is implemented. |
 | Team Tournaments | ❌ Not started | `tournament_registrations.team_id` placeholder unused. |
 | Auto-Forfeit timeout config | ⚠️ Partial | `AutoForfeitJob` uses `waiting_result_time` but not exposed in `SystemSettings` UI. |
 
