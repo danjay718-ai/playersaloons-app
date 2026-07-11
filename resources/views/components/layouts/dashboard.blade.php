@@ -292,6 +292,17 @@
 
             <!-- Main Scrollable Pane -->
             <main class="flex-grow p-4 sm:p-6 md:p-8 flex flex-col relative player-main-content">
+                @php($activePromotion = \App\Modules\Community\Models\Advertisement::query()->currentlyVisible()->latest()->first())
+                @if($activePromotion)
+                    <aside x-data="{ visible: true }" x-show="visible" class="mb-5 overflow-hidden rounded-2xl border border-fuchsia-500/25 bg-gradient-to-r from-fuchsia-950/80 to-indigo-950/80 shadow-lg">
+                        <div class="flex items-center gap-4 p-4">
+                            @if($activePromotion->image_url)<img src="{{ $activePromotion->image_url }}" alt="" class="h-16 w-24 rounded-lg object-cover">@endif
+                            <div class="min-w-0 flex-1"><p class="text-[10px] font-black uppercase tracking-widest text-fuchsia-300">Sponsored promotion</p><h2 class="mt-1 font-bold text-white">{{ $activePromotion->title }}</h2>@if($activePromotion->description)<p class="mt-1 text-xs text-zinc-400">{{ $activePromotion->description }}</p>@endif</div>
+                            @if($activePromotion->target_url)<a href="{{ route('promotions.click', $activePromotion) }}" target="_blank" rel="noopener sponsored" class="rounded-lg bg-fuchsia-500 px-4 py-2 text-xs font-bold text-white">{{ $activePromotion->cta_label }}</a>@endif
+                            <button type="button" @click="visible = false" aria-label="Dismiss promotion" class="text-zinc-500 hover:text-white">×</button>
+                        </div>
+                    </aside>
+                @endif
                 <div id="player-page-loader" class="player-page-loader" aria-hidden="true" data-page-type="default">
                     <div class="player-page-loader-shell">
                         <div class="player-loader-hud">

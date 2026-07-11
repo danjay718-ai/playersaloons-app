@@ -1,6 +1,15 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-12 (v1.105) | **Branch**: `main`
+**Last Updated**: 2026-07-12 (v1.106) | **Branch**: `main`
+
+---
+## ✅ Advertisement & Promotion Management (v1.106)
+
+- **Admin**: Added `/admin/advertisements` for ADMIN/SUPER_ADMIN to create, edit, schedule, activate, and delete promotions with optional image/destination URLs.
+- **Player placement**: The shared authenticated player layout displays the latest currently active promotion as a dismissible sponsored banner.
+- **Scheduling**: Inactive, future, and expired promotions remain hidden.
+- **Tracking**: Promotion destination links redirect safely through a click-counting route and use sponsored/no-opener link attributes.
+- **Tests**: All 4 focused advertisement tests pass with 9 assertions.
 
 ---
 ## ✅ Dynamic Deposit Processing Fees (v1.105)

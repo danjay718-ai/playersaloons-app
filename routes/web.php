@@ -7,6 +7,7 @@ use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Livewire\Admin\AdminDashboard;
 use App\Livewire\Admin\AdminProfile;
+use App\Livewire\Admin\AdvertisementAdmin;
 use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\BroadcastNotificationAdmin;
 use App\Livewire\Admin\CmsAdmin;
@@ -51,6 +52,7 @@ use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Livewire\Wallet\WalletDashboard;
+use App\Modules\Community\Models\Advertisement;
 use App\Modules\Identity\Models\User;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Auth;
@@ -71,6 +73,12 @@ Route::get('/contact', ContactPage::class)->name('contact');
 
 Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
 Route::post('/language', [LanguageController::class, 'update'])->name('language.update');
+Route::get('/promotions/{advertisement:uuid}/click', function (Advertisement $advertisement) {
+    abort_unless(Advertisement::query()->currentlyVisible()->whereKey($advertisement->id)->exists() && $advertisement->target_url, 404);
+    $advertisement->increment('clicks');
+
+    return redirect()->away($advertisement->target_url);
+})->name('promotions.click');
 Route::get('/newsletter/unsubscribe/{user:uuid}', function (User $user) {
     $user->update([
         'newsletter_subscribed' => false,
@@ -170,6 +178,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/contact-inquiries', ContactInquiryAdmin::class)->name('admin.contact-inquiries');
         Route::get('/newsletters', NewsletterAdmin::class)->name('admin.newsletters');
         Route::get('/system-settings', SystemSettingsAdmin::class)->name('admin.system-settings');
+        Route::get('/advertisements', AdvertisementAdmin::class)->name('admin.advertisements');
         Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');
     });
 });

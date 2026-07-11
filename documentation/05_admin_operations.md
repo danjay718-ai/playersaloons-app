@@ -289,6 +289,13 @@ Head-to-head results maintain a game-specific ELO rating used by automatic match
 *   **Authorization**: ADMIN and SUPER_ADMIN only.
 *   **Referral Settings**: Enable/disable rewards and adjust the referrer and new-player amounts. Values are read when the referred player’s first successful deposit qualifies the referral, and updates record `updated_by`.
 
+## 17. Advertisements & Promotions
+
+*   **Admin Route**: `/admin/advertisements` for ADMIN/SUPER_ADMIN.
+*   **Player Placement**: Latest active scheduled promotion appears as a dismissible banner across authenticated player pages.
+*   **Controls**: Title, description, optional external image/destination URL, CTA label, activation, and start/end schedule.
+*   **Tracking**: Active promotion clicks are counted before redirecting to the configured destination.
+
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
 *   **Role Protection**: `test_non_admin_cannot_access_admin_dashboard` / `test_player_cannot_access_staff_activity_dashboard`

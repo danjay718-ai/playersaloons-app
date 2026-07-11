@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-12 (v1.105)
+**Last Updated**: 2026-07-12 (v1.106)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -35,6 +35,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /policies/{slug}` | `app/Livewire/Policies/PolicyPageView.php` | Public legal/policy detail page for active, published policy pages |
 | `GET /contact` | `app/Livewire/Community/ContactPage.php` | Public/player contact support form; guests use public layout and verified players use the player dashboard layout |
 | `GET /newsletter/unsubscribe/{user}` | signed route closure | Removes a recipient from future newsletter campaigns |
+| `GET /promotions/{advertisement}/click` | route closure | Tracks a currently active promotion click and redirects to its destination |
 | `GET /login` | `app/Livewire/Auth/Login.php` | Login (guest only) |
 | `GET /register` | `app/Livewire/Auth/Register.php` | Registration (guest only) with required policy acceptance, required 18+ confirmation, and optional newsletter/update opt-in |
 | `GET /reset-password` | `app/Livewire/Auth/PasswordReset.php` | Sends password reset email link (guest only) |
@@ -87,6 +88,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/contact-inquiries` | `app/Livewire/Admin/ContactInquiryAdmin.php` | Contact inquiry inbox: status counters, search/filter, category/status badges, email reply shortcut, internal notes, resolve, archive |
 | `GET /admin/newsletters` | `app/Livewire/Admin/NewsletterAdmin.php` | Subscriber audience search, campaign sending, delivery totals, and recent campaign history |
 | `GET /admin/system-settings` | `app/Livewire/Admin/SystemSettingsAdmin.php` | Admin-adjustable referral enablement and referrer/new-player reward amounts |
+| `GET /admin/advertisements` | `app/Livewire/Admin/AdvertisementAdmin.php` | Scheduled advertisement/promotion CRUD and click totals |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
 
 ### REST API Routes (`/api/v1`)
