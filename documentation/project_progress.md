@@ -1,6 +1,14 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-10 (v1.97) | **Branch**: `main`
+**Last Updated**: 2026-07-11 (v1.98) | **Branch**: `main`
+
+---
+## ✅ Player Tournament Livewire Coverage (v1.98)
+
+- **Elimination modal**: Added coverage for lost and active player state, plus the Go Back and Continue client transitions on the Matches tab.
+- **My Tournaments**: Added aggregate assertions for active/history and win/loss metrics, verified eliminated players move from Active to History, and guarded the batched match-history query against N+1 regressions.
+- **Browse filters**: Added combined coverage for search, game, tournament status, and frequency filtering.
+- **Verification**: All eight focused component tests pass.
 
 ---
 ## ✅ Broadcast Socket ID Hardening (v1.97)

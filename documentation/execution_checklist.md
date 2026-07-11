@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-10 (v1.97)
+**Status**: Active Backlog | **Last Updated**: 2026-07-11 (v1.98)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -69,14 +69,14 @@ These tests are identified but not yet implemented. Priority order within each s
 - [ ] `test_admin_navigation_flow` — `wire:navigate` SPA transitions between list and create/edit.
 
 ### Livewire Component Tests
-- [ ] `test_elimination_modal_shows_on_lost_match` — lost player navigating to Matches tab triggers modal.
-- [ ] `test_elimination_modal_does_not_show_if_not_lost` — active player, no modal.
-- [ ] `test_elimination_modal_go_back_resets_tab` — "Go Back" reverts to Overview tab.
-- [ ] `test_elimination_modal_continue_stays_on_matches` — "Continue" closes modal, stays on Matches.
-- [ ] `test_stats_banner_calculation` — Win/Loss/Active counts match DB aggregates.
-- [ ] `test_elimination_shifts_tournament_to_history` — lost player's tournament moves to History tab.
-- [ ] `test_n_plus_one_query_prevention` — matches pre-fetched in single query (not per-tournament loop).
-- [ ] `test_player_tournament_list_filtering` — Search, Game, Status, Frequency filters work.
+- [x] `test_elimination_modal_shows_on_lost_match` — lost player navigating to Matches tab triggers modal. *(done v1.98)*
+- [x] `test_elimination_modal_does_not_show_if_not_lost` — active player, no modal. *(done v1.98)*
+- [x] `test_elimination_modal_go_back_resets_tab` — "Go Back" reverts to Overview tab. *(done v1.98)*
+- [x] `test_elimination_modal_continue_stays_on_matches` — "Continue" closes modal, stays on Matches. *(done v1.98)*
+- [x] `test_stats_banner_calculation` — Win/Loss/Active counts match DB aggregates. *(done v1.98)*
+- [x] `test_elimination_shifts_tournament_to_history` — lost player's tournament moves to History tab. *(done v1.98)*
+- [x] `test_n_plus_one_query_prevention` — matches pre-fetched in single query (not per-tournament loop). *(done v1.98)*
+- [x] `test_player_tournament_list_filtering` — Search, Game, Status, Frequency filters work. *(done v1.98)*
 - [x] `test_head_to_head_matchmaking_simulation` — H2H challenge creation, stake lock, matching, and payout. *(done v1.39)*
 
 ---
