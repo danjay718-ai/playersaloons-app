@@ -89,7 +89,7 @@
     </div>
 
     <!-- Active Entities Dashboard -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         <!-- Tournaments Overview -->
         <div class="bg-[#0f172a] border border-slate-800 rounded-xl p-5 shadow-sm">
             <h4 class="text-sm font-bold text-slate-200 mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
@@ -105,6 +105,26 @@
                     <span class="text-xs text-slate-400 font-medium">Completed</span>
                     <span class="text-xs font-bold text-slate-200">{{ $stats['completed_tournaments'] }}</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Contact Inquiries Card -->
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl p-5 shadow-sm">
+            <h4 class="text-sm font-bold text-slate-200 mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
+                <span>Contact Inquiries</span>
+                <span class="text-xs text-indigo-400 hover:underline"><a href="/admin/contact-inquiries" wire:navigate>Manage</a></span>
+            </h4>
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="text-xs text-slate-400 font-medium">New and In Review</span>
+                    <p class="text-2xl font-extrabold {{ $stats['open_contact_inquiries'] > 0 ? 'text-sky-400' : 'text-slate-300' }} mt-1">{{ $stats['open_contact_inquiries'] }}</p>
+                </div>
+                <div class="p-2.5 {{ $stats['open_contact_inquiries'] > 0 ? 'bg-sky-500/10 text-sky-400' : 'bg-slate-800 text-slate-500' }} rounded-lg">
+                    <i data-lucide="inbox" class="w-5 h-5"></i>
+                </div>
+            </div>
+            <div class="mt-4 text-[11px] text-slate-500">
+                {{ $stats['open_contact_inquiries'] > 0 ? 'Support messages need attention' : 'Inbox is clear' }}
             </div>
         </div>
 

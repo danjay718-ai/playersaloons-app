@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Community;
 
 use App\Livewire\Admin\ContactInquiryAdmin;
+use App\Livewire\Admin\AdminDashboard;
 use App\Livewire\Community\ContactPage;
 use App\Modules\Community\Models\ContactInquiry;
 use App\Modules\Identity\Models\User;
@@ -156,6 +157,55 @@ class ContactInquiryTest extends TestCase
             'id' => $inquiry->id,
             'status' => 'archived',
         ]);
+    }
+
+    public function test_admin_inbox_shows_status_counters_badges_and_reply_shortcut(): void
+    {
+        $admin = $this->makeUser('ADMIN', 'inbox-admin@example.com');
+
+        foreach (['new', 'new', 'in_review', 'resolved', 'archived'] as $index => $status) {
+            ContactInquiry::query()->create([
+                'uuid' => Str::uuid()->toString(),
+                'name' => 'Player '.$index,
+                'email' => $index === 0 ? 'reply@example.com' : 'player'.$index.'@example.com',
+                'category' => $index === 0 ? 'wallet' : 'general',
+                'subject' => $index === 0 ? 'Deposit question' : 'Question '.$index,
+                'message' => 'Please help with this support request.',
+                'status' => $status,
+            ]);
+        }
+
+        Livewire::actingAs($admin)
+            ->test(ContactInquiryAdmin::class)
+            ->assertSeeInOrder(['New', '2', 'In review', '1', 'Resolved', '1', 'Archived', '1'])
+            ->assertSee('Wallet or payment')
+            ->call('selectInquiry', 1)
+            ->assertSee('Reply by email')
+            ->assertSeeHtml('href="mailto:reply@example.com?subject=Re%3A%20Deposit%20question"');
+    }
+
+    public function test_admin_dashboard_summarizes_open_contact_inquiries(): void
+    {
+        $admin = $this->makeUser('ADMIN', 'dashboard-admin@example.com');
+
+        foreach (['new', 'in_review', 'resolved'] as $index => $status) {
+            ContactInquiry::query()->create([
+                'uuid' => Str::uuid()->toString(),
+                'name' => 'Dashboard Player '.$index,
+                'email' => 'dashboard'.$index.'@example.com',
+                'category' => 'general',
+                'subject' => 'Dashboard question '.$index,
+                'message' => 'Please review this inquiry.',
+                'status' => $status,
+            ]);
+        }
+
+        Livewire::actingAs($admin)
+            ->test(AdminDashboard::class)
+            ->assertSee('Contact Inquiries')
+            ->assertSee('New and In Review')
+            ->assertSee('Support messages need attention')
+            ->assertViewHas('stats', fn (array $stats): bool => $stats['open_contact_inquiries'] === 2);
     }
 
     public function test_player_cannot_access_contact_inquiry_admin(): void

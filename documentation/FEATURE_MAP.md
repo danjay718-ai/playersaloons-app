@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-12 (v1.100)
+**Last Updated**: 2026-07-12 (v1.101)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -83,7 +83,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/translations` | `app/Livewire/Admin/TranslationAdmin.php` | Translation manager for UI phrase keys; imports `lang/*.json`, edits `translation_strings`, fills missing values, and exports JSON runtime files |
 | `GET /admin/policies` | `app/Livewire/Admin/PolicyAdmin.php` | Dedicated policy editor for Terms and Conditions, Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer |
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
-| `GET /admin/contact-inquiries` | `app/Livewire/Admin/ContactInquiryAdmin.php` | Contact inquiry inbox: search/filter, review, internal notes, resolve, archive |
+| `GET /admin/contact-inquiries` | `app/Livewire/Admin/ContactInquiryAdmin.php` | Contact inquiry inbox: status counters, search/filter, category/status badges, email reply shortcut, internal notes, resolve, archive |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
 
 ### REST API Routes (`/api/v1`)

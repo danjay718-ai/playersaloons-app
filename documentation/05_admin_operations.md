@@ -216,6 +216,8 @@ Managing support/contact messages submitted by guests and signed-in players.
 *   **Public/Player UI Component**: `app/Livewire/Community/ContactPage.php`
 *   **Admin UI Component**: `app/Livewire/Admin/ContactInquiryAdmin.php`
 *   **Data Model**: `app/Modules/Community/Models/ContactInquiry.php`
+*   **Inbox Summary**: New, in-review, resolved, and archived counters double as status filters; the admin dashboard separately highlights new and in-review inquiries requiring attention.
+*   **Reply Workflow**: The detail panel uses distinct category/status badges and provides a prefilled `mailto:` shortcut while internal notes remain private to staff.
 *   **Features**:
     *   Guests and players can submit name, email, category, subject, and message.
     *   Signed-in verified players see the form inside the player dashboard layout and their account is linked automatically.

@@ -12,6 +12,16 @@
         </div>
     @endif
 
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        @foreach(['new' => 'New', 'in_review' => 'In review', 'resolved' => 'Resolved', 'archived' => 'Archived'] as $value => $label)
+            <button type="button" wire:click="$set('status', '{{ $value }}')"
+                class="rounded-xl border p-4 text-left transition {{ $status === $value ? ($statusStyles[$value] ?? '') : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700' }}">
+                <span class="text-[11px] font-bold uppercase tracking-wider">{{ $label }}</span>
+                <span class="mt-1 block text-2xl font-extrabold text-white">{{ (int) ($statusCounts[$value] ?? 0) }}</span>
+            </button>
+        @endforeach
+    </div>
+
     <div class="grid gap-4 lg:grid-cols-[1fr_380px]">
         <section class="rounded-xl border border-slate-800 bg-slate-950/60">
             <div class="grid gap-3 border-b border-slate-800 p-4 md:grid-cols-[1fr_160px_180px]">
@@ -44,7 +54,8 @@
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="text-sm font-semibold text-slate-100">{{ $inquiry->subject }}</span>
-                                    <span class="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ str_replace('_', ' ', $inquiry->status) }}</span>
+                                    <span class="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $statusStyles[$inquiry->status] ?? 'border-slate-700 text-slate-400' }}">{{ str_replace('_', ' ', $inquiry->status) }}</span>
+                                    <span class="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $categoryStyles[$inquiry->category] ?? 'border-slate-700 text-slate-400' }}">{{ $categories[$inquiry->category] ?? $inquiry->category }}</span>
                                 </div>
                                 <p class="mt-1 truncate text-xs text-slate-400">{{ $inquiry->name }} · {{ $inquiry->email }}</p>
                                 <p class="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{{ $inquiry->message }}</p>
@@ -66,10 +77,10 @@
             @if($selectedInquiry)
                 <div class="space-y-5">
                     <div>
-                        <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-300">{{ $categories[$selectedInquiry->category] ?? $selectedInquiry->category }}</p>
+                        <span class="inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider {{ $categoryStyles[$selectedInquiry->category] ?? 'border-slate-700 text-slate-400' }}">{{ $categories[$selectedInquiry->category] ?? $selectedInquiry->category }}</span>
                         <h3 class="mt-1 text-lg font-bold text-white">{{ $selectedInquiry->subject }}</h3>
                         <p class="mt-1 text-xs text-slate-500">{{ $selectedInquiry->created_at?->format('M d, Y h:i A') }}</p>
-                        <span class="mt-3 inline-flex rounded-full border border-slate-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                        <span class="mt-3 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider {{ $statusStyles[$selectedInquiry->status] ?? 'border-slate-700 text-slate-300' }}">
                             {{ str_replace('_', ' ', $selectedInquiry->status) }}
                         </span>
                     </div>
@@ -86,6 +97,12 @@
                             <div><span class="font-semibold text-slate-300">Resolved by:</span> {{ $selectedInquiry->resolver->username }}</div>
                         @endif
                     </div>
+
+                    <a href="mailto:{{ $selectedInquiry->email }}?subject={{ rawurlencode('Re: '.$selectedInquiry->subject) }}"
+                        class="flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 py-2.5 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/20">
+                        <i data-lucide="mail" class="h-4 w-4"></i>
+                        Reply by email
+                    </a>
 
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Internal notes</label>

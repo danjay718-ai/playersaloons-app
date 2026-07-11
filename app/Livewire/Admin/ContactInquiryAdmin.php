@@ -111,6 +111,11 @@ class ContactInquiryAdmin extends AdminComponent
 
     public function render()
     {
+        $statusCounts = ContactInquiry::query()
+            ->selectRaw('status, count(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
         $query = ContactInquiry::query()
             ->with(['user', 'resolver'])
             ->latest();
@@ -134,6 +139,7 @@ class ContactInquiryAdmin extends AdminComponent
         return view('livewire.admin.contact-inquiry-admin', [
             'inquiries' => $query->paginate(12),
             'selectedInquiry' => $this->selectedInquiry(),
+            'statusCounts' => $statusCounts,
             'categories' => [
                 'general' => 'General question',
                 'account' => 'Account support',
@@ -141,6 +147,20 @@ class ContactInquiryAdmin extends AdminComponent
                 'wallet' => 'Wallet or payment',
                 'kyc' => 'KYC verification',
                 'bug' => 'Bug report',
+            ],
+            'categoryStyles' => [
+                'general' => 'border-slate-600 bg-slate-800/60 text-slate-300',
+                'account' => 'border-indigo-500/30 bg-indigo-500/10 text-indigo-300',
+                'tournament' => 'border-violet-500/30 bg-violet-500/10 text-violet-300',
+                'wallet' => 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+                'kyc' => 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+                'bug' => 'border-red-500/30 bg-red-500/10 text-red-300',
+            ],
+            'statusStyles' => [
+                'new' => 'border-sky-500/30 bg-sky-500/10 text-sky-300',
+                'in_review' => 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+                'resolved' => 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+                'archived' => 'border-slate-600 bg-slate-800/60 text-slate-400',
             ],
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Contact Inquiries',

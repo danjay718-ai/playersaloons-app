@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-12 | **Current version**: v1.100 | **Branch**: `main`
+**As of**: 2026-07-12 | **Current version**: v1.101 | **Branch**: `main`
 
 ---
 
@@ -130,8 +130,8 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 
 | Priority | Item | Effort |
 |---|---|---|
-| 1 | Contact inquiry workflow polish | Next |
-| 2 | Newsletter management and sending | After contact workflow |
+| ✅ | Contact inquiry workflow polish | Done v1.101 |
+| 2 | Newsletter management and sending | Next |
 | 3 | Referral system logic | After newsletter management |
 | 4 | Deposit processing fee | After referral logic |
 | 5–7 | Team tournaments, auto-forfeit setting, rematch voting | Follow-up feature gaps, in this order |

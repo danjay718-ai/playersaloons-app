@@ -1,6 +1,15 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-12 (v1.100) | **Branch**: `main`
+**Last Updated**: 2026-07-12 (v1.101) | **Branch**: `main`
+
+---
+## ✅ Contact Inquiry Workflow Polish (v1.101)
+
+- **Admin inbox**: Added live New, In Review, Resolved, and Archived counters that also act as status filters.
+- **Support UX**: Added distinct category/status badges and a prefilled reply-by-email shortcut for the selected inquiry.
+- **Dashboard**: Added a Contact Inquiries summary counting new and in-review messages with direct inbox navigation.
+- **Tests**: All 7 focused contact inquiry tests pass with 27 assertions.
+- **PHPStan**: Focused analysis passes for the modified components and tests.
 
 ---
 ## ✅ Documentation Backlog Synchronization (v1.100)

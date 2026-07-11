@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Modules\Community\Models\ContactInquiry;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
@@ -27,6 +28,7 @@ class AdminDashboard extends AdminComponent
             'pending_kyc' => KycSubmission::where('status', KycStatus::SUBMITTED->value)->count(),
             'pending_withdrawals' => Withdrawal::where('status', WithdrawalStatus::PENDING->value)->count(),
             'open_disputes' => MatchDispute::where('status', DisputeStatus::OPEN->value)->count(),
+            'open_contact_inquiries' => ContactInquiry::whereIn('status', ['new', 'in_review'])->count(),
 
             'active_tournaments' => Tournament::whereIn('status', [
                 TournamentStatus::PUBLISHED->value,
