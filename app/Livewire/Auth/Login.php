@@ -32,9 +32,16 @@ class Login extends Component
         ];
 
         if (Auth::attempt($credentials, $this->remember)) {
-            session()->regenerate();
-
             $user = Auth::user();
+            if ($user?->two_factor_confirmed_at && $user->two_factor_secret) {
+                session()->put('two_factor_login', ['id' => $user->id, 'remember' => $this->remember]);
+                Auth::logout();
+                session()->regenerate();
+
+                return redirect('/two-factor-challenge');
+            }
+
+            session()->regenerate();
             $user?->update(['last_login_at' => now()]);
             $adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER'];
 

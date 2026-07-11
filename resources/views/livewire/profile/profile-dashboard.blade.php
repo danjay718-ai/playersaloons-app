@@ -218,6 +218,43 @@
                                 Save Info
                             </button>
                         </form>
+
+                        <div class="mt-8 border-t border-zinc-800 pt-6">
+                            <div class="mb-4 flex items-center justify-between gap-4">
+                                <div>
+                                    <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Two-Factor Authentication</h3>
+                                    <p class="mt-1 text-xs text-zinc-500">Require an authenticator code when signing in.</p>
+                                </div>
+                                <span class="text-xs font-bold {{ Auth::user()->two_factor_confirmed_at ? 'text-emerald-400' : 'text-zinc-500' }}">{{ Auth::user()->two_factor_confirmed_at ? 'ENABLED' : 'DISABLED' }}</span>
+                            </div>
+
+                            @if($twoFactorRecoveryCodes !== [])
+                                <div class="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+                                    <p class="mb-3 text-xs font-bold text-amber-200">These codes are shown once. Each code can be used only once.</p>
+                                    <div class="grid grid-cols-2 gap-2 font-mono text-sm text-white">@foreach($twoFactorRecoveryCodes as $recoveryCode)<span>{{ $recoveryCode }}</span>@endforeach</div>
+                                </div>
+                            @endif
+
+                            @if(Auth::user()->two_factor_confirmed_at)
+                                <form wire:submit="disableTwoFactor" class="flex flex-col gap-3 sm:flex-row">
+                                    <input wire:model="twoFactorPassword" type="password" placeholder="Current password" class="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white">
+                                    <button class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-bold text-red-300">Disable 2FA</button>
+                                </form>
+                                @error('twoFactorPassword')<p class="mt-2 text-xs text-red-400">{{ $message }}</p>@enderror
+                            @elseif($twoFactorSetupSecret === '')
+                                <button wire:click="beginTwoFactorSetup" class="rounded-lg border border-violet-400/30 bg-violet-500/15 px-4 py-2.5 text-xs font-bold text-violet-100">Set up authenticator</button>
+                            @else
+                                <div class="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
+                                    <p class="text-xs text-zinc-400">Add an account in your authenticator app using this setup key:</p>
+                                    <code class="block break-all rounded bg-black p-3 text-sm text-violet-300">{{ $twoFactorSetupSecret }}</code>
+                                    <form wire:submit="confirmTwoFactor" class="flex flex-col gap-3 sm:flex-row">
+                                        <input wire:model="twoFactorCode" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" class="flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white">
+                                        <button class="rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white">Confirm and enable</button>
+                                    </form>
+                                    @error('twoFactorCode')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
+                                </div>
+                            @endif
+                        </div>
                     </div>
 
                     <div x-show="activeTab === 'account'" x-cloak>

@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Livewire\Profile;
 
 use App\Modules\Community\Models\NotificationPreference;
+use App\Modules\Identity\Actions\DisableTwoFactorAction;
+use App\Modules\Identity\Actions\EnableTwoFactorAction;
 use App\Modules\Identity\Actions\SubmitKycAction;
 use App\Modules\Identity\Actions\UpdateProfileAction;
 use App\Modules\Identity\Actions\UploadAvatarAction;
 use App\Modules\Identity\Events\EmailVerified;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Services\TotpService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -44,6 +47,15 @@ class ProfileDashboard extends Component
     public string $newPassword = '';
 
     public string $newPasswordConfirmation = '';
+
+    public string $twoFactorSetupSecret = '';
+
+    public string $twoFactorCode = '';
+
+    public string $twoFactorPassword = '';
+
+    /** @var list<string> */
+    public array $twoFactorRecoveryCodes = [];
 
     // KYC Submission
     public string $documentType = 'id_card';
@@ -186,6 +198,44 @@ class ProfileDashboard extends Component
         EmailVerified::dispatch((int) $user->getKey());
 
         session()->flash('message', 'Email verified successfully!');
+    }
+
+    public function beginTwoFactorSetup(TotpService $totp): void
+    {
+        $user = Auth::user();
+        if (! $user || $user->two_factor_confirmed_at) {
+            return;
+        }
+
+        $this->twoFactorSetupSecret = $totp->generateSecret();
+        $this->twoFactorCode = '';
+        $this->twoFactorRecoveryCodes = [];
+    }
+
+    public function confirmTwoFactor(EnableTwoFactorAction $action): void
+    {
+        $user = Auth::user();
+        if (! $user || $this->twoFactorSetupSecret === '') {
+            return;
+        }
+
+        $this->validate(['twoFactorCode' => ['required', 'digits:6']]);
+        $this->twoFactorRecoveryCodes = $action->execute($user, $this->twoFactorSetupSecret, $this->twoFactorCode);
+        $this->reset('twoFactorSetupSecret', 'twoFactorCode');
+        session()->flash('message', 'Two-factor authentication enabled. Store your recovery codes securely.');
+    }
+
+    public function disableTwoFactor(DisableTwoFactorAction $action): void
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return;
+        }
+
+        $this->validate(['twoFactorPassword' => ['required', 'string']]);
+        $action->execute($user, $this->twoFactorPassword);
+        $this->reset('twoFactorPassword', 'twoFactorRecoveryCodes');
+        session()->flash('message', 'Two-factor authentication disabled.');
     }
 
     public function updateProfile(UpdateProfileAction $action): void
