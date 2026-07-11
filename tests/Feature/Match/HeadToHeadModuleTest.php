@@ -21,6 +21,9 @@ use App\Modules\Match\Actions\SubmitHeadToHeadResultAction;
 use App\Modules\Match\Jobs\ExpireHeadToHeadMatchesJob;
 use App\Modules\Match\Models\HeadToHeadChallenge;
 use App\Modules\Match\Models\HeadToHeadMatch;
+use App\Modules\Match\Models\HeadToHeadRating;
+use App\Modules\Match\Services\HeadToHeadMatchmakerService;
+use App\Modules\Match\Services\HeadToHeadRatingService;
 use App\Modules\Match\StateMachines\HeadToHeadMatchStateMachine;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\HeadToHeadChallengeStatus;
@@ -32,8 +35,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use LogicException;
 use Livewire\Livewire;
+use LogicException;
 use Tests\TestCase;
 
 class HeadToHeadModuleTest extends TestCase
@@ -311,6 +314,36 @@ class HeadToHeadModuleTest extends TestCase
             'type' => LedgerType::H2H_PAYOUT->value,
             'amount' => '20.00',
         ]);
+        $this->assertDatabaseHas('head_to_head_ratings', ['user_id' => $this->playerA->id, 'game_id' => $this->game->id, 'rating' => 1216, 'wins' => 1]);
+        $this->assertDatabaseHas('head_to_head_ratings', ['user_id' => $this->playerB->id, 'game_id' => $this->game->id, 'rating' => 1184, 'losses' => 1]);
+        $this->assertNotNull($match->rating_processed_at);
+    }
+
+    public function test_rating_processing_is_idempotent(): void
+    {
+        $challenge = $this->createChallenge();
+        $match = app(AcceptHeadToHeadChallengeAction::class)->execute($challenge, $this->playerB, 'PlayerB#222');
+        $match->update(['winner_user_id' => $this->playerA->id]);
+
+        $ratings = app(HeadToHeadRatingService::class);
+        $ratings->process($match);
+        $ratings->process($match->fresh());
+
+        $this->assertSame(1216, $ratings->ratingFor($this->playerA->id, $this->game->id));
+        $this->assertDatabaseCount('head_to_head_ratings', 2);
+    }
+
+    public function test_matchmaking_window_expands_for_older_challenges(): void
+    {
+        $challenge = $this->createChallenge();
+        HeadToHeadRating::query()->create(['user_id' => $this->playerA->id, 'game_id' => $this->game->id, 'rating' => 1450]);
+        HeadToHeadRating::query()->create(['user_id' => $this->playerB->id, 'game_id' => $this->game->id, 'rating' => 1200]);
+
+        $matchmaker = app(HeadToHeadMatchmakerService::class);
+        $this->assertNull($matchmaker->findOpponentChallenge($this->playerB->id, $this->game->id, 10));
+
+        $challenge->forceFill(['created_at' => now()->subMinutes(10)])->save();
+        $this->assertSame($challenge->id, $matchmaker->findOpponentChallenge($this->playerB->id, $this->game->id, 10)?->id);
     }
 
     public function test_stale_submitted_h2h_result_escalates_to_admin_review_without_auto_confirming(): void

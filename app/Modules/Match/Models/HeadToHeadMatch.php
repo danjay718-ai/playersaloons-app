@@ -42,6 +42,11 @@ class HeadToHeadMatch extends Model
         'dispute_resolved_at',
         'completed_at',
         'cancelled_at',
+        'rating_processed_at',
+        'creator_rating_before',
+        'creator_rating_after',
+        'opponent_rating_before',
+        'opponent_rating_after',
     ];
 
     protected function casts(): array
@@ -57,6 +62,11 @@ class HeadToHeadMatch extends Model
             'dispute_resolved_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'rating_processed_at' => 'datetime',
+            'creator_rating_before' => 'integer',
+            'creator_rating_after' => 'integer',
+            'opponent_rating_before' => 'integer',
+            'opponent_rating_after' => 'integer',
         ];
     }
 

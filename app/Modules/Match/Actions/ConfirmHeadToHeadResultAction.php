@@ -6,6 +6,7 @@ namespace App\Modules\Match\Actions;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\HeadToHeadMatch;
+use App\Modules\Match\Services\HeadToHeadRatingService;
 use App\Modules\Match\StateMachines\HeadToHeadMatchStateMachine;
 use App\Shared\Enums\HeadToHeadMatchStatus;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,8 @@ class ConfirmHeadToHeadResultAction
 {
     public function __construct(
         private readonly HeadToHeadMatchStateMachine $stateMachine,
-        private readonly ResolveHeadToHeadStakeAction $resolveStake
+        private readonly ResolveHeadToHeadStakeAction $resolveStake,
+        private readonly HeadToHeadRatingService $ratings,
     ) {}
 
     public function execute(HeadToHeadMatch $match, User $confirmer): void
@@ -43,6 +45,7 @@ class ConfirmHeadToHeadResultAction
 
             $this->resolveStake->execute($lockedMatch, $winner);
             $this->stateMachine->transition($lockedMatch, HeadToHeadMatchStatus::COMPLETED);
+            $this->ratings->process($lockedMatch);
         });
     }
 }
