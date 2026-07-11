@@ -59,6 +59,9 @@ class StreamChannel extends Model
         'taken_down_by',
         'takedown_reason',
         'metadata',
+        'provider_status',
+        'provider_checked_at',
+        'provider_status_error',
     ];
 
     protected static function booted(): void
@@ -110,6 +113,7 @@ class StreamChannel extends Model
             'is_live' => 'boolean',
             'taken_down_at' => 'datetime',
             'metadata' => 'array',
+            'provider_checked_at' => 'datetime',
         ];
     }
 
