@@ -1,6 +1,14 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-11 (v1.99) | **Branch**: `main`
+**Last Updated**: 2026-07-12 (v1.100) | **Branch**: `main`
+
+---
+## ✅ Documentation Backlog Synchronization (v1.100)
+
+- **Backlog**: Consolidated the next implementation sequence in `execution_checklist.md`: contact inquiry workflow, newsletter management, referral logic, and deposit processing fees.
+- **Feature gaps**: Queued team tournaments, auto-forfeit timeout settings, and rematch voting after the four prioritized features.
+- **Production**: Moved external payout provider integration to the production-readiness checklist while sandbox testing continues with manual payouts.
+- **Cleanup**: Removed stale pending labels for tests completed in v1.32 and v1.98.
 
 ---
 ## ✅ Compliance, 2FA, ELO, and Provider Status (v1.99)
@@ -1084,19 +1092,8 @@ The following tests are identified but not yet written:
 **Tournament & Admin UI**
 - `test_admin_tournament_filter_persistence`
 - `test_admin_frequency_tab_functionality` / `test_player_frequency_tab_functionality`
-- `test_join_tournament_button_is_restricted_by_role`
-- `test_tournament_listing_filters_by_status`
-- `test_view_restricted_details_policy`
 - `test_custom_pagination_rendering`
 - `test_admin_navigation_flow` (wire:navigate SPA transitions)
-
-**Livewire Component Tests**
-- Elimination modal (4 cases: show/hide, go back, continue)
-- My Tournaments stats banner calculation
-- Elimination shifts tournament to history tab
-- N+1 query prevention on `/my-tournaments`
-- Player tournament list filtering
-- H2H matchmaking simulation
 
 ### Feature Gaps (Not Implemented)
 Items where schema or stub exists but logic is missing:
@@ -1105,7 +1102,7 @@ Items where schema or stub exists but logic is missing:
 |---|---|---|
 | H2H Admin Review / Proof Uploads | ✅ Done v1.40 | Proof uploads and admin dispute resolution are implemented. |
 | File Storage → R2/S3 | ⚠️ Deferred | Currently using local `public` disk. See deployment notes below. |
-| External Payout Integration | ❌ Not started | `PROCESSED` state is manual. No PayPal/Stripe Connect. |
+| External Payout Integration | ⚪ Production deferred | Manual payouts remain during testing; provider integration is tracked in the production-readiness checklist. |
 | Referral System Logic | ❌ Not started | Integer ref ID in DB, no reward logic. |
 | 2FA | ✅ Done v1.99 | TOTP setup, login challenge, recovery codes, and disable flow are implemented. |
 | `last_login_at` | ✅ Done v1.29/v1.34 | Successful login updates the timestamp and the migration is present. |
@@ -1209,6 +1206,7 @@ Stripe Dashboard setup:
 - [x] Verify Horizon dashboard and queue workers are processing *(confirmed active v1.29)*
 - [x] `php artisan storage:link` — handled in `start.sh` on deploy
 - [ ] Migrate file storage to R2/S3 — deferred, see `execution_checklist.md` → File Storage Migration
+- [ ] Integrate an external payout provider — deferred during testing; manual payout processing remains active
 
 ---
 

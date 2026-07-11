@@ -118,30 +118,12 @@ Player-created wager matches outside tournament brackets.
 *   **Dispute**: `test_match_locks_on_dispute_and_prevents_auto_advancement`
 
 ### 📋 Pending Tests (Testing Debt)
-The following tests are identified in `project_progress.md` as necessary for full coverage:
-
-*   **Feature Tests**:
-    *   `test_join_tournament_button_is_restricted_by_role`: Verify only 'PLAYER' role can see/click join.
-    *   `test_tournament_listing_filters_by_status`: Ensure player-side list correctly excludes Draft/Cancelled/Completed statuses.
-    *   `test_view_restricted_details_policy`: Verify Matches and Activity tabs are hidden from non-participants.
-    *   `test_frequency_tabs_functionality`: Verify Daily/Weekly/Monthly filtering in both admin and player lists.
-*   **Component Tests (Livewire/Alpine)**:
-    *   **Elimination Modal**:
-        *   `test_elimination_modal_shows_on_lost_match`: Player has lost -> navigating to Matches tab triggers warning.
-        *   `test_elimination_modal_does_not_show_if_not_lost`: Player active -> no warning.
-        *   `test_elimination_modal_actions`: "Go Back" resets tab; "Continue" stays on tab.
-    *   **My Tournaments UI**:
-        *   `test_stats_banner_calculation`: Verify Win/Loss/Active counts are accurate.
-        *   `test_elimination_shifts_tournament_to_history`: Verify UI updates location of tournament after a loss.
-        *   `test_n_plus_one_query_prevention`: Ensure matches are pre-fetched in a single query.
-    *   **Discovery**:
-        *   `test_player_tournament_list_filtering`: Verify search, game, and status filters.
+The role, listing, restricted-detail, elimination, tournament-stat, history, N+1, and player-filter tests were completed in v1.32/v1.98. Remaining frequency-filter coverage is tracked in `execution_checklist.md`.
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
-    *   **Auto-Forfeit Logic**: `AutoForfeitJob` exists but the specific timeout configuration (e.g., "forfeit after 15 mins of inactivity") needs to be exposed in `SystemSettings`.
-    *   **Rematch Voting**: Flow for players to request a rematch before a dispute is filed.
-    *   **Rematch Voting**: Flow for players to request a rematch before a dispute is filed.
+    *   **Auto-Forfeit Timeout Setting**: expose the existing `waiting_result_time` configuration in `SystemSettings` after the current ordered feature queue.
+    *   **Rematch Voting**: allow players to request a rematch before a dispute is filed; queued after the current ordered feature work.
 *   **Provider Live Status Detection (v1.99)**:
     *   `ProviderLiveStatusService` checks YouTube, Twitch, and Facebook when provider credentials are configured.
     *   `RefreshProviderLiveStatusesJob` runs every two minutes for public, non-taken-down channels.

@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-11 | **Current version**: v1.99 | **Branch**: `main`
+**As of**: 2026-07-12 | **Current version**: v1.100 | **Branch**: `main`
 
 ---
 
@@ -130,12 +130,13 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 
 | Priority | Item | Effort |
 |---|---|---|
-| ⚪ | Referral system logic | Deferred; growth/marketing feature, not required for current Phase 2 scope |
-| ⚪ | External payout integration | Deferred; sandbox continues with manual payout workflow until payout provider/compliance path is confirmed |
-| ⚪ | Newsletter management/sending | Deferred; registration stores opt-in only until newsletter provider/workflow is selected |
-| 🔵 | Translation management checklist cleanup | Small |
+| 1 | Contact inquiry workflow polish | Next |
+| 2 | Newsletter management and sending | After contact workflow |
+| 3 | Referral system logic | After newsletter management |
+| 4 | Deposit processing fee | After referral logic |
+| 5–7 | Team tournaments, auto-forfeit setting, rematch voting | Follow-up feature gaps, in this order |
 | 🟡 | Remaining testing debt | Admin/player frequency filters, filter persistence, pagination, and admin navigation |
-| ⚪ | R2 storage migration | Deferred during testing; Docker volumes are acceptable until full launch |
+| ⚪ | R2 storage and external payout integration | Production readiness; deferred during testing |
 
 ### Already Done / Do Not Re-open
 

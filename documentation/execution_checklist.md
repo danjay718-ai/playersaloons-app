@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-11 (v1.99)
+**Status**: Active Backlog | **Last Updated**: 2026-07-12 (v1.100)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -83,6 +83,21 @@ These tests are identified but not yet implemented. Priority order within each s
 
 ## 🛠️ Other Post-MVP Tasks
 
+### Ordered Feature Queue
+
+Implement these next, in order:
+
+1. [ ] Contact Inquiry Workflow Polish — add status counters, reply-by-email shortcut, clearer category/status badges, and an admin dashboard inquiry summary.
+2. [ ] Newsletter Management — add admin audience management, campaign/sending workflow, and unsubscribe handling; registration opt-in is already stored.
+3. [ ] Referral System Logic — implement referral attribution and reward rules using the existing integer referral ID.
+4. [ ] Deposit Processing Fee — activate `deposits.fee_amount` and show wallet credit, processing fee, and total charge before Stripe Checkout.
+
+After the ordered feature queue:
+
+5. [ ] Team Tournaments — implement the currently unused `tournament_registrations.team_id` flow.
+6. [ ] Auto-Forfeit Timeout Setting — expose `waiting_result_time` in the System Settings UI.
+7. [ ] Rematch Voting — allow players to request and agree to a rematch before opening a dispute.
+
 ### File Storage Migration (Required Before Full Production)
 - [ ] `composer require league/flysystem-aws-s3-v3`
 - [ ] Set R2 env vars: `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT`, `R2_PUBLIC_URL`
@@ -108,15 +123,22 @@ These tests are identified but not yet implemented. Priority order within each s
 ### Compliance & User Management
 - [x] Compliance/Blacklisting (Middleware + Admin Page) *(done v1.99)*
 - [x] Contact Inquiries (Public/player form + Admin Page) *(done v1.78; resolve/archive UX tightened v1.81)*
-- [ ] Contact Inquiry Support Polish — status counters, reply-by-email shortcut, clearer category/status badges, and admin dashboard inquiry summary. **Deferred**: contact inbox is functional now; these are follow-up support workflow enhancements to do after the next Phase 2 priorities.
-- [ ] Newsletter Management (Admin Page). **Deferred**: registration now records newsletter/update opt-in, but actual newsletter sending, audience management, campaign tools, and unsubscribe flows are deferred until the newsletter provider/workflow is selected.
+- Ordered work is tracked under **Ordered Feature Queue** above.
 
 ### Identity
-- [ ] Referral System Logic — integer ref ID is in DB but reward logic not implemented. **Deferred**: not required for the current Phase 2 scope; can be revisited as a growth/marketing feature after launch priorities are stable.
+- Referral implementation is tracked under **Ordered Feature Queue** above.
 - [x] 2FA — authenticator setup, login challenge, one-time recovery codes, and password-confirmed disable flow. *(done v1.99)*
 - [x] `last_login_at` update on successful login (column exists, now updated in `Login.php` — v1.29)
 - [x] `UserKycSubmitted` listener — event dispatched but no listener registered yet *(done v1.31 — `NotifyAdminsOfKycSubmissionListener`)*
 
 ### Financial
-- [ ] External Payout Integration — `PROCESSED` state is currently manual; no PayPal/Stripe Connect. **Deferred**: sandbox mode will use the existing manual payout workflow; full integration depends on final payout provider, account onboarding, supported regions, and compliance requirements.
-- [ ] Deposit fee implementation — `deposits.fee_amount` field exists but is not active. **Deferred**: sandbox mode will ignore/absorb fees for now. Recommended production policy is to charge the processing fee on top of the desired wallet credit, clearly showing wallet credit, processing fee, and total charge before checkout.
+- Deposit fee implementation is tracked under **Ordered Feature Queue** above.
+
+---
+
+## 🚀 Production Readiness Checklist
+
+These tasks are intentionally deferred while the application remains in testing:
+
+- [ ] External Payout Provider Integration — replace the manual `PROCESSED` withdrawal workflow after the provider, supported regions, account onboarding, and compliance requirements are finalized.
+- [ ] R2/S3 File Storage Migration — complete the file-storage steps above before accepting real users at scale.
