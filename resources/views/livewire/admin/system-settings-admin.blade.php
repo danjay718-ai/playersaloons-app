@@ -3,6 +3,15 @@
         <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{{ session('success') }}</div>
     @endif
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-cyan-300">Tournaments</p>
+        <h2 class="mt-1 text-xl font-bold text-white">Result confirmation timeout</h2>
+        <p class="mt-2 text-sm text-slate-500">New tournaments inherit this value. Organizers can override it on each tournament.</p>
+        <form wire:submit="saveTournamentSettings" class="mt-6 space-y-4">
+            <div><label class="text-xs font-bold uppercase tracking-wider text-slate-400">Default minutes</label><input wire:model="defaultWaitingResultTime" type="number" min="1" max="1440" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">@error('defaultWaitingResultTime')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror</div>
+            <button type="submit" class="rounded-lg bg-cyan-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-cyan-500">Save tournament settings</button>
+        </form>
+    </section>
+    <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-300">Growth</p>
         <h2 class="mt-1 text-xl font-bold text-white">Referral rewards</h2>
         <p class="mt-2 text-sm text-slate-500">Amounts are read when a referred player completes their first successful deposit.</p>

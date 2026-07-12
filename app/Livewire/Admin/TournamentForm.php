@@ -6,6 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Tournament\Actions\CreateTournamentAction;
@@ -83,6 +84,7 @@ class TournamentForm extends AdminComponent
     public function mount(?int $id = null): void
     {
         $this->rules = $this->getDefaultRules();
+        $this->waiting_result_time = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
 
         if ($id) {
             $this->isEditMode = true;

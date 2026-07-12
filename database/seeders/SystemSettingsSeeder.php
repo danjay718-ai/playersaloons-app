@@ -26,6 +26,12 @@ class SystemSettingsSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'key' => 'tournament.waiting_result_time_default',
+                'value' => '30',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
                 'key' => 'wallet.withdrawal_limit_min',
                 'value' => '10.00',
                 'created_at' => now(),

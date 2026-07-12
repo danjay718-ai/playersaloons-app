@@ -21,6 +21,8 @@ class SystemSettingsAdmin extends AdminComponent
 
     public string $depositFeePercentage = '0.00';
 
+    public int $defaultWaitingResultTime = 30;
+
     public function boot(): void
     {
         parent::boot();
@@ -39,6 +41,17 @@ class SystemSettingsAdmin extends AdminComponent
         $this->depositFeeEnabled = filter_var($feeSettings['deposit_fee.enabled'] ?? false, FILTER_VALIDATE_BOOL);
         $this->depositFeeFixed = (string) ($feeSettings['deposit_fee.fixed'] ?? '0.00');
         $this->depositFeePercentage = (string) ($feeSettings['deposit_fee.percentage'] ?? '0.00');
+        $this->defaultWaitingResultTime = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
+    }
+
+    public function saveTournamentSettings(): void
+    {
+        $this->validate(['defaultWaitingResultTime' => ['required', 'integer', 'min:1', 'max:1440']]);
+        SystemSetting::query()->updateOrCreate(
+            ['key' => 'tournament.waiting_result_time_default'],
+            ['value' => (string) $this->defaultWaitingResultTime, 'updated_by' => Auth::id()]
+        );
+        session()->flash('success', 'Tournament timing settings updated.');
     }
 
     public function saveDepositFeeSettings(): void
