@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tournament\Actions;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Team\Models\Team;
 use App\Modules\Tournament\Events\TournamentFilled;
 use App\Modules\Tournament\Events\TournamentSeatReserved;
 use App\Modules\Tournament\Exceptions\TournamentAlreadyRegisteredException;
@@ -12,6 +13,7 @@ use App\Modules\Tournament\Exceptions\TournamentFullException;
 use App\Modules\Tournament\Exceptions\TournamentNotOpenForRegistrationException;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
+use App\Modules\Tournament\Models\TournamentRegistrationMember;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\WalletService;
@@ -34,7 +36,7 @@ class RegisterForTournamentAction
      * @throws TournamentFullException
      * @throws InsufficientBalanceException
      */
-    public function execute(Tournament $tournament, User $user): TournamentRegistration
+    public function execute(Tournament $tournament, User $user, ?Team $team = null): TournamentRegistration
     {
         if ($tournament->status !== TournamentStatus::REGISTRATION_OPEN) {
             throw new TournamentNotOpenForRegistrationException(
@@ -43,12 +45,29 @@ class RegisterForTournamentAction
             );
         }
 
-        return DB::transaction(function () use ($tournament, $user): TournamentRegistration {
+        return DB::transaction(function () use ($tournament, $user, $team): TournamentRegistration {
             // Lock tournament row to prevent race conditions on participant count
             /** @var Tournament|null $locked */
             $locked = Tournament::query()->where('id', $tournament->getKey())->lockForUpdate()->first();
             if ($locked === null) {
                 throw new \RuntimeException('Tournament not found.');
+            }
+
+            if (($locked->team_size ?? 1) > 1) {
+                if ($team === null) {
+                    throw new \LogicException('A team is required for this tournament.');
+                }
+                if ($team->status !== 'active' || (int) $team->captain_user_id !== (int) $user->getKey()) {
+                    throw new \LogicException('Only the captain of an active team may register it.');
+                }
+                if ($team->members()->where('status', 'active')->count() < (int) $locked->team_size) {
+                    throw new \LogicException("Your team needs at least {$locked->team_size} active members.");
+                }
+                if (TournamentRegistration::query()->where('tournament_id', $locked->getKey())->where('team_id', $team->getKey())->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])->exists()) {
+                    throw new \LogicException('This team is already registered for the tournament.');
+                }
+            } elseif ($team !== null) {
+                throw new \LogicException('Teams cannot register for a solo tournament.');
             }
 
             // Check for duplicate registration
@@ -98,10 +117,22 @@ class RegisterForTournamentAction
                 'uuid' => Str::uuid()->toString(),
                 'tournament_id' => $locked->getKey(),
                 'user_id' => $user->getKey(),
+                'team_id' => $team?->getKey(),
                 'status' => RegistrationStatus::CONFIRMED,
                 'payment_status' => $paymentStatus,
                 'registered_at' => now(),
             ]);
+
+            if ($team !== null) {
+                $roster = $team->members()->where('status', 'active')->orderByRaw("CASE WHEN role = 'captain' THEN 0 ELSE 1 END")->limit((int) $locked->team_size)->get();
+                foreach ($roster as $member) {
+                    TournamentRegistrationMember::query()->create([
+                        'registration_id' => $registration->id,
+                        'user_id' => $member->user_id,
+                        'role' => $member->role,
+                    ]);
+                }
+            }
 
             TournamentSeatReserved::dispatch((int) $locked->getKey(), (int) $registration->getKey(), (int) $user->getKey());
 

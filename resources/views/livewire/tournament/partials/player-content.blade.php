@@ -111,7 +111,7 @@
                             @if(Auth::user()->hasRole('PLAYER'))
                                 <button wire:click="register" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
                                     <i data-lucide="plus-circle" class="w-5 h-5"></i>
-                                    <span>Join Tournament</span>
+                                    <span>{{ ($tournament->team_size ?? 1) > 1 ? 'Register My Team' : 'Join Tournament' }}</span>
                                 </button>
                             @else
                                 <div class="w-full bg-zinc-950/60 border border-zinc-800 text-zinc-500 rounded-2xl py-5 px-8 text-center text-xs font-black uppercase tracking-[0.2em]">
@@ -351,10 +351,14 @@
                             </div>
                             <div class="truncate">
                                 <span class="block text-sm font-black text-white truncate font-orbitron tracking-tight">
-                                    {{ $reg->user->profile?->display_name ?: $reg->user->username }}
+                                    {{ $reg->team?->name ?: ($reg->user->profile?->display_name ?: $reg->user->username) }}
                                 </span>
                                 <span class="block text-[10px] text-zinc-600 font-black uppercase tracking-widest truncate">
-                                    #{{ $reg->user->id }} • @ {{ $reg->user->username }}
+                                    @if($reg->team)
+                                        {{ $tournament->team_size }} players • Captain @ {{ $reg->user->username }}
+                                    @else
+                                        #{{ $reg->user->id }} • @ {{ $reg->user->username }}
+                                    @endif
                                 </span>
                             </div>
                         </div>

@@ -38,10 +38,7 @@ class MatchPolicy
             return true;
         }
 
-        $playerAId = $match->playerARegistration?->user_id;
-        $playerBId = $match->playerBRegistration?->user_id;
-
-        return ($user->id === $playerAId || $user->id === $playerBId)
+        return ($match->playerARegistration?->includesUser($user->id) || $match->playerBRegistration?->includesUser($user->id))
             && $user->hasPermissionTo('matches.submit_result');
     }
 
@@ -54,10 +51,7 @@ class MatchPolicy
             return true;
         }
 
-        $playerAId = $match->playerARegistration?->user_id;
-        $playerBId = $match->playerBRegistration?->user_id;
-
-        return ($user->id === $playerAId || $user->id === $playerBId)
+        return ($match->playerARegistration?->includesUser($user->id) || $match->playerBRegistration?->includesUser($user->id))
             && $user->hasPermissionTo('disputes.open');
     }
 }

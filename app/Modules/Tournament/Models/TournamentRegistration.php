@@ -8,6 +8,7 @@ use App\Shared\Enums\PaymentStatus;
 use App\Shared\Enums\RegistrationStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -30,7 +31,7 @@ class TournamentRegistration extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'uuid',
@@ -59,7 +60,7 @@ class TournamentRegistration extends Model
     /**
      * Get the tournament.
      *
-     * @return BelongsTo<Tournament, TournamentRegistration>
+     * @return BelongsTo<Tournament, $this>
      */
     public function tournament(): BelongsTo
     {
@@ -69,7 +70,7 @@ class TournamentRegistration extends Model
     /**
      * Get the registered user.
      *
-     * @return BelongsTo<User, TournamentRegistration>
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -79,10 +80,21 @@ class TournamentRegistration extends Model
     /**
      * Get the registered team, if applicable.
      *
-     * @return BelongsTo<Team, TournamentRegistration>
+     * @return BelongsTo<Team, $this>
      */
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function rosterMembers(): HasMany
+    {
+        return $this->hasMany(TournamentRegistrationMember::class, 'registration_id');
+    }
+
+    public function includesUser(int $userId): bool
+    {
+        return (int) $this->user_id === $userId
+            || $this->rosterMembers()->where('user_id', $userId)->exists();
     }
 }

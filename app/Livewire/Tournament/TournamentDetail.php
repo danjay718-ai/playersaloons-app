@@ -6,6 +6,7 @@ namespace App\Livewire\Tournament;
 
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Stream\Support\StreamEmbedService;
+use App\Modules\Team\Models\Team;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
@@ -66,8 +67,11 @@ class TournamentDetail extends Component
         $user = Auth::user();
 
         try {
-            $action->execute($tournament, $user);
-            session()->flash('message', 'Successfully registered for this tournament!');
+            $team = ($tournament->team_size ?? 1) > 1
+                ? Team::query()->where('captain_user_id', $user->id)->where('status', 'active')->first()
+                : null;
+            $action->execute($tournament, $user, $team);
+            session()->flash('message', $team ? "Successfully registered {$team->name}!" : 'Successfully registered for this tournament!');
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
@@ -98,7 +102,7 @@ class TournamentDetail extends Component
                 'game.translations',
                 'registrations' => function ($q) {
                     $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
-                        ->with('user.profile');
+                        ->with(['user.profile', 'team']);
                 },
                 'brackets.rounds.matches.playerARegistration.user',
                 'brackets.rounds.matches.playerBRegistration.user',
@@ -115,7 +119,9 @@ class TournamentDetail extends Component
         if ($user) {
             $userRegistration = TournamentRegistration::query()
                 ->where('tournament_id', $tournament->id)
-                ->where('user_id', $user->id)
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
+                })
                 ->whereNotIn('status', [RegistrationStatus::CANCELLED, RegistrationStatus::REFUNDED])
                 ->first();
 

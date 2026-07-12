@@ -36,7 +36,9 @@ class CheckinParticipantAction
             /** @var TournamentRegistration|null $registration */
             $registration = TournamentRegistration::query()
                 ->where('tournament_id', $tournament->getKey())
-                ->where('user_id', $user->getKey())
+                ->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->getKey())->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->getKey()));
+                })
                 ->where('status', RegistrationStatus::CONFIRMED)
                 ->first();
 
@@ -66,10 +68,11 @@ class CheckinParticipantAction
             TournamentParticipant::query()->updateOrCreate(
                 [
                     'tournament_id' => $tournament->getKey(),
-                    'user_id' => $user->getKey(),
+                    'user_id' => $registration->user_id,
                 ],
                 [
                     'registration_id' => $registration->getKey(),
+                    'team_id' => $registration->team_id,
                     'status' => 'active',
                 ]
             );

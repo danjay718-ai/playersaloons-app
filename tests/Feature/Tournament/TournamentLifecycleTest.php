@@ -11,6 +11,8 @@ use App\Modules\Match\Actions\ConfirmMatchResultAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Team\Models\Team;
+use App\Modules\Team\Models\TeamMember;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\CloseCheckinAction;
 use App\Modules\Tournament\Actions\CloseRegistrationAction;
@@ -22,7 +24,6 @@ use App\Modules\Tournament\Actions\PublishTournamentAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Exceptions\TournamentFullException;
-use App\Modules\Tournament\Exceptions\TournamentNotOpenForRegistrationException;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
@@ -291,5 +292,43 @@ class TournamentLifecycleTest extends TestCase
         // Match must be DISPUTED — not COMPLETED or advanced
         $this->assertEquals(MatchStatus::DISPUTED, $match->status);
         $this->assertNull($match->winner_registration_id);
+    }
+
+    public function test_active_team_captain_can_register_a_complete_roster(): void
+    {
+        [$tournament] = $this->openTournament(entryFee: 0.0);
+        $tournament->update(['team_size' => 2]);
+        $captain = $this->createPlayer('captain@example.com', 'captain');
+        $member = $this->createPlayer('member@example.com', 'member');
+        $team = Team::query()->create(['uuid' => Str::uuid(), 'name' => 'Alpha', 'slug' => 'alpha', 'captain_user_id' => $captain->id, 'status' => 'active']);
+        TeamMember::query()->create(['team_id' => $team->id, 'user_id' => $captain->id, 'role' => 'captain', 'status' => 'active', 'joined_at' => now()]);
+        TeamMember::query()->create(['team_id' => $team->id, 'user_id' => $member->id, 'role' => 'member', 'status' => 'active', 'joined_at' => now()]);
+
+        $registration = app(RegisterForTournamentAction::class)->execute($tournament->fresh(), $captain, $team);
+
+        $this->assertSame($team->id, $registration->team_id);
+        $this->assertCount(2, $registration->rosterMembers);
+    }
+
+    public function test_team_tournament_rejects_non_captain_and_incomplete_roster(): void
+    {
+        [$tournament] = $this->openTournament(entryFee: 0.0);
+        $tournament->update(['team_size' => 3]);
+        $captain = $this->createPlayer('captain2@example.com', 'captain2');
+        $member = $this->createPlayer('member2@example.com', 'member2');
+        $team = Team::query()->create(['uuid' => Str::uuid(), 'name' => 'Beta', 'slug' => 'beta', 'captain_user_id' => $captain->id, 'status' => 'active']);
+        TeamMember::query()->create(['team_id' => $team->id, 'user_id' => $captain->id, 'role' => 'captain', 'status' => 'active', 'joined_at' => now()]);
+        TeamMember::query()->create(['team_id' => $team->id, 'user_id' => $member->id, 'role' => 'member', 'status' => 'active', 'joined_at' => now()]);
+
+        try {
+            app(RegisterForTournamentAction::class)->execute($tournament->fresh(), $member, $team);
+            $this->fail('Non-captain registration should fail.');
+        } catch (\LogicException $e) {
+            $this->assertStringContainsString('captain', $e->getMessage());
+        }
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('at least 3 active members');
+        app(RegisterForTournamentAction::class)->execute($tournament->fresh(), $captain, $team);
     }
 }
