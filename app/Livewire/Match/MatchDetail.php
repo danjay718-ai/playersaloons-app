@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace App\Livewire\Match;
 
+use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
+use App\Modules\Match\Actions\VoteForRematchAction;
+use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Models\GameMatch;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchStatus;
-use App\Modules\Identity\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -73,7 +75,7 @@ class MatchDetail extends Component
                 $match->completed_at = now();
                 $match->save();
 
-                \App\Modules\Match\Events\MatchCompleted::dispatch(
+                MatchCompleted::dispatch(
                     (int) $match->id,
                     (int) $match->tournament_id,
                     (int) $match->winner_registration_id
@@ -134,6 +136,7 @@ class MatchDetail extends Component
         $user = Auth::user();
         if (! Auth::check() || ! $user->can('dispute', $match)) {
             session()->flash('error', 'You are not authorized to open a dispute for this match.');
+
             return;
         }
 
@@ -145,6 +148,22 @@ class MatchDetail extends Component
             $action->execute($match, (int) Auth::id(), $this->disputeReason);
             session()->flash('message', 'Dispute opened successfully. Please upload screenshots as evidence below.');
             $this->reset('disputeReason');
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
+    public function voteForRematch(VoteForRematchAction $action): void
+    {
+        if (! Auth::check()) {
+            session()->flash('error', 'You must be logged in to request a rematch.');
+
+            return;
+        }
+        $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
+        try {
+            $rematch = $action->execute($match, (int) Auth::id());
+            session()->flash('message', $rematch ? 'Rematch agreed! A new match is ready.' : 'Rematch requested. Waiting for your opponent to agree.');
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
@@ -163,10 +182,11 @@ class MatchDetail extends Component
 
         if (! Auth::check()) {
             session()->flash('error', 'You are not authorized to submit evidence.');
+
             return;
         }
 
-        if (Auth::id() !== $match->playerARegistration?->user_id && Auth::id() !== $match->playerBRegistration?->user_id) {
+        if (! $match->playerARegistration?->includesUser((int) Auth::id()) && ! $match->playerBRegistration?->includesUser((int) Auth::id())) {
             session()->flash('error', 'You are not authorized to submit evidence.');
 
             return;
@@ -193,12 +213,15 @@ class MatchDetail extends Component
                 'tournament',
                 'round',
                 'playerARegistration.user.profile',
+                'playerARegistration.team',
                 'playerBRegistration.user.profile',
+                'playerBRegistration.team',
                 'winnerRegistration.user.profile',
                 'resultSubmissions.user',
                 'disputes' => function ($q) {
                     $q->with('evidence');
                 },
+                'rematchVotes',
             ])
             ->firstOrFail();
 
@@ -211,17 +234,17 @@ class MatchDetail extends Component
         /** @var User|null $user */
         $user = Auth::user();
         $isParticipant = $user && (
-            $user->id === $match->playerARegistration?->user_id ||
-            $user->id === $match->playerBRegistration?->user_id
+            $match->playerARegistration?->includesUser($user->id)
+            || $match->playerBRegistration?->includesUser($user->id)
         );
 
         $activeDispute = $match->disputes()
             ->where('status', '!=', DisputeStatus::RESOLVED->value)
             ->first();
-            
+
         $latestSubmission = $match->resultSubmissions()->latest()->first();
         $isSubmitter = $user && $latestSubmission && $user->id === $latestSubmission->submitted_by;
-            
+
         $isAdmin = Auth::check() && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
         $layout = $isAdmin ? 'components.layouts.admin' : 'components.layouts.dashboard';
 

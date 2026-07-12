@@ -49,7 +49,7 @@
                 </div>
                 <div class="space-y-1">
                     <h2 class="text-xl font-bold text-zinc-100 truncate w-60">
-                        {{ $match->playerARegistration?->user?->profile?->display_name ?: $match->playerARegistration?->user?->username ?: 'TBD' }}
+                        {{ $match->playerARegistration?->team?->name ?: ($match->playerARegistration?->user?->profile?->display_name ?: $match->playerARegistration?->user?->username ?: 'TBD') }}
                     </h2>
                     <span class="block text-xs text-zinc-500 font-semibold">
                         @ @if($match->playerARegistration?->user?->username){{ $match->playerARegistration->user->username }}@else{{ 'To Be Determined' }}@endif
@@ -77,7 +77,7 @@
                 </div>
                 <div class="space-y-1">
                     <h2 class="text-xl font-bold text-zinc-100 truncate w-60">
-                        {{ $match->playerBRegistration?->user?->profile?->display_name ?: $match->playerBRegistration?->user?->username ?: 'TBD' }}
+                        {{ $match->playerBRegistration?->team?->name ?: ($match->playerBRegistration?->user?->profile?->display_name ?: $match->playerBRegistration?->user?->username ?: 'TBD') }}
                     </h2>
                     <span class="block text-xs text-zinc-500 font-semibold">
                         @ @if($match->playerBRegistration?->user?->username){{ $match->playerBRegistration->user->username }}@else{{ 'To Be Determined' }}@endif
@@ -141,7 +141,7 @@
                                     <label class="flex items-center space-x-3 bg-zinc-950 border {{ $winnerRegistrationId === $match->player_a_registration_id ? 'border-violet-500' : 'border-zinc-800' }} rounded-xl p-3.5 cursor-pointer hover:border-zinc-700 transition-colors">
                                         <input wire:model="winnerRegistrationId" type="radio" value="{{ $match->player_a_registration_id }}" class="h-4 w-4 text-violet-600 border-zinc-800 focus:ring-violet-500 focus:ring-offset-zinc-900">
                                         <span class="text-sm font-semibold text-zinc-200">
-                                            {{ $match->playerARegistration?->user?->username }} (Player A)
+                                            {{ $match->playerARegistration?->team?->name ?: $match->playerARegistration?->user?->username }} (Side A)
                                         </span>
                                     </label>
                                 @endif
@@ -151,7 +151,7 @@
                                     <label class="flex items-center space-x-3 bg-zinc-950 border {{ $winnerRegistrationId === $match->player_b_registration_id ? 'border-violet-500' : 'border-zinc-800' }} rounded-xl p-3.5 cursor-pointer hover:border-zinc-700 transition-colors">
                                         <input wire:model="winnerRegistrationId" type="radio" value="{{ $match->player_b_registration_id }}" class="h-4 w-4 text-violet-600 border-zinc-800 focus:ring-violet-500 focus:ring-offset-zinc-900">
                                         <span class="text-sm font-semibold text-zinc-200">
-                                            {{ $match->playerBRegistration?->user?->username }} (Player B)
+                                            {{ $match->playerBRegistration?->team?->name ?: $match->playerBRegistration?->user?->username }} (Side B)
                                         </span>
                                     </label>
                                 @endif
@@ -275,6 +275,21 @@
                     </div>
                 @endif
             </div>
+
+            @if($isParticipant && in_array($statusVal, ['in_progress', 'waiting_for_confirmation', 'result_submitted']))
+                @php
+                    $activeRematchVotes = $match->rematchVotes->where('expires_at', '>', now());
+                    $hasVotedForRematch = $activeRematchVotes->contains('user_id', Auth::id());
+                @endphp
+                <div class="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
+                    <h3 class="text-sm font-black uppercase tracking-wider text-amber-300">Mutual rematch</h3>
+                    <p class="mt-2 text-xs leading-5 text-zinc-400">Both players must agree before a dispute is opened. A mutual vote closes this match without advancing the bracket and creates a replacement match.</p>
+                    <button type="button" wire:click="voteForRematch" @disabled($hasVotedForRematch)
+                        class="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-200 disabled:cursor-not-allowed disabled:opacity-60">
+                        {{ $hasVotedForRematch ? 'Waiting for opponent' : ($activeRematchVotes->count() ? 'Agree to rematch' : 'Request rematch') }}
+                    </button>
+                </div>
+            @endif
 
             <!-- Dispute & Evidence Upload Panel -->
             <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">

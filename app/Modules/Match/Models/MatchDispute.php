@@ -33,10 +33,14 @@ class MatchDispute extends Model implements HasMedia
 {
     use InteractsWithMedia;
 
+    protected $attributes = [
+        'reason' => '',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'uuid',

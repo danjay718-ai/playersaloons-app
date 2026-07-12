@@ -44,7 +44,7 @@ class GameMatch extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'uuid',
@@ -77,11 +77,12 @@ class GameMatch extends Model
 
     public function isTimedOut(): bool
     {
-        if ($this->status !== MatchStatus::WAITING_FOR_CONFIRMATION || !$this->result_submitted_at) {
+        if ($this->status !== MatchStatus::WAITING_FOR_CONFIRMATION || ! $this->result_submitted_at) {
             return false;
         }
 
         $waitTime = $this->tournament->waiting_result_time;
+
         return $this->result_submitted_at->addMinutes($waitTime)->isPast();
     }
 
@@ -153,5 +154,10 @@ class GameMatch extends Model
     public function disputes(): HasMany
     {
         return $this->hasMany(MatchDispute::class, 'match_id');
+    }
+
+    public function rematchVotes(): HasMany
+    {
+        return $this->hasMany(MatchRematchVote::class, 'match_id');
     }
 }

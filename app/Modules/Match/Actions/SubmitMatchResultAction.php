@@ -29,6 +29,9 @@ class SubmitMatchResultAction
         ?UploadedFile $proofFile = null
     ): MatchResultSubmission {
         return DB::transaction(function () use ($match, $submittedByUserId, $winnerRegistrationId, $notes, $proofFile): MatchResultSubmission {
+            if (! $match->playerARegistration?->includesUser($submittedByUserId) && ! $match->playerBRegistration?->includesUser($submittedByUserId)) {
+                throw new InvalidArgumentException('Only match participants can submit a result.');
+            }
             if ($winnerRegistrationId !== $match->player_a_registration_id && $winnerRegistrationId !== $match->player_b_registration_id) {
                 throw new InvalidArgumentException('Winner must be one of the match participants.');
             }

@@ -13,6 +13,7 @@ use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
+use App\Modules\Match\Actions\VoteForRematchAction;
 use App\Modules\Match\Events\TournamentBracketUpdated;
 use App\Modules\Match\Jobs\RematchTimeoutJob;
 use App\Modules\Match\Models\GameMatch;
@@ -355,6 +356,21 @@ class MatchModuleTest extends TestCase
         ]);
 
         Event::assertDispatched(TournamentBracketUpdated::class);
+    }
+
+    public function test_both_players_can_agree_to_a_rematch_before_dispute(): void
+    {
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
+
+        $firstVote = app(VoteForRematchAction::class)->execute($match, $this->playerA->id);
+        $this->assertNull($firstVote);
+        $this->assertDatabaseHas('match_rematch_votes', ['match_id' => $match->id, 'user_id' => $this->playerA->id]);
+
+        $rematch = app(VoteForRematchAction::class)->execute($match, $this->playerB->id);
+        $this->assertNotNull($rematch);
+        $this->assertSame(MatchStatus::COMPLETED, $match->fresh()->status);
+        $this->assertNull($match->fresh()->winner_registration_id);
+        $this->assertSame(MatchStatus::READY, $rematch->status);
     }
 
     /**

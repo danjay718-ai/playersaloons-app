@@ -39,10 +39,7 @@ class SubmitEvidenceAction
             }
 
             // Validate submitter is a participant
-            $playerAUserId = $dispute->match->playerARegistration?->user_id;
-            $playerBUserId = $dispute->match->playerBRegistration?->user_id;
-
-            if ($uploadedByUserId !== $playerAUserId && $uploadedByUserId !== $playerBUserId) {
+            if (! $dispute->match->playerARegistration?->includesUser($uploadedByUserId) && ! $dispute->match->playerBRegistration?->includesUser($uploadedByUserId)) {
                 throw new InvalidArgumentException('Only match participants can submit evidence.');
             }
 

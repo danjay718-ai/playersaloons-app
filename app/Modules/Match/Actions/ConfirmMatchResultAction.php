@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Actions;
 
-use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Events\MatchCompleted;
+use App\Modules\Match\Models\GameMatch;
+use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Shared\Enums\MatchStatus;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
 class ConfirmMatchResultAction
 {
-    public function __construct(private readonly \App\Modules\Match\StateMachines\MatchStateMachine $stateMachine) {}
+    public function __construct(private readonly MatchStateMachine $stateMachine) {}
 
     /**
      * Confirm a match result.
@@ -28,8 +29,17 @@ class ConfirmMatchResultAction
                 throw new LogicException('You cannot confirm your own submission.');
             }
 
-            if (($match->playerARegistration?->user_id !== $userId) && ($match->playerBRegistration?->user_id !== $userId)) {
+            $confirmerSide = $match->playerARegistration?->includesUser($userId)
+                ? $match->playerARegistration
+                : ($match->playerBRegistration?->includesUser($userId) ? $match->playerBRegistration : null);
+            $submitterSide = $match->playerARegistration?->includesUser((int) $submitterId)
+                ? $match->playerARegistration
+                : ($match->playerBRegistration?->includesUser((int) $submitterId) ? $match->playerBRegistration : null);
+            if ($confirmerSide === null) {
                 throw new LogicException('You are not authorized to confirm this match.');
+            }
+            if ($submitterSide?->id === $confirmerSide->id) {
+                throw new LogicException('A teammate cannot confirm your side’s submission.');
             }
 
             // 2. Status validation
