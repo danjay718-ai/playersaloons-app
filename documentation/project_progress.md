@@ -1,6 +1,21 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-12 (v1.108) | **Branch**: `main`
+**Last Updated**: 2026-07-12 (v1.110) | **Branch**: `main`
+
+---
+## ✅ Team Tournaments, Timing Default, and Rematch Voting (v1.110)
+
+- **Team tournaments**: Captains can register active teams with sufficient rosters; registration snapshots the competing roster, creates team-aware participant slots, and grants roster members tournament and match access under existing permissions.
+- **Auto-forfeit configuration**: Admins can set the default result-confirmation timeout in System Settings, and new tournaments inherit it while retaining their per-tournament override.
+- **Mutual rematches**: Match participants can cast expiring, side-aware rematch votes before a dispute. Agreement from both sides closes the original without a winner and creates a ready replacement match.
+- **Verification**: Focused tournament, match, and settings suites pass with 18 tests and 66 assertions.
+
+---
+## ✅ Instant Player Review Star Selection (v1.109)
+
+- **Review UX**: Replaced per-star Livewire requests with deferred Alpine state, so rating clicks update immediately and synchronize only when the form submits.
+- **Accessibility**: Added radio-group semantics, selected-state ARIA values, keyboard focus styling, and a visible numeric rating summary.
+- **Verification**: All 5 player review tests pass with 14 assertions; the production frontend build succeeds.
 
 ---
 ## ✅ Player Mobile Navigation Variable Fix (v1.108)
@@ -1185,8 +1200,8 @@ Items where schema or stub exists but logic is missing:
 | Compliance/Blacklisting | ✅ Done v1.99 | Auditable blocks, middleware enforcement, expiry/revocation, and admin UI are implemented. |
 | Translation Management | ✅ Done v1.69 | Admin translation catalog and JSON export workflow are implemented. |
 | Streaming Integration | ✅ Done v1.91/v1.99 | Stream embeds and moderation are live; optional provider API status polling is implemented. |
-| Team Tournaments | ❌ Not started | `tournament_registrations.team_id` placeholder unused. |
-| Auto-Forfeit timeout config | ⚠️ Partial | `AutoForfeitJob` uses `waiting_result_time` but not exposed in `SystemSettings` UI. |
+| Team Tournaments | ✅ Done v1.110 | Captain registration, roster snapshots, team slots, roster authorization, and team-aware UI are implemented. |
+| Auto-Forfeit timeout config | ✅ Done v1.110 | System Settings provides the default inherited by new tournaments, with per-tournament overrides retained. |
 
 ---
 

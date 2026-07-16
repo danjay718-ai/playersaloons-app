@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-12 | **Current version**: v1.108 | **Branch**: `main`
+**As of**: 2026-07-12 | **Current version**: v1.110 | **Branch**: `main`
 
 ---
 
@@ -136,7 +136,7 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 | ✅ | Deposit processing fee | Done v1.105 |
 | ✅ | Advertisement and promotion management | Done v1.106 |
 | ✅ | Player reviews and star ratings | Done v1.107 |
-| 5–7 | Team tournaments, auto-forfeit setting, rematch voting | Follow-up feature gaps, in this order |
+| ✅ | Team tournaments, auto-forfeit setting, rematch voting | Done v1.110 |
 | 🟡 | Remaining testing debt | Admin/player frequency filters, filter persistence, pagination, and admin navigation |
 | ⚪ | R2 storage and external payout integration | Production readiness; deferred during testing |
 

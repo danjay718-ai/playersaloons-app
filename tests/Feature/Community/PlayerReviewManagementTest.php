@@ -50,7 +50,9 @@ class PlayerReviewManagementTest extends TestCase
             ->get('/reviews')
             ->assertOk()
             ->assertSee('mobile-bottom-nav', escape: false)
-            ->assertSee('Review Us');
+            ->assertSee('Review Us')
+            ->assertSeeHtml('@click="rating = 1"')
+            ->assertDontSee('wire:click="$set(&#039;rating&#039;', escape: false);
     }
 
     public function test_editing_approved_review_returns_it_to_pending(): void
