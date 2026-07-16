@@ -119,7 +119,6 @@ Admins manage auditable player restrictions at `/admin/compliance`. A block reco
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
-    *   **Referral System Logic**: Registration captures valid active referrers from `?ref={user_id}`. The relationship remains pending until the referred player completes their first successful deposit, then credits the referrer and new player through idempotent wallet ledger entries. ADMIN/SUPER_ADMIN can enable the program and adjust both amounts in `/admin/system-settings`.
     *   **Social Login**: `provider_name` and `provider_id` are in some variations of the plan but not yet in the current migration.
 *   **Unused Schema Columns**:
     *   `user_profiles.metadata`: JSON field currently empty/not used by `UpdateProfileAction`.

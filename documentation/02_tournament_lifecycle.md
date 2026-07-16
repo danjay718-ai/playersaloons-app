@@ -122,8 +122,7 @@ The role, listing, restricted-detail, elimination, tournament-stat, history, N+1
 
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
-    *   **Auto-Forfeit Timeout Setting**: expose the existing `waiting_result_time` configuration in `SystemSettings` after the current ordered feature queue.
-    *   **Rematch Voting**: allow players to request a rematch before a dispute is filed; queued after the current ordered feature work.
+    *   None currently tracked in this document.
 *   **Provider Live Status Detection (v1.99)**:
     *   `ProviderLiveStatusService` checks YouTube, Twitch, and Facebook when provider credentials are configured.
     *   `RefreshProviderLiveStatusesJob` runs every two minutes for public, non-taken-down channels.
@@ -132,4 +131,3 @@ The role, listing, restricted-detail, elimination, tournament-stat, history, N+1
 *   **Unused Schema Columns**:
     *   `tournaments.metadata`: JSON field for extended rules (e.g., "No items", "Final Destination only") not yet processed by the wizard.
     *   `matches.server_id`: Field for external game server integration (e.g., CS2/Dota2) currently null.
-    *   `tournament_registrations.team_id`: Placeholder for team-based tournaments (currently focusing on solo).

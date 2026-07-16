@@ -102,7 +102,6 @@ Team members coordinate inside the shared player comms hub.
 ## 🛠️ Feature Gaps & Unused Schema
 *   **Missing Features**:
     *   **Team Leveling/XP**: Schema for `teams.level` or `teams.xp` is missing; no progression logic implemented.
-    *   **Team Tournaments**: Current registration flow only handles solo players.
 *   **Unused Schema Columns**:
     *   `teams.logo_path`: Field exists but `CreateTeamAction` doesn't handle image uploads yet.
     *   `team_members.role`: Currently defaults to `MEMBER` or `CAPTAIN`, but potential for `CO_CAPTAIN` or `MODERATOR` exists in the schema.

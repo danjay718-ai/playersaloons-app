@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-12 (v1.107)
+**Status**: Active Backlog | **Last Updated**: 2026-07-12 (v1.110)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
