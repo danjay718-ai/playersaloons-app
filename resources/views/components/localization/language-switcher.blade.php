@@ -25,13 +25,20 @@
         'player' => 'hover:bg-purple-950/30 hover:text-white',
         default => 'hover:bg-cyan-500/10 hover:text-white',
     };
+
+    $isVisible = true;
+    if ($variant === 'admin') {
+        $isVisible = filter_var(\App\Modules\Operations\Models\SystemSetting::where('key', 'language_switcher.show_admin')->value('value') ?? false, FILTER_VALIDATE_BOOL);
+    } elseif ($variant === 'public') {
+        $isVisible = filter_var(\App\Modules\Operations\Models\SystemSetting::where('key', 'language_switcher.show_guest')->value('value') ?? false, FILTER_VALIDATE_BOOL);
+    }
 @endphp
 
+@if($isVisible)
+
 <div {{ $attributes->merge(['class' => 'relative']) }} x-data="{ open: false }" @click.outside="open = false">
-    <button type="button" @click="open = !open" class="{{ $buttonClasses }}" aria-label="{{ __('Language') }}" aria-haspopup="true" :aria-expanded="open">
-        <i data-lucide="globe-2" class="h-4 w-4"></i>
-        <span>{{ strtoupper($currentLocale) }}</span>
-        <span class="hidden sm:inline normal-case tracking-normal">{{ $currentLanguage['native'] ?? strtoupper($currentLocale) }}</span>
+    <button type="button" @click="open = !open" class="{{ $buttonClasses }} !px-2" aria-label="{{ __('Language') }}" aria-haspopup="true" :aria-expanded="open">
+        <span class="fi fi-{{ $currentLanguage['flag'] ?? 'us' }} text-sm rounded-sm"></span>
         <i data-lucide="chevron-down" class="h-3 w-3"></i>
     </button>
 
@@ -51,10 +58,14 @@
                 @csrf
                 <input type="hidden" name="locale" value="{{ $locale }}">
                 <button type="submit" class="flex w-full items-center justify-between px-4 py-2 text-left text-xs transition {{ $itemClasses }} {{ $currentLocale === $locale ? 'font-bold text-white' : '' }}">
-                    <span>{{ $language['native'] }}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="fi fi-{{ $language['flag'] ?? 'us' }} text-sm rounded-sm"></span>
+                        <span>{{ $language['native'] }}</span>
+                    </div>
                     <span class="text-[10px] uppercase opacity-60">{{ $locale }}</span>
                 </button>
             </form>
         @endforeach
     </div>
 </div>
+@endif

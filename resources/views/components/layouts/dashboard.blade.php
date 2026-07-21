@@ -25,6 +25,7 @@
     <!-- Tailwind CSS & Fonts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
 <body class="bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-violet-600 selection:text-white relative cyber-grid">
     @php

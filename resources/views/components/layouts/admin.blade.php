@@ -20,6 +20,7 @@
             font-family: 'Inter', sans-serif;
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
 <body class="bg-[#090d16] text-slate-100 h-screen overflow-hidden antialiased flex flex-col">
 
@@ -96,6 +97,7 @@
                                 ['label' => 'Newsletters', 'icon' => 'mail', 'url' => '/admin/newsletters'],
                                 ['label' => 'Advertisements', 'icon' => 'badge-percent', 'url' => '/admin/advertisements'],
                                 ['label' => 'Player Reviews', 'icon' => 'star', 'url' => '/admin/player-reviews'],
+                                ['label' => 'Geo-Blocking', 'icon' => 'globe', 'url' => '/admin/geo-blocking'],
                                 ['label' => 'System Settings', 'icon' => 'settings', 'url' => '/admin/system-settings'],
                             ],
                         ],

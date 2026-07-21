@@ -40,4 +40,20 @@
             <button type="submit" class="rounded-lg bg-emerald-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500">Save deposit fee settings</button>
         </form>
     </section>
+    <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-pink-300">Localization</p>
+        <h2 class="mt-1 text-xl font-bold text-white">Language Switcher Visibility</h2>
+        <p class="mt-2 text-sm text-slate-500">Control where the language switcher is displayed. (It is always visible to players in their dashboard).</p>
+        <form wire:submit="saveLanguageSwitcherSettings" class="mt-6 space-y-4">
+            <label class="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-200">
+                Show on Guest Pages
+                <input wire:model="showLanguageSwitcherGuest" type="checkbox" class="rounded border-slate-700 bg-slate-900 text-pink-500">
+            </label>
+            <label class="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-200">
+                Show on Admin Pages
+                <input wire:model="showLanguageSwitcherAdmin" type="checkbox" class="rounded border-slate-700 bg-slate-900 text-pink-500">
+            </label>
+            <button type="submit" class="rounded-lg bg-pink-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-pink-500">Save localization settings</button>
+        </form>
+    </section>
 </div>

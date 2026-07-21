@@ -23,6 +23,10 @@ class SystemSettingsAdmin extends AdminComponent
 
     public int $defaultWaitingResultTime = 30;
 
+    public bool $showLanguageSwitcherGuest = false;
+
+    public bool $showLanguageSwitcherAdmin = false;
+
     public function boot(): void
     {
         parent::boot();
@@ -42,6 +46,10 @@ class SystemSettingsAdmin extends AdminComponent
         $this->depositFeeFixed = (string) ($feeSettings['deposit_fee.fixed'] ?? '0.00');
         $this->depositFeePercentage = (string) ($feeSettings['deposit_fee.percentage'] ?? '0.00');
         $this->defaultWaitingResultTime = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
+        
+        $langSettings = SystemSetting::query()->whereIn('key', ['language_switcher.show_guest', 'language_switcher.show_admin'])->pluck('value', 'key');
+        $this->showLanguageSwitcherGuest = filter_var($langSettings['language_switcher.show_guest'] ?? false, FILTER_VALIDATE_BOOL);
+        $this->showLanguageSwitcherAdmin = filter_var($langSettings['language_switcher.show_admin'] ?? false, FILTER_VALIDATE_BOOL);
     }
 
     public function saveTournamentSettings(): void
@@ -90,6 +98,23 @@ class SystemSettingsAdmin extends AdminComponent
         }
 
         session()->flash('success', 'Referral settings updated.');
+    }
+
+    public function saveLanguageSwitcherSettings(): void
+    {
+        $this->validate([
+            'showLanguageSwitcherGuest' => ['boolean'],
+            'showLanguageSwitcherAdmin' => ['boolean'],
+        ]);
+
+        foreach ([
+            'language_switcher.show_guest' => $this->showLanguageSwitcherGuest ? 'true' : 'false',
+            'language_switcher.show_admin' => $this->showLanguageSwitcherAdmin ? 'true' : 'false',
+        ] as $key => $value) {
+            SystemSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'updated_by' => Auth::id()]);
+        }
+
+        session()->flash('success', 'Language switcher settings updated.');
     }
 
     public function render()
