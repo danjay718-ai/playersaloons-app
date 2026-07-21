@@ -249,7 +249,7 @@ class ProfileDashboard extends Component
         $this->validate([
             'displayName' => ['required', 'string', 'max:100'],
             'bio' => ['nullable', 'string', 'max:500'],
-            'countryCode' => ['nullable', 'string', 'size:2'],
+            'countryCode' => ['nullable', 'string', 'size:2', 'in:' . implode(',', array_keys(config('countries', [])))],
             'timezone' => ['nullable', 'string', 'timezone'],
         ]);
 

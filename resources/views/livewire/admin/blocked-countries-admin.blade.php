@@ -11,15 +11,15 @@
         
         <form wire:submit="addCountry" class="mt-6 space-y-4">
             <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="text-xs font-bold uppercase tracking-wider text-slate-400">ISO Country Code (e.g. US, PH, GB)</label>
-                    <input wire:model="countryCode" type="text" maxlength="2" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white uppercase placeholder:text-slate-600" placeholder="US">
+                <div class="sm:col-span-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Country</label>
+                    <select wire:model="countryCode" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white placeholder:text-slate-600">
+                        <option value="">Select Country</option>
+                        @foreach(config('countries') as $code => $name)
+                            <option value="{{ $code }}">{{ $name }} ({{ $code }})</option>
+                        @endforeach
+                    </select>
                     @error('countryCode') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Country Name</label>
-                    <input wire:model="countryName" type="text" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white placeholder:text-slate-600" placeholder="United States">
-                    @error('countryName') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
                 </div>
             </div>
             <div>

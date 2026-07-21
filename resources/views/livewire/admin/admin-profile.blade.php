@@ -106,15 +106,18 @@
 
                     <!-- Country Code -->
                     <div class="space-y-1.5">
-                        <label for="countryCode" class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Country Code (e.g. PH, US)</label>
-                        <input 
-                            type="text" 
-                            id="countryCode" 
-                            wire:model="countryCode" 
-                            maxlength="2"
-                            class="bg-slate-900 border border-slate-800 hover:border-slate-700 focus:border-indigo-500 focus:outline-none rounded-lg px-4 py-2.5 text-xs font-semibold text-slate-100 w-full uppercase"
-                            placeholder="PH"
-                        >
+                        <label for="countryCode" class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Country</label>
+                        <div class="mt-1">
+                            <select 
+                                id="countryCode" 
+                                wire:model="countryCode" 
+                                class="block w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                                <option value="">Select Country</option>
+                                @foreach(config('countries') as $code => $name)
+                                    <option value="{{ $code }}">{{ $name }} ({{ $code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
                         @error('countryCode') <span class="text-[10px] text-red-400 font-bold font-mono">{{ $message }}</span> @enderror
                     </div>
                 </div>

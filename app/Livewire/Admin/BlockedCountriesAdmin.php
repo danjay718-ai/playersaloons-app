@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Cache;
 class BlockedCountriesAdmin extends AdminComponent
 {
     public string $countryCode = '';
-    public string $countryName = '';
     public string $message = 'Our services are currently not available in your region due to regulatory restrictions.';
 
     public function boot(): void
@@ -23,15 +22,16 @@ class BlockedCountriesAdmin extends AdminComponent
     public function addCountry(): void
     {
         $this->validate([
-            'countryCode' => ['required', 'string', 'size:2'],
-            'countryName' => ['required', 'string', 'max:255'],
+            'countryCode' => ['required', 'string', 'size:2', 'in:' . implode(',', array_keys(config('countries', [])))],
             'message' => ['required', 'string', 'max:1000'],
         ]);
+
+        $countryName = config("countries.{$this->countryCode}", $this->countryCode);
 
         BlockedCountry::updateOrCreate(
             ['country_code' => strtoupper($this->countryCode)],
             [
-                'country_name' => $this->countryName,
+                'country_name' => $countryName,
                 'message' => $this->message,
                 'updated_by' => Auth::id(),
             ]
@@ -39,7 +39,7 @@ class BlockedCountriesAdmin extends AdminComponent
 
         Cache::forget('blocked_countries');
         
-        $this->reset(['countryCode', 'countryName']);
+        $this->reset(['countryCode']);
         $this->message = 'Our services are currently not available in your region due to regulatory restrictions.';
         session()->flash('success', 'Blocked country added/updated successfully.');
     }

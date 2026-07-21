@@ -198,8 +198,13 @@
                                     @error('displayName') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <label for="countryCode" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Country Code</label>
-                                    <input id="countryCode" type="text" wire:model="countryCode" maxlength="2" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold uppercase text-white focus:border-cyan-400 focus:outline-none" placeholder="PH">
+                                    <label for="countryCode" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Country</label>
+                                    <select id="countryCode" wire:model="countryCode" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none">
+                                        <option value="">Select Country</option>
+                                        @foreach(config('countries') as $code => $name)
+                                            <option value="{{ $code }}">{{ $name }} ({{ $code }})</option>
+                                        @endforeach
+                                    </select>
                                     @error('countryCode') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
                                 </div>
                             </div>
