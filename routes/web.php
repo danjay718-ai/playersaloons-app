@@ -12,6 +12,7 @@ use App\Livewire\Admin\AuditLogAdmin;
 use App\Livewire\Admin\BroadcastNotificationAdmin;
 use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\CmsContentAdmin;
+use App\Livewire\Admin\BlockedCountriesAdmin;
 use App\Livewire\Admin\ComplianceAdmin;
 use App\Livewire\Admin\ContactInquiryAdmin;
 use App\Livewire\Admin\KycAdmin;
@@ -181,6 +182,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/contact-inquiries', ContactInquiryAdmin::class)->name('admin.contact-inquiries');
         Route::get('/newsletters', NewsletterAdmin::class)->name('admin.newsletters');
         Route::get('/system-settings', SystemSettingsAdmin::class)->name('admin.system-settings');
+        Route::get('/geo-blocking', BlockedCountriesAdmin::class)->name('admin.system.geoblocking');
         Route::get('/advertisements', AdvertisementAdmin::class)->name('admin.advertisements');
         Route::get('/player-reviews', PlayerReviewAdmin::class)->name('admin.player-reviews');
         Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity');

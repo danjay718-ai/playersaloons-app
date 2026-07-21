@@ -1,0 +1,61 @@
+<?php
+
+namespace App\Livewire\Admin;
+
+use App\Modules\Compliance\Models\BlockedCountry;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+
+class BlockedCountriesAdmin extends AdminComponent
+{
+    public string $countryCode = '';
+    public string $countryName = '';
+    public string $message = 'Our services are currently not available in your region due to regulatory restrictions.';
+
+    public function boot(): void
+    {
+        parent::boot();
+        if (! Auth::user()?->hasAnyRole(['SUPER_ADMIN', 'ADMIN'])) {
+            abort(403);
+        }
+    }
+
+    public function addCountry(): void
+    {
+        $this->validate([
+            'countryCode' => ['required', 'string', 'size:2'],
+            'countryName' => ['required', 'string', 'max:255'],
+            'message' => ['required', 'string', 'max:1000'],
+        ]);
+
+        BlockedCountry::updateOrCreate(
+            ['country_code' => strtoupper($this->countryCode)],
+            [
+                'country_name' => $this->countryName,
+                'message' => $this->message,
+                'updated_by' => Auth::id(),
+            ]
+        );
+
+        Cache::forget('blocked_countries');
+        
+        $this->reset(['countryCode', 'countryName']);
+        $this->message = 'Our services are currently not available in your region due to regulatory restrictions.';
+        session()->flash('success', 'Blocked country added/updated successfully.');
+    }
+
+    public function removeCountry(string $code): void
+    {
+        BlockedCountry::where('country_code', $code)->delete();
+        Cache::forget('blocked_countries');
+        session()->flash('success', "Unblocked $code successfully.");
+    }
+
+    public function render()
+    {
+        $blocked = BlockedCountry::with('updatedBy')->orderBy('country_name')->get();
+        return view('livewire.admin.blocked-countries-admin', [
+            'blockedCountries' => $blocked
+        ])->layout('components.layouts.admin', ['admin_title' => 'Geo-Blocking']);
+    }
+}
