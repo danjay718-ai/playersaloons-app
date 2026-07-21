@@ -1,6 +1,19 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-12 (v1.110) | **Branch**: `main`
+**Last Updated**: 2026-07-21 (v1.112) | **Branch**: `main`
+
+---
+## ✅ Geo-Blocking & Localization UI Updates (v1.111–v1.112)
+
+- **Localization Updates (v1.111)**:
+  - Swapped unicode emoji flags for `flag-icons` CSS classes via CDN across all major layout files.
+  - Added visibility toggles in **System Settings** for the Language Switcher, allowing admins to selectively hide it on guest and admin pages (defaults to hidden).
+  - The language switcher remains visible by default in the player dashboard.
+- **Geo-Blocking (v1.112)**:
+  - Integrated `stevebauman/location` for IP geolocation.
+  - Created `blocked_countries` table and `BlockedCountry` model to persist ISO country codes, display names, and customizable restriction messages.
+  - Implemented `BlockRestrictedCountries` middleware applied globally (except for admin/system paths) to intercept users from blocked regions.
+  - Added a Geo-Blocking UI panel (`/admin/geo-blocking`) allowing admins to quickly add, edit, or remove blocks and restriction messages.
 
 ---
 ## ✅ Team Tournaments, Timing Default, and Rematch Voting (v1.110)
@@ -129,7 +142,6 @@
 - **Regression coverage**: Added a chat integration test that forces the realtime broadcaster to be unavailable and verifies the send endpoint still returns `201 Created` and persists the message.
 
 ---
-
 ## ✅ Realtime Global, Direct, and Team Chat (v1.95)
 
 - **Persisted chat pipeline**: Replaced the `/chat` mock with `chat_conversations`, `chat_participants`, and `chat_messages` for global, player-to-player, and team conversations.
@@ -142,7 +154,6 @@
 - **Tests/build**: Added `tests/Feature/Community/ChatIntegrationTest.php`; focused chat tests and `npm run build` pass.
 
 ---
-
 ## ✅ Player Sidebar Viewport Pinning Fix (v1.94)
 
 - **`resources/views/components/layouts/dashboard.blade.php`**: Changed the desktop player sidebar from `sticky` to viewport `fixed` positioning so its bottom action area stays pinned to the viewport while long player content scrolls.
@@ -150,7 +161,6 @@
 - **Build**: `npm run build` passes.
 
 ---
-
 ## ✅ Real-time Stream Chat & Twitch-Style Redesign (v1.92)
 
 - **Twitch-Style Redesign:** Overhauled the `/streams` page with a Twitch-inspired UI. Added an Alpine.js carousel for featured streams and a browse section with game categories.
@@ -162,8 +172,6 @@
 - **Fixes:** Addressed an `ArgumentCountError` caused by malformed Blade directives (`@livewire-event`) and cleaned up duplicate login prompts in the chat.
 
 ---
-
-
 ## ✅ Player and Tournament Stream Embed Integration (v1.91)
 
 - **Normalized stream storage**: Added `stream_channels` as the shared stream model for player-owned and tournament-owned broadcasts, keeping providers extensible for future embeds and rewards.
@@ -177,7 +185,6 @@
 - **Tests/build**: Added `tests/Feature/Stream/StreamIntegrationTest.php` for player stream publishing, admin takedown/restore, sample game trailer seeding, stream URL validation, `/streams` rendering, and tournament detail embeds. Focused stream tests pass, and `npm run build` passes. PHPStan still exits with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Resend Transactional Mail Failover (v1.90)
 
 - **Mail transport**: Added `resend/resend-php` and configured Laravel's `failover` mailer to try Resend first, then SMTP, then `log`.
@@ -186,7 +193,6 @@
 - **Verification**: `php artisan test tests/Feature/Auth/EmailDeliveryTest.php` passes, and a direct `Mail::mailer('resend')` test sent successfully using the verified domain sender.
 
 ---
-
 ## ✅ Admin Rich Editor Compatibility Restore (v1.89)
 
 - **Quill compatibility**: Restored the existing Quill 1.3 admin CDN assets after the local Quill 2 bundle broke the tournament wizard and existing rich editors.
@@ -195,7 +201,6 @@
 - **Tests/build**: `npm run build` and `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php tests/Feature/Localization/LanguageSwitchTest.php` pass.
 
 ---
-
 ## ✅ CMS Body Rich Editor Typing Fix (v1.88)
 
 - **CMS content editor**: Fixed the Blog/News/Page Body editor so Quill initializes reliably before event handlers read `quill.root`.
@@ -204,7 +209,6 @@
 - **Tests**: `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php tests/Feature/Localization/LanguageSwitchTest.php` passes.
 
 ---
-
 ## ✅ WordPress-Style Blog and News Editor (v1.87)
 
 - **`CmsContentAdmin`**: Split Blog/News/Page authoring into a dedicated Livewire component separate from the generic CMS manager.
@@ -215,7 +219,6 @@
 - **Tests**: `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
 
 ---
-
 ## ✅ CMS Section Page Split (v1.86)
 
 - **CMS routes**: Changed CMS sidebar links from query-string tabs to real section URLs: `/admin/cms/content`, `/admin/cms/landing`, `/admin/cms/games`, `/admin/cms/platforms`, and `/admin/cms/navigation`.
@@ -224,7 +227,6 @@
 - **Tests**: Updated CMS coverage to assert the content page exposes Blog & News controls without the old tab buttons. `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
 
 ---
-
 ## ✅ Admin Sidebar Translation Crash Fix (v1.85)
 
 - **Admin sidebar**: Kept grouped sidebar labels as plain strings in the nav config to avoid array-valued translation results being echoed by Blade.
@@ -232,7 +234,6 @@
 - **Tests**: `php artisan test tests/Feature/Localization/LanguageSwitchTest.php tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
 
 ---
-
 ## ✅ CMS Sidebar Grouping (v1.84)
 
 - **Admin sidebar**: Grouped admin navigation into Operations, CMS, and System sections.
@@ -240,7 +241,6 @@
 - **Tests**: Added coverage that `/admin/cms?tab=pages` exposes Blog & News controls. `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
 
 ---
-
 ## ✅ Blog and News Admin Visibility Fix (v1.83)
 
 - **Admin navigation**: Added a dedicated Blog & News sidebar item that opens `/admin/cms?tab=pages` directly.
@@ -248,7 +248,6 @@
 - **Tests**: `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
 
 ---
-
 ## ✅ CMS Blog and News Pages (v1.82)
 
 - **`cms_pages` / `cms_page_translations`**: Added article metadata for CMS page type (`page`, `blog`, `news`), featured image path, featured flag, and localized excerpts.
@@ -258,7 +257,6 @@
 - **Tests**: `php artisan test tests/Feature/CMS/BlogNewsPageTest.php tests/Feature/CMS/LandingPageTest.php` passes.
 
 ---
-
 ## ✅ Contact Inquiry Resolve UX Fix (v1.81)
 
 - **Admin resolve action**: Resolve and Archive now validate that an inquiry is selected, update the inquiry status, reset pagination, and move the status filter to the resulting state so the admin can immediately see the updated record.
@@ -268,7 +266,6 @@
 - **Known unrelated test issue**: `AdminPanelTest::test_admin_can_access_other_admin_pages` still fails when rendering User Admin without Redis available for the online indicator.
 
 ---
-
 ## ✅ Shared Guest Footer Consolidation (v1.80)
 
 - **Guest footer architecture**: Moved the shared public footer into `components.layouts.landing` so the landing page and policy pages use the same guest footer partial as the other public pages.
@@ -278,7 +275,6 @@
 - **Build**: `npm run build` passes.
 
 ---
-
 ## ✅ Landing Footer Contact Link Correction (v1.79)
 
 - **Landing page footer**: Added Contact visibility coverage after discovering the landing page did not use the shared guest footer yet.
@@ -286,7 +282,6 @@
 - **Tests**: Landing page coverage asserts the Contact link renders on `/`.
 
 ---
-
 ## ✅ Contact Inquiries Public Form and Admin Inbox (v1.78)
 
 - **`ContactPage`**: Added `/contact` support form for guests and players. Verified players get the player dashboard layout and automatic account linking; guests get the public layout.
@@ -299,7 +294,6 @@
 - **PHPStan**: Attempted on changed contact files; exited with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Branded Lightweight Auth Email Templates (v1.77)
 
 - **Email branding**: Replaced Laravel default verification/password-reset emails with lightweight PlayerSaloons-branded Blade templates using the platform icon, dark esports styling, direct CTA button, and fallback URL.
@@ -309,7 +303,6 @@
 - **PHPStan**: Not run for this Blade/notification pass.
 
 ---
-
 ## ✅ Auth Form Double-Submit Guard (v1.76)
 
 - **Auth forms**: Login, registration, password reset, and verification resend buttons now disable during their Livewire request and show loading text, preventing repeated clicks while a submission is processing.
@@ -317,7 +310,6 @@
 - **Build**: `npm run build` passes.
 
 ---
-
 ## ✅ Local Registration Migration and Auth Icon Refresh Fix (v1.75)
 
 - **Database**: Ran the pending `2026_07_05_000000_add_registration_consent_fields_to_users_table` migration locally, fixing the SQLite `users.accepted_terms_at` missing-column error during registration.
@@ -326,7 +318,6 @@
 - **Build**: `npm run build` passes.
 
 ---
-
 ## ✅ Email Verification, Forgot Password Email, and Newsletter Deferral (v1.74)
 
 - **Registration email verification**: New accounts now receive Laravel's email verification notification, are redirected to `/verify-email`, and cannot access verified player routes until the signed email link is opened.
@@ -337,7 +328,6 @@
 - **PHPStan**: Attempted on changed auth/identity files and routes; exited with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Registration Consent and Join Form Redesign (v1.73)
 
 - **`Register` / `register.blade.php`**: Redesigned the Join Now form into a two-panel account setup flow. Submit is disabled until required fields are filled, passwords match, the policy checkbox is accepted, and the 18+ confirmation is checked. Added optional newsletter/platform update opt-in.
@@ -348,7 +338,6 @@
 - **PHPStan**: Pending for this pass.
 
 ---
-
 ## ✅ Production Startup CMS Seeding Fix (v1.72)
 
 - **`docker/start.sh`**: Added production startup seeding for `PlatformSeeder`, `PolicyPageSeeder`, `LandingPageSeeder`, `PublicNavigationSeeder`, and `TranslationStringSeeder` after migrations.
@@ -358,7 +347,6 @@
 - **PHPStan**: Not run for this startup script fix.
 
 ---
-
 ## ✅ Production Composer Build Fix (v1.71)
 
 - **`Dockerfile`**: Added `mbstring`, `curl`, `dom`, and `simplexml` to the production PHP extension install list so `composer install --no-dev` satisfies the locked package platform requirements inside the Coolify build image. Added Composer build defaults for `COMPOSER_CURL_DISABLE_HTTP2=1` and `COMPOSER_PREFER_INSTALL=auto`, configured git to use HTTP/1.1, then changed the production install command to `composer install --prefer-install=auto ...`.
@@ -368,7 +356,6 @@
 - **PHPStan**: Not run for this deployment Dockerfile fix.
 
 ---
-
 ## ✅ Related CMS Seed Flow (v1.70)
 
 - **`PlatformSeeder`**: Added platform defaults for PC, Console, Mobile, and Cross-Platform so tournament/H2H platform options exist after a fresh `db:seed`.
@@ -382,7 +369,6 @@
 - **PHPStan**: Not run for this seeding-focused pass.
 
 ---
-
 ## ✅ Admin Translation Manager and Runtime Localization (v1.69)
 
 - **`config/localization.php` / `lang/*.json`**: Added supported locale configuration and JSON runtime files for English, French, Spanish, German, Italian, Dutch, Portuguese, Russian, Japanese, Chinese, and Polish.
@@ -395,7 +381,6 @@
 - **PHPStan**: Not run for this pass.
 
 ---
-
 ## ✅ Terms and Conditions Policy Page (v1.68)
 
 - **`PolicyPageSeeder`**: Added Terms and Conditions as a seeded policy page at `/policies/terms-and-conditions`.
@@ -404,7 +389,6 @@
 - **PHPStan**: Not rerun for this small policy-content follow-up; previous run exited with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Database-backed Policy Pages (v1.67)
 
 - **`policy_pages`**: Added a dedicated table for legal/policy content, separate from generic `cms_pages`, with slug, title, summary, body content, active/published state, sort order, and updater tracking.
@@ -415,7 +399,6 @@
 - **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Documentation Synchronization Pass (v1.66)
 
 - **Docs sync**: Aligned `FEATURE_MAP.md`, `CARRY_FORWARD.md`, `execution_checklist.md`, `architecture_baseline.md`, and module flow docs with the current v1.65 code/documentation state.
@@ -425,14 +408,12 @@
 - **PHPStan**: Not run — documentation-only sync.
 
 ---
-
 ## ✅ Landing Hero Video Loop Reliability Fix (v1.65)
 
 - **`landing-page.blade.php`**: Added `id="hero-video"` to the hero background video and changed `preload="metadata"` to `preload="auto"` to ensure the video buffers fully, which aids native loop reliability.
 - **`app.js`**: Added `initHeroVideoFallback()` function to forcefully reset and replay the video when the `ended` event fires. This acts as a belt-and-suspenders guarantee for browsers (especially on mobile/iOS) that occasionally ignore the native HTML `loop` attribute when SPA navigation occurs or buffering stutters.
 
 ---
-
 ## ✅ Esports Landing Redesign, Scroll-Aware Nav & Mobile Overflow Fix (v1.64)
 
 - **`landing-page.blade.php`**: Full esports visual redesign. Full-viewport video hero with Ken Burns scale animation, layered radial-gradient overlays, and animated cyber-grid overlay. Staggered `landing-fade-in` animations on badge, heading, body, and CTAs. Gradient CTA button with glow bloom (`landing-cta-primary`). Scroll-hint indicator below CTAs. All sections use glassmorphism cards with ambient orb accents, hover lift, and inner-border shimmer. Added a full-width gradient CTA banner section before the footer. In-page footer retained from CMS data.
@@ -445,10 +426,6 @@
 - **PHPStan**: Not applicable — no PHP changes.
 
 ---
-
-
----
-
 ## ✅ Dynamic Public Navigation CMS (v1.63)
 
 - **`public_navigation_items`**: Added table-backed public navigation items with label, URL, Lucide icon, active pattern, visibility, sort order, active state, and new-tab behavior.
@@ -459,7 +436,6 @@
 - **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Landing Mobile Responsiveness Pass (v1.62)
 
 - **Landing page**: Tightened mobile hero spacing, headline sizing, CTA button tracking, section padding, carousel card widths, stat number wrapping, empty states, CTA banner spacing, and footer wrapping for phone-first usage.
@@ -469,7 +445,6 @@
 - **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Landing Game Carousel and Banners (v1.61)
 
 - **Landing background**: Added a static CSS-only game-pattern treatment to the landing content background and game-card fallback banners. The pattern uses gradients only, with no animated canvas or heavy assets.
@@ -479,7 +454,6 @@
 - **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Dynamic Landing Page CMS (v1.60)
 
 - **`LandingPage` / `landing-page.blade.php`**: Replaced the static homepage route with a DB-backed Livewire landing page, including `/compressed_v1.mp4` video hero, active game cards, how-it-works steps, live stats, weekly top players, feature cards, reviews, and editable footer content.
@@ -490,7 +464,6 @@
 - **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Tournament History Detail Access Fix (v1.59)
 
 - **`TournamentDetail`**: Player-facing tournament detail lookup now allows all non-draft tournaments instead of only active/joinable statuses. This keeps completed, cancelled, and refunded tournaments accessible from player history while preserving the draft visibility guard.
@@ -498,7 +471,6 @@
 - **PHPStan**: Not run for this documentation/test follow-up.
 
 ---
-
 ## ✅ Head-to-Head UX Enhancements & Global Active Badge (v1.58)
 
 - **Initiate Challenge Drawer**: Removed the "Initiate Challenge" tab and replaced it with a sleek, Alpine.js-powered sliding drawer (`showInitiateDrawer`), accessible via a prominent button placed directly next to the Game Filter.
@@ -507,7 +479,6 @@
 - **Bug Fix**: Removed `Cache::remember` for the `games` and `platforms` Eloquent Collections to fix a `__PHP_Incomplete_Class` Redis serialization error that occurred on some environments.
 
 ---
-
 ## ✅ Head-to-Head UI/UX Redesign & Performance Optimization (v1.57)
 
 - **`HeadToHeadList` Component**: Optimized database queries to prevent slow load times per tab. `activeMatches`, `waitingChallenges`, and `historyMatches` are now conditionally fetched based on the active tab state rather than unconditionally queried on every render.
@@ -517,7 +488,6 @@
 - **Testing**: Confirmed Redis/Predis connection is working.
 
 ---
-
 ## ✅ Head-to-Head Game Tabs, Guards, and Duel Prompt (v1.56)
 
 - **`HeadToHeadList` / `head-to-head-list.blade.php`**: Split the H2H player page into `Initiate Challenge`, `Open Challenges`, `Active Duels`, and `History` tabs. Open challenges, active duels, and history are filtered by the selected game.
@@ -528,7 +498,6 @@
 - **PHPStan**: `./vendor/bin/phpstan analyse` exited with code 1 and no diagnostics/output in this environment.
 
 ---
-
 ## ✅ Player Navigation, Upload Feedback, and PWA Landing Cache Fixes (v1.55)
 
 - **`resources/views/livewire/profile/profile-dashboard.blade.php`**: Added immediate Alpine-side selected-file feedback and upload progress indicators for avatar and KYC document uploads so players see the upload UI as soon as a file is selected.
@@ -540,7 +509,6 @@
 - **PHPStan**: Skipped per request for this documentation/update pass.
 
 ---
-
 ## ✅ Player Toasts, Loading States, and KYC Document Display Fix (v1.54)
 
 - **`resources/views/components/ui/toasts.blade.php`**: Added reusable player-facing toast component for existing flash keys (`message`, `success`, `info`, `error`, `h2h_status`, `h2h_error`).
@@ -552,7 +520,6 @@
 - **PHPStan**: Not run in this pass; prior environment runs exited code 1 without diagnostics.
 
 ---
-
 ## ✅ Stripe Checkout Wallet Deposits (v1.53)
 
 - **`WalletDashboard`**: Replaced the mock deposit flow with Stripe Checkout Session creation and hosted Checkout redirect. Wallet balance is no longer credited synchronously from the UI.
@@ -565,7 +532,6 @@
 - **PHPStan**: Not yet run for this change; run `./vendor/bin/phpstan analyse` before production promotion.
 
 ---
-
 ## ✅ PWA / Reverb Console Cleanup (v1.52)
 
 - **PWA meta tags**: Added `mobile-web-app-capable=yes` beside the existing Apple mobile web app meta tag in public, app, and dashboard layouts to satisfy current browser installability expectations.
@@ -590,620 +556,6 @@
 - **Layouts**: Added manifest/theme/apple icon meta tags to public, app, and dashboard layouts.
 - **Tests**: `npm run build` passed; manifest JSON and service worker syntax were validated during implementation.
 - **PHPStan**: Not run; static asset/frontend change.
-
-## ✅ Phase 1 — Migrations & Seeders
-
-**57 migration files** across all domains. All pass `migrate` and `migrate:rollback` cleanly.
-
-| Domain | Tables |
-|---|---|
-| Identity | `users`, `user_profiles`, `kyc_submissions` |
-| Community | `notifications`, `notification_preferences`, `broadcast_messages` |
-| Team | `teams`, `team_members`, `team_invitations` |
-| CMS | `games`, `game_translations`, `cms_pages`, `cms_page_translations` |
-| Tournament | `tournament_templates`, `tournament_template_prizes`, `tournaments`, `tournament_cancellations` (immutable), `tournament_rules`, `tournament_announcements`, `tournament_registrations`, `tournament_participants`, `tournament_checkins` (immutable), `brackets`, `rounds` |
-| Match | `matches`, `match_result_submissions`, `match_disputes`, `match_evidence` (immutable) |
-| Wallet | `wallets`, `ledger_entries` (immutable), `wallet_transactions`, `deposits`, `withdrawals`, `refunds` (immutable), `prize_distributions` (immutable) |
-| Operations | `system_settings`, `job_execution_logs` (immutable) |
-
-**Seeders**: `RolesAndPermissionsSeeder`, `PlatformSystemUserSeeder`, `GamesTableSeeder`, `SystemSettingsSeeder`, `DatabaseSeeder`.
-
----
-
-## ✅ Phase 2 — Eloquent Models
-
-**32 models** under `app/Modules/*/Models/`. PHPStan Level 8 passing. Key notes:
-- **Immutable models** (`LedgerEntry`, `MatchEvidence`, `Refund`, `PrizeDistribution`, `TournamentCancellation`, `TournamentCheckin`, `JobExecutionLog`) — throw `LogicException` on update/delete via `booted()` hooks.
-- `GameMatch` maps to the `matches` table to avoid PHP reserved word conflict.
-- `User` moved to `app/Modules/Identity/Models/` with custom `newFactory()`.
-
----
-
-## ✅ Phase 3 — Laravel Enums
-
-**17 backed PHP enums** under `app/Shared/Enums/`:
-
-`TournamentStatus` · `MatchStatus` · `HeadToHeadChallengeStatus` · `HeadToHeadMatchStatus` · `HeadToHeadDisputeResolution` · `WithdrawalStatus` · `KycStatus` · `TeamInvitationStatus` · `SeatReservationStatus` · `RegistrationStatus` · `PaymentStatus` · `LedgerType` · `DisputeStatus` · `DisputeResolution` · `UserStatus` · `WalletStatus` · `CheckinStatus`
-
----
-
-## ✅ Phase 4 — State Machines
-
-**7 state machines** under `app/Modules/*/StateMachines/`, extending [`AbstractStateMachine`]
-| Machine | Key Transitions | Guards |
-|---|---|---|
-| `TournamentStateMachine` | DRAFT→PUBLISHED→...→ONGOING→COMPLETED→REFUNDED | Publish config, bracket count, min participants |
-| `MatchStateMachine` | PENDING→READY→IN_PROGRESS→COMPLETED; dispute & forfeit paths | — |
-| `WalletStateMachine` | ACTIVE↔SUSPENDED↔FROZEN | SUPER_ADMIN check on unfreeze |
-| `WithdrawalStateMachine` | PENDING→UNDER_REVIEW→APPROVED→PROCESSED | KYC approved + sufficient balance |
-| `KycStateMachine` | NOT_SUBMITTED→SUBMITTED→UNDER_REVIEW→APPROVED/REJECTED | — |
-| `InvitationStateMachine` | PENDING→ACCEPTED/DECLINED/EXPIRED/REVOKED | Expiry check |
-| `SeatReservationStateMachine` | RESERVED→CONFIRMED/EXPIRED/CANCELLED | — |
-
-**Tests**: `62 unit tests` · 100% passing — [`tests/Unit/StateMachines/`](file:///home/danjay/Projects/playersaloons-app/tests/Unit/StateMachines/)
-
----
-
-## ✅ Phase 5 — Domain Events
-
-**36 thin domain events** across 7 modules, all extending [`DomainEvent`](file:///home/danjay/Projects/playersaloons-app/app/Shared/Events/DomainEvent.php) (provides `Dispatchable` + immutable `occurredAt`).
-
-| Module | Events |
-|---|---|
-| Identity | `UserRegistered` `EmailVerified` `UserKycSubmitted` `UserKycApproved` `UserKycRejected` `UserSuspended` `UserUnsuspended` |
-| Team | `TeamCreated` `TeamUpdated` `TeamDeleted` `TeamMemberInvited` `TeamMemberJoined` `TeamMemberRemoved` `TeamCaptainChanged` |
-| Tournament | `TournamentCreated` `TournamentPublished` `TournamentRegistrationOpened` `TournamentRegistrationClosed` `TournamentCheckinOpened` `TournamentCheckinClosed` `TournamentBracketGenerated` `TournamentStarted` `TournamentCompleted` `TournamentCancelled` `TournamentRefunded` `TournamentSeatReserved` `TournamentSeatReleased` `TournamentFilled` `PlayerCheckedIn` |
-| Match | `MatchCreated` `MatchStarted` `MatchResultSubmitted` `MatchResultVerified` `MatchCompleted` `MatchDisputed` `MatchForfeited` |
-| Wallet | `WalletCreated` `WalletCredited` `WalletDebited` `EntryFeeCollected` `PrizeAwarded` `RefundIssued` `WithdrawalRequested` `WithdrawalApproved` `WithdrawalRejected` |
-| Notification | `NotificationCreated` `NotificationSent` `NotificationFailed` |
-| System | `AuditLogCreated` `JobFailed` `SystemMaintenanceStarted` `SystemMaintenanceCompleted` |
-
-All events carry **identifiers only** — no Eloquent model instances. PHPStan Level 8 passing.
-
----
-
-## ✅ Phase 6 — Identity Module
-
-**Actions, Event Listeners, and Feature Tests** for the Identity domain. PHPStan Level 8 passing.
-
-- **Actions (`app/Modules/Identity/Actions/`)**:
-  - `RegisterUserAction`: Atomically registers a user, profile, assigns the `PLAYER` role, and dispatches `UserRegistered`.
-  - `SubmitKycAction`: Handles KYC document uploads, validation, state transitioning (`NOT_SUBMITTED` or `REJECTED` -> `SUBMITTED`), and storage.
-  - `ReviewKycAction`, `ApproveKycAction`, `RejectKycAction`: Governs the KYC review workflow and roles verification.
-  - `SuspendUserAction`, `UnsuspendUserAction`: Manages user status administration.
-  - `AssignRoleAction`, `RevokeRoleAction`: Updates user roles in the RBAC system.
-  - `UpdateProfileAction`, `UploadAvatarAction`: Manages profile details and avatar uploads.
-- **Event Listeners (`app/Modules/Wallet/Listeners/`)**:
-  - `CreateWalletListener`: Subscribes to `UserRegistered` and creates a starting active wallet.
-- **Tests**:
-  - Feature tests added under `tests/Feature/Identity/` (`RegisterUserActionTest` and `SubmitKycActionTest`). 
-  - Test suite passing at 100% (68 tests total).
-
-## ✅ Phase 7 — Wallet Service
-
-Ledger entries, transaction processing (credit, debit, lock, unlock), entry fee collection, deposit/withdrawal pipelines.
-
-- **Actions & Services (`app/Modules/Wallet/`)**:
-  - `WalletService`: Manages credits, debits, running balances, and recalculations. Enforces state checks (frozen, suspended).
-  - Deposit, withdrawal, refund, and prize distributions flows.
-- **Tests**:
-  - Wallet feature tests passing at 100%.
-
----
-
-## ✅ Phase 8 — Tournament Module
-
-Templates creation/updating, lifecycle state transitions, registration and check-in flows, bracket and match generation, auto-cancellation, prize calculation and distribution, and async refunding.
-
-- **Actions & Services (`app/Modules/Tournament/`)**:
-  - `CreateTournamentTemplateAction`, `UpdateTournamentTemplateAction`, `DeleteTournamentTemplateAction`.
-  - `CloseCheckinAction` (marks MISSED check-ins), `CloseRegistrationAction` (calculates tournament prize pool).
-  - `ProcessRefundAction` (transitions CANCELLED → REFUNDED).
-  - `BracketGenerationService` (single-elimination bracket, rounds, and matches with byes for non-power-of-2 participant counts). **Refactored (v1.23)**: Added `.values()` for safe 0-based Collection indexing, renamed vars for clarity, extracted `nextPowerOfTwo()` private method, fixed bye-slot seeding to use `Collection::get()` instead of unsafe `[]` operator.
-- **Listeners & Jobs (`app/Modules/Tournament/`)**:
-  - `AutoCancelTournamentJob` (triggered if checked-in participants < min).
-  - `AwardPrizesListener` (calculates distributions, credits winners, handles platform rake and rounding remainder).
-  - `IssueRefundsListener` (credits cancelled tournament registrations).
-- **Tests**:
-  - Full suite of tournament feature tests passing at 100%.
-  - Unit tests for `BracketGenerationService` covering 2, 5, 6, and 8 player bracket sizes with byes mathematics.
-
----
-
-## ✅ Phase 9 — Match Module
-
-Match execution, disputes flow, rematch logic, bracket advancement.
-- **Actions & Services (`app/Modules/Match/`)**: 
-  - `SubmitMatchResultAction`, `ConfirmMatchResultAction`, `ForfeitMatchAction`, `OpenDisputeAction`, `ResolveDisputeAction`. 
-- **Listeners & Jobs (`app/Modules/Match/`)**: 
-  - `AdvanceWinnerListener` (automates bracket progression), `BroadcastBracketUpdateListener`, `NotifyParticipantsListener`. 
-- **Tests**: 
-  - Full suite of match feature tests passing at 100%.
-  - Feature tests for the complete `confirmResult` -> `MatchCompleted` -> `AdvanceWinnerListener` flow and `AutoForfeitJob` timeout.
-
---- 
-
-## ✅ Phase 10 — Community & Real-time 
-
-In-app notifications, user preferences, and real-time broadcasting via Reverb/WebSockets. 
-
-- **Actions & Services (`app/Modules/Community/`)**: 
-  - `NotificationService`: Handles preferences-aware multi-channel delivery (In-app, Real-time). 
-- **Broadcasting Events**: 
-  - `BroadcastNotification`, `BroadcastTournamentStarted`, `BroadcastBracketUpdate`, `BroadcastMatchCompleted`. 
-- **Listeners & Subscribers**: 
-  - `TournamentNotificationListener` (Subscriber): Handles all tournament-related user alerts. 
-  - `BroadcastTournamentLifecycleListener`: Manages public real-time bracket and status updates. 
-- **Tests**: 
-  - Community and notification feature tests passing at 100%.
-
-## ✅ Phase 10 — Team Module
-
-Team creation, management, invitations, captaincy transfers.
-- **Actions & Services (`app/Modules/Team/`)**:
-  - `CreateTeamAction`, `UpdateTeamAction`, `DisbandTeamAction`.
-  - `InviteToTeamAction`, `AcceptTeamInvitationAction`, `DeclineTeamInvitationAction`, `RevokeTeamInvitationAction`.
-  - `RemoveTeamMemberAction`, `TransferTeamCaptainAction`.
-- **Jobs (`app/Modules/Team/`)**:
-  - `ExpireTeamInvitationsJob` (expires unaccepted invitations after `expires_at`).
-- **Tests**:
-  - Full suite of team feature tests passing at 100%.
-
-## ✅ Phase 11 — Scheduler Automation
-
-- **Jobs (`app/Modules/Tournament/Jobs/`)**:
-  - `CloseRegistrationJob`, `OpenCheckinJob`, `CloseCheckinJob`, `StartTournamentJob`, `AutoCancelTournamentJob`, `ExpireReservationsJob`.
-  - Configured as sweeping jobs running every minute via `routes/console.php` to perform lifecycle automation tasks.
-- **Jobs (`app/Modules/Team/Jobs/`)**:
-  - `ExpireTeamInvitationsJob` added to the scheduler to expire pending team invitations.
-
----
-
-## ✅ Phase 12 — Notifications & Realtime
-
-- **Notification Service (`app/Modules/Community/Services/`)**:
-  - `NotificationService`: Manages user notification delivery (in-app DB records, realtime broadcasts, and email dispatch checks) and respects user preference configurations (`NotificationPreference` settings: `email_enabled`, `in_app_enabled`, `realtime_enabled`).
-- **Reverb Realtime Broadcast Events (`app/Modules/` and `app/Shared/`)**:
-  - `BroadcastNotification` (channel: `user.{uuid}`)
-  - `BroadcastTournamentStarted` (channel: `tournament.{uuid}`)
-  - `BroadcastTournamentCompleted` (channel: `tournament.{uuid}`)
-  - `BroadcastBracketUpdate` (channel: `tournament.{uuid}`)
-  - `BroadcastMatchCompleted` (channel: `match.{uuid}`)
-- **Key Notification Triggers & Listeners**:
-  - `TournamentNotificationListener`: Subscribes to `TournamentSeatReserved` (registration confirmed), `TournamentCheckinOpened` (check-in reminder), `TournamentStarted` (tournament started), and `PrizeAwarded` (prize awarded) events to trigger preference-respecting notifications.
-  - `NotifyParticipantsListener`: Updated to notify players on match status changes: match ready (`MatchCreated`), rematch scheduled (`MatchRematchCreated`), match started (`MatchStarted`), match result submitted (`MatchResultSubmitted`), match completed or dispute resolved (`MatchCompleted`), and opponent forfeits (`MatchForfeited`).
-  - Wallet: `SendDepositNotificationListener` and `SendNotificationListener` (withdrawal approved/rejected) updated to dispatch preference-aware notifications using the new service.
-- **Tests**:
-  - Comprehensive feature tests in `tests/Feature/Community/NotificationServiceTest.php` passing 100% (with zero errors across the entire suite of 124 tests).
-
----
-
-## ✅ Phase 13 — Authorization (RBAC)
-
-- **Modular Policies (`app/Modules/`)**:
-  - `TournamentPolicy`: Governs tournament creation, publication, cancellation, management, and restricted details view. Restricts viewing players, matches, and activity tabs to registered participants or organizers/admins via `viewRestrictedDetails` policy.
-  - `MatchPolicy`: Governs match starting, result submissions, and match disputes. Restricts submit and dispute actions to players involved in the match.
-  - `WalletPolicy`: Governs wallet viewing, withdrawal requests, and wallet freezing/unfreezing. Enforces that only `SUPER_ADMIN` can unfreeze frozen wallets.
-  - `WithdrawalPolicy`: Governs withdrawal review, approval, and rejection. Enforces **Four-Eyes check** (requester cannot self-approve or self-review/reject their own withdrawal request).
-  - `KycPolicy`: Governs viewing, reviewing, and approving/rejecting KYC submissions. Allows owner to view their own submission without requiring global view permissions.
-  - `TeamPolicy`: Governs team creation, captain management, member invitations, and roster removals. Restricts manage/invite/remove actions strictly to the team captain.
-  - `UserPolicy`: Governs user suspension, unsuspension, and role assignment/revocation.
-  - `DisputePolicy`: Governs viewing, opening, and resolving disputes. Restricts resolving to organizers/admin and viewing to involved match players.
-- **Explicit Registration**:
-  - Registered all 8 policies explicitly inside `AppServiceProvider::boot()` using `Gate::policy()` mappings.
-- **Tests**:
-  - Comprehensive unit and integration test coverage implemented in `tests/Feature/Authorization/PolicyTest.php`.
-  - All **139 tests in the project suite are passing successfully** (132 baseline + 7 new API endpoints test suites).
-
----
-
-## ✅ Phase 14 — API Layer
-
-Exposed `/api/v1` routes with Sanctum auth middleware. Created resources and API controllers utilizing existing module Actions.
-
-- **Endpoints & Controllers (`app/Http/Controllers/Api/V1/`)**:
-  - `TournamentApiController`: Exposes public index (paginated, with filters) and show, plus authenticated register and check-in endpoints.
-  - `MatchApiController`: Exposes show, result submission (with involved participant checks), and dispute opening.
-  - `WalletApiController`: Exposes balance lookup, transaction ledger log listing (paginated), and withdrawal requests (requires KYC approval check).
-  - `ProfileApiController`: Exposes show and update profile details. Enforces secure model fields, while returning the referral URL using the plain primary key integer database ID (`?ref=123`) as requested.
-  - `TeamApiController`: Exposes team creation, detail retrieval, and inviting new members.
-  - `NotificationApiController`: Exposes notification list (paginated) and mark-as-read actions.
-- **API Resources (`app/Http/Resources/`)**:
-  - `TournamentResource` · `TournamentCollection` · `MatchResource` · `WalletResource` · `LedgerEntryResource` · `UserResource` · `UserProfileResource` · `TeamResource` · `NotificationResource` · `WithdrawalResource`.
-  - All resource serialization utilizes `uuid` and hides internal database `id` fields (except user referral URL using raw integer `id`).
-- **Authorization & Security**:
-  - Injected `Gate` policy checks (e.g. `submitResult`, `dispute`, `requestWithdrawal`, `invite`, `create`) across controllers, returning semantic 403 / 422 JSON error responses.
-  - Handled invalid state machine transitions (`InvalidStateTransitionException`) returning 422 errors instead of 500 crashes.
-- **Tests**:
-  - Comprehensive feature tests implemented in `tests/Feature/Api/ApiEndpointsTest.php` verifying 401 unauthenticated, 403 unauthorized, paginated structures, status filters, and the custom referral URL requirement.
-  - 100% passing tests across the entire application suite.
-
----
-
-## ✅ Phase 15 — Livewire UI (Frontend & Dashboard)
-
-Designed and implemented premium dark neon frontend pages using Tailwind CSS and Livewire 3.
-
-- **Main Layouts (`resources/views/components/layouts/`)**:
-  - `app.blade.php`: Public layout with sleek navigation and Lucide icons.
-  - `dashboard.blade.php`: High-fidelity sidebar layout with real-time wallet balance display and user status.
-- **Public Landing Page (`resources/views/welcome.blade.php`)**:
-  - Ultra-modern "Hero" section with glassmorphism effects.
-  - Interactive call-to-action buttons for registration and tournament exploration.
-  - Marketing stats section showcasing platform reliability.
-- **Player Dashboard (`app/Livewire/Dashboard/PlayerDashboard.php` & `resources/views/livewire/dashboard/player-dashboard.blade.php`)**:
-  - **Overview**: Real-time view of active matches and registered tournaments.
-  - **Head-to-Head (H2H)**: Integrated matchmaking interface with stake selection and simulated opponent matching.
-  - **Comms Hub**: Persisted Reverb-backed global, direct, and team chat with player search/profile actions.
-  - **Tournaments**: Compact views for browsing and managing current registrations.
-- **Profile Dashboard (`app/Livewire/Profile/ProfileDashboard.php` & `resources/views/livewire/profile/profile-dashboard.blade.php`)**:
-  - Game-style player card for avatar, display name, region, timezone, KYC status, verified email status, and referral link.
-  - Profile, account, and password forms for changing public info, username/email, and password.
-  - KYC upload form moved into a drawer opened from the KYC status card; the page shows only verified/not verified status and withdrawal requirement info.
-  - Direct DB update toggles for Email, In-App, and Real-Time notification preferences.
-- **Team Dashboard (`app/Livewire/Team/TeamDashboard.php` & `resources/views/livewire/team/team-dashboard.blade.php`)**:
-  - Handles incoming invites and team creation.
-  - Inside a team: Roster listing with captaincy badge.
-  - Captain actions: invite new players, revoke outbound invites, remove team members, transfer captaincy to another member, rename team, and disband the team.
-  - Member actions: leave the team.
-- **Mobile Responsiveness**:
-  - Tournament bracket list uses horizontal overflow with scroll snap (`snap-x flex-nowrap`) to ensure fluid scrolling on mobile devices.
-  - UI styled with clean spacing, readable typography (Inter and Orbitron), custom status badges, and Lucide icons.
-- **UI Polishing (v1.1)**:
-  - Refined the Player Dashboard interface for better aesthetics and mobile usability.
-  - Updated the topbar title from **SYSTEM DASHBOARD** to **DASHBOARD**.
-  - Optimized topbar for mobile by hiding the title while keeping essential action icons (Deposit, Notifications, Profile, and Language Switcher) visible.
-  - Enlarged the platform logo in the sidebar for stronger brand presence and removed the **PLAYERSALOONS** text branding for a modern "icon-first" design.
-- **Tournament Discovery & Dashboard Enhancements (v1.2)**:
-  - Added `frequency` (Daily/Weekly/Monthly) and `banner_url` to tournaments for better visual presentation.
-  - Enhanced `TournamentList` with a frequency filter and rich card design featuring image banners.
-  - Refactored `PlayerDashboard` with a tabbed interface ("My Tournaments & Stats" vs "Browse & Register").
-  - Implemented real-time tournament filtering (Search, Game, Status, Frequency) directly within the player dashboard.
-  - Added past tournament history section and reusable `tournament-card-item` component for consistency.
-- **Routing (`routes/web.php`)**:
-  - Standardized web routing under `guest` and `auth` middleware groups.
-- **Tests**:
-  - Run and passed the entire test suite (139 tests, 100% passing).
-
----
-
-## ✅ Phase 16 — Admin Panel (Livewire)
-
-Full-featured internal operations dashboard for staff (ADMIN / SUPER_ADMIN roles). Built on Livewire 3 with a dedicated admin layout at `resources/views/components/layouts/admin.blade.php`.
-
-- **Base Class (`app/Livewire/Admin/AdminComponent.php`)**:
-  - Abstract base enforcing staff-only access via `boot()` — redirects with 403 if the authenticated user lacks the `ADMIN` or `SUPER_ADMIN` role.
-
-- **Admin Layout (`resources/views/components/layouts/admin.blade.php`)**:
-  - Dark professional theme (Slate-950 / Slate-900 surfaces).
-  - Responsive sidebar with Lucide icons, mobile burger menu, and live user name/role display.
-  - Flash message toast system (success / error / info).
-
-- **Admin Dashboard (`AdminDashboard` → `/admin`)**:
-  - Live stats grid: total users, pending KYC, pending withdrawals, active tournaments, ongoing matches, open disputes, platform escrow balance.
-  - Recent activity feeds for KYC and withdrawals with quick status badges.
-
-- **Tournament Admin (`TournamentAdmin` → `/admin/tournaments`)**:
-  - Searchable, filterable paginated tournament list.
-  - Create/Edit modal for draft tournaments (full date/time fields, game selector, fee, participant limits).
-  - State-transition buttons (`applyTransition`) covering the full lifecycle: Publish → Open Registration → Close Registration → Open Check-in → Close Check-in → Generate Bracket → Start → Complete → Process Refund.
-  - Cancel modal with mandatory reason and audit note.
-
-- **Match Admin (`MatchAdmin` → `/admin/matches`)**:
-  - Searchable match list with dispute filter (active disputes highlighted).
-  - Result override panel: select winner, write override notes, trigger `MatchStateMachine` override.
-  - Dispute resolution panel: view evidence, choose resolution (`PLAYER_A_WINS`, `PLAYER_B_WINS`, `DRAW`, `REMATCH`), resolve via `ResolveDisputeAction`.
-
-- **KYC Admin (`KycAdmin` → `/admin/kyc`)**:
-  - Status-filtered KYC queue (SUBMITTED / UNDER_REVIEW / APPROVED / REJECTED).
-  - Side-panel detail view with document links, submitted data.
-  - One-click Approve or Reject (with mandatory rejection reason note).
-
-- **Withdrawal Admin (`WithdrawalAdmin` → `/admin/withdrawals`)**:
-  - Defaults to `PENDING` status filter with search by username / email.
-  - Selecting a withdrawal auto-moves it to `UNDER_REVIEW` (four-eyes guard: reviewer ≠ requester).
-  - Approve modal (with notes) and Reject modal (mandatory reason).
-  - Process Payout button for `APPROVED` withdrawals.
-  - Shows linked KYC status and last 10 wallet ledger entries inline.
-
-- **User Admin (`UserAdmin` → `/admin/users`)**:
-  - Paginated user list with status and role filters.
-  - Detail panel: suspend / unsuspend action with reason, role assignment / revocation (all non-SUPER_ADMIN roles), view wallet balance and KYC status.
-
-- **Audit Log Admin (`AuditLogAdmin` → `/admin/audit-logs`)**:
-  - Date-range, actor, action-type, and entity-type filters.
-  - Paginated log table showing actor, action, entity, and timestamp.
-
-- **CMS Admin (`CmsAdmin` → `/admin/cms`)**:
-  - Tabbed interface: **Games** tab and **Pages** tab.
-  - Games: toggle active/inactive, edit English translations (name / description).
-  - Pages: list all CMS pages with locale, status badge; publish action.
-
-- **Routing (`routes/web.php`)**:
-  - All admin routes mounted under `/admin` prefix inside the `auth` middleware group:
-    - `/admin` · `/admin/tournaments` · `/admin/matches` · `/admin/kyc` · `/admin/withdrawals` · `/admin/users` · `/admin/audit-logs` · `/admin/cms`
-
-- **UI Polish & Role-Based UI Separation (v1.1)**:
-  - Implemented dynamic role-based login redirects: players redirect to `/dashboard`, staff/admin roles redirect to `/admin`.
-  - Added request-time checks in `PlayerDashboard::mount()` to auto-redirect staff users accessing `/dashboard` to `/admin`.
-  - Added "Admin Panel" sidebar and profile dropdown links to `/dashboard` for staff members to easily switch views.
-  - Enhanced the admin layout header (desktop & mobile) to show logged-in staff username, dynamic role labels, and dedicated color-coded shields (e.g. red for `SUPER_ADMIN`, indigo for `ADMIN`).
-  - Added a sign-out button directly inside the admin header.
-
-- **Bug Fixes**:
-  - Renamed `TournamentAdmin::transition()` → `applyTransition()` to avoid conflict with Livewire's reserved `transition()` lifecycle method.
-  - Fixed `WithdrawalAdmin::reject()` union type hint (removed erroneous `RejectKycAction` from union).
-  - Fixed `TournamentAdmin` validation: replaced `max:max_participants` (invalid cross-field ref) with `lte:max_participants`.
-  - Added `rounds()` `hasManyThrough` relationship to `Tournament` model (via `Bracket`).
-
-- **UI Refinements & Fixes (v1.3)**:
-  - **Compact Admin Profile Icon**: Refined the admin header layout, making the user display name and role badge more compact and adjusting margins to prevent overlapping.
-  - **Action Icons Fix (Global)**: Fixed the bug where clicking action buttons caused the icons (e.g. eye, edit, delete, cancel) to disappear and turn into empty circles. Implemented global Livewire `livewire:init` + `morph.updated` + `message.processed` hooks inside all layout files to auto-re-initialize Lucide icons upon any DOM morphing or request processing.
-  - **Livewire DOM Keying (`wire:key`)**: Added unique `wire:key` attributes to table rows (`<tr>`) inside all admin views (`tournament-admin`, `match-admin`, `audit-log-admin`, `cms-admin`, `kyc-admin`, `user-admin`, `withdrawal-admin`) to ensure proper Livewire DOM tracking.
-  - **Custom Dark-Neon Pagination**: Styled the default Laravel/Livewire pagination component in `app.css` using custom CSS overrides. The pagination now blends seamlessly with the dark-neon theme (deep slate background, indigo-to-violet gradient for active pages, subtle glow effects).
-  - **Tournament Pagination Spacing**: Wrapped the tournament admin pagination in an `mt-6` container for improved visual spacing.
-
-- **Tournament Admin Refactor & CMS Improvements (v1.4)**:
-  - Extracted Tournament creation/editing from a modal into a dedicated page (`/admin/tournaments/create` and `/admin/tournaments/{id}/edit`) for better UX and spacious layout.
-  - Implemented Livewire's `wire:navigate` for SPA-like lazy loaded transitions between the tournament list and form.
-  - Expanded tournament configuration fields (prize pools, team size, checkin/registration timings, etc.) and added an automatic default rules template generator.
-  - Added dynamic **Platform Management** to the CMS Admin (`/admin/cms`). Platforms are now database-driven (`platforms` table), configurable via CRUD actions, and automatically populate the platform select dropdown when creating tournaments.
-  - Improved CMS UI by replacing browser alerts with a polished custom delete confirmation modal for both CMS Pages and Platforms.
-
-- **Advanced Tournament Features & Performance (v1.5)**:
-  - **Modal Optimization**: Integrated Alpine.js for instant modal visibility and backdrop control. Optimized server-side `render()` logic to prevent unnecessary relationship loading when modals are closed. Added `wire:loading` states and skeletons.
-  - **Reusable Action Dropdown**: Created a reusable `x-admin.action-dropdown` Blade component for consistent 'kebab' action menus across all admin tables.
-  - **Limited Edit Mode**: Implemented "Limited Edit" (Option A) for tournaments, allowing admins to update rules, descriptions, and schedules for published tournaments while locking critical financial/structural fields.
-  - **Multi-Step Tournament Wizard**: Refactored the tournament creation/edit form into a 4-step interactive wizard (Identity, Settings, Schedule, Prizes) with strict per-step validation and real-time button disabling.
-  - **Rich Text Integration**: Integrated **Quill Rich Text Editor** for tournament descriptions and rules with optimized deferred synchronization to eliminate typing lag.
-  - **Expanded Filters & Schedules**: Added "One-time / Single Event" frequency option. Made Platform selection mandatory and implemented Platform/Frequency filters on both Admin and Player tournament lists.
-  - **Draft Persistence**: Implemented local persistence using `localStorage` to automatically save tournament drafts, preventing data loss during creation.
-  - **Scheduling Guidance**: Added instructional helper notes to Step 3 of the wizard to guide admins on chronological date requirements (Registration < Check-in < Start).
-  - **Dynamic Status Badges**: Implemented color-coded status badges for tournament list.
-    - *Technical Debt Note*: Currently uses inline styles to bypass CSS compilation issues in the environment. Future refactor needed to revert to standard Tailwind utility classes using a dedicated blade component once build pipeline is stabilized.
-
-- **Tournament Access & Visibility Improvements (v1.7)**:
-  - **Player Restriction (Logic)**: Updated `TournamentDetail` to enforce 'PLAYER' role requirement for registration in the backend.
-  - **Player Restriction (UI)**: Updated `tournament-detail.blade.php` to hide the 'Join' button and show an informative message for non-player roles.
-  - **Tournament Visibility**: Refactored `TournamentList` to filter out inactive statuses (Draft, Completed, Cancelled, Refunded) by default, showing only active tournaments (Registration, Check-in, Ongoing).
-
-- **Tournament Lifecycle & Admin Control Improvements (v1.14)**:
-  - **State Rollbacks**: Implemented valid state transition rollbacks in `TournamentStateMachine` (e.g., re-opening check-in from closed status), allowing for better tournament management flexibility.
-  - **Check-in Validation Guard**: Added a mandatory participant count validation (`guardCanCloseCheckin`) to prevent premature check-in closure if tournament participation requirements are not met.
-  - **Admin UI Enhancements**: Exposed new rollback transitions ('Re-open Registration', 'Re-open Check-in') directly in the Admin Tournament action dropdown for immediate workflow adjustment.
-  - **Bug Fix**: Added missing `checkins()` relationship to the `Tournament` model to support participation validation logic.
-
-- **Head-to-Head Feature Modularization (v1.11)**:
-  - **Dedicated H2H Page**: Extracted 'Head-to-Head' duels from the `PlayerDashboard` into a dedicated Livewire page (`/head-to-head`), improving load times and simplifying the dashboard DOM.
-  - **Prototype/Mock Implementation at the time**: v1.11 used mock in-memory data for UI demonstration. The production DB-backed H2H flow was later implemented in v1.39 and follow-up H2H work is tracked in `documentation/execution_checklist.md`.
-  - **Navigation Update**: Updated sidebar to include a direct link to the new H2H page and removed H2H tab from the main dashboard.
-
-- **Dashboard Redesign (v1.13)**:
-  - **Cockpit Overview**: Refactored the `PlayerDashboard` to act as a lightweight 'Cockpit' overview. It now features widgets for user welcome/balance, recent matches, upcoming tournaments, progression stats, announcements, and a video placeholder.
-  - **Tabbed Navigation**: Re-implemented tabbed navigation within the dashboard to allow quick switching between the Cockpit view and the new dedicated pages (My Tournaments, Browse Tournaments, H2H, Leaderboards, Streams, Chat).
-
-- **Match Resolution Automation (v1.16)**:
-  - **Match Startup Automation**: Implemented `AutoStartMatchesListener` and updated `AdvanceWinnerListener` to automatically transition 'READY' matches to 'IN_PROGRESS' when a tournament starts or a player advances, enabling immediate action for participants.
-  - **Backfill Command**: Created `tournaments:start-matches` Artisan command to manually fix matches stuck in 'READY' status for ongoing tournaments.
-  - **AutoForfeitJob Registration**: Registered `AutoForfeitJob` in the Laravel scheduler to run every minute.
-  - **Infrastructure Requirement**: Production deployment requires a configured cron job (`php artisan schedule:run`) and a persistent queue worker (`php artisan queue:work`) supervised process.
-  - **Testing Coverage (v1.23)**: Implemented `ConfirmResultFlowTest` validating successful opponent confirmation, winner advancement/progression, and `AutoForfeitJob` timeout resolution.
-
-- **Tournament UI Enhancements (v1.17)**:
-  - **Persistent Tabs**: Implemented `localStorage` state persistence for tournament content tabs using Alpine.js, scoped per tournament ID.
-  - **Activity Feed Tab**: Added a new 'Activity' tab featuring a vertical timeline layout to display chronological tournament events (`$tournament->activities`).
-  - **Mobile Layout & Usability**: Re-designed the navigation tab container to use horizontal scrolling on mobile devices to prevent wrapping breakages, and applied `whitespace-nowrap`.
-  - **Simplified Terminology**: Renamed default tabs from 'Intel/Warriors/Battle Grid' to clearer 'Overview/Players/Matches'.
-
-- **Tournament Elimination Warning Modal (v1.18)**:
-  - **Elimination Verification**: Calculates `$hasLost` status inside `TournamentDetail` by checking if the logged-in player has a resolved match (`COMPLETED` or `FORFEITED`) in the tournament where they are not the winner.
-  - **Alpine.js Warning Modal**: Shows a custom modal with a skull icon notifying players that they are eliminated when selecting the Matches tab.
-  - **Navigation Flow**: Provides a "Go Back" option (reverts tab to Overview) and a "Continue" option (allows them to proceed viewing matches).
-
-- **My Tournaments UI Redesign (v1.19)**:
-  - **Player Statistics Banner**: Added a top row statistics grid showing Active Tournaments, Tournament History, Match Victories (Wins), and Match Defeats (Losses).
-  - **Active Tab Alignment**: Re-designed active tournament cards to match the neon styling, banner images, status badges, and fee/prize layouts of the Browse Tournaments page.
-  - **History List View**: Re-engineered the history tab as a detailed chronological list item view displaying game category, end date, and user match histories (including round number, opponent name, and custom outcome badges like "WON" or "LOST").
-  - **Elimination Lifecycle Shift**: Tournaments where a player has lost are immediately moved from the "Active" tab to the "History" tab, and the stats banner counts reflect this database-driven status.
-
-- **Performance Optimizations (v1.20)**:
-  - **Eager Loading Counts**: Implemented `withCount` on active tournament registrations for both browse and player listings, replacing inline loop queries with optimized database subqueries (`registrations_count`).
-  - **Pre-fetched Matches**: Replaced loop-level N+1 query structures on `/my-tournaments` page by pre-fetching all player matches for paginated tournaments in a single DB query, reducing page load queries drastically.
-  - **Eager Activity Logs**: Swapped inline database loops for Spatie activity logs in `player-content.blade.php` with the pre-fetched `$activityLogs` collection passed from the component.
-
-- **File Storage Fix & Restriction (v1.21)**:
-  - **S3/R2 Removed Locally**: Switched dispute evidence (`SubmitEvidenceAction`) and match result proof (`SubmitMatchResultAction`) uploads from the `r2` disk to the local `public` disk, resolving the `Class "League\Flysystem\AwsS3V3\PortableVisibilityConverter" not found` error.
-  - **Images Only, 2MB Cap**: Restricted allowed file types to images only (PNG, JPG, WEBP) and capped size at 2MB for both upload flows. Removed PDF and video (MP4/MOV) support for now.
-  - **Validation Sync**: Updated Livewire `MatchDetail` component validation for both `evidenceFile` and `submissionProof` to reflect the new limits (`max:2048`, `mimes:png,jpg,jpeg,webp`).
-  - **UI Copy Updated**: Updated hint text and dispute description in `match-detail.blade.php` to reflect the new restrictions.
-  - **Storage URL Compatibility**: Existing blade templates already used `/storage/{{ $path }}` for both fields — confirmed correct for the `public` disk with no additional changes.
-  - **Deployment Note**: Added `🚀 Deployment Considerations` section to this file with a step-by-step checklist to migrate back to R2/S3 before going live.
-
-- **Match Result Confirmation Fixes (v1.23)**:
-  - **`confirmResult` Stub Fixed**: The `MatchDetail::confirmResult()` Livewire method was a no-op stub (`// ... (existing method)`). Implemented the full body: load match with relations, auth guard, delegate to `ConfirmMatchResultAction`, and flash messages.
-  - **`MatchCompleted::dispatch()` TypeError Fixed**: `ConfirmMatchResultAction::execute()` was passing a `GameMatch` object to `MatchCompleted::dispatch()` but the event constructor expects `(int $matchId, int $tournamentId, int $winnerRegistrationId)`. Fixed by extracting `winner_registration_id` from the latest submission, persisting it on the match, and dispatching with correct `int` arguments.
-  - **`BracketGenerationService`**: Fixed unsafe Eloquent Collection index access (`$participants[(int)]` → `$participants->get(int)`) by adding `.values()` after `orderBy()`. Renamed `$p` → `$bracketSize` for clarity. Extracted `nextPowerOfTwo()` as a private method. Documented that `TournamentParticipant` rows are exclusively checked-in players (created by `CheckinParticipantAction`), so no additional filter is needed.
-  - **`Prize Pool Retention`**: Fixed a bug where a manually set or guaranteed prize pool in the tournament wizard was overwritten with `0.00` when registration closed (or when completing a tournament). Updated `CloseRegistrationAction` and `PrizeCalculationService` to retain the higher of the manually entered prize pool and the calculated registration fees (minus platform rake).
-  - **Testing Coverage (v1.23)**: Implemented unit tests for `BracketGenerationService` covering 2, 5, 6, and 8 player tournament bracket generation structures (byes math & propagation). Implemented feature tests for the complete `confirmResult` → `MatchCompleted` → `AdvanceWinnerListener` flow and the `AutoForfeitJob` timeout mechanism.
-
-- **Admin Dispute Evidence UI (v1.22)**:
-  - **Detail Modal — Dispute Section Redesign**: Replaced the plain file-link list with a full dispute card per dispute showing: filed-by user with timestamp, status badge (open/under_review/resolved with distinct colours), player's note/reason in a labelled block, and a 2-column image thumbnail grid (clickable to open full image in new tab) with hover overlay showing uploader name. Fallback for broken image links included.
-  - **Resolve CTA Scope Expanded**: The "Resolve Dispute" button now appears for both `open` and `under_review` dispute statuses (previously only `open`).
-  - **Dispute Resolution Modal Upgraded**: Widened from `max-w-md` to `max-w-2xl`, made scrollable (`max-h-[90vh]`). Now eager-loads `openedBy` and `evidence.uploadedBy` relations. Shows: filed-by header with status badge, player note block, evidence image thumbnail grid (with zoom-in hover overlay), then the admin ruling radio buttons (with `has-[:checked]` highlight styles for emerald/amber). Submit button renamed to "Submit Ruling" with a gavel icon.
-  - **No backend changes required**: All data was already available via existing relations; only the Blade template was updated.
-
-
-- **Tournament Admin Features (v1.6-1.11)**:
-  - Need to add feature tests for:
-    - Admin Tournament Filter Persistence (`TournamentAdmin` component).
-    - Frequency tabs functionality in admin and player contexts.
-    - Custom pagination component rendering.
-    - Role-based restriction on the 'Join Tournament' button.
-    - Tournament status filtering on player-side listing.
-    - Restricted details view (`viewRestrictedDetails` policy) limiting Players, Matches, and Activity tabs visibility to registered participants, organizers, and admins.
-  - Need to add component tests for:
-    - `TournamentDetail` elimination modal:
-      - Player has lost -> navigating to Matches tab triggers warning modal.
-      - Player has not lost -> navigating to Matches tab does not trigger modal.
-      - Clicking "Go Back" in modal resets active tab to "Overview".
-      - Clicking "Continue" in modal closes the modal and keeps active tab on "Matches".
-    - `MyTournamentsList` logic and styling:
-      - Calculating stats banner counts (active, history, wins, losses) directly from DB aggregates.
-      - Active tab matching Browse page cards.
-      - History tab presenting lists of user match details (opponent, round, win/loss badge).
-      - Player elimination shifting tournaments from the Active list to the History list.
-      - N+1 query check (ensuring matches and registration counts are retrieved in grouped queries rather than nested loops).
-    - `PlayerTournamentList` (Browse Tournaments filtering).
-    - `HeadToHeadList` (matchmaking simulation, challenge creation).
-  - Need to add integration/E2E tests for:
-    - Navigation between dashboard, my-tournaments, and browse-tournaments pages.
-
----
-
-## ✅ PHPStan Fixes (v1.25)
-
-Resolved 5 PHPStan Level 8 errors across Match, Wallet, and Tournament modules.
-
-- **`GameMatch` model**: Added missing `@property Carbon|null $result_submitted_at` to PHPDoc. The column was already cast to `datetime` but not declared, causing a `string|null` type mismatch when assigning `Carbon::now()` in `SubmitMatchResultAction`.
-- **`Wallet` model**: Added `@property WalletStatus $status` PHPDoc. Without it, PHPStan inferred the property as `string` (from the `$fillable` array), making strict enum comparisons (`=== WalletStatus::FROZEN/SUSPENDED`) in `WalletService` always evaluate to false.
-- **`TournamentModuleTest`**: Fixed `AutoCancelTournamentJob::dispatchSync($tournament->id)` → `dispatchSync()`. The job has no constructor and queries tournaments internally; passing an argument violated the Larastan `larastan.jobs.noConstructor` rule.
-
----
-
-## 🚀 Deployment Considerations
-
-### File Storage — Switch Local → R2/S3
-
-Currently, all user-uploaded files (dispute evidence screenshots and match result proof images) are stored on the **local `public` disk** (`storage/app/public/`). This works for local development but is **not suitable for production** (files won't persist across deployments and won't scale).
-
-**Before going live:**
-1. Install the required adapter: `composer require league/flysystem-aws-s3-v3`.
-2. Set the correct `.env` variables for Cloudflare R2 (or AWS S3):
-   - `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT`, `R2_PUBLIC_URL`
-3. In `SubmitEvidenceAction::execute()` — change disk from `'public'` → `'r2'`.
-4. In `SubmitMatchResultAction::execute()` — change disk from `'public'` → `'r2'`.
-5. Update any file URL helpers (currently `/storage/{{ $path }}`) to use `Storage::disk('r2')->url($path)` so URLs resolve correctly from R2/CDN.
-6. Run `php artisan storage:link` if keeping any local public files on the server.
-
-> **Note:** File type restriction is currently **images only** (PNG, JPG, WEBP, max 2MB). If video evidence is needed in production, update `SubmitEvidenceAction::ALLOWED_MIME_TYPES` and the Livewire validation in `MatchDetail.php` accordingly.
-
----
-
-## ✅ Financial Operations Audit & Fixes (v1.26)
-
-Audited the full financial operations flow against `documentation/03_financial_operations.md`. Fixed source bugs, resolved PHPStan errors, aligned all tests to the correct architecture.
-
-- **`ProcessWithdrawalAction`**: Removed erroneous `WalletService::debit()` call. Debit is handled by `CreateLedgerEntryListener` on `WithdrawalApproved` (async/queued). Added missing role guard (`FINANCE_OPERATOR / ADMIN / SUPER_ADMIN`). Added `processed_at` stamp.
-- **`CreateLedgerEntryListener`**: Fixed idempotency on `WithdrawalApproved`. Old guard (`status !== APPROVED`) was insufficient — on queue retry the status is still `APPROVED`, causing double debit. Now checks for existing `LedgerEntry` with matching `reference_type + reference_id` before debiting.
-- **`MatchStateMachine`**: Fixed a historical result-submission mismatch. This note was superseded in v1.37 when `WAITING_FOR_CONFIRMATION` became the canonical post-submission state and `RESULT_SUBMITTED` was retained only for legacy compatibility.
-- **`TournamentStateMachine`**: Added missing `COMPLETED → REFUNDED` and `CANCELLED → REFUNDED` transitions (`REFUNDED` existed in the enum but not in the transition table). Extracted `activity()` call into a `protected logTransition()` method so unit tests can override it without hitting the `activity_log` DB table.
-- **`Withdrawal` model**: Added `@property WithdrawalStatus $status` PHPDoc. Added `processed_at` to `$fillable` and `casts`. Fixed `$fillable` PHPDoc to `list<string>`. Fixed `BelongsTo` return type PHPDoc to `BelongsTo<T, $this>`.
-- **`Deposit` model**: Added `fee_amount` to `$fillable` and `casts`. Fixed `$fillable` PHPDoc. Fixed `BelongsTo` return type PHPDoc.
-- **`KycSubmission` model**: Added `@property KycStatus $status` PHPDoc. Fixed `$fillable` PHPDoc to `list<string>`.
-- **`WithdrawalStateMachine`**: Added null-safety guards for `$kyc` and `$wallet` before calling approval guards.
-- **Docblock fixes**: Removed duplicate `float` in `@param string|float|float $amount` in `ProcessDepositAction` and `RequestWithdrawalAction`.
-- **`TournamentStateMachineTest`**: Switched to anonymous subclass overriding `logTransition()` to suppress `activity_log` DB calls in unit tests.
-- **Tests**: 88 tests passing (40 wallet feature + 48 state machine unit). Added 7 new test cases covering deposit idempotency, reject withdrawal, process withdrawal role guard, process withdrawal status/timestamp, `CreateLedgerEntryListener` debit, listener idempotency, and ledger sum = cached balance.
-- **PHPStan**: 0 errors on all modified files at Level 5.
-
----
-
-## ✅ Team Module Fixes & Convention Alignment (v1.27)
-
-Audited Team module against `documentation/04_team_management.md`. Fixed PHPStan errors, applied missing conventions, wired unused components, and aligned docs to reality.
-
-- **Models (`Team`, `TeamMember`, `TeamInvitation`)**: Added `declare(strict_types=1)`. Fixed `$fillable` PHPDoc from `array<int, string>` → `list<string>` to satisfy covariant override constraint (PHPStan Level 5, 3 errors resolved).
-- **`InvitationStateMachine`**: Was completely unused — actions were directly mutating `$invitation->status`. Wired into `AcceptTeamInvitationAction`, `DeclineTeamInvitationAction`, and `RevokeTeamInvitationAction` via constructor injection.
-- **Event Dispatch**: All 7 team events existed but were never dispatched. Fixed by emitting the correct event from each action: `TeamCreated`, `TeamUpdated`, `TeamDeleted`, `TeamMemberInvited`, `TeamMemberJoined`, `TeamMemberRemoved`, `TeamCaptainChanged`. Added `User $actingUser` param to `UpdateTeamAction`, `DisbandTeamAction`, and `RemoveTeamMemberAction` to carry actor ID into events.
-- **`04_team_management.md`**: Corrected stale test names (`test_captain_can_invite_player` → `test_can_invite_user`, etc.), added all 11 test cases across 4 sections, fixed `teams.logo_url` → `teams.logo_path`.
-- **Tests**: Updated test file to use `app()` for DI-injected actions and pass the required `User` actor arg. All **11 team tests passing**.
-
----
-
-## ✅ Phase 6 — Identity Module Fixes & Test Coverage Audit (v1.24)
-
-Audited the full Identity & Onboarding flow against `documentation/01_identity_onboarding.md`. Fixed source bugs, aligned tests to the doc-specified names and assertions, and removed dead code.
-
-- **`RegisterUserAction`**: Moved `UserRegistered::dispatch()` outside `DB::transaction()`. Previously the event could be picked up by a queued listener before the transaction committed, causing a missing-row race condition.
-- **`SubmitKycAction`**: Replaced `(new KycSubmission)->newQuery()` with `KycSubmission::query()`. Removed unreachable `$path === false` guard (file is already validated before `store()` is called).
-- **`CreateWalletListener`**: Replaced `(new Wallet)->newQuery()` with `Wallet::query()`.
-- **`KycSubmission`, `User` models**: Added `declare(strict_types=1)` to match module convention.
-- **`ProfileDashboard`**: Removed dead `resolveView()` pass-through method; calls `->layout()` directly on the view. Removed unused `Factory` / `View` imports.
-- **`RegisterUserActionTest`**: Renamed to doc-specified method names. Fixed wallet balance assertion (`'0'` → `'0.00'`). Added `Event::assertDispatched(UserRegistered::class)`. Split wallet assertion into `test_wallet_is_created_after_registration`. Added `test_registration_fails_with_invalid_email` and `test_registration_fails_with_existing_username`.
-- **`SubmitKycActionTest`**: Renamed to doc-specified method names. Fixed `'national_id'` → `'id_card'` (must match `ProfileDashboard` allowed values: `passport`, `id_card`, `drivers_license`). Added `Event::assertDispatched(UserKycSubmitted::class)` to the success test.
-- **`01_identity_onboarding.md`**: Updated to reflect post-transaction event dispatch, explicit KYC document type list, corrected test assertion details, and added `UserKycSubmitted` no-listener gap note.
-
----
-
-## ✅ Admin Operations Audit & Staff Activity Feature (v1.28)
-
-Audited the full Admin & Operations flow against `documentation/05_admin_operations.md`. Fixed security gaps, resolved PHPStan errors, corrected a failing test, and delivered the Staff Activity Dashboard.
-
-### Security Fixes
-- **`WithdrawalAdmin::approve()` and `processPayout()`**: Added missing `$reviewer->can('approve', $withdrawal)` policy guard at the Livewire layer. Previously the `WithdrawalPolicy` four-eyes check was enforced inside the action but bypassed at the component level — inconsistent with the KYC pattern (`KycAdmin` correctly calls `$reviewer->can()` before delegating).
-- **`ResolveDisputeAction`**: Changed signature from `int $resolvedByAdminUserId` to `User $actor`. Added `hasAnyRole(['ADMIN', 'SUPER_ADMIN'])` role guard. The action was the only one in the codebase without an authorization check; if called directly (outside `MatchAdmin`) there was no gate. Updated `MatchAdmin::resolveDispute()` to pass `Auth::user()` instead of `Auth::id()`.
-
-### PHPStan Level 5 Fixes
-- **`CmsAdmin`** (3 errors):
-  - `published_at = now()` → `update(['published_at' => now()])` to avoid `Carbon` assigned to `string|null` property (the cast is on the model, not reflected in the bare property type).
-  - `$translation?->name ?? ''` and `$translation?->content ?? ''` → explicit `@var ModelClass|null` PHPDoc + ternary, resolving `nullsafe.neverNull` from Larastan inferring `first()` as non-nullable on a typed `HasMany`.
-- **`TournamentForm`** (2 errors):
-  - `$tournament->rules` resolved to the `HasMany` relation collection (not the string column) due to PHPDoc `@property-read Collection|TournamentRule[] $rules`. Fixed by using `$tournament->getAttribute('rules')` to explicitly retrieve the raw column value.
-  - `Game::first()?->id ?? 0` → `@var Game|null` PHPDoc + ternary, resolving `nullsafe.neverNull`.
-- **`AdminPanelTest`** (1 error): Removed dead `$superAdmin` property that was written in `setUp()` but never read.
-
-### Test Fix
-- **`test_tournament_admin_can_create_tournament`**: Was calling `->test(TournamentAdmin::class)` and setting `$name`, which doesn't exist on `TournamentAdmin`. Tournament creation was extracted to `TournamentForm` in v1.4. Fixed to use `TournamentForm::class` and supplied all required fields (`platform_id`, `description`, `rules`, `frequency`, `team_size`, `waiting_result_time`).
-
-### New Feature — Staff Activity Dashboard
-- **`app/Livewire/Admin/StaffActivityDashboard.php`**: New Livewire component at `/admin/staff-activity`. Restricted to `ADMIN` and `SUPER_ADMIN` (enforced in `boot()`). Displays per-staff action counts with breakdown by event type, date-range and username filters (defaults to last 7 days), and a top-10 actions summary across all staff in the period.
-- **`resources/views/livewire/admin/staff-activity-dashboard.blade.php`**: Dark-neon styled table matching admin panel design system. Shows staff member, role badge, total action count, inline action breakdown pills, and last-active timestamp.
-- **Route**: Added `Route::get('/staff-activity', StaffActivityDashboard::class)->name('admin.staff-activity')` to the admin prefix group in `routes/web.php`.
-
-### Documentation
-- **`documentation/05_admin_operations.md`**: Updated to reflect all security fixes (policy guards, `ResolveDisputeAction` actor change), corrected `AssignRoleAction` note (SUPER_ADMIN only, not all admins), added Section 6 for Staff Activity Dashboard, updated test case list including new staff activity tests, and removed the `test_staff_redirect_from_player_dashboard` pending test (already covered by `test_admin_visiting_player_dashboard_redirects_to_admin_dashboard`).
-
-### Tests
-- **4 new tests** in `AdminPanelTest`: `test_player_cannot_access_staff_activity_dashboard`, `test_admin_can_access_staff_activity_dashboard`, `test_staff_activity_dashboard_shows_staff_members`, `test_staff_activity_dashboard_filters_by_date`, `test_staff_activity_dashboard_filters_by_staff_name`.
-- **All 21 `AdminPanelTest` tests passing**. PHPStan Level 5: 0 errors across all modified files.
-
----
-
-## 🔲 Pending / Not Yet Done
-
-This section consolidates all known incomplete work across the project. For detailed task lists, see `documentation/execution_checklist.md`.
-
-### Testing Debt
-The following tests are identified but not yet written:
-
-**Tournament & Admin UI**
-- `test_admin_tournament_filter_persistence`
-- `test_admin_frequency_tab_functionality` / `test_player_frequency_tab_functionality`
-- `test_custom_pagination_rendering`
-- `test_admin_navigation_flow` (wire:navigate SPA transitions)
-
-### Feature Gaps (Not Implemented)
-Items where schema or stub exists but logic is missing:
-
-| Feature | Status | Notes |
-|---|---|---|
-| H2H Admin Review / Proof Uploads | ✅ Done v1.40 | Proof uploads and admin dispute resolution are implemented. |
-| File Storage → R2/S3 | ⚠️ Deferred | Currently using local `public` disk. See deployment notes below. |
-| External Payout Integration | ⚪ Production deferred | Manual payouts remain during testing; provider integration is tracked in the production-readiness checklist. |
-| Referral System Logic | ✅ Done v1.103/v1.104 | First-deposit qualification, dynamic admin settings, and idempotent wallet rewards are implemented. |
-| 2FA | ✅ Done v1.99 | TOTP setup, login challenge, recovery codes, and disable flow are implemented. |
-| `last_login_at` | ✅ Done v1.29/v1.34 | Successful login updates the timestamp and the migration is present. |
-| `UserKycSubmitted` listener | ✅ Done v1.31 | Admin notification listener is registered. |
-| `deposits.fee_amount` | ✅ Done v1.105 | Dynamic fixed/percentage fees are charged on top and persisted separately from wallet credit. |
-| Broadcast Messages UI | ✅ Done v1.35 | Admin broadcast notification panel is live. |
-| CMS Blog/News | ✅ Done v1.82 | Public `/blog` and `/news` listing/detail routes backed by `cms_pages`; authoring lives in `/admin/cms`. |
-| Compliance/Blacklisting | ✅ Done v1.99 | Auditable blocks, middleware enforcement, expiry/revocation, and admin UI are implemented. |
-| Translation Management | ✅ Done v1.69 | Admin translation catalog and JSON export workflow are implemented. |
-| Streaming Integration | ✅ Done v1.91/v1.99 | Stream embeds and moderation are live; optional provider API status polling is implemented. |
-| Team Tournaments | ✅ Done v1.110 | Captain registration, roster snapshots, team slots, roster authorization, and team-aware UI are implemented. |
-| Auto-Forfeit timeout config | ✅ Done v1.110 | System Settings provides the default inherited by new tournaments, with per-tournament overrides retained. |
-
----
 
 ## 🚀 Deployment Notes
 

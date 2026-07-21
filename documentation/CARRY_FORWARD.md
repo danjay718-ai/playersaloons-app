@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-12 | **Current version**: v1.110 | **Branch**: `main`
+**As of**: 2026-07-21 | **Current version**: v1.112 | **Branch**: `main`
 
 ---
 
@@ -137,6 +137,8 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 | ✅ | Advertisement and promotion management | Done v1.106 |
 | ✅ | Player reviews and star ratings | Done v1.107 |
 | ✅ | Team tournaments, auto-forfeit setting, rematch voting | Done v1.110 |
+| ✅ | Localization UI updates (flag icons, admin toggles) | Done v1.111 |
+| ✅ | Geo-Blocking middleware and Admin UI | Done v1.112 |
 | 🟡 | Remaining testing debt | Admin/player frequency filters, filter persistence, pagination, and admin navigation |
 | ⚪ | R2 storage and external payout integration | Production readiness; deferred during testing |
 

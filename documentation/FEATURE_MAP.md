@@ -88,7 +88,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
 | `GET /admin/contact-inquiries` | `app/Livewire/Admin/ContactInquiryAdmin.php` | Contact inquiry inbox: status counters, search/filter, category/status badges, email reply shortcut, internal notes, resolve, archive |
 | `GET /admin/newsletters` | `app/Livewire/Admin/NewsletterAdmin.php` | Subscriber audience search, campaign sending, delivery totals, and recent campaign history |
-| `GET /admin/system-settings` | `app/Livewire/Admin/SystemSettingsAdmin.php` | Admin-adjustable referral enablement and referrer/new-player reward amounts |
+| `GET /admin/system-settings` | `app/Livewire/Admin/SystemSettingsAdmin.php` | Admin-adjustable referral settings, auto-forfeit settings, and localization visibility toggles |
+| `GET /admin/geo-blocking` | `app/Livewire/Admin/BlockedCountriesAdmin.php` | Admin management of blocked IP regions and custom messages |
 | `GET /admin/advertisements` | `app/Livewire/Admin/AdvertisementAdmin.php` | Scheduled advertisement/promotion CRUD and click totals |
 | `GET /admin/player-reviews` | `app/Livewire/Admin/PlayerReviewAdmin.php` | Approve or reject player star reviews before public display |
 | `GET /admin/staff-activity` | `app/Livewire/Admin/StaffActivityDashboard.php` | Per-staff action breakdown (ADMIN/SUPER_ADMIN) |
@@ -150,6 +151,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|---|
 | Locale selection | `app/Http/Middleware/SetLocale.php` | Sets `app()->getLocale()` from authenticated `users.locale`, guest session locale, or app fallback. Safely handles requests before a session store is attached. |
 | Rendered UI text translation | `app/Http/Middleware/TranslateRenderedHtml.php` | Translates rendered HTML text nodes plus `placeholder`, `title`, `aria-label`, and `alt` attributes by exact JSON key. Also handles Livewire JSON payloads that contain rendered HTML. |
+| Geo-Blocking interception | `app/Http/Middleware/BlockRestrictedCountries.php` | Checks user IP against `blocked_countries` table and blocks non-admin access with a 403 error. |
 | Supported language list | `config/localization.php` | Defines supported locales: English, French, Spanish, German, Italian, Dutch, Portuguese, Russian, Japanese, Chinese, and Polish. |
 | Runtime files | `lang/*.json` | Laravel JSON translation files used at runtime. Admin edits are exported here from `translation_strings`. |
 | Admin editing source | `translation_strings` table | Database-backed phrase catalog edited from `/admin/translations`; JSON files are export/cache output. |

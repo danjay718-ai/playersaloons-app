@@ -288,6 +288,7 @@ Head-to-head results maintain a game-specific ELO rating used by automatic match
 *   **Admin Route**: `/admin/system-settings`
 *   **Authorization**: ADMIN and SUPER_ADMIN only.
 *   **Referral Settings**: Enable/disable rewards and adjust the referrer and new-player amounts. Values are read when the referred player’s first successful deposit qualifies the referral, and updates record `updated_by`.
+*   **Localization**: Toggle the visibility of the Language Switcher on Guest and Admin pages (defaults to hidden). Players always see the switcher in the dashboard.
 
 ## 17. Advertisements & Promotions
 
@@ -301,6 +302,12 @@ Head-to-head results maintain a game-specific ELO rating used by automatic match
 *   **Player Route**: `/reviews`; one editable 1–5 star review per player.
 *   **Admin Route**: `/admin/player-reviews` for ADMIN/SUPER_ADMIN approval or rejection.
 *   **Moderation Rule**: New submissions and edits are pending; only approved reviews render publicly on the landing page.
+
+## 19. Geo-Blocking (Compliance)
+
+*   **Admin Route**: `/admin/geo-blocking` for ADMIN/SUPER_ADMIN.
+*   **Middleware**: `BlockRestrictedCountries` running on global routes (except `/admin*` and system internals).
+*   **Functionality**: Resolves player IPs via `stevebauman/location`. If the country code is in the blocked list, access is denied with a 403 screen displaying the admin's custom block message for that country. Admin UI manages the blocked countries list and instantly resets the cached active blocklist upon change.
 
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
