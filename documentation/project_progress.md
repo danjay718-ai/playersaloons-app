@@ -1,6 +1,16 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-21 (v1.112) | **Branch**: `main`
+**Last Updated**: 2026-07-24 (v1.113) | **Branch**: `main`
+
+---
+## ✅ Admin Matches UI, Tournament Automation, Roles & Admin Polish (v1.113)
+
+- **Tournament Automation**: Added `AutoCancelTournaments` to automatically cancel/refund underfilled tournaments before they start. Added `AutoGenerateRecurringTournaments` to generate daily/weekly/monthly tournaments from templates. Both registered in Laravel Scheduler.
+- **Admin Tournament Matches UI**: Added `TournamentMatches` component (Fixtures style layout) to view all matches for a tournament, supporting both team logos and individual profiles/initials, and status filtering.
+- **H2H Commission**: Added a system setting for H2H commission percentage and wired it into `ResolveHeadToHeadStakeAction` to deduct a house cut from the total match pool before payout.
+- **Roles & Permissions UI**: Completely redesigned the Roles and Permissions admin page with a modern, responsive layout, intuitive grouping, toggle switches, and added it to the sidebar.
+- **About Us CMS**: Added an About Us page into the CMS Navigation management for dynamic content editing.
+- **Admin Modal Latency Fix**: Applied the instant AlpineJS state hiding trick (`@click="open = false"`) across Admin modals (UserAdmin, TournamentForm, etc.) to eliminate perceived Livewire round-trip latency.
 
 ---
 ## ✅ Geo-Blocking & Localization UI Updates (v1.111–v1.112)
