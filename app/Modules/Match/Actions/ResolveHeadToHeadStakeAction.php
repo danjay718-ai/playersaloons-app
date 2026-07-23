@@ -34,7 +34,12 @@ class ResolveHeadToHeadStakeAction
             return $existing;
         }
 
-        $payout = number_format((float) $match->stake_amount * 2, 2, '.', '');
+        $totalPool = (float) $match->stake_amount * 2;
+        $commissionPercent = (float) (\App\Modules\Operations\Models\SystemSetting::query()->where('key', 'h2h.commission_percentage')->value('value') ?? 10.00);
+        $commissionAmount = $totalPool * ($commissionPercent / 100);
+        $netPayout = $totalPool - $commissionAmount;
+
+        $payout = number_format($netPayout, 2, '.', '');
 
         return $this->walletService->credit(
             $wallet,
@@ -42,7 +47,7 @@ class ResolveHeadToHeadStakeAction
             LedgerType::H2H_PAYOUT,
             HeadToHeadMatch::class,
             (string) $match->getKey(),
-            'Head-to-head match payout'
+            "Head-to-head match payout (Net of {$commissionPercent}% commission)"
         );
     }
 }

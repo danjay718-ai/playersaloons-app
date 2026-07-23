@@ -21,6 +21,8 @@ class SystemSettingsAdmin extends AdminComponent
 
     public string $depositFeePercentage = '0.00';
 
+    public string $h2hCommissionPercentage = '10.00';
+
     public int $defaultWaitingResultTime = 30;
 
     public bool $showLanguageSwitcherGuest = false;
@@ -45,6 +47,9 @@ class SystemSettingsAdmin extends AdminComponent
         $this->depositFeeEnabled = filter_var($feeSettings['deposit_fee.enabled'] ?? false, FILTER_VALIDATE_BOOL);
         $this->depositFeeFixed = (string) ($feeSettings['deposit_fee.fixed'] ?? '0.00');
         $this->depositFeePercentage = (string) ($feeSettings['deposit_fee.percentage'] ?? '0.00');
+        
+        $this->h2hCommissionPercentage = (string) (SystemSetting::query()->where('key', 'h2h.commission_percentage')->value('value') ?? '10.00');
+        
         $this->defaultWaitingResultTime = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
         
         $langSettings = SystemSetting::query()->whereIn('key', ['language_switcher.show_guest', 'language_switcher.show_admin'])->pluck('value', 'key');
@@ -60,6 +65,20 @@ class SystemSettingsAdmin extends AdminComponent
             ['value' => (string) $this->defaultWaitingResultTime, 'updated_by' => Auth::id()]
         );
         session()->flash('success', 'Tournament timing settings updated.');
+    }
+
+    public function saveH2hSettings(): void
+    {
+        $this->validate([
+            'h2hCommissionPercentage' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
+        ]);
+
+        SystemSetting::query()->updateOrCreate(
+            ['key' => 'h2h.commission_percentage'],
+            ['value' => number_format((float) $this->h2hCommissionPercentage, 2, '.', ''), 'updated_by' => Auth::id()]
+        );
+
+        session()->flash('success', 'H2H settings updated.');
     }
 
     public function saveDepositFeeSettings(): void

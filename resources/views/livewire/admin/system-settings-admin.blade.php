@@ -12,6 +12,22 @@
         </form>
     </section>
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-orange-300">Head-to-Head (H2H)</p>
+        <h2 class="mt-1 text-xl font-bold text-white">Platform Commission</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-500">The percentage deducted from the total prize pool (winner's payout) as the platform fee. For example, if two players stake $10 each, a 10% commission deducts $2 from the $20 pool, paying out $18 to the winner.</p>
+        <form wire:submit="saveH2hSettings" class="mt-6 space-y-5">
+            <div>
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Commission Percentage</label>
+                <div class="relative mt-2 w-full sm:w-64">
+                    <input wire:model="h2hCommissionPercentage" type="number" min="0" max="100" step="0.01" class="w-full rounded-lg border border-slate-800 bg-slate-900 pl-3 pr-8 py-2 text-white">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 font-bold">%</div>
+                </div>
+                @error('h2hCommissionPercentage')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+            </div>
+            <button type="submit" class="rounded-lg bg-orange-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-orange-500">Save H2H settings</button>
+        </form>
+    </section>
+    <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-300">Growth</p>
         <h2 class="mt-1 text-xl font-bold text-white">Referral rewards</h2>
         <p class="mt-2 text-sm text-slate-500">Amounts are read when a referred player completes their first successful deposit.</p>
