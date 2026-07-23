@@ -18,7 +18,7 @@ class CmsAdmin extends AdminComponent
 {
     use WithPagination;
 
-    public string $tab = 'games'; // games | pages | platforms | landing | navigation
+    public string $tab = 'games'; // games | pages | platforms | landing | navigation | about
 
     public function mount(?string $section = null): void
     {
@@ -29,6 +29,10 @@ class CmsAdmin extends AdminComponent
             if ($firstSection) {
                 $this->selectLandingSection((int) $firstSection->id);
             }
+        }
+
+        if ($this->tab === 'about') {
+            $this->loadAboutSettings();
         }
     }
 
@@ -125,6 +129,11 @@ class CmsAdmin extends AdminComponent
 
     public bool $navigationOpensNewTab = false;
 
+    // About Page forms
+    public string $aboutTitle = '';
+    public string $aboutSubtitle = '';
+    public string $aboutBody = '';
+
     protected $paginationTheme = 'tailwind';
 
     public function setTab(string $tabName): void
@@ -138,6 +147,40 @@ class CmsAdmin extends AdminComponent
                 $this->selectLandingSection((int) $firstSection->id);
             }
         }
+
+        if ($tabName === 'about') {
+            $this->loadAboutSettings();
+        }
+    }
+
+    private function loadAboutSettings(): void
+    {
+        $settings = \App\Modules\Operations\Models\SystemSetting::query()->whereIn('key', ['about.title', 'about.subtitle', 'about.body'])->pluck('value', 'key');
+        $this->aboutTitle = $settings['about.title'] ?? 'About PlayerSaloons';
+        $this->aboutSubtitle = $settings['about.subtitle'] ?? 'Our mission is to revolutionize competitive gaming.';
+        $this->aboutBody = $settings['about.body'] ?? '<p>Welcome to PlayerSaloons.</p>';
+    }
+
+    public function saveAboutSettings(): void
+    {
+        $this->validate([
+            'aboutTitle' => 'required|string|max:255',
+            'aboutSubtitle' => 'nullable|string|max:255',
+            'aboutBody' => 'required|string',
+        ]);
+
+        foreach ([
+            'about.title' => $this->aboutTitle,
+            'about.subtitle' => $this->aboutSubtitle,
+            'about.body' => $this->aboutBody,
+        ] as $key => $value) {
+            \App\Modules\Operations\Models\SystemSetting::query()->updateOrCreate(
+                ['key' => $key],
+                ['value' => $value, 'updated_by' => \Illuminate\Support\Facades\Auth::id()]
+            );
+        }
+
+        session()->flash('success', 'About Us page content saved successfully.');
     }
 
     private function resolveTab(?string $section): string
@@ -147,6 +190,7 @@ class CmsAdmin extends AdminComponent
             'games' => 'games',
             'platforms' => 'platforms',
             'navigation' => 'navigation',
+            'about' => 'about',
             default => 'games',
         };
     }
@@ -532,6 +576,7 @@ class CmsAdmin extends AdminComponent
                     ->orderBy('sort_order')
                     ->get(),
             ],
+            'about' => [],
             default => [
                 'games' => Game::with('translations')->paginate(10, ['*'], 'games_page'),
             ],
@@ -542,6 +587,7 @@ class CmsAdmin extends AdminComponent
                 'platforms' => 'Platforms',
                 'landing' => 'Landing Page',
                 'navigation' => 'Public Navigation',
+                'about' => 'About Us Content',
                 default => 'Games Catalog',
             },
         ]);

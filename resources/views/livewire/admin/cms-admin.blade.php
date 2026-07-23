@@ -627,4 +627,44 @@
             </div>
         </div>
     @endif
+
+    <!-- About Us Tab Content -->
+    @if($tab === 'about')
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6 p-6">
+            <h2 class="text-xl font-bold text-white mb-2">About Us Page Content</h2>
+            <p class="text-sm text-slate-400 mb-6">Manage the content that appears on the public About Us page.</p>
+            
+            <form wire:submit.prevent="saveAboutSettings" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
+                    <input type="text" wire:model="aboutTitle" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                    @error('aboutTitle') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Subtitle</label>
+                    <input type="text" wire:model="aboutSubtitle" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                    @error('aboutSubtitle') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Body Content (HTML allowed)</label>
+                    <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden focus-within:border-indigo-500 transition-colors">
+                        <textarea wire:model="aboutBody" rows="15" class="w-full bg-transparent px-4 py-3 text-sm text-slate-200 focus:outline-none resize-y" placeholder="<p>Write your about us content here...</p>"></textarea>
+                    </div>
+                    @error('aboutBody') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="pt-4 flex justify-end relative">
+                    <div wire:loading wire:target="saveAboutSettings" class="absolute inset-0 bg-[#0f172a]/60 backdrop-blur-[1px] flex items-center justify-end pr-4 rounded-lg">
+                         <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    </div>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm uppercase tracking-wider px-6 py-3 rounded-lg flex items-center transition-colors">
+                        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                        Save Content
+                    </button>
+                </div>
+            </form>
+        </div>
+    @endif
 </div>
