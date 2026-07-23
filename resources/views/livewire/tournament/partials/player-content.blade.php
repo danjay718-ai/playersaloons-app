@@ -29,6 +29,21 @@
         <span>Return</span>
     </button>
 
+    <!-- Auto-Cancel Notice -->
+    @if($tournament->is_auto_cancel_underfilled)
+        <div class="bg-amber-900/30 border border-amber-500/50 rounded-[1.5rem] p-4 md:px-6 mb-6 flex items-start md:items-center space-x-4 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 mt-1 md:mt-0">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h3 class="text-xs font-black text-amber-400 uppercase tracking-widest">Auto-Cancel Active</h3>
+                <p class="text-[11px] font-medium text-amber-200/70 mt-0.5 leading-relaxed">
+                    If this tournament does not reach the minimum required participants ({{ $tournament->min_participants }}) by the start time, it will be automatically cancelled and all entry fees will be refunded.
+                </p>
+            </div>
+        </div>
+    @endif
+
     <!-- Tournament Header Banner (Ultra Neon) -->
     <div class="relative group bg-zinc-900/60 backdrop-blur-2xl border border-zinc-800/80 rounded-[2.5rem] p-8 md:p-12 shadow-2xl overflow-hidden">
         <!-- background dynamic glows -->

@@ -33,7 +33,7 @@ class CancelTournamentAction
      * @throws InvalidStateTransitionException
      * @throws \LogicException
      */
-    public function execute(Tournament $tournament, User $actor, string $reason, ?string $notes = null): Tournament
+    public function execute(Tournament $tournament, ?User $actor, string $reason, ?string $notes = null): Tournament
     {
         return DB::transaction(function () use ($tournament, $actor, $reason, $notes): Tournament {
             $this->stateMachine->transition($tournament, TournamentStatus::CANCELLED);
@@ -55,7 +55,7 @@ class CancelTournamentAction
             // Create immutable cancellation record
             $cancellation = TournamentCancellation::query()->create([
                 'tournament_id' => $tournament->getKey(),
-                'cancelled_by' => $actor->getKey(),
+                'cancelled_by' => $actor?->getKey(),
                 'reason' => $reason,
                 'notes' => $notes,
                 'affected_participant_count' => $paid->count(),

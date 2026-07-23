@@ -8,3 +8,5 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::job(new AutoForfeitJob)->everyMinute();
 Schedule::job(new ExpireHeadToHeadMatchesJob)->everyMinute();
 Schedule::job(new RefreshProviderLiveStatusesJob)->everyTwoMinutes()->withoutOverlapping();
+Schedule::command('tournaments:auto-cancel')->everyMinute()->withoutOverlapping();
+Schedule::command('tournaments:auto-generate')->hourly()->withoutOverlapping();

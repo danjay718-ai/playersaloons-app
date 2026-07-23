@@ -49,6 +49,7 @@ class TournamentTemplate extends Model
         'checkin_minutes',
         'is_recurring',
         'settings_json',
+        'is_auto_cancel_underfilled',
     ];
 
     /**
@@ -65,6 +66,7 @@ class TournamentTemplate extends Model
             'checkin_minutes' => 'integer',
             'is_recurring' => 'boolean',
             'settings_json' => 'array',
+            'is_auto_cancel_underfilled' => 'boolean',
         ];
     }
 

@@ -62,6 +62,7 @@ class CreateTournamentAction
                 'prize_2nd' => $data['prize_2nd'] ?? null,
                 'prize_3rd' => $data['prize_3rd'] ?? null,
                 'winning_points' => $data['winning_points'] ?? null,
+                'is_auto_cancel_underfilled' => $data['is_auto_cancel_underfilled'] ?? false,
                 'banner_url' => $data['banner_url'] ?? null,
                 'created_by' => $creator->getKey(),
             ]);

@@ -92,6 +92,7 @@ class Tournament extends Model implements HasMedia
         'prize_2nd',
         'prize_3rd',
         'winning_points',
+        'is_auto_cancel_underfilled',
     ];
 
     /**
@@ -121,6 +122,7 @@ class Tournament extends Model implements HasMedia
             'waiting_result_time' => 'integer',
             'team_size' => 'integer',
             'winning_points' => 'integer',
+            'is_auto_cancel_underfilled' => 'boolean',
         ];
     }
 
