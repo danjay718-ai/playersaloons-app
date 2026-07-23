@@ -284,6 +284,23 @@
                                 </select>
                                 @error('frequency') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                             </div>
+
+                            <div class="col-span-2 mt-2">
+                                <label class="flex items-start space-x-3 cursor-pointer">
+                                    <div class="relative mt-0.5">
+                                        <input type="checkbox" wire:model="is_auto_cancel_underfilled" class="sr-only" @disabled($isLocked)>
+                                        <div class="w-10 h-6 bg-slate-800 rounded-full shadow-inner transition-colors" :class="$wire.is_auto_cancel_underfilled ? 'bg-indigo-500' : ''"></div>
+                                        <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform" :class="$wire.is_auto_cancel_underfilled ? 'translate-x-4' : ''"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-300 uppercase flex items-center">
+                                            Auto-Cancel & Refund
+                                            @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 normal-case mt-0.5">Automatically cancels the tournament and refunds entry fees if min participants are not met by start time.</p>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">

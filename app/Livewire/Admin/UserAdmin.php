@@ -12,6 +12,10 @@ use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
 
@@ -19,50 +23,126 @@ class UserAdmin extends AdminComponent
 {
     use WithPagination;
 
+    public string $activeTab = 'players'; // 'players' | 'users'
+
     public string $search = '';
-
     public string $statusFilter = '';
-
     public string $roleFilter = '';
+
+    public string $onlineFilter = '';
+    public string $countryFilter = '';
 
     // Modals
     public bool $showDetailModal = false;
-
     public bool $showSuspendModal = false;
-
     public bool $showRoleModal = false;
+    public bool $showEditModal = false;
+    public bool $showPasswordModal = false;
 
     // Selection
     public ?int $selectedUserId = null;
 
     // Forms
     public string $suspendReason = '';
-
     public string $selectedRole = '';
-
     public string $roleAction = 'assign'; // assign | revoke
+
+    // Edit Forms
+    public ?int $editingUserId = null;
+    public string $editUsername = '';
+    public string $editEmail = '';
+    public string $editDisplayName = '';
+    public string $editCountryCode = '';
+
+    // Password Forms
+    public ?int $passwordUserId = null;
+    public string $newPassword = '';
+    public string $newPasswordConfirmation = '';
 
     protected $paginationTheme = 'tailwind';
 
-    public function updatingSearch(): void
+    public function setTab(string $tab): void
     {
+        $this->activeTab = $tab;
         $this->resetPage();
     }
 
-    public function updatingStatusFilter(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingRoleFilter(): void
-    {
-        $this->resetPage();
-    }
+    public function updatingSearch(): void { $this->resetPage(); }
+    public function updatingStatusFilter(): void { $this->resetPage(); }
+    public function updatingRoleFilter(): void { $this->resetPage(); }
+    public function updatingOnlineFilter(): void { $this->resetPage(); }
+    public function updatingCountryFilter(): void { $this->resetPage(); }
 
     public function selectUser(int $id): void
     {
         $this->selectedUserId = $id;
         $this->showDetailModal = true;
+    }
+
+    public function editUser(int $id): void
+    {
+        $user = User::with('profile')->findOrFail($id);
+        $this->editingUserId = $user->id;
+        $this->editUsername = $user->username;
+        $this->editEmail = $user->email;
+        $this->editDisplayName = $user->profile->display_name ?? '';
+        $this->editCountryCode = $user->profile->country_code ?? '';
+        $this->showEditModal = true;
+    }
+
+    public function updateUser(): void
+    {
+        $this->validate([
+            'editUsername' => 'required|string|max:255|unique:users,username,' . $this->editingUserId,
+            'editEmail' => 'required|email|max:255|unique:users,email,' . $this->editingUserId,
+            'editDisplayName' => 'nullable|string|max:255',
+            'editCountryCode' => 'nullable|string|max:2',
+        ]);
+
+        $user = User::findOrFail($this->editingUserId);
+        $user->update([
+            'username' => $this->editUsername,
+            'email' => $this->editEmail,
+        ]);
+
+        if ($user->profile) {
+            $user->profile->update([
+                'display_name' => $this->editDisplayName,
+                'country_code' => $this->editCountryCode,
+            ]);
+        } else {
+            $user->profile()->create([
+                'uuid' => (string) Str::uuid(),
+                'display_name' => $this->editDisplayName,
+                'country_code' => $this->editCountryCode,
+            ]);
+        }
+
+        session()->flash('success', 'User data updated successfully.');
+        $this->showEditModal = false;
+    }
+
+    public function prepareResetPassword(int $id): void
+    {
+        $this->passwordUserId = $id;
+        $this->newPassword = '';
+        $this->newPasswordConfirmation = '';
+        $this->showPasswordModal = true;
+    }
+
+    public function resetPassword(): void
+    {
+        $this->validate([
+            'newPassword' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user = User::findOrFail($this->passwordUserId);
+        $user->update([
+            'password' => Hash::make($this->newPassword),
+        ]);
+
+        session()->flash('success', 'User password reset successfully.');
+        $this->showPasswordModal = false;
     }
 
     public function openSuspendModal(): void
@@ -88,11 +168,15 @@ class UserAdmin extends AdminComponent
             return;
         }
 
+        if ($target->id === $actor->id) {
+            session()->flash('error', 'Suspension failed: You cannot suspend your own account.');
+            return;
+        }
+
         try {
             $action->execute($target, $actor, $this->suspendReason);
             session()->flash('success', 'User suspended successfully.');
             $this->showSuspendModal = false;
-            // Refresh detail modal
         } catch (\Exception $e) {
             session()->flash('error', 'Suspension failed: '.$e->getMessage());
         }
@@ -114,7 +198,6 @@ class UserAdmin extends AdminComponent
         try {
             $action->execute($target, $actor);
             session()->flash('success', 'User account unsuspended.');
-            // Refresh detail modal
         } catch (\Exception $e) {
             session()->flash('error', 'Unsuspension failed: '.$e->getMessage());
         }
@@ -145,6 +228,13 @@ class UserAdmin extends AdminComponent
         }
 
         try {
+            if ($this->roleAction === 'revoke' && $target->id === $actor->id && $this->selectedRole === 'SUPER_ADMIN') {
+                $superAdminCount = User::role('SUPER_ADMIN')->count();
+                if ($superAdminCount <= 1) {
+                    throw new \Exception('You cannot revoke your own SUPER_ADMIN role because you are the only one. Assign it to someone else first.');
+                }
+            }
+
             if ($this->roleAction === 'assign') {
                 app(AssignRoleAction::class)->execute($target, $this->selectedRole, $actor);
                 session()->flash('success', "Role '{$this->selectedRole}' assigned to user.");
@@ -160,26 +250,60 @@ class UserAdmin extends AdminComponent
 
     public function render()
     {
-        $query = User::query()
-            ->with(['roles', 'profile'])
-            ->orderBy('created_at', 'desc');
+        // Build players query for count
+        $playersQuery = User::query()->whereHas('roles', function ($q) {
+            $q->where('name', 'PLAYER');
+        });
 
+        if ($this->onlineFilter !== '') {
+            $keys = Redis::keys('*user_online:*');
+            $onlineIds = [];
+            foreach ($keys as $key) {
+                $parts = explode('user_online:', $key);
+                if (count($parts) > 1) {
+                    $onlineIds[] = (int) $parts[1];
+                }
+            }
+            if ($this->onlineFilter === 'online') {
+                $playersQuery->whereIn('id', $onlineIds);
+            } else if ($this->onlineFilter === 'offline') {
+                $playersQuery->whereNotIn('id', $onlineIds);
+            }
+        }
+
+        if ($this->countryFilter !== '') {
+            $playersQuery->whereHas('profile', function($q) {
+                $q->where('country_code', $this->countryFilter);
+            });
+        }
+        
+        $playersCount = $playersQuery->count();
+
+        // Build users query for count
+        $usersQuery = User::query()->whereDoesntHave('roles', function ($q) {
+            $q->where('name', 'PLAYER');
+        });
+        
         if ($this->search) {
-            $query->where(function ($q) {
+            $usersQuery->where(function ($q) {
                 $q->where('username', 'like', '%'.$this->search.'%')
                     ->orWhere('email', 'like', '%'.$this->search.'%');
             });
         }
-
         if ($this->statusFilter) {
-            $query->where('status', $this->statusFilter);
+            $usersQuery->where('status', $this->statusFilter);
         }
-
         if ($this->roleFilter) {
-            $query->whereHas('roles', function ($q) {
+            $usersQuery->whereHas('roles', function ($q) {
                 $q->where('name', $this->roleFilter);
             });
         }
+        
+        $usersCount = $usersQuery->count();
+
+        // Main query for active tab
+        $query = $this->activeTab === 'players' ? clone $playersQuery : clone $usersQuery;
+        $query->with(['roles', 'profile'])->orderBy('created_at', 'desc');
 
         $users = $query->paginate(15);
         $roles = Role::all();
@@ -189,7 +313,7 @@ class UserAdmin extends AdminComponent
         $walletHistory = [];
         $tournamentHistory = [];
 
-        if ($this->selectedUserId) {
+        if ($this->selectedUserId && $this->showDetailModal) {
             $selectedUser = User::with(['roles', 'profile', 'wallet'])->find($this->selectedUserId);
             if ($selectedUser) {
                 $userKyc = KycSubmission::where('user_id', $this->selectedUserId)
@@ -212,6 +336,8 @@ class UserAdmin extends AdminComponent
             'userKyc' => $userKyc,
             'walletHistory' => $walletHistory,
             'tournamentHistory' => $tournamentHistory,
+            'playersCount' => $playersCount,
+            'usersCount' => $usersCount,
         ])->layout('components.layouts.admin', [
             'admin_title' => 'User Management Directory',
         ]);

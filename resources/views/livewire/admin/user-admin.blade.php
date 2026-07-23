@@ -1,46 +1,71 @@
 <div>
+    <!-- Tabs -->
+    <div class="flex space-x-1 border-b border-slate-800 mb-6 relative">
+        <div wire:loading wire:target="setTab" class="absolute top-0 right-0 p-3">
+            <svg class="animate-spin h-4 w-4 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+        </div>
+        <button wire:click="setTab('players')" class="px-4 py-3 text-xs font-bold uppercase tracking-wider focus:outline-none transition-colors {{ $activeTab === 'players' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-slate-300' }}">
+            Players ({{ $playersCount }})
+        </button>
+        <button wire:click="setTab('users')" class="px-4 py-3 text-xs font-bold uppercase tracking-wider focus:outline-none transition-colors {{ $activeTab === 'users' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-slate-300' }}">
+            All Users ({{ $usersCount }})
+        </button>
+    </div>
+
     <!-- Top Action Bar -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <!-- Search and Filters -->
         <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            <input type="text" wire:model.live="search" placeholder="Search by username or email..." 
-                   class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full sm:w-64">
-            
-            <select wire:model.live="statusFilter" 
-                    class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
-                <option value="">All Statuses</option>
-                @foreach(\App\Shared\Enums\UserStatus::cases() as $status)
-                    <option value="{{ $status->value }}">{{ strtoupper($status->name) }}</option>
-                @endforeach
-            </select>
+            @if($activeTab === 'users')
+                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search by username or email..." 
+                       class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full sm:w-64">
+                
+                <select wire:model.live="statusFilter" 
+                        class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                    <option value="">All Statuses</option>
+                    @foreach(\App\Shared\Enums\UserStatus::cases() as $status)
+                        <option value="{{ $status->value }}">{{ strtoupper($status->name) }}</option>
+                    @endforeach
+                </select>
 
-            <select wire:model.live="roleFilter" 
-                    class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
-                <option value="">All Roles</option>
-                @foreach($roles as $role)
-                    <option value="{{ $role->name }}">{{ $role->name }}</option>
-                @endforeach
-            </select>
+                <select wire:model.live="roleFilter" 
+                        class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                    <option value="">All Roles</option>
+                    @foreach($roles as $role)
+                        <option value="{{ $role->name }}">{{ $role->name }}</option>
+                    @endforeach
+                </select>
+            @else
+                <select wire:model.live="onlineFilter" 
+                        class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                    <option value="">All (Online/Offline)</option>
+                    <option value="online">Online Only</option>
+                    <option value="offline">Offline Only</option>
+                </select>
+
+                <input type="text" wire:model.live.debounce.300ms="countryFilter" placeholder="Country Code (e.g. PH)" 
+                       class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full sm:w-48">
+            @endif
         </div>
     </div>
 
     <!-- Feedback Alerts -->
     @if(session()->has('success'))
         <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-lg text-sm mb-6 flex items-center">
-            <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>{{ session('success') }}</span>
         </div>
     @endif
     @if(session()->has('error'))
         <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm mb-6 flex items-center">
-            <i data-lucide="alert-circle" class="w-4 h-4 mr-2"></i>
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>{{ session('error') }}</span>
         </div>
     @endif
 
     <!-- Users Table -->
     <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto min-h-[300px]">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
                     <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
@@ -93,9 +118,24 @@
                                 </span>
                             </td>
                             <td class="p-4 text-right">
-                                <button wire:click="selectUser({{ $usr->id }})" class="px-3 py-1 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-wider">
-                                    Manage
-                                </button>
+                                <div x-data="{ open: false }" class="relative inline-block text-left" @click.away="open = false" wire:ignore.self>
+                                    <button @click="open = !open" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-wider flex items-center space-x-1 ml-auto transition-colors">
+                                        <span>Actions</span>
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </button>
+                                    <div x-show="open" x-transition style="display: none;" class="absolute right-0 mt-2 w-40 bg-slate-800 rounded-lg shadow-xl z-50 border border-slate-700 py-1 overflow-hidden">
+                                        <button wire:click="editUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white uppercase font-bold tracking-wider transition-colors relative">
+                                            Edit Data
+                                        </button>
+                                        <button wire:click="prepareResetPassword({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white uppercase font-bold tracking-wider transition-colors">
+                                            Reset Password
+                                        </button>
+                                        <div class="border-t border-slate-700 my-0.5"></div>
+                                        <button wire:click="selectUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-indigo-400 hover:bg-slate-700 hover:text-indigo-300 uppercase font-bold tracking-wider transition-colors">
+                                            Full Manage
+                                        </button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -109,22 +149,105 @@
     </div>
 
     <!-- Pagination -->
-    <div>
-        {{ $users->links() }}
+    <div class="mt-4">
+        {{ $users->links('vendor.livewire.custom-pagination') }}
     </div>
+
+    <!-- Edit User Data Modal -->
+    @if($showEditModal)
+        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showEditModal', false)"></div>
+            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Edit User Data</h3>
+                    <button type="button" @click="open = false; $wire.set('showEditModal', false)" class="text-slate-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="updateUser" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
+                        <input type="text" wire:model="editUsername" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        @error('editUsername') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Email</label>
+                        <input type="email" wire:model="editEmail" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        @error('editEmail') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Display Name</label>
+                        <input type="text" wire:model="editDisplayName" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        @error('editDisplayName') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Country Code (e.g. PH)</label>
+                        <input type="text" wire:model="editCountryCode" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" maxlength="2">
+                        @error('editCountryCode') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                        <button type="button" @click="open = false; $wire.set('showEditModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- Reset Password Modal -->
+    @if($showPasswordModal)
+        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showPasswordModal', false)"></div>
+            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Reset User Password</h3>
+                    <button type="button" @click="open = false; $wire.set('showPasswordModal', false)" class="text-slate-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="resetPassword" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">New Password</label>
+                        <input type="password" wire:model="newPassword" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        @error('newPassword') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Confirm New Password</label>
+                        <input type="password" wire:model="newPasswordConfirmation" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                        <button type="button" @click="open = false; $wire.set('showPasswordModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                            Reset Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 
     <!-- Detail Modal -->
     @if($showDetailModal && $selectedUser)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showDetailModal', false)"></div>
+        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="open = false; $wire.set('showDetailModal', false)"></div>
             <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-4xl w-full overflow-hidden shadow-2xl relative z-10 max-h-[90vh] flex flex-col">
                 <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
                     <div>
                         <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">User Account Management</h3>
                         <p class="text-[9px] text-slate-500 font-mono mt-0.5">{{ $selectedUser->uuid }}</p>
                     </div>
-                    <button wire:click="$set('showDetailModal', false)" class="text-slate-400 hover:text-white">
-                        <i data-lucide="x" class="w-5 h-5"></i>
+                    <button type="button" @click="open = false; $wire.set('showDetailModal', false)" class="text-slate-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
@@ -166,8 +289,8 @@
                                 <span class="text-[10px] text-slate-500 font-bold uppercase block tracking-wider">Access Roles</span>
                                 @if(auth()->user()->hasRole('SUPER_ADMIN'))
                                     <div class="flex space-x-1.5">
-                                        <button wire:click="openRoleModal('assign')" class="text-[9px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2 py-0.5 rounded">Assign</button>
-                                        <button wire:click="openRoleModal('revoke')" class="text-[9px] bg-red-950 border border-red-900 text-red-400 font-bold px-2 py-0.5 rounded">Revoke</button>
+                                        <button wire:click="openRoleModal('assign')" class="text-[9px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2 py-0.5 rounded transition-colors">Assign</button>
+                                        <button wire:click="openRoleModal('revoke')" class="text-[9px] bg-red-950 border border-red-900 text-red-400 font-bold px-2 py-0.5 rounded transition-colors">Revoke</button>
                                     </div>
                                 @endif
                             </div>
@@ -282,16 +405,16 @@
                 <div class="px-6 py-4 border-t border-slate-800 bg-[#0b0f19] flex justify-between items-center">
                     <div>
                         @if($selectedUser->status === \App\Shared\Enums\UserStatus::ACTIVE)
-                            <button wire:click="openSuspendModal" class="bg-red-950 hover:bg-red-900 border border-red-900/50 text-red-400 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                            <button wire:click="openSuspendModal" class="bg-red-950 hover:bg-red-900 border border-red-900/50 text-red-400 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                                 Suspend Account
                             </button>
                         @elseif($selectedUser->status === \App\Shared\Enums\UserStatus::SUSPENDED)
-                            <button wire:click="unsuspend" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                            <button wire:click="unsuspend" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                                 Unsuspend Account
                             </button>
                         @endif
                     </div>
-                    <button wire:click="$set('showDetailModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                    <button type="button" @click="open = false; $wire.set('showDetailModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                         Close Directory
                     </button>
                 </div>
@@ -301,13 +424,13 @@
 
     <!-- Suspend Reason Modal -->
     @if($showSuspendModal)
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" wire:click="$set('showSuspendModal', false)"></div>
+        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showSuspendModal', false)"></div>
             <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
                 <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
                     <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider">Suspend User Account</h3>
-                    <button wire:click="$set('showSuspendModal', false)" class="text-slate-400 hover:text-white">
-                        <i data-lucide="x" class="w-5 h-5"></i>
+                    <button type="button" @click="open = false; $wire.set('showSuspendModal', false)" class="text-slate-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
@@ -320,12 +443,12 @@
                     </div>
 
                     <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                        <button type="button" wire:click="$set('showSuspendModal', false)" 
-                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                        <button type="button" @click="open = false; $wire.set('showSuspendModal', false)" 
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                             Cancel
                         </button>
                         <button type="submit" 
-                                class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                                class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                             Suspend User
                         </button>
                     </div>
@@ -336,13 +459,13 @@
 
     <!-- Role Edit Modal -->
     @if($showRoleModal)
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" wire:click="$set('showRoleModal', false)"></div>
+        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showRoleModal', false)"></div>
             <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
                 <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
                     <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider capitalize">{{ $roleAction }} Role</h3>
-                    <button wire:click="$set('showRoleModal', false)" class="text-slate-400 hover:text-white">
-                        <i data-lucide="x" class="w-5 h-5"></i>
+                    <button type="button" @click="open = false; $wire.set('showRoleModal', false)" class="text-slate-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
@@ -359,12 +482,12 @@
                     </div>
 
                     <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                        <button type="button" wire:click="$set('showRoleModal', false)" 
-                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                        <button type="button" @click="open = false; $wire.set('showRoleModal', false)" 
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                             Cancel
                         </button>
                         <button type="submit" 
-                                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                             Confirm {{ ucfirst($roleAction) }}
                         </button>
                     </div>

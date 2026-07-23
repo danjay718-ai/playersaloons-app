@@ -59,6 +59,8 @@ class TournamentForm extends AdminComponent
 
     public string $frequency = 'daily';
 
+    public bool $is_auto_cancel_underfilled = false;
+
     public ?int $waiting_time = null;
 
     public ?int $waiting_result_time = null;
@@ -120,6 +122,7 @@ class TournamentForm extends AdminComponent
             $this->rules = (string) ($tournament->getAttribute('rules') ?: $this->getDefaultRules());
             $this->platform_id = $tournament->platform_id;
             $this->frequency = $tournament->frequency ?? 'daily';
+            $this->is_auto_cancel_underfilled = (bool) $tournament->is_auto_cancel_underfilled;
             $this->waiting_time = $tournament->waiting_time;
             $this->waiting_result_time = $tournament->waiting_result_time;
             $this->team_size = $tournament->team_size ?? 1;
@@ -204,6 +207,7 @@ class TournamentForm extends AdminComponent
             'rules' => 'required|string',
             'platform_id' => 'required|exists:platforms,id',
             'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
+            'is_auto_cancel_underfilled' => 'boolean',
             'waiting_time' => 'nullable|integer|min:0',
             'waiting_result_time' => 'required|integer|min:1',
             'team_size' => 'required|integer|min:1',
@@ -238,6 +242,7 @@ class TournamentForm extends AdminComponent
             'rules' => $this->rules,
             'platform_id' => $this->platform_id,
             'frequency' => $this->frequency,
+            'is_auto_cancel_underfilled' => $this->is_auto_cancel_underfilled,
             'waiting_time' => $this->waiting_time,
             'waiting_result_time' => $this->waiting_result_time,
             'team_size' => $this->team_size,
@@ -273,6 +278,7 @@ class TournamentForm extends AdminComponent
                     $data['team_size'],
                     $data['platform_id'],
                     $data['frequency'],
+                    $data['is_auto_cancel_underfilled'],
                     $data['winning_points']
                 );
             }
