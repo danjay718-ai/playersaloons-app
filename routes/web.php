@@ -24,6 +24,8 @@ use App\Livewire\Admin\StaffActivityDashboard;
 use App\Livewire\Admin\SystemSettingsAdmin;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Admin\TournamentForm;
+use App\Livewire\Admin\TournamentMatches;
+use App\Livewire\Admin\RolePermissionAdmin;
 use App\Livewire\Admin\TranslationAdmin;
 use App\Livewire\Admin\UserAdmin;
 use App\Livewire\Admin\WithdrawalAdmin;
@@ -64,6 +66,7 @@ use Illuminate\Support\Facades\Storage;
 
 // Public routes
 Route::get('/', LandingPage::class);
+Route::get('/about', \App\Livewire\AboutPage::class)->name('about');
 
 Route::get('/tournaments', PublicTournamentList::class);
 Route::get('/blog', BlogIndex::class)->name('blog.index');
@@ -151,6 +154,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/tournaments', TournamentAdmin::class)->name('admin.tournaments');
         Route::get('/tournaments/create', TournamentForm::class)->name('admin.tournaments.create');
         Route::get('/tournaments/{id}/edit', TournamentForm::class)->name('admin.tournaments.edit');
+        Route::get('/tournaments/{id}/matches', TournamentMatches::class)->name('admin.tournaments.matches');
         Route::get('/matches', MatchAdmin::class);
         Route::get('/streams', StreamList::class)->name('admin.streams');
         Route::get('/streams/{id}', StreamWatch::class)->name('admin.streams.watch');
@@ -170,11 +174,12 @@ Route::middleware('auth')->group(function () {
         })->where('path', '.*')->name('admin.kyc.document');
         Route::get('/withdrawals', WithdrawalAdmin::class);
         Route::get('/users', UserAdmin::class);
+        Route::get('/roles-permissions', RolePermissionAdmin::class)->name('admin.roles-permissions');
         Route::get('/compliance', ComplianceAdmin::class)->name('admin.compliance');
         Route::get('/audit-logs', AuditLogAdmin::class);
         Route::get('/cms/content', CmsContentAdmin::class)->name('admin.cms.content');
-        Route::get('/cms/{section?}', CmsAdmin::class)
-            ->whereIn('section', ['landing', 'games', 'platforms', 'navigation'])
+        Route::get('/cms/{section?}', \App\Livewire\Admin\CmsAdmin::class)
+            ->whereIn('section', ['landing', 'games', 'platforms', 'navigation', 'about'])
             ->name('admin.cms');
         Route::get('/translations', TranslationAdmin::class)->name('admin.translations');
         Route::get('/policies', PolicyAdmin::class);

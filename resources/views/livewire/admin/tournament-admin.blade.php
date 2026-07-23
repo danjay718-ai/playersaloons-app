@@ -165,6 +165,12 @@
                                             <i data-lucide="eye" class="w-3.5 h-3.5 mr-2 text-slate-500 group-hover:text-indigo-400"></i>
                                             Admin Details
                                         </button>
+
+                                        <!-- Matches View -->
+                                        <a href="{{ route('admin.tournaments.matches', $tournament->id) }}" wire:navigate class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
+                                            <i data-lucide="swords" class="w-3.5 h-3.5 mr-2 text-slate-500 group-hover:text-indigo-400"></i>
+                                            View Matches
+                                        </a>
                                         
                                         <!-- State Transition Quick Actions -->
                                         @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT)
