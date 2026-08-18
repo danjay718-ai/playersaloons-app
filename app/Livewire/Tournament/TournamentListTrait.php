@@ -4,6 +4,7 @@ namespace App\Livewire\Tournament;
 
 use App\Modules\CMS\Models\Game;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
@@ -21,6 +22,9 @@ trait TournamentListTrait
     #[Url]
     public string $activeTab = 'all';
 
+    #[Url]
+    public string $competitionType = '';
+
     public function updatingSearch(): void
     {
         $this->resetPage();
@@ -36,12 +40,17 @@ trait TournamentListTrait
         $this->resetPage();
     }
 
+    public function updatingCompetitionType(): void
+    {
+        $this->resetPage();
+    }
+
     protected function getTournamentQuery()
     {
         $query = Tournament::query()
             ->with(['game.translations', 'platform'])
             ->withCount(['registrations' => function ($q) {
-                $q->whereNotIn('status', ['cancelled', 'refunded']);
+                $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
             }])
             ->whereIn('status', [
                 TournamentStatus::REGISTRATION_OPEN->value,
@@ -53,7 +62,7 @@ trait TournamentListTrait
             ]);
 
         if ($this->search) {
-            $query->where('name', 'like', '%' . $this->search . '%');
+            $query->where('name', 'like', '%'.$this->search.'%');
         }
 
         if ($this->gameId) {
@@ -62,6 +71,10 @@ trait TournamentListTrait
 
         if ($this->activeTab !== 'all') {
             $query->where('frequency', $this->activeTab);
+        }
+
+        if ($this->competitionType !== '') {
+            $query->where('competition_type', $this->competitionType);
         }
 
         return $query->orderBy('created_at', 'desc');

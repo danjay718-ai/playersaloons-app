@@ -6,6 +6,7 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Modules\Stream\Models\StreamChannel;
+use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property string $uuid
  * @property int|null $template_id
  * @property int $game_id
+ * @property CompetitionType $competition_type
  * @property string $name
  * @property string $slug
  * @property TournamentStatus $status
@@ -65,6 +67,7 @@ class Tournament extends Model implements HasMedia
         'uuid',
         'template_id',
         'game_id',
+        'competition_type',
         'name',
         'slug',
         'status',
@@ -104,6 +107,7 @@ class Tournament extends Model implements HasMedia
     {
         return [
             'status' => TournamentStatus::class,
+            'competition_type' => CompetitionType::class,
             'entry_fee' => 'decimal:2',
             'prize_pool' => 'decimal:2',
             'max_participants' => 'integer',

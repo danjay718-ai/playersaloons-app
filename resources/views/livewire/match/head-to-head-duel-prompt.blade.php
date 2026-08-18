@@ -1,4 +1,4 @@
-<div wire:poll.10s>
+<div>
     @if($prompt)
         <div class="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm">
             <div class="w-full max-w-md overflow-hidden rounded-2xl border border-fuchsia-500/30 bg-[#0a0718] shadow-[0_0_45px_rgba(217,70,239,0.25)]">

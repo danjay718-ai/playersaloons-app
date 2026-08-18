@@ -46,9 +46,10 @@ class RegisterUserAction
 
             $profile = new UserProfile;
             $profile->fill([
-                'uuid' => Str::uuid()->toString(),
-                'user_id' => $user->getKey(),
+                'uuid'         => Str::uuid()->toString(),
+                'user_id'      => $user->getKey(),
                 'display_name' => $data['display_name'] ?? $data['username'],
+                'country_code' => $data['country_code'] ?? null,
             ]);
             $profile->save();
 

@@ -1,4 +1,14 @@
-version: '3.8'
+x-app-environment: &app-environment
+  DB_CONNECTION: mysql
+  DB_HOST: mysql
+  DB_PORT: 3306
+  DB_DATABASE: playersaloons
+  DB_USERNAME: playersaloons
+  DB_PASSWORD: secret
+  REDIS_HOST: redis
+  QUEUE_CONNECTION: redis
+  CACHE_STORE: redis
+  SESSION_DRIVER: redis
 
 services:
   app:
@@ -11,9 +21,14 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
+    environment:
+      <<: *app-environment
+      SERVICE_TYPE: web
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - playersaloons_network
 
@@ -44,6 +59,11 @@ services:
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     networks:
       - playersaloons_network
 
@@ -55,6 +75,11 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
       - playersaloons_network
 
@@ -65,10 +90,14 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
-    command: php artisan horizon
+    environment:
+      <<: *app-environment
+      SERVICE_TYPE: worker
     depends_on:
-      - app
-      - redis
+      app:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - playersaloons_network
 
@@ -79,10 +108,14 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
-    command: sh -c "while [ true ]; do php artisan schedule:run --no-interaction & sleep 60; done"
+    environment:
+      <<: *app-environment
+      SERVICE_TYPE: scheduler
     depends_on:
-      - app
-      - redis
+      app:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - playersaloons_network
 
@@ -95,7 +128,9 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
-    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    environment:
+      <<: *app-environment
+      SERVICE_TYPE: reverb
     depends_on:
       - app
       - redis

@@ -5,7 +5,6 @@ use App\Http\Middleware\SanitizeBroadcastSocketId;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TranslateRenderedHtml;
 use App\Http\Middleware\UpdateUserOnlineStatus;
-use App\Http\Middleware\BlockRestrictedCountries;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,13 +20,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
-        $middleware->appendToGroup('web', BlockRestrictedCountries::class);
         $middleware->appendToGroup('web', SanitizeBroadcastSocketId::class);
         $middleware->appendToGroup('web', SetLocale::class);
         $middleware->appendToGroup('web', UpdateUserOnlineStatus::class);
         $middleware->appendToGroup('web', TranslateRenderedHtml::class);
         $middleware->alias([
             'compliance.clear' => EnsureNotComplianceBlocked::class,
+            'geo.block'        => \App\Http\Middleware\BlockRestrictedCountries::class,
         ]);
         $middleware->validateCsrfTokens(except: [
             'stripe/webhook',

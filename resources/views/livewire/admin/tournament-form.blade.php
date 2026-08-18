@@ -12,8 +12,10 @@
                 // Simple mapping for non-rich text fields
                 $wire.name = data.name || '';
                 $wire.game_id = data.game_id || 0;
+                $wire.competition_type = data.competition_type || 'tournament';
                 $wire.platform_id = data.platform_id || 0;
                 $wire.frequency = data.frequency || 'one-time';
+                $wire.timezone = data.timezone || 'UTC';
                 $wire.team_size = data.team_size || 1;
                 $wire.youtube_stream_url = data.youtube_stream_url || null;
                 $wire.twitch_stream_url = data.twitch_stream_url || null;
@@ -28,8 +30,10 @@
         const data = {
             name: $wire.name,
             game_id: $wire.game_id,
+            competition_type: $wire.competition_type,
             platform_id: $wire.platform_id,
             frequency: $wire.frequency,
+            timezone: $wire.timezone,
             team_size: $wire.team_size,
             description: $wire.description,
             rules: $wire.rules,
@@ -88,10 +92,10 @@
 
     <div class="mb-6 flex justify-between items-center">
         <div>
-            <h2 class="text-xl font-bold text-white">{{ $isEditMode ? 'Edit Tournament' : 'Create New Tournament' }}</h2>
+            <h2 class="text-xl font-bold text-white">{{ $isEditMode ? 'Edit Competition' : 'Create New Competition' }}</h2>
             <p class="text-sm text-slate-400 mt-1">Step <span x-text="step"></span> of <span x-text="totalSteps"></span>: 
                 <span x-show="step === 1">Identity & Content</span>
-                <span x-show="step === 2">Tournament Settings</span>
+                <span x-show="step === 2">Competition Settings</span>
                 <span x-show="step === 3">Schedule & Logistics</span>
                 <span x-show="step === 4">Stakes, Prizes & Capacity</span>
             </p>
@@ -145,7 +149,20 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-6">
                         <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Tournament Name <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center">
+                                <span>Competition Type <span class="text-red-500">*</span></span>
+                                @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
+                            </label>
+                            <select wire:model.live="competition_type" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <option value="tournament">Tournament</option>
+                                <option value="head_to_head">Head-to-Head (automatic 1v1)</option>
+                            </select>
+                            <p class="text-[10px] text-slate-500 mt-1">Platform H2H uses the tournament lifecycle with exactly two solo-player slots.</p>
+                            @error('competition_type') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Competition Name <span class="text-red-500">*</span></label>
                             <input type="text" wire:model="name" placeholder="e.g. Pro League Summer 2026" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
                             @error('name') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
@@ -309,7 +326,7 @@
                                     <span>Team Size <span class="text-red-500">*</span></span>
                                     @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                                 </label>
-                                <input type="number" wire:model="team_size" @disabled($isLocked) min="1" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <input type="number" wire:model="team_size" @disabled($isLocked || $competition_type === 'head_to_head') min="1" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <p class="text-[9px] text-slate-500 mt-1 italic">Individual players per team (1 = Solo, 2 = Duo)</p>
                                 @error('team_size') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                             </div>
@@ -379,6 +396,16 @@
 
             <!-- STEP 3: Schedule & Logistics -->
             <div x-show="step === 3" class="p-6 space-y-6" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4">
+                <div class="max-w-sm">
+                    <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Schedule Timezone <span class="text-red-500">*</span></label>
+                    <select wire:model="timezone" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        @foreach($timezones as $timezoneOption)
+                            <option value="{{ $timezoneOption }}">{{ $timezoneOption }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-[9px] text-slate-500 mt-1">All dates are persisted in UTC and generated in this wall-clock timezone.</p>
+                    @error('timezone') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="space-y-6">
                         <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center">
@@ -421,7 +448,7 @@
                             <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-indigo-500/20">
                                 <i data-lucide="play" class="w-6 h-6 text-white fill-current"></i>
                             </div>
-                            <h4 class="text-sm font-bold text-slate-200 uppercase tracking-widest mb-2">Tournament Start <span class="text-red-500">*</span></h4>
+                            <h4 class="text-sm font-bold text-slate-200 uppercase tracking-widest mb-2">Competition Start <span class="text-red-500">*</span></h4>
                             <p class="text-[10px] text-slate-500 mb-4 max-w-[240px]">This is when the first matches are generated. Must be after the check-in window ends.</p>
                             
                             <input type="datetime-local" wire:model="start_at" class="w-full max-w-xs bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 text-center font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
@@ -453,7 +480,7 @@
                                         <span>Min Players</span>
                                         @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                                     </label>
-                                    <input type="number" wire:model="min_participants" @disabled($isLocked) class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
+                                    <input type="number" wire:model="min_participants" @disabled($isLocked || $competition_type === 'head_to_head') class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
                                     @error('min_participants') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
@@ -461,8 +488,8 @@
                                         <span>Max Players <span class="text-red-500">*</span></span>
                                         @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
                                     </label>
-                                    <input type="number" wire:model="max_participants" @disabled($isLocked) class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
-                                    <p class="text-[9px] text-slate-600 mt-1 italic">Total player capacity for the whole tournament</p>
+                                    <input type="number" wire:model="max_participants" @disabled($isLocked || $competition_type === 'head_to_head') class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
+                                    <p class="text-[9px] text-slate-600 mt-1 italic">H2H is fixed to two players.</p>
                                     @error('max_participants') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
                                 </div>
                             </div>
@@ -525,7 +552,7 @@
 
                     <button type="submit" x-show="step === totalSteps" @click="clearDraft()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase px-8 py-2.5 rounded-lg flex items-center shadow-lg shadow-emerald-500/20 transition-all">
                         <i data-lucide="save" class="w-4 h-4 mr-2"></i>
-                        {{ $isEditMode ? 'Save Changes' : 'Create Tournament' }}
+                        {{ $isEditMode ? 'Save Changes' : 'Create Competition' }}
                     </button>
                 </div>
             </div>

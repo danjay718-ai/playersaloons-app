@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-27 | **Current version**: v1.114 | **Branch**: `main`
+**As of**: 2026-08-18 | **Current version**: v1.115 | **Branch**: `main`
 
 ---
 
@@ -15,7 +15,7 @@
 - H2H result/dispute proof uploads and admin dispute resolution are implemented in `/admin/matches`
 - H2H now shows friendly wallet/balance errors and existing users missing wallet rows were backfilled
 - H2H timeout policy is conservative: expired waiting challenges refund; stale active/submitted matches go to admin review, never auto-win
-- H2H page now has separate Initiate, Open Challenges, Active Duels, and History tabs filtered by selected game, with same-game duplicate waiting/active duel guards and a dashboard-wide duel/invite modal prompt
+- New H2H is platform-created from the normal admin competition form and always 1v1; the older player-wager flow is preserved but disabled by default behind `PLAYER_WAGER_ENABLED`
 - H2H UX was refined with an Initiate Challenge drawer, highlighted game filter, global Active Duels badge, conditional tab queries, and removal of cached Eloquent collections that caused Redis `__PHP_Incomplete_Class` errors
 - Player tournament history detail pages now load completed/cancelled/refunded tournaments while keeping draft tournaments hidden
 - Player wallet deposits now use Stripe Checkout; signed Stripe webhooks credit the ledger-backed wallet after payment success
@@ -31,7 +31,7 @@
 - Login, registration, password reset, and verification resend actions disable their buttons during submit to prevent repeated clicks
 - Contact inquiries are now live at `/contact` for guests/players and `/admin/contact-inquiries` for staff review, notes, resolve, and archive
 - Admin sidebar is grouped into Operations, CMS, and System; the CMS section contains Blog & News, Landing Page, Games, Platforms, Navigation, About Us, Policies, and Translations
-- Tournament automation now cancels/refunds opted-in underfilled tournaments every minute and generates daily/weekly/monthly tournaments from recurring templates hourly
+- One lifecycle reconciler now catches overdue competitions up every minute; recurring daily/weekly/monthly competitions generate every five minutes with timezone, lock, cap, and uniqueness safeguards
 - Admins can open a tournament-specific fixtures view at `/admin/tournaments/{id}/matches`, configure the H2H commission percentage, and manage grouped role permissions from `/admin/roles-permissions`
 - `/about` is backed by CMS-managed title, subtitle, and body settings under `/admin/cms/about`
 - All ten non-English runtime JSON catalogs now match the 82-key English catalog and use localized values instead of the earlier fallback-heavy content
@@ -56,6 +56,7 @@
 
 | Version | Item |
 |---|---|
+| v1.115 | Platform-created 1v1 H2H, gated legacy wagers, reliable lifecycle/recurrence, MySQL local parity, and query/presence hardening |
 | v1.30 | SSL env vars updated sa Coolify |
 | v1.31 | `NotifyAdminsOfKycSubmissionListener` — admin notified on KYC submit |
 | v1.32 | Security tests — Join button, listing filter, viewRestrictedDetails policy |

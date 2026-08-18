@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Models;
 
 use App\Modules\Community\Models\Notification;
+use App\Modules\Identity\Services\UserPresenceService;
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Wallet\Models\Wallet;
 use App\Notifications\Auth\ResetPasswordNotification;
@@ -20,7 +21,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Redis;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -189,7 +189,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
      */
     public function isOnline(): bool
     {
-        return (bool) Redis::exists('user_online:'.$this->id);
+        return app(UserPresenceService::class)->isOnline((int) $this->getKey());
     }
 
     public function sendEmailVerificationNotification(): void

@@ -19,7 +19,7 @@ final class LanguageSwitchTest extends TestCase
         $this->withSession(['locale' => 'es'])
             ->get('/login')
             ->assertOk()
-            ->assertSee('Iniciar sesion');
+            ->assertSee('Iniciar sesión');
     }
 
     public function test_language_update_persists_for_authenticated_user(): void

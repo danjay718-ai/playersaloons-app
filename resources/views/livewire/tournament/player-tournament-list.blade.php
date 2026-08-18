@@ -3,10 +3,10 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>
             <h1 class="text-3xl md:text-5xl font-black font-orbitron tracking-tighter bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent filter drop-shadow-[0_0_10px_rgba(124,77,255,0.3)]">
-                BROWSE TOURNAMENTS
+                BROWSE COMPETITIONS
             </h1>
             <p class="text-sm text-zinc-400 mt-2 font-medium">
-                Browse active tournaments, register to compete, and track current brackets.
+                Browse tournaments and platform-created 1v1 head-to-head competitions.
             </p>
         </div>
     </div>
@@ -24,7 +24,7 @@
             @endforeach
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 relative z-10">
             <!-- Search -->
             <div>
                 <label for="search" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2.5 ml-1">Search</label>
@@ -34,8 +34,18 @@
                     </span>
                     <input wire:model.live.debounce.300ms="search" id="search" type="text"
                         class="block w-full pl-10 pr-4 py-3 bg-zinc-950/80 border border-zinc-800 rounded-xl text-sm text-zinc-200 placeholder-zinc-700 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-300"
-                        placeholder="Search tournament name...">
+                        placeholder="Search competition name...">
                 </div>
+            </div>
+
+            <div>
+                <label for="competitionType" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2.5 ml-1">Competition Type</label>
+                <select wire:model.live="competitionType" id="competitionType"
+                    class="block w-full px-4 py-3 bg-zinc-950/80 border border-zinc-800 rounded-xl text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-300 appearance-none cursor-pointer">
+                    <option value="">All Types</option>
+                    <option value="tournament">Tournaments</option>
+                    <option value="head_to_head">Head-to-Head (1v1)</option>
+                </select>
             </div>
 
             <!-- Game Filter -->

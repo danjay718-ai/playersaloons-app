@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Livewire\Tournament;
 
 use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\Platform;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -62,7 +64,7 @@ class TournamentList extends Component
         $query = Tournament::query()
             ->with(['game.translations', 'platform'])
             ->withCount(['registrations' => function ($q) {
-                $q->whereNotIn('status', ['cancelled', 'refunded']);
+                $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
             }])
             ->whereIn('status', [
                 TournamentStatus::REGISTRATION_OPEN->value,
@@ -95,7 +97,7 @@ class TournamentList extends Component
 
         $tournaments = $query->orderBy('created_at', 'desc')->paginate(9);
         $games = Game::query()->with('translations')->get();
-        $platforms = \App\Modules\CMS\Models\Platform::where('is_active', true)->get();
+        $platforms = Platform::where('is_active', true)->get();
 
         return view('livewire.tournament.tournament-list', [
             'tournaments' => $tournaments,

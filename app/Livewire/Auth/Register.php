@@ -26,6 +26,8 @@ class Register extends Component
 
     public bool $newsletter_subscribed = false;
 
+    public string $countryCode = '';
+
     public ?int $referrerId = null;
 
     public function mount(): void
@@ -50,7 +52,11 @@ class Register extends Component
 
     public function register(RegisterUserAction $action)
     {
-        $this->validate();
+        $countryCodes = implode(',', array_keys(config('countries', [])));
+
+        $this->validate(array_merge($this->rules, [
+            'countryCode' => ['nullable', 'string', 'size:2', 'in:' . $countryCodes],
+        ]));
 
         $acceptedAt = now();
 
@@ -65,6 +71,7 @@ class Register extends Component
             'age_confirmed_at' => $acceptedAt,
             'newsletter_subscribed' => $this->newsletter_subscribed,
             'newsletter_subscribed_at' => $this->newsletter_subscribed ? $acceptedAt : null,
+            'country_code' => $this->countryCode ?: null,
             'policy_acceptance_ip' => request()->ip(),
             'policy_acceptance_user_agent' => substr((string) request()->userAgent(), 0, 2000),
             'referrer_id' => $this->referrerId,

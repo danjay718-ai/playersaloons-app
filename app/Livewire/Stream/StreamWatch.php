@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Livewire\Stream;
 
-use App\Modules\Stream\Models\StreamChannel;
-use App\Modules\Stream\Models\StreamChatMessage;
-use App\Modules\Stream\Models\StreamViewer;
 use App\Modules\Stream\Events\StreamMessageDeleted;
 use App\Modules\Stream\Events\StreamMessageSent;
 use App\Modules\Stream\Events\StreamViewerCountUpdated;
+use App\Modules\Stream\Models\StreamChannel;
+use App\Modules\Stream\Models\StreamChatMessage;
+use App\Modules\Stream\Models\StreamViewer;
 use App\Modules\Stream\Support\StreamEmbedService;
+use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -105,13 +107,13 @@ class StreamWatch extends Component
             ->get()
             ->reverse()
             ->map(fn ($msg) => [
-                'id'       => $msg->id,
-                'user_id'  => $msg->user_id,
+                'id' => $msg->id,
+                'user_id' => $msg->user_id,
                 'username' => $msg->user->profile?->display_name ?? $msg->user->username,
-                'message'  => $msg->message,
-                'color'    => $msg->user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT_AGENT']) ? '#10b981' : $msg->color,
-                'is_mod'   => $msg->user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT_AGENT']),
-                'time'     => $msg->created_at?->format('H:i'),
+                'message' => $msg->message,
+                'color' => $msg->user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT_AGENT']) ? '#10b981' : $msg->color,
+                'is_mod' => $msg->user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT_AGENT']),
+                'time' => $msg->created_at?->format('H:i'),
             ])
             ->values()
             ->toArray();
@@ -128,6 +130,7 @@ class StreamWatch extends Component
         $mutedUsers = $this->streamChannel->metadata['muted_users'] ?? [];
         if (in_array($user->id, $mutedUsers)) {
             session()->flash('error', 'You are muted and cannot chat.');
+
             return;
         }
 
@@ -145,26 +148,26 @@ class StreamWatch extends Component
 
         $msg = StreamChatMessage::create([
             'stream_channel_id' => $this->streamChannel->id,
-            'user_id'           => $user->id,
-            'message'           => $message,
-            'color'             => self::CHAT_COLORS[$colorIndex],
+            'user_id' => $user->id,
+            'message' => $message,
+            'color' => self::CHAT_COLORS[$colorIndex],
         ]);
 
         $messageData = [
-            'id'       => $msg->id,
-            'user_id'  => $user->id,
+            'id' => $msg->id,
+            'user_id' => $user->id,
             'username' => $user->profile?->display_name ?? $user->username,
-            'message'  => $message,
-            'color'    => $isMod ? '#10b981' : self::CHAT_COLORS[$colorIndex],
-            'is_mod'   => $isMod,
-            'time'     => $msg->created_at?->format('H:i'),
+            'message' => $message,
+            'color' => $isMod ? '#10b981' : self::CHAT_COLORS[$colorIndex],
+            'is_mod' => $isMod,
+            'time' => $msg->created_at?->format('H:i'),
         ];
 
         $this->broadcastSafely(new StreamMessageSent($this->streamChannel->id, $messageData), 'message_sent');
 
         $this->chatMessage = '';
         $this->recentMessages[] = $messageData;
-        
+
         $this->dispatch('chat-updated');
     }
 
@@ -212,8 +215,8 @@ class StreamWatch extends Component
         $this->requireModerator();
 
         $this->streamChannel->forceFill([
-            'taken_down_at'   => now(),
-            'taken_down_by'   => Auth::id(),
+            'taken_down_at' => now(),
+            'taken_down_by' => Auth::id(),
             'takedown_reason' => 'Taken down from stream viewer by admin.',
         ])->save();
 
@@ -233,8 +236,8 @@ class StreamWatch extends Component
         $this->requireModerator();
 
         $this->streamChannel->forceFill([
-            'taken_down_at'   => null,
-            'taken_down_by'   => null,
+            'taken_down_at' => null,
+            'taken_down_by' => null,
             'takedown_reason' => null,
         ])->save();
 
@@ -337,20 +340,53 @@ class StreamWatch extends Component
 
         $layoutData = $this->isAdminView
             ? [
-                'title'       => ($this->streamChannel->title ?? 'Stream') . ' | Admin',
+                'title' => ($this->streamChannel->title ?? 'Stream').' | Admin',
                 'admin_title' => 'Stream Viewer',
             ]
             : [
-                'title'           => ($this->streamChannel->title ?? 'Stream') . ' | PlayerSaloons',
+                'title' => ($this->streamChannel->title ?? 'Stream').' | PlayerSaloons',
                 'dashboard_title' => 'LIVE STREAM',
             ];
 
+        // Related content belongs in the component rather than the Blade view.
+        // Both queries are bounded and eager-load every relation used by cards.
+        $gameStreams = collect();
+        $gameCompetitions = collect();
+        if (! $this->isAdminView && $this->streamChannel->game_id !== null) {
+            $gameStreams = StreamChannel::query()
+                ->with('user.profile')
+                ->where('game_id', $this->streamChannel->game_id)
+                ->where('is_public', true)
+                ->whereNull('taken_down_at')
+                ->whereKeyNot($this->streamChannel->id)
+                ->orderByDesc('viewer_count')
+                ->limit(6)
+                ->get();
+
+            $gameCompetitions = Tournament::query()
+                ->where('game_id', $this->streamChannel->game_id)
+                ->whereIn('status', [
+                    TournamentStatus::PUBLISHED,
+                    TournamentStatus::REGISTRATION_OPEN,
+                    TournamentStatus::REGISTRATION_CLOSED,
+                    TournamentStatus::CHECKIN_OPEN,
+                    TournamentStatus::CHECKIN_CLOSED,
+                    TournamentStatus::BRACKET_GENERATED,
+                    TournamentStatus::ONGOING,
+                ])
+                ->orderBy('start_at')
+                ->limit(5)
+                ->get();
+        }
+
         return view('livewire.stream.stream-watch', [
-            'stream'       => $stream,
-            'embedUrl'     => $stream['embed_url'],
+            'stream' => $stream,
+            'embedUrl' => $stream['embed_url'],
             'streamerName' => $this->streamChannel->user?->profile?->display_name
                 ?? $this->streamChannel->user?->username
                 ?? 'Stream',
+            'gameStreams' => $gameStreams,
+            'gameCompetitions' => $gameCompetitions,
         ])->layout($layout, $layoutData);
     }
 }

@@ -7,6 +7,7 @@ namespace App\Modules\Tournament\Actions;
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Events\TournamentCreated;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -40,6 +41,7 @@ class CreateTournamentAction
                 'name' => $data['name'],
                 'slug' => Str::slug($data['name']).'-'.Str::random(6),
                 'game_id' => $data['game_id'],
+                'competition_type' => $data['competition_type'] ?? CompetitionType::TOURNAMENT,
                 'status' => TournamentStatus::DRAFT,
                 'max_participants' => $data['max_participants'],
                 'min_participants' => $data['min_participants'],
@@ -66,6 +68,14 @@ class CreateTournamentAction
                 'banner_url' => $data['banner_url'] ?? null,
                 'created_by' => $creator->getKey(),
             ]);
+
+            if ($tournament->competition_type === CompetitionType::HEAD_TO_HEAD) {
+                // Platform H2H is represented by the standard competition
+                // lifecycle, but its participant shape is an invariant.
+                $tournament->min_participants = 2;
+                $tournament->max_participants = 2;
+                $tournament->team_size = 1;
+            }
             $tournament->save();
 
             TournamentCreated::dispatch((int) $tournament->getKey(), (int) $creator->getKey());

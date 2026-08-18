@@ -7,10 +7,10 @@ namespace App\Livewire\Tournament;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Team\Models\Team;
+use App\Modules\Tournament\Actions\CancelRegistrationAction;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
-use App\Modules\Tournament\Models\TournamentCheckin;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Shared\Enums\CheckinStatus;
 use App\Shared\Enums\MatchStatus;
@@ -37,8 +37,11 @@ class TournamentDetail extends Component
         $user = Auth::user();
         if ($user && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
             $this->layout = 'components.layouts.admin';
-        } else {
+        } elseif ($user) {
             $this->layout = 'components.layouts.dashboard';
+        } else {
+            // Guest visitors use app layout
+            $this->layout = 'components.layouts.app';
         }
     }
 
@@ -70,8 +73,11 @@ class TournamentDetail extends Component
             $team = ($tournament->team_size ?? 1) > 1
                 ? Team::query()->where('captain_user_id', $user->id)->where('status', 'active')->first()
                 : null;
+
+            // For team tournaments: if no team found, register as solo (team lobby mode)
+            // The team parameter is null for solo/team-lobby registration
             $action->execute($tournament, $user, $team);
-            session()->flash('message', $team ? "Successfully registered {$team->name}!" : 'Successfully registered for this tournament!');
+            session()->flash('message', $team ? "Successfully registered {$team->name}!" : 'Successfully joined the tournament! You can form a team in the Team Lobby.');
         } catch (\Exception $e) {
             session()->flash('error', $e->getMessage());
         }
@@ -94,21 +100,49 @@ class TournamentDetail extends Component
         }
     }
 
+    public function cancelRegistration(CancelRegistrationAction $action)
+    {
+        if (! Auth::check()) {
+            return redirect()->to('/login');
+        }
+
+        $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
+        $user = Auth::user();
+
+        $registration = TournamentRegistration::query()
+            ->where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
+            ->first();
+
+        if (! $registration) {
+            session()->flash('error', 'No active registration found.');
+
+            return;
+        }
+
+        try {
+            $action->execute($registration, $user);
+            session()->flash('message', 'Registration cancelled successfully. Any entry fee has been refunded to your wallet.');
+        } catch (\Exception $e) {
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
     public function render(StreamEmbedService $streamService)
     {
         $tournament = $this->getTournamentQuery()
             ->where('uuid', $this->uuid)
             ->with([
                 'game.translations',
-                'registrations' => function ($q) {
-                    $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
-                        ->with(['user.profile', 'team']);
-                },
-                'brackets.rounds.matches.playerARegistration.user',
-                'brackets.rounds.matches.playerBRegistration.user',
-                'brackets.rounds.matches.winnerRegistration.user',
+                'platform',
+                'template',
                 'streamChannels',
             ])
+            ->withCount(['registrations' => fn ($query) => $query->whereNotIn('status', [
+                RegistrationStatus::CANCELLED->value,
+                RegistrationStatus::REFUNDED->value,
+            ])])
             ->firstOrFail();
 
         $user = Auth::user();
@@ -123,16 +157,30 @@ class TournamentDetail extends Component
                     $q->where('user_id', $user->id)->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
                 })
                 ->whereNotIn('status', [RegistrationStatus::CANCELLED, RegistrationStatus::REFUNDED])
+                ->with(['checkins' => fn ($query) => $query->where('status', CheckinStatus::CHECKED_IN)])
                 ->first();
 
             if ($userRegistration) {
                 $isRegistered = true;
-
-                $isCheckedIn = TournamentCheckin::query()
-                    ->where('registration_id', $userRegistration->id)
-                    ->where('status', CheckinStatus::CHECKED_IN)
-                    ->exists();
+                $isCheckedIn = $userRegistration->checkins->isNotEmpty();
             }
+        }
+
+        $canViewRestricted = $user?->can('viewRestrictedDetails', $tournament) ?? false;
+
+        if ($canViewRestricted) {
+            // Large participant/bracket graphs are only loaded for users who
+            // may render them. This prevents non-participants from paying the
+            // query and hydration cost of data they cannot see.
+            $tournament->load([
+                'registrations' => fn ($query) => $query
+                    ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
+                    ->with(['user.profile', 'team']),
+                'brackets.rounds.matches.playerARegistration.user',
+                'brackets.rounds.matches.playerBRegistration.user',
+                'brackets.rounds.matches.winnerRegistration.user',
+                'brackets.rounds.matches.round',
+            ]);
         }
 
         $hasLost = false;
@@ -148,17 +196,29 @@ class TournamentDetail extends Component
                 ->exists();
         }
 
-        // Bracket rounds sorted
-        $rounds = collect();
-        if ($tournament->brackets->isNotEmpty()) {
-            $rounds = $tournament->brackets->first()->rounds()->orderBy('round_number')->get();
-        }
+        // Reuse the already eager-loaded bracket graph for both tabs. The old
+        // implementation fetched rounds and matches a second time on every
+        // Livewire render, which became increasingly expensive as brackets grew.
+        $rounds = $canViewRestricted ? ($tournament->brackets->first()?->rounds
+            ->sortBy('round_number')
+            ->values() ?? collect()) : collect();
+        $allMatches = $rounds->flatMap->matches
+            ->sortBy(fn (GameMatch $match): string => sprintf('%010d:%010d', $match->round_id, $match->id))
+            ->values();
 
-        $activityLogs = Activity::query()
-            ->where('subject_type', Tournament::class)
-            ->where('subject_id', $tournament->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $activityLogs = $canViewRestricted
+            ? Activity::query()
+                ->where('subject_type', Tournament::class)
+                ->where('subject_id', $tournament->id)
+                ->orderBy('created_at', 'desc')
+                ->get()
+            : collect();
+
+        // Check if tournament can still be cancelled (registration still open)
+        $canCancelRegistration = $isRegistered && in_array($tournament->status, [
+            TournamentStatus::REGISTRATION_OPEN,
+            TournamentStatus::PUBLISHED,
+        ], true);
 
         return view('livewire.tournament.tournament-detail', [
             'tournament' => $tournament,
@@ -166,9 +226,12 @@ class TournamentDetail extends Component
             'isCheckedIn' => $isCheckedIn,
             'userRegistration' => $userRegistration,
             'rounds' => $rounds,
+            'allMatches' => $allMatches,
             'activityLogs' => $activityLogs,
             'hasLost' => $hasLost,
             'streamService' => $streamService,
+            'canCancelRegistration' => $canCancelRegistration,
+            'canViewRestricted' => $canViewRestricted,
         ])->layout($this->layout, ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
     }
 }

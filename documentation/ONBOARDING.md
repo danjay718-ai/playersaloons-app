@@ -51,7 +51,7 @@ Default seeded credentials (from `DatabaseSeeder`):
 | RBAC | Spatie Laravel Permission |
 | Audit Log | Spatie Laravel Activity Log |
 | Queue | Laravel Horizon (Redis) |
-| Database | MySQL 8 (prod) / SQLite (local) |
+| Database | MySQL 8 (production and local) / SQLite in-memory (tests only) |
 | Cache/Session | Redis |
 | File Storage | Local `public` disk (dev) → R2/S3 (prod, pending) |
 | Testing | PHPUnit (Feature + Unit) |

@@ -10,10 +10,10 @@ use App\Modules\Identity\Actions\SuspendUserAction;
 use App\Modules\Identity\Actions\UnsuspendUserAction;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Services\UserPresenceService;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Livewire\WithPagination;
@@ -26,17 +26,24 @@ class UserAdmin extends AdminComponent
     public string $activeTab = 'players'; // 'players' | 'users'
 
     public string $search = '';
+
     public string $statusFilter = '';
+
     public string $roleFilter = '';
 
     public string $onlineFilter = '';
+
     public string $countryFilter = '';
 
     // Modals
     public bool $showDetailModal = false;
+
     public bool $showSuspendModal = false;
+
     public bool $showRoleModal = false;
+
     public bool $showEditModal = false;
+
     public bool $showPasswordModal = false;
 
     // Selection
@@ -44,19 +51,27 @@ class UserAdmin extends AdminComponent
 
     // Forms
     public string $suspendReason = '';
+
     public string $selectedRole = '';
+
     public string $roleAction = 'assign'; // assign | revoke
 
     // Edit Forms
     public ?int $editingUserId = null;
+
     public string $editUsername = '';
+
     public string $editEmail = '';
+
     public string $editDisplayName = '';
+
     public string $editCountryCode = '';
 
     // Password Forms
     public ?int $passwordUserId = null;
+
     public string $newPassword = '';
+
     public string $newPasswordConfirmation = '';
 
     protected $paginationTheme = 'tailwind';
@@ -67,11 +82,30 @@ class UserAdmin extends AdminComponent
         $this->resetPage();
     }
 
-    public function updatingSearch(): void { $this->resetPage(); }
-    public function updatingStatusFilter(): void { $this->resetPage(); }
-    public function updatingRoleFilter(): void { $this->resetPage(); }
-    public function updatingOnlineFilter(): void { $this->resetPage(); }
-    public function updatingCountryFilter(): void { $this->resetPage(); }
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingRoleFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingOnlineFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingCountryFilter(): void
+    {
+        $this->resetPage();
+    }
 
     public function selectUser(int $id): void
     {
@@ -93,8 +127,8 @@ class UserAdmin extends AdminComponent
     public function updateUser(): void
     {
         $this->validate([
-            'editUsername' => 'required|string|max:255|unique:users,username,' . $this->editingUserId,
-            'editEmail' => 'required|email|max:255|unique:users,email,' . $this->editingUserId,
+            'editUsername' => 'required|string|max:255|unique:users,username,'.$this->editingUserId,
+            'editEmail' => 'required|email|max:255|unique:users,email,'.$this->editingUserId,
             'editDisplayName' => 'nullable|string|max:255',
             'editCountryCode' => 'nullable|string|max:2',
         ]);
@@ -170,6 +204,7 @@ class UserAdmin extends AdminComponent
 
         if ($target->id === $actor->id) {
             session()->flash('error', 'Suspension failed: You cannot suspend your own account.');
+
             return;
         }
 
@@ -248,42 +283,38 @@ class UserAdmin extends AdminComponent
         }
     }
 
-    public function render()
+    public function render(UserPresenceService $presence)
     {
+        // One sorted-set read serves filtering and every row indicator. This
+        // avoids Redis KEYS (blocking at scale) and per-row presence calls.
+        $onlineIds = $presence->onlineUserIds();
+
         // Build players query for count
         $playersQuery = User::query()->whereHas('roles', function ($q) {
             $q->where('name', 'PLAYER');
         });
 
         if ($this->onlineFilter !== '') {
-            $keys = Redis::keys('*user_online:*');
-            $onlineIds = [];
-            foreach ($keys as $key) {
-                $parts = explode('user_online:', $key);
-                if (count($parts) > 1) {
-                    $onlineIds[] = (int) $parts[1];
-                }
-            }
             if ($this->onlineFilter === 'online') {
                 $playersQuery->whereIn('id', $onlineIds);
-            } else if ($this->onlineFilter === 'offline') {
+            } elseif ($this->onlineFilter === 'offline') {
                 $playersQuery->whereNotIn('id', $onlineIds);
             }
         }
 
         if ($this->countryFilter !== '') {
-            $playersQuery->whereHas('profile', function($q) {
+            $playersQuery->whereHas('profile', function ($q) {
                 $q->where('country_code', $this->countryFilter);
             });
         }
-        
+
         $playersCount = $playersQuery->count();
 
         // Build users query for count
         $usersQuery = User::query()->whereDoesntHave('roles', function ($q) {
             $q->where('name', 'PLAYER');
         });
-        
+
         if ($this->search) {
             $usersQuery->where(function ($q) {
                 $q->where('username', 'like', '%'.$this->search.'%')
@@ -298,7 +329,7 @@ class UserAdmin extends AdminComponent
                 $q->where('name', $this->roleFilter);
             });
         }
-        
+
         $usersCount = $usersQuery->count();
 
         // Main query for active tab
@@ -306,6 +337,9 @@ class UserAdmin extends AdminComponent
         $query->with(['roles', 'profile'])->orderBy('created_at', 'desc');
 
         $users = $query->paginate(15);
+        $users->getCollection()->each(
+            fn (User $user) => $user->setAttribute('is_online', in_array($user->id, $onlineIds, true)),
+        );
         $roles = Role::all();
 
         $selectedUser = null;

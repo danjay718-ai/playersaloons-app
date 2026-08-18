@@ -54,18 +54,19 @@ class RegisterForTournamentAction
             }
 
             if (($locked->team_size ?? 1) > 1) {
-                if ($team === null) {
-                    throw new \LogicException('A team is required for this tournament.');
+                // Team tournaments allow both: registering with a formed team OR solo (team lobby mode)
+                if ($team !== null) {
+                    if ($team->status !== 'active' || (int) $team->captain_user_id !== (int) $user->getKey()) {
+                        throw new \LogicException('Only the captain of an active team may register it.');
+                    }
+                    if ($team->members()->where('status', 'active')->count() < (int) $locked->team_size) {
+                        throw new \LogicException("Your team needs at least {$locked->team_size} active members.");
+                    }
+                    if (TournamentRegistration::query()->where('tournament_id', $locked->getKey())->where('team_id', $team->getKey())->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])->exists()) {
+                        throw new \LogicException('This team is already registered for the tournament.');
+                    }
                 }
-                if ($team->status !== 'active' || (int) $team->captain_user_id !== (int) $user->getKey()) {
-                    throw new \LogicException('Only the captain of an active team may register it.');
-                }
-                if ($team->members()->where('status', 'active')->count() < (int) $locked->team_size) {
-                    throw new \LogicException("Your team needs at least {$locked->team_size} active members.");
-                }
-                if (TournamentRegistration::query()->where('tournament_id', $locked->getKey())->where('team_id', $team->getKey())->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])->exists()) {
-                    throw new \LogicException('This team is already registered for the tournament.');
-                }
+                // If $team is null, player joins the team lobby (will be matched with a random team)
             } elseif ($team !== null) {
                 throw new \LogicException('Teams cannot register for a solo tournament.');
             }

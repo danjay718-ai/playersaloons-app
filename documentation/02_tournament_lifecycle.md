@@ -72,12 +72,14 @@ Resolving conflicts when players disagree on results.
     *   `app/Modules/Match/Models/MatchEvidence.php`: Immutable evidence records.
     *   `app/Modules/Match/Events/MatchDisputed.php`.
 
-## 7. Head-to-Head Duels
-Player-created wager matches outside tournament brackets.
+## 7. Head-to-Head Competitions and Legacy Wagers
+New head-to-head competitions are platform-created tournament occurrences with a fixed 1v1 shape.
 
-*   **Action**: Player creates or accepts an open H2H challenge from `/head-to-head`.
+*   **Current action**: Staff selects `Head-to-Head (1v1)` in `/admin/tournaments/create`; players discover and join it through the normal competition browse/detail flow.
+*   **Invariant**: Both action and template layers force `min_participants = 2`, `max_participants = 2`, and `team_size = 1`.
+*   **Legacy wager feature**: The player-created wager domain is retained for future use but disabled by default with `PLAYER_WAGER_ENABLED=false`. When disabled, its route, navigation, global prompt, and expiry job are not registered/rendered.
 *   **UI Component**: `app/Livewire/Match/HeadToHeadList.php`
-*   **UX Surface**: `/head-to-head` is split into `Initiate Challenge`, `Open Challenges`, `Active Duels`, and `History` tabs. The selected game filter scopes open challenges, active duels, and history so a player cannot accidentally accept or manage a duel for a different game context.
+*   **Legacy UX Surface**: When the feature flag is deliberately enabled, `/head-to-head` exposes the preserved initiate/open/active/history wager flow.
 *   **Logic (Actions/Services)**:
     *   `app/Modules/Match/Actions/CreateHeadToHeadChallengeAction.php`: Creates a waiting challenge and locks creator stake. It blocks another waiting challenge or active duel by the same player for the same game.
     *   `app/Modules/Match/Services/HeadToHeadMatchmakerService.php`: Finds compatible waiting challenges by game, stake, platform, and region.
@@ -90,7 +92,7 @@ Player-created wager matches outside tournament brackets.
 *   **Connected Files**:
     *   `app/Modules/Match/Models/HeadToHeadChallenge.php`
     *   `app/Modules/Match/Models/HeadToHeadMatch.php`
-    *   `app/Livewire/Match/HeadToHeadDuelPrompt.php`: Dashboard-wide polling modal for active duel and open-invite alerts.
+    *   `app/Livewire/Match/HeadToHeadDuelPrompt.php`: Retained legacy prompt; it is feature-gated and no longer globally polls.
     *   `app/Modules/Match/StateMachines/HeadToHeadMatchStateMachine.php`
     *   `app/Shared/Enums/HeadToHeadDisputeResolution.php`
     *   `app/Shared/Enums/HeadToHeadChallengeStatus.php`
@@ -105,8 +107,9 @@ Player-created wager matches outside tournament brackets.
 ## 8. Scheduled Tournament Automation
 Tournament maintenance is registered in `routes/console.php` and runs through the production scheduler container.
 
-*   **Underfilled cancellation**: `tournaments:auto-cancel` runs every minute. It selects tournaments that opted into `is_auto_cancel_underfilled`, have reached their start time, and remain below `min_participants`, then calls `CancelTournamentAction` so the normal cancellation/refund flow is preserved.
-*   **Recurring generation**: `tournaments:auto-generate` runs hourly. For each recurring template it calculates the next daily, weekly, or monthly start and calls `CreateTournamentAction` only if that template/start-time occurrence does not already exist.
+*   **Lifecycle reconciliation**: `tournaments:reconcile-lifecycle` runs every minute and catches overdue competitions up through registration, check-in, bracket, and start transitions. Opted-in underfilled competitions use the same cancellation/refund action.
+*   **Recurring generation**: `tournaments:auto-generate` runs every five minutes. Timezone-aware daily, weekly, or monthly templates are row-locked, capped per run, and protected by a unique template/start occurrence key.
+*   **Scheduling safety**: Lifecycle and generation commands use overlap protection and a single-server lock. Production must run both the scheduler and queue worker.
 *   **Admin visibility**: `/admin/tournaments/{id}/matches` opens `TournamentMatches`, a fixtures-style tournament match view with status filters and individual or team identity.
 
 ## 🧪 Isolated Test Cases

@@ -90,6 +90,23 @@
                 </div>
 
                 <div>
+                    <label for="countryCode" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Country <span class="text-zinc-600 font-normal normal-case">(optional)</span></label>
+                    <div class="mt-1.5 relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 pointer-events-none">
+                            <i data-lucide="globe" class="h-4 w-4"></i>
+                        </span>
+                        <select wire:model="countryCode" id="countryCode" name="countryCode"
+                            class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-3 text-sm text-zinc-200 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 appearance-none">
+                            <option value="">Select your country</option>
+                            @foreach(config('countries') as $code => $name)
+                                <option value="{{ $code }}">{{ $name }} ({{ $code }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @error('countryCode') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
                     <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Email Address</label>
                     <div class="mt-1.5 relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">

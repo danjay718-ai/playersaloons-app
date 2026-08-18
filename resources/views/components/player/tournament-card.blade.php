@@ -23,6 +23,7 @@
     $gameName = $gameTranslation?->name ?? $tournament->game?->slug ?? __('Game');
     $registrationsCount = $tournament->getAttribute('registrations_count')
         ?? ($tournament->relationLoaded('registrations') ? $tournament->registrations->count() : 0);
+    $isHeadToHead = $tournament->competition_type === \App\Shared\Enums\CompetitionType::HEAD_TO_HEAD;
 @endphp
 
 <article {{ $attributes->class(['player-tournament-card group']) }}>
@@ -33,9 +34,14 @@
         <div class="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-transparent to-zinc-950/40"></div>
 
         <div class="absolute left-4 right-4 top-4 flex items-center justify-between gap-3">
-            <span class="player-badge border-cyan-800/50 bg-zinc-950/85 text-cyan-400">
-                {{ $gameName }}
-            </span>
+            <div class="flex items-center gap-2">
+                <span class="player-badge border-cyan-800/50 bg-zinc-950/85 text-cyan-400">
+                    {{ $gameName }}
+                </span>
+                @if($isHeadToHead)
+                    <span class="player-badge border-fuchsia-700/50 bg-fuchsia-950/85 text-fuchsia-300">1v1 H2H</span>
+                @endif
+            </div>
             <span class="player-badge {{ $statusColors[$statusValue] ?? 'text-zinc-400 border-zinc-800 bg-zinc-950/85' }}">
                 {{ str_replace('_', ' ', $statusValue) }}
             </span>
@@ -79,7 +85,7 @@
         </div>
 
         <a href="/tournaments/{{ $tournament->uuid }}/view" wire:navigate class="player-card-action">
-            <span>{{ $actionLabel }}</span>
+            <span>{{ $isHeadToHead ? 'Join Head-to-Head' : $actionLabel }}</span>
             <i data-lucide="{{ $actionIcon }}" class="h-3.5 w-3.5 text-cyan-400 transition-transform duration-300 group-hover:translate-x-1"></i>
         </a>
     </div>

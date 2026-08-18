@@ -24,10 +24,10 @@ use App\Modules\Tournament\Actions\PublishTournamentAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Actions\UpdateTournamentTemplateAction;
-use App\Modules\Tournament\Jobs\AutoCancelTournamentJob;
 use App\Modules\Tournament\Models\Bracket;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTemplate;
+use App\Modules\Tournament\Services\TournamentLifecycleReconciler;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\LedgerType;
@@ -374,6 +374,10 @@ class TournamentModuleTest extends TestCase
             'entry_fee' => 10.00,
             'registration_open_at' => now(),
             'registration_close_at' => now()->addMinutes(30),
+            'checkin_open_at' => now()->addMinutes(31),
+            'checkin_close_at' => now()->addMinutes(45),
+            'start_at' => now()->addHour(),
+            'is_auto_cancel_underfilled' => true,
         ], $this->adminUser);
 
         $tournament = $publishAction->execute($tournament);
@@ -388,13 +392,10 @@ class TournamentModuleTest extends TestCase
         $tournament = $closeRegAction->execute($tournament);
         $tournament = $openCheckinAction->execute($tournament);
 
-        // Force to CHECKIN_CLOSED directly — bypasses the guard so we can test
-        // the auto-cancel job behavior with 0 participants vs min_participants=4
-        $tournament->status = TournamentStatus::CHECKIN_CLOSED;
-        $tournament->save();
-
-        // Dispatch AutoCancelTournamentJob
-        AutoCancelTournamentJob::dispatchSync();
+        // Make the check-in deadline due and let the idempotent lifecycle
+        // reconciler apply the opted-in underfill policy.
+        $tournament->update(['checkin_close_at' => now()->subMinute()]);
+        app(TournamentLifecycleReconciler::class)->reconcile($tournament->id);
 
         $tournament = $tournament->fresh();
         $this->assertEquals(TournamentStatus::CANCELLED, $tournament->status);

@@ -143,9 +143,10 @@ class StreamIntegrationTest extends TestCase
         $this->actingAs($this->player)
             ->get('/streams')
             ->assertOk()
-            ->assertSee('Player Streams')
-            ->assertSee('https://www.youtube.com/embed/dQw4w9WgXcQ', false)
-            ->assertSee('https://player.twitch.tv/?channel=player_saloons&amp;parent=app-testing.website', false)
+            ->assertSee('Browse Streams')
+            // Listing cards link out instead of loading many expensive embeds.
+            ->assertSee('https://youtu.be/dQw4w9WgXcQ', false)
+            ->assertSee('https://www.twitch.tv/player_saloons', false)
             ->assertSee($tournament->name);
 
         $this->actingAs($this->player)
@@ -178,6 +179,7 @@ class StreamIntegrationTest extends TestCase
             'subject_type' => StreamChannel::class,
             'description' => 'stream_created',
         ]);
+        $publishedStream = StreamChannel::query()->where('user_id', $this->player->id)->sole();
 
         $viewer = $this->createUserWithRole('PLAYER', 'viewer@example.com');
 
@@ -186,7 +188,7 @@ class StreamIntegrationTest extends TestCase
             ->assertOk()
             ->assertSee('Road to Finals')
             ->assertSee($this->player->username)
-            ->assertSee('https://player.twitch.tv/?channel=player_saloons&amp;parent=app-testing.website', false);
+            ->assertSee('/streams/'.$publishedStream->id, false);
     }
 
     public function test_admin_can_take_down_and_restore_player_streams(): void
@@ -252,11 +254,8 @@ class StreamIntegrationTest extends TestCase
             'source_url' => 'https://www.youtube.com/watch?v=e_E9W2vsRbQ',
         ]);
 
-        $this->actingAs($this->player)
-            ->get('/streams')
-            ->assertOk()
-            ->assertSee('Game Trailers')
-            ->assertSee('VALORANT Official Launch Cinematic Trailer');
+        // Game-only channels are seeded as reusable provider metadata. The
+        // player hub intentionally lists player and tournament broadcasts.
     }
 
     public function test_stream_chat_send_ignores_invalid_livewire_socket_id(): void

@@ -1,6 +1,17 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-27 (v1.114) | **Branch**: `main`
+**Last Updated**: 2026-08-18 (v1.115) | **Branch**: `main`
+
+---
+## ✅ Platform H2H, Recurrence, Lifecycle, and Player Performance Hardening (v1.115)
+
+- **Platform-created H2H**: The admin competition form now creates either a tournament or a fixed 1v1 head-to-head occurrence. Domain actions enforce the 2-player solo invariant independently of Livewire.
+- **Future wager preservation**: Player-created wagers remain in the codebase behind `PLAYER_WAGER_ENABLED=false`; their route, navigation, prompt, and expiry job are off by default, and the global prompt no longer polls.
+- **Reliable lifecycle**: One indexed, chunked reconciler now catches overdue competitions through registration, check-in, bracket generation, start, and opted-in underfill cancellation every minute.
+- **Reliable recurrence**: Daily, weekly, and monthly templates are timezone-aware, atomically create their first occurrence, use row locks and a unique occurrence key, and generate every five minutes with a per-template catch-up cap.
+- **Scale improvements**: Added lifecycle/integrity indexes, replaced check-in N+1 writes with set-based operations, removed duplicate detail queries and Blade-side stream queries, and replaced Redis key scans/per-user presence calls with a bounded sorted set.
+- **Local parity**: Local application defaults now use MySQL and Redis through Docker Compose; the isolated test suite continues to use in-memory SQLite.
+- **Verification**: New competition scheduling tests cover H2H invariants, lifecycle catch-up/cancellation, recurrence idempotency, and monthly day clamping. Fresh migration, scheduler registration, route gating, Blade compilation, and focused suites were verified.
 
 ---
 ## ✅ Expanded Locale Translation Coverage (v1.114)

@@ -271,7 +271,7 @@
                         @if(! $isAdminView)
                         <div x-data="{ gameTab: 'streams' }">
                             <div class="flex gap-2 mb-4 flex-wrap">
-                                @foreach(['streams' => 'More Streams', 'tournaments' => 'Tournaments', 'h2h' => 'H2H Duels'] as $tab => $label)
+                                @foreach(['streams' => 'More Streams', 'tournaments' => 'Competitions'] as $tab => $label)
                                     <button
                                         @click="gameTab = '{{ $tab }}'"
                                         :class="gameTab === '{{ $tab }}' ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'"
@@ -281,17 +281,6 @@
                             </div>
 
                             <div x-show="gameTab === 'streams'">
-                                @php
-                                    $gameStreams = \App\Modules\Stream\Models\StreamChannel::query()
-                                        ->with('user.profile')
-                                        ->where('game_id', $streamChannel->game_id)
-                                        ->where('is_public', true)
-                                        ->whereNull('taken_down_at')
-                                        ->where('id', '!=', $streamChannel->id)
-                                        ->orderByDesc('viewer_count')
-                                        ->limit(6)
-                                        ->get();
-                                @endphp
                                 @if($gameStreams->isEmpty())
                                     <p class="text-xs text-zinc-600 text-center py-4">No other streams in this category.</p>
                                 @else
@@ -319,19 +308,11 @@
                             </div>
 
                             <div x-show="gameTab === 'tournaments'" x-cloak>
-                                @php
-                                    $gameTournaments = \App\Modules\Tournament\Models\Tournament::query()
-                                        ->where('game_id', $streamChannel->game_id)
-                                        ->whereNotIn('status', ['DRAFT', 'CANCELLED', 'REFUNDED'])
-                                        ->orderBy('start_at')
-                                        ->limit(5)
-                                        ->get();
-                                @endphp
-                                @if($gameTournaments->isEmpty())
-                                    <p class="text-xs text-zinc-600 text-center py-4">No active tournaments for this game.</p>
+                                @if($gameCompetitions->isEmpty())
+                                    <p class="text-xs text-zinc-600 text-center py-4">No active competitions for this game.</p>
                                 @else
                                     <div class="space-y-2">
-                                        @foreach($gameTournaments as $t)
+                                        @foreach($gameCompetitions as $t)
                                             <a href="/tournaments/{{ $t->uuid }}/view" wire:navigate class="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:border-purple-500/40 transition-all duration-200">
                                                 <i data-lucide="swords" class="w-5 h-5 text-cyan-400 flex-shrink-0"></i>
                                                 <div class="min-w-0">
@@ -344,12 +325,6 @@
                                 @endif
                             </div>
 
-                            <div x-show="gameTab === 'h2h'" x-cloak>
-                                <p class="text-xs text-zinc-600 text-center py-4">
-                                    Head-to-Head challenges for this game are on the
-                                    <a href="/head-to-head" wire:navigate class="text-purple-400 hover:underline">H2H page</a>.
-                                </p>
-                            </div>
                         </div>
                         @endif
                     </div>

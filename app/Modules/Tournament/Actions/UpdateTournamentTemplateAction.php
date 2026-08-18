@@ -6,6 +6,7 @@ namespace App\Modules\Tournament\Actions;
 
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Tournament\Models\TournamentTemplatePrize;
+use App\Shared\Enums\CompetitionType;
 use Illuminate\Support\Facades\DB;
 
 class UpdateTournamentTemplateAction
@@ -35,6 +36,15 @@ class UpdateTournamentTemplateAction
     {
         return DB::transaction(function () use ($template, $data): TournamentTemplate {
             $template->fill(array_filter($data, fn ($key) => $key !== 'prizes', ARRAY_FILTER_USE_KEY));
+
+            // Head-to-head is a platform-managed 1v1 competition. Enforce the
+            // invariant here as well as in the UI so every caller is safe.
+            if ($template->competition_type === CompetitionType::HEAD_TO_HEAD) {
+                $template->min_participants = 2;
+                $template->max_participants = 2;
+                $template->settings_json = array_merge($template->settings_json ?? [], ['team_size' => 1]);
+            }
+
             $template->save();
 
             if (isset($data['prizes'])) {

@@ -92,6 +92,12 @@ class TournamentRegistration extends Model
         return $this->hasMany(TournamentRegistrationMember::class, 'registration_id');
     }
 
+    /** @return HasMany<TournamentCheckin, $this> */
+    public function checkins(): HasMany
+    {
+        return $this->hasMany(TournamentCheckin::class, 'registration_id');
+    }
+
     public function includesUser(int $userId): bool
     {
         return (int) $this->user_id === $userId

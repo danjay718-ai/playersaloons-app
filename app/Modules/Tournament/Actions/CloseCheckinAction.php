@@ -28,27 +28,21 @@ class CloseCheckinAction
         return DB::transaction(function () use ($tournament): Tournament {
             $this->stateMachine->transition($tournament, TournamentStatus::CHECKIN_CLOSED);
 
-            // Get all confirmed registrations for the tournament
-            $registrations = $tournament->registrations()
+            // Resolve missed check-ins in two set-based queries. The previous
+            // per-registration exists() loop produced an N+1 at peak check-in.
+            $missedRegistrationIds = $tournament->registrations()
                 ->where('status', RegistrationStatus::CONFIRMED)
-                ->get();
+                ->whereDoesntHave('checkins', fn ($query) => $query->where('status', CheckinStatus::CHECKED_IN))
+                ->pluck('id');
 
-            foreach ($registrations as $registration) {
-                // Check if they checked in
-                $hasCheckin = TournamentCheckin::query()
-                    ->where('registration_id', $registration->getKey())
-                    ->where('status', CheckinStatus::CHECKED_IN)
-                    ->exists();
-
-                if (! $hasCheckin) {
-                    // Mark checkin as missed
-                    TournamentCheckin::query()->create([
-                        'registration_id' => $registration->getKey(),
-                        'status' => CheckinStatus::MISSED,
-                        'checked_in_at' => null,
-                        'created_at' => now(),
-                    ]);
-                }
+            if ($missedRegistrationIds->isNotEmpty()) {
+                $now = now();
+                TournamentCheckin::query()->insert($missedRegistrationIds->map(fn (int $registrationId): array => [
+                    'registration_id' => $registrationId,
+                    'status' => CheckinStatus::MISSED->value,
+                    'checked_in_at' => null,
+                    'created_at' => $now,
+                ])->all());
             }
 
             $confirmedCount = $tournament->participants()->count();

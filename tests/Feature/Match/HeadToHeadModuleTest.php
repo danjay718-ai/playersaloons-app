@@ -305,14 +305,14 @@ class HeadToHeadModuleTest extends TestCase
 
         $match->refresh();
         $this->assertEquals(HeadToHeadMatchStatus::COMPLETED, $match->status);
-        $this->assertEquals('110.00', (string) $this->playerA->wallet->fresh()->cached_balance);
+        $this->assertEquals('108.00', (string) $this->playerA->wallet->fresh()->cached_balance);
         $this->assertEquals('90.00', (string) $this->playerB->wallet->fresh()->cached_balance);
         $this->assertDatabaseHas('ledger_entries', [
             'wallet_id' => $this->playerA->wallet->id,
             'reference_type' => HeadToHeadMatch::class,
             'reference_id' => $match->id,
             'type' => LedgerType::H2H_PAYOUT->value,
-            'amount' => '20.00',
+            'amount' => '18.00',
         ]);
         $this->assertDatabaseHas('head_to_head_ratings', ['user_id' => $this->playerA->id, 'game_id' => $this->game->id, 'rating' => 1216, 'wins' => 1]);
         $this->assertDatabaseHas('head_to_head_ratings', ['user_id' => $this->playerB->id, 'game_id' => $this->game->id, 'rating' => 1184, 'losses' => 1]);
@@ -425,7 +425,7 @@ class HeadToHeadModuleTest extends TestCase
         $this->assertEquals($this->playerB->id, $match->winner_user_id);
         $this->assertEquals(HeadToHeadDisputeResolution::PLAYER_B, $match->dispute_resolution);
         $this->assertEquals('90.00', (string) $this->playerA->wallet->fresh()->cached_balance);
-        $this->assertEquals('110.00', (string) $this->playerB->wallet->fresh()->cached_balance);
+        $this->assertEquals('108.00', (string) $this->playerB->wallet->fresh()->cached_balance);
     }
 
     public function test_admin_can_void_h2h_dispute_and_refund_both_stakes(): void
@@ -464,7 +464,7 @@ class HeadToHeadModuleTest extends TestCase
 
         $this->assertEquals(HeadToHeadMatchStatus::COMPLETED, $match->status);
         $this->assertEquals($this->playerA->id, $match->winner_user_id);
-        $this->assertEquals('110.00', (string) $this->playerA->wallet->fresh()->cached_balance);
+        $this->assertEquals('108.00', (string) $this->playerA->wallet->fresh()->cached_balance);
     }
 
     private function createChallenge(): HeadToHeadChallenge

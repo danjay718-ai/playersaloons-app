@@ -111,6 +111,9 @@
                                 <span class="block text-slate-200 hover:text-indigo-400 cursor-pointer" wire:click="selectTournament({{ $tournament->id }})">
                                     {{ $tournament->name }}
                                 </span>
+                                @if($tournament->competition_type === \App\Shared\Enums\CompetitionType::HEAD_TO_HEAD)
+                                    <span class="mt-1 inline-flex rounded border border-fuchsia-800/60 bg-fuchsia-950/40 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-fuchsia-300">1v1 H2H</span>
+                                @endif
                                 <span class="block text-[10px] text-slate-500 font-normal mt-0.5">{{ $tournament->uuid }}</span>
                             </td>
                             <td class="p-4 text-slate-300">
@@ -123,7 +126,7 @@
                                 ${{ number_format((float)$tournament->prize_pool, 2) }}
                             </td>
                             <td class="p-4 text-slate-300">
-                                {{ $tournament->registrations->count() }} / {{ $tournament->max_participants }}
+                                {{ $tournament->registrations_count }} / {{ $tournament->max_participants }}
                             </td>
                             <td class="p-4">
                                 @php
@@ -230,6 +233,13 @@
                                     </div>
                                     
                                     <div class="py-1">
+                                        @if($tournament->template)
+                                            <button @click="open = false" wire:click="setRecurringScheduleState({{ $tournament->template->id }}, {{ $tournament->template->is_recurring ? 'false' : 'true' }})" class="w-full flex items-center px-4 py-2 text-xs text-cyan-300 hover:bg-slate-800 hover:text-cyan-200 text-left">
+                                                <i data-lucide="{{ $tournament->template->is_recurring ? 'pause' : 'play' }}" class="w-3.5 h-3.5 mr-2"></i>
+                                                {{ $tournament->template->is_recurring ? 'Pause Recurrence' : 'Resume Recurrence' }}
+                                            </button>
+                                        @endif
+
                                         <!-- Edit -->
                                         @php
                                             $canEdit = !in_array($tournament->status, [
@@ -254,7 +264,7 @@
                                         @endif
                                         
                                         <!-- Delete -->
-                                        @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT && $tournament->registrations->count() == 0)
+                                        @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT && $tournament->registrations_count == 0)
                                             <button @click="open = false" wire:click="openDeleteModal({{ $tournament->id }})" class="w-full flex items-center px-4 py-2 text-xs text-red-400 hover:bg-slate-800 hover:text-red-300 text-left">
                                                 <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-2"></i>
                                                 Delete Permanently

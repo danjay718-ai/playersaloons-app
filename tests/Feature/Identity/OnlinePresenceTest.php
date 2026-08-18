@@ -26,11 +26,11 @@ class OnlinePresenceTest extends TestCase
     private function makeUser(): User
     {
         return User::query()->create([
-            'uuid'              => Str::uuid()->toString(),
-            'email'             => 'player@example.com',
-            'username'          => 'player_one',
-            'password'          => bcrypt('password'),
-            'status'            => UserStatus::ACTIVE,
+            'uuid' => Str::uuid()->toString(),
+            'email' => 'player@example.com',
+            'username' => 'player_one',
+            'password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
             'email_verified_at' => now(),
         ]);
     }
@@ -40,9 +40,9 @@ class OnlinePresenceTest extends TestCase
         $this->withMiddleware(UpdateUserOnlineStatus::class);
         $user = $this->makeUser();
 
-        Redis::shouldReceive('setex')
+        Redis::shouldReceive('zadd')
             ->once()
-            ->with('user_online:'.$user->id, 300, 1);
+            ->with('presence:online-users', [strval($user->id) => now()->timestamp]);
 
         $this->actingAs($user)->get('/dashboard');
     }
@@ -51,7 +51,7 @@ class OnlinePresenceTest extends TestCase
     {
         $this->withMiddleware(UpdateUserOnlineStatus::class);
 
-        Redis::shouldReceive('setex')->never();
+        Redis::shouldReceive('zadd')->never();
 
         $this->get('/');
     }
@@ -60,10 +60,10 @@ class OnlinePresenceTest extends TestCase
     {
         $user = $this->makeUser();
 
-        Redis::shouldReceive('exists')
+        Redis::shouldReceive('zscore')
             ->once()
-            ->with('user_online:'.$user->id)
-            ->andReturn(1);
+            ->with('presence:online-users', strval($user->id))
+            ->andReturn(now()->timestamp);
 
         $this->assertTrue($user->isOnline());
     }
@@ -72,10 +72,10 @@ class OnlinePresenceTest extends TestCase
     {
         $user = $this->makeUser();
 
-        Redis::shouldReceive('exists')
+        Redis::shouldReceive('zscore')
             ->once()
-            ->with('user_online:'.$user->id)
-            ->andReturn(0);
+            ->with('presence:online-users', strval($user->id))
+            ->andReturn(null);
 
         $this->assertFalse($user->isOnline());
     }

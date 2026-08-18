@@ -19,7 +19,6 @@ class PlayerDashboard extends Component
         ['label' => 'Overview', 'url' => '/dashboard', 'pattern' => 'dashboard'],
         ['label' => 'My Tournaments', 'url' => '/my-tournaments', 'pattern' => 'my-tournaments'],
         ['label' => 'Browse', 'url' => '/tournaments/browse', 'pattern' => 'tournaments/browse*'],
-        ['label' => 'H2H Duels', 'url' => '/head-to-head', 'pattern' => 'head-to-head'],
         ['label' => 'Leaderboard', 'url' => '/leaderboards', 'pattern' => 'leaderboards'],
         ['label' => 'Streams', 'url' => '/streams', 'pattern' => 'streams'],
         ['label' => 'Chat', 'url' => '/chat', 'pattern' => 'chat'],
@@ -46,7 +45,7 @@ class PlayerDashboard extends Component
 
         // Summary Data for Cockpit
         $activeTournaments = Tournament::query()
-            ->whereHas('registrations', fn($q) => $q->where('user_id', $user->id))
+            ->whereHas('registrations', fn ($q) => $q->where('user_id', $user->id))
             ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
             ->with('game.translations')
             ->withCount(['registrations' => function ($q) {
@@ -58,8 +57,8 @@ class PlayerDashboard extends Component
 
         $recentMatches = GameMatch::query()
             ->where(function ($q) use ($user) {
-                $q->whereHas('playerARegistration', fn($qr) => $qr->where('user_id', $user->id))
-                  ->orWhereHas('playerBRegistration', fn($qr) => $qr->where('user_id', $user->id));
+                $q->whereHas('playerARegistration', fn ($qr) => $qr->where('user_id', $user->id))
+                    ->orWhereHas('playerBRegistration', fn ($qr) => $qr->where('user_id', $user->id));
             })
             ->with('tournament')
             ->orderBy('updated_at', 'desc')
@@ -93,7 +92,9 @@ class PlayerDashboard extends Component
             'recentMatches' => $recentMatches,
             'earnings' => $earnings,
             'announcements' => $announcements,
-            'navItems' => self::PLAYER_NAV_ITEMS,
+            'navItems' => config('features.player_wager.enabled')
+                ? array_merge(self::PLAYER_NAV_ITEMS, [['label' => 'H2H Duels', 'url' => '/head-to-head', 'pattern' => 'head-to-head']])
+                : self::PLAYER_NAV_ITEMS,
         ])->layout('components.layouts.dashboard', [
             'title' => 'Gamer Terminal | PlayerSaloons',
             'dashboard_title' => 'DASHBOARD',

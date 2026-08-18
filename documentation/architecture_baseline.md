@@ -1,6 +1,6 @@
 # PlayerSaloons — Architecture Baseline
 
-**Last Updated**: 2026-07-24 (v1.113) | **Original Baseline**: 2026-06-14
+**Last Updated**: 2026-08-18 (v1.115) | **Original Baseline**: 2026-06-14
 
 ## 🏗️ Architectural Overview
 
@@ -170,6 +170,18 @@ Changes here represent deviations or additions to the original baseline design. 
 - Both commands are registered in `routes/console.php` and execute through the existing scheduler container.
 
 **Why**: Reusing domain actions keeps automated operations consistent with staff-triggered lifecycle behavior and prevents duplicate recurring occurrences.
+
+### [v1.115] Competition Scheduling and Scale Hardening
+
+**What changed**:
+- Platform-created head-to-head is represented by `competition_type=HEAD_TO_HEAD` in the existing tournament aggregate, with server-side 2-player/solo invariants. This reuses registration, check-in, bracket, result, dispute, and financial paths instead of creating a parallel competition engine.
+- Legacy player wagers remain isolated behind `PLAYER_WAGER_ENABLED`; disabled mode removes their route, navigation, prompt, polling, and scheduled expiry while preserving historical administration and future activation.
+- `TournamentLifecycleReconciler` replaces fragmented lifecycle jobs and catches overdue records up every minute. Due scans are indexed and chunked, and scheduler entries use overlap/single-server locks.
+- Recurrence stores frequency, timezone, next/last run, and generation lead on templates. Generation is transactionally row-locked, bounded, and protected by a database unique key on `(template_id, start_at)`.
+- Player detail queries reuse one eager-loaded bracket graph; stream recommendations moved out of Blade; bulk check-in closure avoids N+1 writes; online presence uses one Redis sorted set instead of key scans.
+- MySQL 8 is now the local-development database for production parity; in-memory SQLite remains the fast isolated test database.
+
+**Why**: A single competition aggregate avoids duplicate lifecycle rules, while database-enforced idempotency and bounded background work keep scheduler behavior predictable as player and tournament volume grows.
 
 ### [v1.113] Configurable H2H House Commission
 

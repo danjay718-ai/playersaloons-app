@@ -61,15 +61,12 @@ class TournamentPolicy
      */
     public function viewRestrictedDetails(User $user, Tournament $tournament): bool
     {
-        // 1. Check if user is registered for the tournament
-        $isRegistered = $tournament->registrations()->where(function ($q) use ($user) {
-            $q->where('user_id', $user->id)->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
-        })->exists();
-        if ($isRegistered) {
-            return true;
-        }
-
-        // 2. Check if user has management permissions for tournaments
-        return $user->hasPermissionTo('tournaments.manage');
+        return $tournament->registrations()
+            ->where(function ($query) use ($user): void {
+                $query->where('user_id', $user->getKey())
+                    ->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->getKey()));
+            })
+            ->exists()
+            || $user->hasPermissionTo('tournaments.manage');
     }
 }

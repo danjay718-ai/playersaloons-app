@@ -32,10 +32,14 @@
         $bottomNavItems = [
             ['label' => __('Overview'), 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'pattern' => 'dashboard'],
             ['label' => __('Browse'), 'icon' => 'search', 'url' => '/tournaments/browse', 'pattern' => 'tournaments/browse*'],
-            ['label' => __('H2H'), 'icon' => 'swords', 'url' => '/head-to-head', 'pattern' => 'head-to-head'],
             ['label' => __('My Games'), 'icon' => 'trophy', 'url' => '/my-tournaments', 'pattern' => 'my-tournaments'],
             ['label' => __('More'), 'icon' => 'grid-3x3', 'url' => null, 'pattern' => null],
         ];
+        if (config('features.player_wager.enabled')) {
+            array_splice($bottomNavItems, 2, 0, [[
+                'label' => __('H2H'), 'icon' => 'swords', 'url' => '/head-to-head', 'pattern' => 'head-to-head',
+            ]]);
+        }
     @endphp
     <!-- Global Background FX -->
     <div class="fixed inset-0 pointer-events-none z-0">
@@ -47,7 +51,9 @@
         <div class="absolute inset-0 scanlines opacity-[0.15] mix-blend-overlay"></div>
     </div>
 
-    <livewire:match.head-to-head-duel-prompt />
+    @if(config('features.player_wager.enabled'))
+        <livewire:match.head-to-head-duel-prompt />
+    @endif
 
     <!-- ─────────────────────────────────────
          MOBILE BOTTOM NAV — "More" Backdrop
@@ -126,13 +132,17 @@
                     ['label' => __('Overview'),    'icon' => 'layout-dashboard', 'url' => '/dashboard',        'active' => request()->is('dashboard')],
                     ['label' => __('Tournaments'), 'icon' => 'search',           'url' => '/tournaments/browse','active' => request()->is('tournaments/browse*')],
                     ['label' => __('My Games'),    'icon' => 'trophy',           'url' => '/my-tournaments',   'active' => request()->is('my-tournaments')],
-                    ['label' => __('H2H Duels'),   'icon' => 'swords',          'url' => '/head-to-head',     'active' => request()->is('head-to-head')],
                     ['label' => __('Leaderboard'), 'icon' => 'award',            'url' => '/leaderboards',     'active' => request()->is('leaderboards')],
                     ['label' => __('Streams'),     'icon' => 'tv',               'url' => '/streams',          'active' => request()->is('streams')],
                     ['label' => __('Chat'),        'icon' => 'message-square',   'url' => '/chat',             'active' => request()->is('chat')],
                     ['label' => __('Support'),     'icon' => 'headphones',       'url' => '/contact',          'active' => request()->is('contact')],
                     ['label' => __('Review Us'),   'icon' => 'star',             'url' => '/reviews',          'active' => request()->is('reviews')],
                 ];
+                if (config('features.player_wager.enabled')) {
+                    array_splice($navItems, 3, 0, [[
+                        'label' => __('H2H Duels'), 'icon' => 'swords', 'url' => '/head-to-head', 'active' => request()->is('head-to-head'),
+                    ]]);
+                }
             @endphp
 
             <nav class="flex-grow my-8 px-3 space-y-2.5">

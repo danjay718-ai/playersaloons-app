@@ -21,28 +21,27 @@ class ExpireReservationsJob implements ShouldQueue
     public function handle(CancelRegistrationAction $action): void
     {
         // Find pending registrations that have not been paid within 15 minutes of registration
-        $expiredRegistrations = TournamentRegistration::query()->where('status', RegistrationStatus::PENDING)
+        TournamentRegistration::query()
+            ->with('user')
+            ->where('status', RegistrationStatus::PENDING)
             ->where('registered_at', '<', now()->subMinutes(15))
-            ->get();
+            ->orderBy('id')
+            ->chunkById(100, function ($expiredRegistrations) use ($action): void {
+                /** @var TournamentRegistration $registration */
+                foreach ($expiredRegistrations as $registration) {
+                    if ($registration->user === null) {
+                        continue;
+                    }
 
-        $count = 0;
-
-        /** @var TournamentRegistration $registration */
-        foreach ($expiredRegistrations as $registration) {
-            if ($registration->user === null) {
-                continue;
-            }
-
-            try {
-                $action->execute($registration, $registration->user);
-                $count++;
-            } catch (\Throwable $e) {
-                Log::error("Failed to expire reservation {$registration->uuid}: {$e->getMessage()}");
-            }
-        }
-
-        if ($count > 0) {
-            Log::info("Expired {$count} tournament seat reservations.");
-        }
+                    try {
+                        $action->execute($registration, $registration->user);
+                    } catch (\Throwable $exception) {
+                        Log::error('Failed to expire tournament reservation.', [
+                            'registration_id' => $registration->getKey(),
+                            'exception' => $exception,
+                        ]);
+                    }
+                }
+            });
     }
 }

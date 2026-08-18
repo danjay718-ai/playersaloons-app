@@ -100,7 +100,7 @@ class MyTournamentsList extends Component
             })
             ->with('game.translations')
             ->withCount(['registrations' => function ($q) {
-                $q->whereNotIn('status', ['cancelled', 'refunded']);
+                $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
             }]);
 
         if ($this->tSubTab === 'active') {

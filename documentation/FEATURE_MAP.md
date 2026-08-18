@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-27 (v1.114)
+**Last Updated**: 2026-08-18 (v1.115)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -53,7 +53,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /tournaments/browse` | `app/Livewire/Tournament/PlayerTournamentList.php` | Browse & filter all active tournaments |
 | `GET /tournaments/{uuid}/view` | `app/Livewire/Tournament/TournamentDetail.php` | Tournament detail, registration, check-in, bracket, matches, and embedded tournament broadcasts when stream URLs are configured |
 | `GET /matches/{uuid}` | `app/Livewire/Match/MatchDetail.php` | Match lobby: result submission, evidence, dispute |
-| `GET /head-to-head` | `app/Livewire/Match/HeadToHeadList.php` | DB-backed H2H tabs for initiate challenge, game-filtered open challenges, active duels, history, stake lock, proof-backed result submit/confirm/dispute flow |
+| `GET /head-to-head` | `app/Livewire/Match/HeadToHeadList.php` | Preserved player-wager flow; registered only when `PLAYER_WAGER_ENABLED=true` (disabled by default) |
 | `GET /leaderboards` | `app/Livewire/Match/LeaderboardList.php` | Leaderboard (stub) |
 | `GET /streams` | `app/Livewire/Stream/StreamList.php` | Player stream hub where players publish normalized `stream_channels` for YouTube, Twitch, or Facebook and watch other player/tournament embeds |
 | `GET /chat` | `app/Livewire/Community/GlobalChat.php` + `app/Http/Controllers/Community/ChatController.php` | Reverb-backed comms hub for persisted global chat, player-to-player direct chat, team chat with join/switch warning, unread badges, avatars, player search, profile stats modal, follow, and message actions. Global chat retains the latest 100 messages |
@@ -125,7 +125,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 |---|---|---|
 | Player dashboard topbar | `app/Livewire/Notification/NotificationBell.php` | Shows latest 10 user notifications, unread count, single/all mark-as-read actions, and refreshes from realtime Reverb broadcasts |
 | Player toast notifications | `resources/views/components/ui/toasts.blade.php` | Shared toast surface for player-facing `session()->flash()` feedback (`message`, `success`, `info`, `error`, `h2h_status`, `h2h_error`) |
-| H2H duel prompt | `app/Livewire/Match/HeadToHeadDuelPrompt.php` | Dashboard-wide polling modal that alerts players when a duel is active or when an open duel invite is available |
+| Legacy H2H duel prompt | `app/Livewire/Match/HeadToHeadDuelPrompt.php` | Feature-gated preserved prompt; global polling has been removed |
 | Player dashboard shell | `resources/views/components/layouts/dashboard.blade.php` | Desktop player shell with a viewport-fixed hover-expand sidebar (`#desktop-sidebar`) and a desktop content offset matching the collapsed sidebar width; mobile uses the fixed bottom navigation and More panel |
 | Player loading states | `resources/js/app.js`, `resources/css/app.css`, `resources/views/components/layouts/dashboard.blade.php` | Disables Livewire submit buttons during submit and shows a game-style full-page loader for uncached player `wire:navigate` route changes; tab links are excluded and visited routes are cached in `sessionStorage` |
 | Player upload feedback | `resources/views/livewire/profile/profile-dashboard.blade.php` | Shows immediate selected-file feedback and Livewire upload progress for avatar and KYC document uploads |
@@ -209,8 +209,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Close registration | `CloseRegistrationAction` | `TournamentRegistrationClosed` | — |
 | Generate bracket | `BracketGenerationService` | `TournamentBracketGenerated` | — |
 | Start tournament | `StartTournamentAction` | `TournamentStarted` | `AutoStartMatchesListener`, `BroadcastTournamentLifecycleListener` |
-| Auto-cancel underfilled tournaments | `CancelTournamentAction` | `TournamentCancelled` | `tournaments:auto-cancel` command every minute; only opted-in tournaments at/past start time are evaluated and refunds use the normal cancellation flow |
-| Generate recurring tournaments | `CreateTournamentAction` | — | `tournaments:auto-generate` command hourly; creates the next daily, weekly, or monthly occurrence when it does not already exist |
+| Reconcile competition lifecycle | `TournamentLifecycleReconciler` | Lifecycle events | `tournaments:reconcile-lifecycle` every minute; catches up overdue states and routes opted-in underfill cancellation through the refund flow |
+| Generate recurring competitions | `GenerateRecurringTournamentAction` | — | `tournaments:auto-generate` every five minutes; timezone-aware, row-locked, capped, and idempotent via unique template/start occurrence |
 | Complete tournament | — | `TournamentCompleted` | `AwardPrizesListener` |
 | Cancel + refund | `CancelTournamentAction` + `ProcessRefundAction` | `TournamentCancelled` | `IssueRefundsListener` |
 
@@ -225,7 +225,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Auto-start | — | — | `AutoStartMatchesListener` (on `TournamentStarted` + `MatchCompleted`) |
 | Auto-forfeit timeout | — | — | `AutoForfeitJob` (scheduler, every minute) |
 
-### Head-to-Head Duels
+### Legacy Player-Wager Head-to-Head Duels
+This domain remains implemented for future activation, but its player surfaces and expiry scheduler are disabled unless `PLAYER_WAGER_ENABLED=true`. Current platform-created H2H uses the normal tournament lifecycle with an enforced 1v1 shape.
 Per-game `head_to_head_ratings` use a 1200 baseline and K-factor 32. `HeadToHeadRatingService` updates confirmed or adjudicated results once, stores before/after snapshots on the match, and `HeadToHeadMatchmakerService` prioritizes nearby ratings with a widening wait-time window.
 | Feature | Action/Service | Event | Listener/Job |
 |---|---|---|---|
@@ -332,7 +333,7 @@ See `execution_checklist.md` → Testing Debt section for the full list.
 | Audit Logging | Spatie Laravel Activity Log |
 | Queue/Jobs | Laravel Horizon (Redis) |
 | Payments | Stripe Checkout + Stripe webhooks for wallet deposits |
-| Database | MySQL 8 (production) / SQLite (local dev) |
+| Database | MySQL 8 (production and local dev); SQLite in-memory for isolated tests |
 | Cache/Session | Redis |
 | File Storage | Local `public` disk (dev/staging) → R2/S3 (production, pending) |
 | Testing | PHPUnit (Feature + Unit) |

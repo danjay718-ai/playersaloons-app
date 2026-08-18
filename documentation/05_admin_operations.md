@@ -35,19 +35,21 @@ Verifying and processing cash-out requests.
 ## 3. Tournament Control
 Managing the lifecycle of tournaments.
 
-*   **Action**: Admin publishes, cancels, or manually progresses a tournament.
+*   **Action**: Admin creates a tournament or fixed 1v1 head-to-head competition, optionally makes it daily/weekly/monthly, publishes, cancels, or manually progresses it.
 *   **UI Component**: `app/Livewire/Admin/TournamentAdmin.php` (list + lifecycle transitions)
 *   **Create/Edit Component**: `app/Livewire/Admin/TournamentForm.php` (multi-step creation form at `/admin/tournaments/create`)
 *   **Fixtures Component**: `app/Livewire/Admin/TournamentMatches.php` at `/admin/tournaments/{id}/matches`, with match-status filtering and individual/team identity rendering.
 *   **Logic (Actions)**:
     *   `app/Modules/Tournament/Actions/CreateTournamentAction.php`: Initializes a new tournament.
+    *   `app/Modules/Tournament/Actions/CreateRecurringCompetitionAction.php`: Atomically creates a recurring template and its first published occurrence.
     *   `app/Modules/Tournament/Actions/CancelTournamentAction.php`: Triggers the cancellation and refund flow.
-    *   `app/Console/Commands/AutoCancelTournaments.php`: Runs every minute and sends opted-in underfilled tournaments through the normal cancellation/refund action after their start time.
-    *   `app/Console/Commands/AutoGenerateRecurringTournaments.php`: Runs hourly and creates the next missing daily, weekly, or monthly occurrence from recurring templates.
+    *   `app/Console/Commands/ReconcileTournamentLifecycle.php`: Runs every minute and catches due competitions up through lifecycle transitions, including opted-in underfill cancellation.
+    *   `app/Console/Commands/AutoGenerateRecurringTournaments.php`: Runs every five minutes and safely creates due daily, weekly, or monthly occurrences.
 *   **Connected Files**:
     *   `app/Modules/Tournament/StateMachines/TournamentStateMachine.php`: The core engine for tournament states.
     *   `app/Modules/Tournament/Actions/ProcessRefundAction.php`: Automates refunds for cancelled tournaments.
-    *   `app/Modules/Tournament/Jobs/AutoCancelTournamentJob.php`: Triggered if participation is too low.
+    *   `app/Modules/Tournament/Services/TournamentLifecycleReconciler.php`: Central lifecycle catch-up policy used by the scheduler.
+    *   `app/Modules/Tournament/Services/RecurrenceSchedule.php`: Timezone-aware recurrence calculation.
 
 ## 4. Match & Dispute Management
 Resolving conflicts and overriding results.
@@ -73,11 +75,11 @@ Managing player accounts and roles.
 *   **Logic (Actions)**:
     *   `app/Modules/Identity/Actions/SuspendUserAction.php`: Disables account access. Enforces `ADMIN | SUPER_ADMIN`.
     *   `app/Modules/Identity/Actions/AssignRoleAction.php`: Updates RBAC roles. **Restricted to `SUPER_ADMIN` only** (not plain ADMIN).
-*   **Online Presence**: Each row in the user table shows a dot indicator — emerald if online (active in last 5 min via `User::isOnline()` / Redis), slate if offline.
+*   **Online Presence**: Each row shows a dot indicator from one Redis sorted-set read for the page. Presence is fail-soft and never scans Redis keys or makes one Redis call per user.
 *   **Connected Files**:
     *   `app/Modules/Identity/Policies/UserPolicy.php`: Restricts moderation to staff.
     *   `app/Modules/Identity/Events/UserSuspended.php`.
-    *   `app/Http/Middleware/UpdateUserOnlineStatus.php`: Sets `user_online:{id}` Redis key (TTL 300s) on every authenticated web request.
+    *   `app/Http/Middleware/UpdateUserOnlineStatus.php`: Updates the bounded `presence:web:last_seen` Redis sorted set on authenticated web requests.
 
 ## 6. Broadcast Notifications
 Managing platform-wide broadcast messages.
