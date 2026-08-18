@@ -1,6 +1,6 @@
 # PlayerSaloons — Execution Checklist (Post-MVP)
 
-**Status**: Active Backlog | **Last Updated**: 2026-07-12 (v1.110)
+**Status**: Active Backlog | **Last Updated**: 2026-07-27 (v1.114)
 
 > **How to use this file**: When a bug, enhancement, or new feature is identified, add it here immediately under the correct section. When built, check the box and add a `## ✅` entry to `project_progress.md`. See `ONBOARDING.md` → Tracking Features, Bugs & Enhancements for the full sync guide.
 
@@ -96,10 +96,10 @@ Implement these next, in order:
 
 After the ordered feature queue:
 
-9. [x] Team Tournaments — captain registration, active-roster validation and snapshotting, team bracket slots, roster access, team check-in, and team-aware match UI. *(done v1.110)*
-10. [x] Auto-Forfeit Timeout Setting — System Settings now controls the default inherited by new tournaments while preserving per-tournament overrides. *(done v1.110)*
-11. [x] Rematch Voting — either side can request a time-limited rematch and the opposing side can agree before a dispute; mutual agreement creates a replacement match without advancing the bracket. *(done v1.110)*
-12. [x] Admin UI/UX Optimization — apply the instant AlpineJS modal/action hiding trick (`x-data="{ open: true }"` and `@click="open = false; $wire.set(...)"`) to all other admin modals and dropdowns across the system to eliminate perceived Livewire latency.
+7. [x] Team Tournaments — captain registration, active-roster validation and snapshotting, team bracket slots, roster access, team check-in, and team-aware match UI. *(done v1.110)*
+8. [x] Auto-Forfeit Timeout Setting — System Settings now controls the default inherited by new tournaments while preserving per-tournament overrides. *(done v1.110)*
+9. [x] Rematch Voting — either side can request a time-limited rematch and the opposing side can agree before a dispute; mutual agreement creates a replacement match without advancing the bracket. *(done v1.110)*
+10. [x] Admin UI/UX Optimization — applied instant AlpineJS state hiding to the admin user and tournament form interactions to eliminate perceived Livewire latency. *(done v1.113)*
 
 ### File Storage Migration (Required Before Full Production)
 - [ ] `composer require league/flysystem-aws-s3-v3`

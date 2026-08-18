@@ -1,6 +1,6 @@
 # PlayerSaloons — Architecture Baseline
 
-**Last Updated**: 2026-07-05 (v1.81) | **Original Baseline**: 2026-06-14
+**Last Updated**: 2026-07-24 (v1.113) | **Original Baseline**: 2026-06-14
 
 ## 🏗️ Architectural Overview
 
@@ -160,6 +160,25 @@ Changes here represent deviations or additions to the original baseline design. 
 - Production deployment requires both a cron running `php artisan schedule:run` AND a persistent queue worker. In Docker this is handled by dedicated `scheduler` and `worker` containers (see `docker-compose.prod.yml`).
 
 **Why**: As more jobs were added, the scheduler became a first-class infrastructure concern, not just an automation feature.
+
+### [v1.113] Recurring Tournament and Underfill Automation
+
+**Baseline reference**: Scheduler infrastructure already ran match-forfeit and expiry jobs, while tournament creation and underfill decisions were manual.
+
+- `tournaments:auto-cancel` runs every minute and routes opted-in, underfilled tournaments through `CancelTournamentAction` after their start time so existing refunds and lifecycle events remain authoritative.
+- `tournaments:auto-generate` runs hourly and creates the next daily, weekly, or monthly tournament occurrence from recurring templates, guarded by template/start-time existence checks.
+- Both commands are registered in `routes/console.php` and execute through the existing scheduler container.
+
+**Why**: Reusing domain actions keeps automated operations consistent with staff-triggered lifecycle behavior and prevents duplicate recurring occurrences.
+
+### [v1.113] Configurable H2H House Commission
+
+**Baseline reference**: `ResolveHeadToHeadStakeAction` previously paid the full combined stake pool to the winner.
+
+- The action now reads `h2h.commission_percentage` from `system_settings` (10% default), deducts the commission from the two-player pool, and credits the net payout.
+- Existing reference-based ledger idempotency remains the duplicate-payout guard.
+
+**Why**: Keeping the percentage in System Settings allows operations to adjust the house cut without deploying code while preserving a single auditable settlement path.
 
 ---
 

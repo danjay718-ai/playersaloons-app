@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-07-12 (v1.107)
+**Last Updated**: 2026-07-27 (v1.114)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -31,6 +31,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /blog/{slug}` | `app/Livewire/CMS/BlogArticleView.php` | Public Blog detail page for one published CMS blog post |
 | `GET /news` | `app/Livewire/CMS/NewsIndex.php` | Public News listing for published CMS news articles |
 | `GET /news/{slug}` | `app/Livewire/CMS/NewsArticleView.php` | Public News detail page for one published CMS news article |
+| `GET /about` | `app/Livewire/AboutPage.php` | Public About Us page backed by CMS-managed system settings |
 | `GET /policies` | `app/Livewire/Policies/PolicyIndex.php` | Public legal/policy index backed by `policy_pages` |
 | `GET /policies/{slug}` | `app/Livewire/Policies/PolicyPageView.php` | Public legal/policy detail page for active, published policy pages |
 | `GET /contact` | `app/Livewire/Community/ContactPage.php` | Public/player contact support form; guests use public layout and verified players use the player dashboard layout |
@@ -74,6 +75,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/tournaments` | `app/Livewire/Admin/TournamentAdmin.php` | Tournament list + lifecycle state transitions |
 | `GET /admin/tournaments/create` | `app/Livewire/Admin/TournamentForm.php` | 4-step creation wizard |
 | `GET /admin/tournaments/{id}/edit` | `app/Livewire/Admin/TournamentForm.php` | Edit existing tournament |
+| `GET /admin/tournaments/{id}/matches` | `app/Livewire/Admin/TournamentMatches.php` | Tournament-specific fixtures view with status filtering and player/team identity |
 | `GET /admin/matches` | `app/Livewire/Admin/MatchAdmin.php` | Dispute queue + Match monitoring |
 | `GET /admin/streams` | `app/Livewire/Stream/StreamList.php` | Stream moderation surface for viewing player streams, taking down invalid/abusive streams, and restoring streams |
 | `GET /admin/kyc` | `app/Livewire/Admin/KycAdmin.php` | Review KYC submissions (approve/reject) |
@@ -82,13 +84,14 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
 | `GET /admin/compliance` | `app/Livewire/Admin/ComplianceAdmin.php` | Apply, search, inspect, expire, and revoke auditable player compliance blocks |
 | `GET /admin/audit-logs` | `app/Livewire/Admin/AuditLogAdmin.php` | Spatie activity log viewer with filters |
-| `GET /admin/cms/{section?}` | `app/Livewire/Admin/CmsAdmin.php` | CMS section pages for Blog & News (`content`), Landing Page (`landing`), Games (`games`), Platforms (`platforms`), and Navigation (`navigation`); renders only the active section data |
+| `GET /admin/cms/{section?}` | `app/Livewire/Admin/CmsAdmin.php` | CMS section pages for Landing Page (`landing`), Games (`games`), Platforms (`platforms`), Navigation (`navigation`), and About Us (`about`); renders only the active section data |
 | `GET /admin/translations` | `app/Livewire/Admin/TranslationAdmin.php` | Translation manager for UI phrase keys; imports `lang/*.json`, edits `translation_strings`, fills missing values, and exports JSON runtime files |
 | `GET /admin/policies` | `app/Livewire/Admin/PolicyAdmin.php` | Dedicated policy editor for Terms and Conditions, Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer |
 | `GET /admin/notifications` | `app/Livewire/Admin/BroadcastNotificationAdmin.php` | Broadcast messages: create, edit, expire, delete (SUPER_ADMIN) |
 | `GET /admin/contact-inquiries` | `app/Livewire/Admin/ContactInquiryAdmin.php` | Contact inquiry inbox: status counters, search/filter, category/status badges, email reply shortcut, internal notes, resolve, archive |
 | `GET /admin/newsletters` | `app/Livewire/Admin/NewsletterAdmin.php` | Subscriber audience search, campaign sending, delivery totals, and recent campaign history |
-| `GET /admin/system-settings` | `app/Livewire/Admin/SystemSettingsAdmin.php` | Admin-adjustable referral settings, auto-forfeit settings, and localization visibility toggles |
+| `GET /admin/system-settings` | `app/Livewire/Admin/SystemSettingsAdmin.php` | Admin-adjustable referral rewards, tournament auto-forfeit timeout, H2H commission, and localization visibility toggles |
+| `GET /admin/roles-permissions` | `app/Livewire/Admin/RolePermissionAdmin.php` | Grouped role-permission toggles; SUPER_ADMIN permissions are protected from modification |
 | `GET /admin/geo-blocking` | `app/Livewire/Admin/BlockedCountriesAdmin.php` | Admin management of blocked IP regions and custom messages |
 | `GET /admin/advertisements` | `app/Livewire/Admin/AdvertisementAdmin.php` | Scheduled advertisement/promotion CRUD and click totals |
 | `GET /admin/player-reviews` | `app/Livewire/Admin/PlayerReviewAdmin.php` | Approve or reject player star reviews before public display |
@@ -153,7 +156,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Rendered UI text translation | `app/Http/Middleware/TranslateRenderedHtml.php` | Translates rendered HTML text nodes plus `placeholder`, `title`, `aria-label`, and `alt` attributes by exact JSON key. Also handles Livewire JSON payloads that contain rendered HTML. |
 | Geo-Blocking interception | `app/Http/Middleware/BlockRestrictedCountries.php` | Checks user IP against `blocked_countries` table and blocks non-admin access with a 403 error. |
 | Supported language list | `config/localization.php` | Defines supported locales: English, French, Spanish, German, Italian, Dutch, Portuguese, Russian, Japanese, Chinese, and Polish. |
-| Runtime files | `lang/*.json` | Laravel JSON translation files used at runtime. Admin edits are exported here from `translation_strings`. |
+| Runtime files | `lang/*.json` | Laravel JSON translation files used at runtime. All ten non-English catalogs match the 82-key English catalog as of v1.114; admin edits are exported here from `translation_strings`. |
 | Admin editing source | `translation_strings` table | Database-backed phrase catalog edited from `/admin/translations`; JSON files are export/cache output. |
 
 ---
@@ -194,6 +197,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Blog/news rendering | `CmsPage` + `BlogIndex` / `BlogArticleView` / `NewsIndex` / `NewsArticleView` | — | Filters to published posts by CMS page type |
 | Blog/news authoring | `CmsContentAdmin::saveContent()` | — | WordPress-style inline editor for type, uploaded featured image, featured flag, localized title/excerpt/content |
 | UI translation management | `TranslationAdmin` + `TranslationCatalogService` | — | `TranslationStringSeeder` and admin actions sync `lang/*.json` into `translation_strings`, fill missing values from English fallback, and export JSON runtime files |
+| About Us content | `CmsAdmin::saveAbout()` + `SystemSetting` | — | Stores editable `about.title`, `about.subtitle`, and `about.body` values rendered by `AboutPage` |
 | Player/tournament stream embeds | `StreamList`, `TournamentForm`, `StreamEmbedService`, `StreamChannel` | — | Player streams, tournament broadcasts, and game trailers are normalized in `stream_channels`; create/update/delete writes are activity-logged while reads are not |
 | Provider live status | `ProviderLiveStatusService` | — | `RefreshProviderLiveStatusesJob` polls configured YouTube/Twitch/Facebook APIs every two minutes and preserves manual state on unavailable/error responses |
 
@@ -205,7 +209,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Close registration | `CloseRegistrationAction` | `TournamentRegistrationClosed` | — |
 | Generate bracket | `BracketGenerationService` | `TournamentBracketGenerated` | — |
 | Start tournament | `StartTournamentAction` | `TournamentStarted` | `AutoStartMatchesListener`, `BroadcastTournamentLifecycleListener` |
-| Auto-cancel | — | — | `AutoCancelTournamentJob` |
+| Auto-cancel underfilled tournaments | `CancelTournamentAction` | `TournamentCancelled` | `tournaments:auto-cancel` command every minute; only opted-in tournaments at/past start time are evaluated and refunds use the normal cancellation flow |
+| Generate recurring tournaments | `CreateTournamentAction` | — | `tournaments:auto-generate` command hourly; creates the next daily, weekly, or monthly occurrence when it does not already exist |
 | Complete tournament | — | `TournamentCompleted` | `AwardPrizesListener` |
 | Cancel + refund | `CancelTournamentAction` + `ProcessRefundAction` | `TournamentCancelled` | `IssueRefundsListener` |
 
@@ -228,7 +233,7 @@ Per-game `head_to_head_ratings` use a 1200 baseline and K-factor 32. `HeadToHead
 | Matchmake / accept challenge | `HeadToHeadMatchmakerService` + `AcceptHeadToHeadChallengeAction` | — | Accept requires the selected game to match and blocks another same-game waiting challenge or active duel |
 | Cancel waiting challenge | `CancelHeadToHeadChallengeAction` + `RefundHeadToHeadStakeAction` | — | — |
 | Submit H2H result | `SubmitHeadToHeadResultAction` | — | Optional proof upload stored on `head_to_head_matches.result_proof_path` |
-| Confirm H2H result | `ConfirmHeadToHeadResultAction` + `ResolveHeadToHeadStakeAction` | — | — |
+| Confirm H2H result | `ConfirmHeadToHeadResultAction` + `ResolveHeadToHeadStakeAction` | — | Winner receives the combined stake pool less the configured `h2h.commission_percentage` (10% default) |
 | Dispute H2H result | `DisputeHeadToHeadResultAction` | — | Optional dispute proof/notes stored for admin review |
 | Resolve H2H dispute | `ResolveHeadToHeadDisputeAction` | — | Admin can award creator, award opponent, or void/refund both stakes from `/admin/matches` |
 | H2H timeout/expiry | — | — | `ExpireHeadToHeadMatchesJob` every minute; expired waiting challenges refund, stale active/submitted matches escalate to admin review |
@@ -243,6 +248,7 @@ Per-game `head_to_head_ratings` use a 1200 baseline and K-factor 32. `HeadToHead
 | Process withdrawal | `ProcessWithdrawalAction` | — | — |
 | Prize award | `AwardPrizesListener` | `PrizeAwarded` | `TournamentNotificationListener` |
 | Entry fee | `WalletService::debit()` (inside RegisterForTournamentAction) | `EntryFeeCollected` | — |
+| H2H settlement | `ResolveHeadToHeadStakeAction` | — | Credits an idempotent net payout after deducting `h2h.commission_percentage` from the combined stake pool |
 
 ### Team Management
 | Feature | Action/Service | Event | Job |

@@ -38,9 +38,12 @@ Managing the lifecycle of tournaments.
 *   **Action**: Admin publishes, cancels, or manually progresses a tournament.
 *   **UI Component**: `app/Livewire/Admin/TournamentAdmin.php` (list + lifecycle transitions)
 *   **Create/Edit Component**: `app/Livewire/Admin/TournamentForm.php` (multi-step creation form at `/admin/tournaments/create`)
+*   **Fixtures Component**: `app/Livewire/Admin/TournamentMatches.php` at `/admin/tournaments/{id}/matches`, with match-status filtering and individual/team identity rendering.
 *   **Logic (Actions)**:
     *   `app/Modules/Tournament/Actions/CreateTournamentAction.php`: Initializes a new tournament.
     *   `app/Modules/Tournament/Actions/CancelTournamentAction.php`: Triggers the cancellation and refund flow.
+    *   `app/Console/Commands/AutoCancelTournaments.php`: Runs every minute and sends opted-in underfilled tournaments through the normal cancellation/refund action after their start time.
+    *   `app/Console/Commands/AutoGenerateRecurringTournaments.php`: Runs hourly and creates the next missing daily, weekly, or monthly occurrence from recurring templates.
 *   **Connected Files**:
     *   `app/Modules/Tournament/StateMachines/TournamentStateMachine.php`: The core engine for tournament states.
     *   `app/Modules/Tournament/Actions/ProcessRefundAction.php`: Automates refunds for cancelled tournaments.
@@ -64,8 +67,9 @@ Resolving conflicts and overriding results.
 ## 5. User Moderation
 Managing player accounts and roles.
 
-*   **Action**: Admin suspends a user or updates their roles.
+*   **Action**: Admin suspends a user or updates their roles; authorized staff can manage grouped role permissions from `/admin/roles-permissions`.
 *   **UI Component**: `app/Livewire/Admin/UserAdmin.php`
+*   **Roles & Permissions Component**: `app/Livewire/Admin/RolePermissionAdmin.php`; permission toggles are grouped by name prefix and SUPER_ADMIN permissions cannot be modified.
 *   **Logic (Actions)**:
     *   `app/Modules/Identity/Actions/SuspendUserAction.php`: Disables account access. Enforces `ADMIN | SUPER_ADMIN`.
     *   `app/Modules/Identity/Actions/AssignRoleAction.php`: Updates RBAC roles. **Restricted to `SUPER_ADMIN` only** (not plain ADMIN).
@@ -109,19 +113,21 @@ Managing public content, Blog/News articles, game catalog labels, and the editab
 *   **UI Components**:
     *   `app/Livewire/Admin/CmsContentAdmin.php`: Blog, News, and static page authoring.
     *   `app/Livewire/Admin/CmsAdmin.php`: Landing, Games, Platforms, and Navigation management.
-*   **Admin Sidebar Group**: CMS section contains Blog & News, Landing Page, Games, Platforms, Navigation, Policies, and Translations.
+*   **Admin Sidebar Group**: CMS section contains Blog & News, Landing Page, Games, Platforms, Navigation, About Us, Policies, and Translations.
 *   **Admin Section Routes**:
     *   `/admin/cms/content`: Blog, News, and generic CMS page authoring with a WordPress-style editor.
     *   `/admin/cms/landing`: Landing page sections and landing section items.
     *   `/admin/cms/games`: Game catalog labels, descriptions, landing banners, and active status.
     *   `/admin/cms/platforms`: Platform rows and active status.
     *   `/admin/cms/navigation`: Public navigation items.
+    *   `/admin/cms/about`: About Us title, subtitle, and rich HTML body stored as system settings.
 *   **Render Scope**: `CmsAdmin::render()` only loads data for the active section route to avoid rendering all CMS management surfaces on every request.
 *   **Public Blog/News Routes**:
     *   `/blog`: Published CMS blog post listing.
     *   `/blog/{slug}`: Published CMS blog post detail.
     *   `/news`: Published CMS news article listing.
     *   `/news/{slug}`: Published CMS news article detail.
+*   **Public About Route**: `/about`, rendered by `app/Livewire/AboutPage.php` from `about.title`, `about.subtitle`, and `about.body` settings.
 *   **CMS Page Tables**:
     *   `cms_pages`: Stores slug, content type (`page`, `blog`, `news`), featured image path, featured flag, published timestamp, creator, and soft-delete state.
     *   `cms_page_translations`: Stores localized title, excerpt, and HTML content.
@@ -204,6 +210,7 @@ Managing user-facing UI phrases and locale JSON runtime files.
     *   `TranslateRenderedHtml` translates rendered Blade/Livewire text and supported attributes by exact JSON key.
     *   Game/CMS translation helpers read current locale first and fall back to English.
 *   **Defaults**: `TranslationStringSeeder` runs in the main `DatabaseSeeder` flow and syncs current `lang/*.json` phrase keys into `translation_strings`.
+*   **Current catalog state (v1.114)**: German, Spanish, French, Italian, Japanese, Dutch, Polish, Portuguese, Russian, and Chinese each contain the same 82 keys as English, with localized values replacing the earlier fallback-heavy catalogs.
 *   **Tests**:
     *   `tests/Feature/Admin/TranslationAdminTest.php`
     *   `tests/Feature/Localization/LanguageSwitchTest.php`
@@ -288,6 +295,7 @@ Head-to-head results maintain a game-specific ELO rating used by automatic match
 *   **Admin Route**: `/admin/system-settings`
 *   **Authorization**: ADMIN and SUPER_ADMIN only.
 *   **Referral Settings**: Enable/disable rewards and adjust the referrer and new-player amounts. Values are read when the referred player’s first successful deposit qualifies the referral, and updates record `updated_by`.
+*   **H2H Commission**: Configure `h2h.commission_percentage` (10% default). `ResolveHeadToHeadStakeAction` deducts this percentage from the combined two-player stake pool before creating the winner's idempotent payout ledger entry.
 *   **Localization**: Toggle the visibility of the Language Switcher on Guest and Admin pages (defaults to hidden). Players always see the switcher in the dashboard.
 
 ## 17. Advertisements & Promotions

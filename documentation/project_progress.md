@@ -1,6 +1,13 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-07-24 (v1.113) | **Branch**: `main`
+**Last Updated**: 2026-07-27 (v1.114) | **Branch**: `main`
+
+---
+## ✅ Expanded Locale Translation Coverage (v1.114)
+
+- **Runtime locale files**: Replaced the remaining English fallback-heavy values across German, Spanish, French, Italian, Japanese, Dutch, Polish, Portuguese, Russian, and Chinese JSON catalogs with localized copy.
+- **Catalog parity**: All ten non-English runtime catalogs contain the same 82 phrase keys as `lang/en.json`, with no missing or extra keys.
+- **Scope**: Updated translation data only; locale selection, middleware, admin translation management, and the supported-language list are unchanged.
 
 ---
 ## ✅ Admin Matches UI, Tournament Automation, Roles & Admin Polish (v1.113)

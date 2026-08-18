@@ -78,6 +78,15 @@ Real-time monitoring of wallet funds and history.
     *   `app/Modules/Wallet/Models/LedgerEntry.php`: Provides the detailed transaction log.
     *   `app/Http/Controllers/Api/V1/WalletApiController.php`: Exposes `/api/v1/wallet/balance`, `/api/v1/wallet/transactions`, and `/api/v1/wallet/withdraw`.
 
+## 4. Head-to-Head Settlement
+Paying the winner of a confirmed or admin-adjudicated H2H duel.
+
+*   **Gross pool**: Twice the match stake (`stake_amount × 2`).
+*   **Commission**: `ResolveHeadToHeadStakeAction` reads `h2h.commission_percentage` from System Settings, defaulting to 10%, and deducts that percentage from the gross pool.
+*   **Net payout**: The winner receives one `H2H_PAYOUT` ledger credit for `gross pool - commission`, rounded to two decimal places.
+*   **Idempotency**: An existing payout for the same wallet and H2H match is returned instead of creating a duplicate credit.
+*   **Admin control**: ADMIN and SUPER_ADMIN can update the percentage from `/admin/system-settings`.
+
 ## 🧪 Isolated Test Cases
 ### 1. Ledger Integrity
 *   **Balance Recalculation**: `test_wallet_balance_matches_ledger_sum`

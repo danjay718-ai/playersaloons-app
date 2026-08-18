@@ -1,5 +1,5 @@
 # PlayerSaloons — Carry Forward Summary
-**As of**: 2026-07-21 | **Current version**: v1.112 | **Branch**: `main`
+**As of**: 2026-07-27 | **Current version**: v1.114 | **Branch**: `main`
 
 ---
 
@@ -30,7 +30,11 @@
 - Transactional mail now uses Laravel `failover` with Resend first, SMTP second, and `log` last; set `RESEND_API_KEY` and use a verified-domain `MAIL_FROM_ADDRESS`
 - Login, registration, password reset, and verification resend actions disable their buttons during submit to prevent repeated clicks
 - Contact inquiries are now live at `/contact` for guests/players and `/admin/contact-inquiries` for staff review, notes, resolve, and archive
-- Admin sidebar is grouped into Operations, CMS, and System; the CMS section contains Blog & News, Landing Page, Games, Platforms, Navigation, Policies, and Translations
+- Admin sidebar is grouped into Operations, CMS, and System; the CMS section contains Blog & News, Landing Page, Games, Platforms, Navigation, About Us, Policies, and Translations
+- Tournament automation now cancels/refunds opted-in underfilled tournaments every minute and generates daily/weekly/monthly tournaments from recurring templates hourly
+- Admins can open a tournament-specific fixtures view at `/admin/tournaments/{id}/matches`, configure the H2H commission percentage, and manage grouped role permissions from `/admin/roles-permissions`
+- `/about` is backed by CMS-managed title, subtitle, and body settings under `/admin/cms/about`
+- All ten non-English runtime JSON catalogs now match the 82-key English catalog and use localized values instead of the earlier fallback-heavy content
 - CMS section links are real section URLs (`/admin/cms/content`, `/admin/cms/landing`, `/admin/cms/games`, `/admin/cms/platforms`, `/admin/cms/navigation`) and `CmsAdmin::render()` only loads the active section data
 - Blog/News/Page authoring is handled by dedicated `CmsContentAdmin` with a WordPress-style left content list, right inline Quill editor, uploaded featured images, and a fallback textarea so the Body field remains editable while Quill initializes
 - Rendered HTML translation now falls back to the original text if a translation lookup returns a non-scalar value, preventing `htmlspecialchars()` array crashes
@@ -48,7 +52,7 @@
 
 ---
 
-## ✅ Natapos ngayong session (v1.30–v1.90)
+## ✅ Version History
 
 | Version | Item |
 |---|---|
@@ -121,6 +125,21 @@
 | v1.97 | Broadcast socket ID hardening and resilient stream chat broadcasts |
 | v1.98 | Player tournament Livewire coverage: elimination, stats/history, filtering, and N+1 guard |
 | v1.99 | Compliance/blacklisting, authenticator 2FA, per-game H2H ELO, and provider live-status polling |
+| v1.100 | Documentation backlog synchronization |
+| v1.101 | Contact inquiry workflow polish |
+| v1.102 | Newsletter management and campaign sending |
+| v1.103 | Dynamic referral rewards |
+| v1.104 | First-deposit referral qualification |
+| v1.105 | Dynamic deposit processing fees |
+| v1.106 | Advertisement and promotion management |
+| v1.107 | Moderated player reviews and star ratings |
+| v1.108 | Player mobile navigation variable fix |
+| v1.109 | Instant, accessible player review rating selection |
+| v1.110 | Team tournaments, auto-forfeit default, and mutual rematch voting |
+| v1.111 | Localization flag icons and language-switcher visibility settings |
+| v1.112 | Geo-blocking middleware and admin management |
+| v1.113 | Tournament automation, tournament fixtures admin UI, H2H commission, roles/permissions UI, About CMS, and admin modal polish |
+| v1.114 | Expanded translations across all ten non-English runtime catalogs |
 
 ---
 
@@ -139,6 +158,9 @@ See `documentation/execution_checklist.md` for complete list. Summary:
 | ✅ | Team tournaments, auto-forfeit setting, rematch voting | Done v1.110 |
 | ✅ | Localization UI updates (flag icons, admin toggles) | Done v1.111 |
 | ✅ | Geo-Blocking middleware and Admin UI | Done v1.112 |
+| ✅ | Tournament automation and admin fixtures view | Done v1.113 |
+| ✅ | H2H commission, roles/permissions UI, About CMS, and admin modal polish | Done v1.113 |
+| ✅ | Expanded non-English runtime translations | Done v1.114 |
 | 🟡 | Remaining testing debt | Admin/player frequency filters, filter persistence, pagination, and admin navigation |
 | ⚪ | R2 storage and external payout integration | Production readiness; deferred during testing |
 

@@ -100,6 +100,14 @@ Player-created wager matches outside tournament brackets.
     *   Waiting challenge past `expires_at`: `EXPIRED` and creator stake refunded.
     *   In-progress match past `match_timer_minutes + 15` minutes: `DISPUTED` with system timeout note.
     *   Submitted result past `confirmation_due_at`: `DISPUTED` with system timeout note.
+*   **Settlement**: A confirmed or admin-awarded winner receives both stakes less the admin-configured `h2h.commission_percentage` (10% default). `ResolveHeadToHeadStakeAction` records one idempotent `H2H_PAYOUT` ledger credit for the net amount.
+
+## 8. Scheduled Tournament Automation
+Tournament maintenance is registered in `routes/console.php` and runs through the production scheduler container.
+
+*   **Underfilled cancellation**: `tournaments:auto-cancel` runs every minute. It selects tournaments that opted into `is_auto_cancel_underfilled`, have reached their start time, and remain below `min_participants`, then calls `CancelTournamentAction` so the normal cancellation/refund flow is preserved.
+*   **Recurring generation**: `tournaments:auto-generate` runs hourly. For each recurring template it calculates the next daily, weekly, or monthly start and calls `CreateTournamentAction` only if that template/start-time occurrence does not already exist.
+*   **Admin visibility**: `/admin/tournaments/{id}/matches` opens `TournamentMatches`, a fixtures-style tournament match view with status filters and individual or team identity.
 
 ## 🧪 Isolated Test Cases
 ### 1. Registration & Wallet
