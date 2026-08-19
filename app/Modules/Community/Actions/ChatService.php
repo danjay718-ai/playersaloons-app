@@ -10,7 +10,7 @@ use App\Modules\Community\Models\ChatMessage;
 use App\Modules\Community\Models\ChatParticipant;
 use App\Modules\Identity\Models\User;
 use App\Modules\Team\Models\Team;
-use App\Modules\Team\Models\TeamMember;
+use App\Modules\Tournament\Models\TournamentTeam;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -99,31 +99,37 @@ class ChatService
 
     public function joinTeamConversation(Team $team, User $actor): ChatConversation
     {
+        // Opening chat must never mutate squad membership. Joining a squad is
+        // an explicit request/approval workflow managed from the Squads page.
+        return $this->teamConversation($team, $actor);
+    }
+
+    public function tournamentTeamConversation(TournamentTeam $team, User $actor): ChatConversation
+    {
+        $team->loadMissing('members.user');
+        if (! $team->members->contains('user_id', $actor->getKey())) {
+            abort(403, 'Only tournament team members can open this chat.');
+        }
+
         return DB::transaction(function () use ($team, $actor): ChatConversation {
-            /** @var TeamMember|null $existingMember */
-            $existingMember = TeamMember::query()
-                ->with('team')
-                ->where('user_id', $actor->getKey())
-                ->where('status', 'active')
-                ->first();
-
-            if ($existingMember && (int) $existingMember->team_id !== (int) $team->getKey()) {
-                $this->leaveTeamForChatSwitch($existingMember, $actor);
-            }
-
-            TeamMember::query()->firstOrCreate(
+            $conversation = ChatConversation::query()->firstOrCreate(
+                ['scope_key' => 'tournament-team:'.$team->getKey()],
                 [
-                    'team_id' => $team->getKey(),
-                    'user_id' => $actor->getKey(),
+                    'uuid' => Str::uuid()->toString(),
+                    'type' => ChatConversation::TYPE_TOURNAMENT_TEAM,
+                    'name' => $team->name,
+                    'tournament_team_id' => $team->getKey(),
+                    'created_by_user_id' => $actor->getKey(),
                 ],
-                [
-                    'role' => 'member',
-                    'status' => 'active',
-                    'joined_at' => now(),
-                ]
             );
 
-            return $this->teamConversation($team, $actor);
+            foreach ($team->members as $member) {
+                if ($member->user !== null) {
+                    $this->ensureParticipant($conversation, $member->user, $member->role);
+                }
+            }
+
+            return $conversation->fresh(['participants.user', 'tournamentTeam']) ?? $conversation;
         });
     }
 
@@ -199,6 +205,10 @@ class ChatService
                 ->exists() ?? false;
         }
 
+        if ($conversation->type === ChatConversation::TYPE_TOURNAMENT_TEAM && $conversation->tournament_team_id !== null) {
+            return $conversation->tournamentTeam?->members()->where('user_id', $user->getKey())->exists() ?? false;
+        }
+
         return $conversation->participants()
             ->where('user_id', $user->getKey())
             ->exists();
@@ -209,7 +219,7 @@ class ChatService
      */
     public function conversationPayload(ChatConversation $conversation, User $viewer): array
     {
-        $conversation->loadMissing(['participants.user', 'team']);
+        $conversation->loadMissing(['participants.user', 'team', 'tournamentTeam.tournament']);
         /** @var ChatParticipant|null $participant */
         $participant = $conversation->participants
             ->first(fn (ChatParticipant $candidate): bool => (int) $candidate->user_id === (int) $viewer->getKey());
@@ -224,8 +234,11 @@ class ChatService
             $title = $other?->username ?? 'Direct Chat';
             $subtitle = 'Player to player';
         } elseif ($conversation->type === ChatConversation::TYPE_TEAM) {
-            $title = $conversation->team?->name ?? $conversation->name ?? 'Team Chat';
-            $subtitle = 'Team channel';
+            $title = $conversation->team?->name ?? $conversation->name ?? 'Squad Chat';
+            $subtitle = 'Permanent Squad Chat';
+        } elseif ($conversation->type === ChatConversation::TYPE_TOURNAMENT_TEAM) {
+            $title = $conversation->name ?? 'Tournament Team Chat';
+            $subtitle = $conversation->tournamentTeam?->tournament?->name ?? 'Tournament Team Chat';
         } elseif ($conversation->type === ChatConversation::TYPE_GLOBAL) {
             $subtitle = 'All verified players';
         }
@@ -237,6 +250,7 @@ class ChatService
             'subtitle' => $subtitle,
             'last_message_at' => $conversation->last_message_at?->toIso8601String(),
             'team_id' => $conversation->team_id,
+            'tournament_team_id' => $conversation->tournament_team_id,
             'is_unread' => $conversation->last_message_at !== null
                 && ($participant?->last_read_at === null || $conversation->last_message_at->gt($participant->last_read_at)),
         ];
@@ -279,7 +293,7 @@ class ChatService
 
         /** @var Collection<int, ChatConversation> $conversations */
         $conversations = ChatConversation::query()
-            ->with(['participants.user', 'team'])
+            ->with(['participants.user', 'team', 'tournamentTeam.tournament'])
             ->where(function ($query) use ($participantConversationIds, $global): void {
                 $query->where('id', $global->getKey())
                     ->orWhereIn('id', $participantConversationIds);
@@ -315,41 +329,6 @@ class ChatService
 
         if (! $isMember) {
             abort(403, 'Only active team members can open team chat.');
-        }
-    }
-
-    private function leaveTeamForChatSwitch(TeamMember $member, User $actor): void
-    {
-        $team = $member->team;
-
-        if ($team && (int) $team->captain_user_id === (int) $actor->getKey()) {
-            /** @var TeamMember|null $nextCaptain */
-            $nextCaptain = $team->members()
-                ->where('user_id', '!=', $actor->getKey())
-                ->where('status', 'active')
-                ->oldest('joined_at')
-                ->first();
-
-            $team->forceFill(['captain_user_id' => $nextCaptain?->user_id])->save();
-
-            if ($nextCaptain) {
-                $nextCaptain->forceFill(['role' => 'captain'])->save();
-            }
-        }
-
-        $member->delete();
-
-        if ($team) {
-            $conversation = ChatConversation::query()
-                ->where('scope_key', 'team:'.$team->getKey())
-                ->first();
-
-            if ($conversation) {
-                ChatParticipant::query()
-                    ->where('chat_conversation_id', $conversation->getKey())
-                    ->where('user_id', $actor->getKey())
-                    ->delete();
-            }
         }
     }
 

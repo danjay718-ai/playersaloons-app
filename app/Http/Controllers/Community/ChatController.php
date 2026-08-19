@@ -42,8 +42,7 @@ class ChatController extends Controller
             ->first();
 
         $teams = Team::query()
-            ->where('status', 'active')
-            ->orderBy('name')
+            ->when($currentMember, fn ($query) => $query->whereKey($currentMember->team_id), fn ($query) => $query->whereRaw('1 = 0'))
             ->get(['id', 'uuid', 'name'])
             ->map(fn (Team $team): array => [
                 'id' => $team->id,
@@ -332,6 +331,7 @@ class ChatController extends Controller
 
                 if ((int) $registration->id === (int) $match->winner_registration_id) {
                     $wins++;
+
                     return;
                 }
 

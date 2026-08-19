@@ -69,6 +69,11 @@ class Team extends Model implements HasMedia
         return $this->hasMany(TeamInvitation::class);
     }
 
+    public function joinRequests(): HasMany
+    {
+        return $this->hasMany(TeamJoinRequest::class);
+    }
+
     /**
      * Get the captain of the team.
      *

@@ -113,7 +113,7 @@ class LoginRedirectTest extends TestCase
 
         $response = $this->actingAs($player)->get('/dashboard');
         $response->assertStatus(200);
-        $response->assertSee('WELCOME BACK');
+        $response->assertSee('Player command center');
         $response->assertSee($player->username);
     }
 

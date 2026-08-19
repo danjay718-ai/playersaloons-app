@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Community\Models;
 
 use App\Modules\Team\Models\Team;
+use App\Modules\Tournament\Models\TournamentTeam;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,8 +30,12 @@ use Illuminate\Support\Carbon;
 class ChatConversation extends Model
 {
     public const TYPE_GLOBAL = 'global';
+
     public const TYPE_DIRECT = 'direct';
+
     public const TYPE_TEAM = 'team';
+
+    public const TYPE_TOURNAMENT_TEAM = 'tournament_team';
 
     /**
      * @var list<string>
@@ -41,6 +46,7 @@ class ChatConversation extends Model
         'scope_key',
         'name',
         'team_id',
+        'tournament_team_id',
         'created_by_user_id',
         'last_message_at',
     ];
@@ -61,6 +67,11 @@ class ChatConversation extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function tournamentTeam(): BelongsTo
+    {
+        return $this->belongsTo(TournamentTeam::class);
     }
 
     /**

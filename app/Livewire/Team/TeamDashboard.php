@@ -17,11 +17,14 @@ use App\Modules\Team\Actions\TransferTeamCaptainAction;
 use App\Modules\Team\Actions\UpdateTeamAction;
 use App\Modules\Team\Models\Team;
 use App\Modules\Team\Models\TeamInvitation;
+use App\Modules\Team\Models\TeamJoinRequest;
 use App\Modules\Team\Models\TeamMember;
 use App\Shared\Enums\TeamInvitationStatus;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class TeamDashboard extends Component
@@ -36,6 +39,10 @@ class TeamDashboard extends Component
 
     // Inviting Members
     public string $inviteUsername = '';
+
+    public string $squadSearch = '';
+
+    public string $joinRequestMessage = '';
 
     public function mount(): void
     {
@@ -279,6 +286,96 @@ class TeamDashboard extends Component
         }
     }
 
+    public function requestToJoin(int $teamId): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if ($user === null) {
+            return;
+        }
+
+        if (TeamMember::query()->where('user_id', $user->id)->where('status', 'active')->exists()) {
+            session()->flash('error', 'Leave your current squad before requesting another one.');
+
+            return;
+        }
+
+        $this->validate(['joinRequestMessage' => 'nullable|string|max:500']);
+        $team = Team::query()->where('status', 'active')->findOrFail($teamId);
+
+        TeamJoinRequest::query()->updateOrCreate([
+            'team_id' => $team->id,
+            'user_id' => $user->id,
+            'status' => 'pending',
+        ], [
+            'uuid' => Str::uuid()->toString(),
+            'message' => trim($this->joinRequestMessage) ?: null,
+        ]);
+
+        $this->reset('joinRequestMessage');
+        session()->flash('message', "Join request sent to {$team->name}.");
+    }
+
+    public function reviewJoinRequest(string $uuid, bool $approve): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        $team = $this->getCurrentTeam();
+        $manager = $team?->members()->where('user_id', $user?->id)->whereIn('role', ['captain', 'co_captain'])->exists() ?? false;
+        if (! $user || ! $team || ! $manager) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($uuid, $approve, $user, $team): void {
+            $request = TeamJoinRequest::query()
+                ->where('uuid', $uuid)
+                ->where('team_id', $team->id)
+                ->where('status', 'pending')
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($approve && TeamMember::query()->where('user_id', $request->user_id)->where('status', 'active')->exists()) {
+                throw new \LogicException('This player has already joined another squad.');
+            }
+
+            if ($approve) {
+                TeamMember::query()->updateOrCreate([
+                    'team_id' => $team->id,
+                    'user_id' => $request->user_id,
+                ], [
+                    'role' => 'member',
+                    'status' => 'active',
+                    'joined_at' => now(),
+                ]);
+            }
+
+            $request->update([
+                'status' => $approve ? 'approved' : 'declined',
+                'reviewed_by' => $user->id,
+                'reviewed_at' => now(),
+            ]);
+        });
+
+        session()->flash('message', $approve ? 'Player added to the squad.' : 'Join request declined.');
+    }
+
+    public function updateMemberRole(int $memberId, string $role): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        $team = $this->getCurrentTeam();
+        if (! $user || ! $team || (int) $team->captain_user_id !== (int) $user->id) {
+            abort(403);
+        }
+        if (! in_array($role, ['co_captain', 'member'], true)) {
+            throw new \InvalidArgumentException('Invalid squad role.');
+        }
+
+        $member = $team->members()->whereKey($memberId)->where('user_id', '!=', $user->id)->firstOrFail();
+        $member->update(['role' => $role]);
+        session()->flash('message', 'Squad role updated.');
+    }
+
     private function getCurrentTeam(): ?Team
     {
         /** @var User|null $user */
@@ -288,7 +385,9 @@ class TeamDashboard extends Component
         }
 
         return TeamMember::query()
+            ->with('team')
             ->where('user_id', $user->id)
+            ->where('status', 'active')
             ->first()
             ?->team;
     }
@@ -317,6 +416,8 @@ class TeamDashboard extends Component
                 'myPendingInvites' => collect(),
                 'teamMembers' => collect(),
                 'teamPendingInvites' => collect(),
+                'teamJoinRequests' => collect(),
+                'squadDirectory' => collect(),
             ]);
         }
 
@@ -335,6 +436,7 @@ class TeamDashboard extends Component
         // Load details for current team if user belongs to one
         $teamMembers = collect();
         $teamPendingInvites = collect();
+        $teamJoinRequests = collect();
 
         if ($team) {
             $teamMembers = $team->members()->with('user.profile')->get();
@@ -345,19 +447,32 @@ class TeamDashboard extends Component
                 })
                 ->with('invitee')
                 ->get();
+            $isManager = $team->members()->where('user_id', $user->id)->whereIn('role', ['captain', 'co_captain'])->exists();
+            if ($isManager) {
+                $teamJoinRequests = $team->joinRequests()->where('status', 'pending')->with('user.profile')->oldest()->get();
+            }
 
             if (! $this->editName) {
                 $this->editName = $team->name;
             }
         }
 
+        $squadDirectory = $team === null
+            ? Team::query()->where('status', 'active')
+                ->when(trim($this->squadSearch) !== '', fn ($query) => $query->where('name', 'like', '%'.trim($this->squadSearch).'%'))
+                ->withCount(['members' => fn ($query) => $query->where('status', 'active')])
+                ->orderByDesc('members_count')->orderBy('name')->limit(20)->get()
+            : collect();
+
         $view = view('livewire.team.team-dashboard', [
             'team' => $team,
             'myPendingInvites' => $myPendingInvites,
             'teamMembers' => $teamMembers,
             'teamPendingInvites' => $teamPendingInvites,
+            'teamJoinRequests' => $teamJoinRequests,
+            'squadDirectory' => $squadDirectory,
         ]);
 
-        return $this->resolveView($view)->layout('components.layouts.app', ['title' => 'My Team | PlayerSaloons']);
+        return $this->resolveView($view)->layout('components.layouts.app', ['title' => 'Squads | PlayerSaloons']);
     }
 }

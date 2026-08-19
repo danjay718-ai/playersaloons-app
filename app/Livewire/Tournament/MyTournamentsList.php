@@ -145,11 +145,23 @@ class MyTournamentsList extends Component
                             ->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
                     });
                 })
-                ->with(['round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration'])
+                ->with(['tournament', 'round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration'])
                 ->orderBy('id', 'desc')
                 ->get()
                 ->groupBy('tournament_id');
         }
+
+        $activeMatchRooms = $userMatches
+            ->flatten(1)
+            ->filter(fn (GameMatch $match): bool => in_array($match->status, [
+                MatchStatus::READY,
+                MatchStatus::IN_PROGRESS,
+                MatchStatus::RESULT_SUBMITTED,
+                MatchStatus::WAITING_FOR_CONFIRMATION,
+                MatchStatus::DISPUTED,
+            ], true))
+            ->sortByDesc('updated_at')
+            ->values();
 
         return view('livewire.tournament.my-tournaments-list', [
             'tournaments' => $tournaments,
@@ -158,6 +170,7 @@ class MyTournamentsList extends Component
             'historyCount' => $historyCount,
             'matchWins' => $matchWins,
             'matchLosses' => $matchLosses,
+            'activeMatchRooms' => $activeMatchRooms,
         ])->layout('components.layouts.dashboard', ['title' => 'My Tournaments | PlayerSaloons', 'dashboard_title' => 'MY TOURNAMENTS']);
     }
 }

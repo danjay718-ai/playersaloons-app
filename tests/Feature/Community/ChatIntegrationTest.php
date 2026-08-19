@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Community;
 
-use App\Modules\Community\Events\ChatMessageSent;
 use App\Modules\Community\Actions\ChatService;
+use App\Modules\Community\Events\ChatMessageSent;
 use App\Modules\Community\Models\ChatConversation;
 use App\Modules\Community\Models\ChatMessage;
 use App\Modules\Community\Models\PlayerFollow;
@@ -232,7 +232,7 @@ class ChatIntegrationTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_joining_team_channel_switches_existing_team_membership(): void
+    public function test_opening_another_squad_chat_never_switches_membership(): void
     {
         $captainA = User::factory()->create(['username' => 'captain_a']);
         $captainB = User::factory()->create(['username' => 'captain_b']);
@@ -248,23 +248,19 @@ class ChatIntegrationTest extends TestCase
             'joined_at' => now(),
         ]);
 
-        $oldConversationUuid = $this->actingAs($player)
+        $this->actingAs($player)
             ->postJson(route('chat.teams.open', ['uuid' => $teamA->uuid]))
-            ->assertCreated()
-            ->json('conversation.uuid');
+            ->assertCreated();
 
-        $newConversationUuid = $this->actingAs($player)
+        $this->actingAs($player)
             ->postJson(route('chat.teams.join', ['uuid' => $teamB->uuid]))
-            ->assertCreated()
-            ->assertJsonPath('conversation.type', ChatConversation::TYPE_TEAM)
-            ->json('conversation.uuid');
+            ->assertForbidden();
 
-        $this->assertNotSame($oldConversationUuid, $newConversationUuid);
-        $this->assertDatabaseMissing('team_members', [
+        $this->assertDatabaseHas('team_members', [
             'team_id' => $teamA->id,
             'user_id' => $player->id,
         ]);
-        $this->assertDatabaseHas('team_members', [
+        $this->assertDatabaseMissing('team_members', [
             'team_id' => $teamB->id,
             'user_id' => $player->id,
         ]);

@@ -64,7 +64,7 @@ class ComplianceBlockTest extends TestCase
 
         $this->actingAs($this->player)->get('/dashboard')
             ->assertForbidden()
-            ->assertSee('restricted by compliance review');
+            ->assertSee('Access is prohibited by policy rules');
     }
 
     public function test_expired_block_does_not_prevent_access(): void

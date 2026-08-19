@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tournament\Actions;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Models\UserGameAccount;
 use App\Modules\Team\Models\Team;
 use App\Modules\Tournament\Events\TournamentFilled;
 use App\Modules\Tournament\Events\TournamentSeatReserved;
@@ -14,6 +15,8 @@ use App\Modules\Tournament\Exceptions\TournamentNotOpenForRegistrationException;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentRegistrationMember;
+use App\Modules\Tournament\Models\TournamentTeam;
+use App\Modules\Tournament\Models\TournamentTeamMember;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\WalletService;
@@ -36,8 +39,14 @@ class RegisterForTournamentAction
      * @throws TournamentFullException
      * @throws InsufficientBalanceException
      */
-    public function execute(Tournament $tournament, User $user, ?Team $team = null): TournamentRegistration
-    {
+    public function execute(
+        Tournament $tournament,
+        User $user,
+        ?Team $team = null,
+        ?string $gameIdValue = null,
+        string $readyMode = 'auto',
+        ?TournamentTeam $tournamentTeam = null,
+    ): TournamentRegistration {
         if ($tournament->status !== TournamentStatus::REGISTRATION_OPEN) {
             throw new TournamentNotOpenForRegistrationException(
                 $tournament->name,
@@ -45,7 +54,15 @@ class RegisterForTournamentAction
             );
         }
 
-        return DB::transaction(function () use ($tournament, $user, $team): TournamentRegistration {
+        $gameIdValue = trim((string) ($gameIdValue ?: $user->username));
+        if ($gameIdValue === '' || mb_strlen($gameIdValue) > 191) {
+            throw new \LogicException('Enter a valid Game ID / In-Game Name.');
+        }
+        if (! in_array($readyMode, ['auto', 'confirm_each_match'], true)) {
+            throw new \LogicException('Choose a valid match readiness option.');
+        }
+
+        return DB::transaction(function () use ($tournament, $user, $team, $gameIdValue, $readyMode, $tournamentTeam): TournamentRegistration {
             // Lock tournament row to prevent race conditions on participant count
             /** @var Tournament|null $locked */
             $locked = Tournament::query()->where('id', $tournament->getKey())->lockForUpdate()->first();
@@ -54,19 +71,28 @@ class RegisterForTournamentAction
             }
 
             if (($locked->team_size ?? 1) > 1) {
-                // Team tournaments allow both: registering with a formed team OR solo (team lobby mode)
-                if ($team !== null) {
+                if ($tournamentTeam !== null) {
+                    $tournamentTeam = TournamentTeam::query()->with('members')->lockForUpdate()->findOrFail($tournamentTeam->getKey());
+                    if ((int) $tournamentTeam->tournament_id !== (int) $locked->getKey()
+                        || (int) $tournamentTeam->leader_user_id !== (int) $user->getKey()
+                        || $tournamentTeam->status !== 'ready'
+                        || $tournamentTeam->members->count() !== (int) $locked->team_size) {
+                        throw new \LogicException('This tournament team is not ready for registration.');
+                    }
+                } elseif ($team !== null) {
                     if ($team->status !== 'active' || (int) $team->captain_user_id !== (int) $user->getKey()) {
-                        throw new \LogicException('Only the captain of an active team may register it.');
+                        throw new \LogicException('Only the Squad Leader (captain) may create its tournament team.');
                     }
                     if ($team->members()->where('status', 'active')->count() < (int) $locked->team_size) {
-                        throw new \LogicException("Your team needs at least {$locked->team_size} active members.");
+                        throw new \LogicException("Your squad needs at least {$locked->team_size} active members.");
                     }
                     if (TournamentRegistration::query()->where('tournament_id', $locked->getKey())->where('team_id', $team->getKey())->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])->exists()) {
-                        throw new \LogicException('This team is already registered for the tournament.');
+                        throw new \LogicException('This squad already has a registered tournament team.');
                     }
+                    $tournamentTeam = $this->snapshotSquadLineup($locked, $team, $user, $gameIdValue, $readyMode);
+                } else {
+                    throw new \LogicException('Form a tournament team or use Find a Team before registering.');
                 }
-                // If $team is null, player joins the team lobby (will be matched with a random team)
             } elseif ($team !== null) {
                 throw new \LogicException('Teams cannot register for a solo tournament.');
             }
@@ -119,13 +145,27 @@ class RegisterForTournamentAction
                 'tournament_id' => $locked->getKey(),
                 'user_id' => $user->getKey(),
                 'team_id' => $team?->getKey(),
+                'tournament_team_id' => $tournamentTeam?->getKey(),
+                'game_id_value' => $gameIdValue,
+                'ready_mode' => $tournamentTeam?->members->every(fn ($member) => $member->ready_mode === 'auto') ? 'auto' : $readyMode,
                 'status' => RegistrationStatus::CONFIRMED,
                 'payment_status' => $paymentStatus,
                 'registered_at' => now(),
+                'locked_at' => $locked->extra_registration_started_at !== null ? now() : null,
             ]);
 
-            if ($team !== null) {
-                $roster = $team->members()->where('status', 'active')->orderByRaw("CASE WHEN role = 'captain' THEN 0 ELSE 1 END")->limit((int) $locked->team_size)->get();
+            if ($locked->platform_id !== null) {
+                UserGameAccount::query()->updateOrCreate([
+                    'user_id' => $user->getKey(),
+                    'game_id' => $locked->game_id,
+                    'platform_id' => $locked->platform_id,
+                ], [
+                    'game_id_value' => $gameIdValue,
+                ]);
+            }
+
+            if ($tournamentTeam !== null) {
+                $roster = $tournamentTeam->members;
                 foreach ($roster as $member) {
                     TournamentRegistrationMember::query()->create([
                         'registration_id' => $registration->id,
@@ -145,5 +185,50 @@ class RegisterForTournamentAction
 
             return $registration;
         });
+    }
+
+    private function snapshotSquadLineup(
+        Tournament $tournament,
+        Team $squad,
+        User $leader,
+        string $leaderGameId,
+        string $leaderReadyMode,
+    ): TournamentTeam {
+        $members = $squad->members()
+            ->where('status', 'active')
+            ->with('user:id,username')
+            ->orderByRaw("CASE WHEN role = 'captain' THEN 0 WHEN role = 'co_captain' THEN 1 ELSE 2 END")
+            ->limit((int) $tournament->team_size)
+            ->get();
+
+        $accountIds = UserGameAccount::query()
+            ->whereIn('user_id', $members->pluck('user_id'))
+            ->where('game_id', $tournament->game_id)
+            ->where('platform_id', $tournament->platform_id)
+            ->pluck('game_id_value', 'user_id');
+
+        $team = TournamentTeam::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'tournament_id' => $tournament->getKey(),
+            'source_team_id' => $squad->getKey(),
+            'leader_user_id' => $leader->getKey(),
+            'name' => $squad->name,
+            'status' => 'ready',
+        ]);
+
+        TournamentTeamMember::query()->insert($members->map(fn ($member): array => [
+            'tournament_id' => $tournament->getKey(),
+            'tournament_team_id' => $team->getKey(),
+            'user_id' => $member->user_id,
+            'role' => (int) $member->user_id === (int) $leader->getKey() ? 'leader' : 'member',
+            'game_id_value' => (int) $member->user_id === (int) $leader->getKey()
+                ? $leaderGameId
+                : (string) ($accountIds[$member->user_id] ?? $member->user?->username ?? ''),
+            'ready_mode' => (int) $member->user_id === (int) $leader->getKey() ? $leaderReadyMode : 'auto',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ])->all());
+
+        return $team->load('members');
     }
 }

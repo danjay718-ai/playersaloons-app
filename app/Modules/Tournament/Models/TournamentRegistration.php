@@ -38,9 +38,13 @@ class TournamentRegistration extends Model
         'tournament_id',
         'user_id',
         'team_id',
+        'tournament_team_id',
+        'game_id_value',
+        'ready_mode',
         'status',
         'payment_status',
         'registered_at',
+        'locked_at',
     ];
 
     /**
@@ -54,6 +58,7 @@ class TournamentRegistration extends Model
             'status' => RegistrationStatus::class,
             'payment_status' => PaymentStatus::class,
             'registered_at' => 'datetime',
+            'locked_at' => 'datetime',
         ];
     }
 
@@ -87,6 +92,11 @@ class TournamentRegistration extends Model
         return $this->belongsTo(Team::class);
     }
 
+    public function tournamentTeam(): BelongsTo
+    {
+        return $this->belongsTo(TournamentTeam::class);
+    }
+
     public function rosterMembers(): HasMany
     {
         return $this->hasMany(TournamentRegistrationMember::class, 'registration_id');
@@ -101,6 +111,8 @@ class TournamentRegistration extends Model
     public function includesUser(int $userId): bool
     {
         return (int) $this->user_id === $userId
-            || $this->rosterMembers()->where('user_id', $userId)->exists();
+            || ($this->relationLoaded('rosterMembers')
+                ? $this->rosterMembers->contains('user_id', $userId)
+                : $this->rosterMembers()->where('user_id', $userId)->exists());
     }
 }

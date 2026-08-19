@@ -19,6 +19,10 @@ class CreateTeamAction
     public function execute(array $data, User $captain): Team
     {
         return DB::transaction(function () use ($data, $captain) {
+            if (TeamMember::query()->where('user_id', $captain->id)->where('status', 'active')->lockForUpdate()->exists()) {
+                throw new \LogicException('A player can only belong to one active squad.');
+            }
+
             /** @var Team $team */
             $team = Team::create([
                 'uuid' => Str::uuid()->toString(),

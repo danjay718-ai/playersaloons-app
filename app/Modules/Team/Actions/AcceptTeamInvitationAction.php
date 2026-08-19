@@ -18,6 +18,10 @@ class AcceptTeamInvitationAction
     public function execute(TeamInvitation $invitation): void
     {
         DB::transaction(function () use ($invitation) {
+            if (TeamMember::query()->where('user_id', $invitation->invited_user_id)->where('status', 'active')->lockForUpdate()->exists()) {
+                throw new \LogicException('Leave the current squad before accepting another invitation.');
+            }
+
             $this->stateMachine->transition($invitation, TeamInvitationStatus::ACCEPTED);
 
             TeamMember::create([

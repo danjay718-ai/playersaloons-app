@@ -92,6 +92,9 @@
                     <span class="text-[10px] font-black uppercase tracking-[0.2em] border rounded-full px-4 py-1.5 {{ $statusColorClass }}">
                         {{ str_replace('_', ' ', $statusValue) }}
                     </span>
+                    <span class="text-[10px] font-black uppercase tracking-[0.15em] rounded-full border border-zinc-800 bg-zinc-950/60 px-4 py-1.5 text-zinc-400">
+                        {{ $tournament->timezone ?: config('app.tournament_timezone') }}
+                    </span>
                     @if(($tournament->team_size ?? 1) > 1)
                         <span class="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] bg-violet-950/30 border border-violet-800/60 rounded-full px-4 py-1.5">
                             {{ $tournament->team_size }}v{{ $tournament->team_size }} Teams
@@ -153,20 +156,33 @@
                             @endif
                         @else
                             @if(Auth::user()->hasRole('PLAYER'))
+                                <div class="mb-3 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-left">
+                                    <div>
+                                        <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ $gameIdSettings['label'] ?? 'Game ID / In-Game Name' }}</label>
+                                        <input wire:model="gameIdValue" type="text" maxlength="191" placeholder="{{ $gameIdSettings['example'] ?? 'Enter the ID opponents can find' }}" class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-600">
+                                        @error('gameIdValue')<p class="mt-1 text-[10px] text-red-400">{{ $message }}</p>@enderror
+                                        @if(!empty($gameIdSettings['instructions']))<p class="mt-1.5 text-[10px] leading-relaxed text-zinc-600">{{ $gameIdSettings['instructions'] }}</p>@endif
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Before Each Match</label>
+                                        <select wire:model="readyMode" class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-600">
+                                            <option value="auto">Auto Ready — less steps</option>
+                                            <option value="confirm_each_match">I'll Confirm Every Match</option>
+                                        </select>
+                                    </div>
+                                </div>
                                 @if(($tournament->team_size ?? 1) > 1)
-                                    <!-- Team tournament: join with team or join lobby -->
-                                    @php
-                                        $userTeam = \App\Modules\Team\Models\Team::query()
-                                            ->where('captain_user_id', Auth::id())
-                                            ->where('status', 'active')
-                                            ->first();
-                                    @endphp
                                     <button wire:click="register" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
-                                        <i data-lucide="{{ $userTeam ? 'users' : 'user-plus' }}" class="w-5 h-5"></i>
-                                        <span>{{ $userTeam ? 'Register My Team' : 'Join Team Lobby' }}</span>
+                                        <i data-lucide="{{ $userTournamentTeam || $userSquad ? 'users' : 'user-plus' }}" class="w-5 h-5"></i>
+                                        <span>{{ $userTournamentTeam && (int) $userTournamentTeam->leader_user_id === (int) Auth::id() ? 'Register Team' : ($userSquad ? 'Create Team From Squad' : ($isSearchingForTeam ? 'Still Finding a Team' : 'Find a Team')) }}</span>
                                     </button>
-                                    @if(!$userTeam)
-                                        <p class="text-center text-[10px] text-zinc-500 font-medium">No team? Join the lobby to find teammates.</p>
+                                    @if($userTournamentTeam)
+                                        <p class="text-center text-[10px] text-zinc-500 font-medium">{{ $userTournamentTeam->name }} · {{ $userTournamentTeam->members->count() }}/{{ $tournament->team_size }} players · {{ (int) $userTournamentTeam->leader_user_id === (int) Auth::id() ? 'You are Team Leader' : 'Waiting for Team Leader' }}</p>
+                                        @if((int) $userTournamentTeam->leader_user_id === (int) Auth::id())
+                                            <div class="flex flex-wrap justify-center gap-1.5">@foreach($userTournamentTeam->members->where('user_id', '!=', Auth::id()) as $member)<button wire:click="transferTournamentTeamLeadership({{ $member->user_id }})" wire:confirm="Make {{ $member->user?->username }} the Team Leader?" class="rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-[9px] text-zinc-500 hover:text-cyan-300">Make {{ $member->user?->username }} Leader</button>@endforeach</div>
+                                        @endif
+                                    @elseif(!$userSquad)
+                                        <p class="text-center text-[10px] text-zinc-500 font-medium">Players are grouped for this tournament only. No charge until the team is complete.</p>
                                     @endif
                                 @else
                                     <button wire:click="register" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
@@ -180,17 +196,12 @@
                                 </div>
                             @endif
                         @endif
-                    @elseif($tournament->status->value === 'CHECKIN_OPEN')
-                        @if($isCheckedIn)
+                    @elseif(in_array($tournament->status->value, ['REGISTRATION_CLOSED', 'CHECKIN_OPEN', 'CHECKIN_CLOSED']))
+                        @if($isRegistered)
                             <div class="w-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-2xl py-5 px-8 text-center text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center space-x-3 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
                                 <i data-lucide="user-check" class="w-5 h-5"></i>
-                                <span>Ready for Combat</span>
+                                <span>Entry Locked · Preparing Matches</span>
                             </div>
-                        @elseif($isRegistered)
-                            <button wire:click="checkin" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
-                                <i data-lucide="crosshair" class="w-5 h-5"></i>
-                                <span>Check-in Now</span>
-                            </button>
                         @else
                             <div class="w-full bg-zinc-950/60 border border-zinc-800 text-zinc-600 rounded-2xl py-5 px-8 text-center text-xs font-black uppercase tracking-[0.2em]">
                                 Recruitment Closed
@@ -215,19 +226,11 @@
 
         $statusVal = $tournament->status->value ?? $tournament->status;
         if ($statusVal === 'REGISTRATION_OPEN' && $tournament->registration_close_at) {
-            $timerLabel = 'Registration closes in';
+            $timerLabel = $tournament->extra_registration_started_at ? 'Extra Registration closes in' : 'Registration closes in';
             $timerTarget = $tournament->registration_close_at;
             $timerColor = 'emerald';
-        } elseif ($statusVal === 'REGISTRATION_CLOSED' && $tournament->checkin_open_at) {
-            $timerLabel = 'Check-in opens in';
-            $timerTarget = $tournament->checkin_open_at;
-            $timerColor = 'amber';
-        } elseif ($statusVal === 'CHECKIN_OPEN' && $tournament->checkin_close_at) {
-            $timerLabel = 'Check-in closes in';
-            $timerTarget = $tournament->checkin_close_at;
-            $timerColor = 'fuchsia';
-        } elseif ($statusVal === 'CHECKIN_CLOSED' && $tournament->start_at) {
-            $timerLabel = 'Tournament starts in';
+        } elseif (in_array($statusVal, ['REGISTRATION_CLOSED', 'CHECKIN_OPEN', 'CHECKIN_CLOSED']) && $tournament->start_at) {
+            $timerLabel = 'First matches begin in';
             $timerTarget = $tournament->start_at;
             $timerColor = 'violet';
         } elseif ($statusVal === 'PUBLISHED' && $tournament->registration_open_at) {
@@ -463,7 +466,7 @@
                             <!-- Default rules when none specified -->
                             <ul class="space-y-4">
                                 @foreach([
-                                    'Check-in is mandatory during the designated window.',
+                                    'Tournament entries lock when registration closes.',
                                     'Standard competitive server parameters only.',
                                     'Instant result reporting required post-engagement.',
                                     'Disputes necessitate high-definition screenshot evidence.',
@@ -494,9 +497,9 @@
                         @foreach([
                             ['icon' => 'calendar', 'color' => 'text-cyan-400 border-cyan-800/50', 'label' => 'Registration Opens', 'time' => $tournament->registration_open_at],
                             ['icon' => 'calendar-x', 'color' => 'text-rose-400 border-rose-800/50', 'label' => 'Registration Ends', 'time' => $tournament->registration_close_at],
-                            ['icon' => 'clock', 'color' => 'text-fuchsia-400 border-fuchsia-800/50', 'label' => 'Check-in Opens', 'time' => $tournament->checkin_open_at],
-                            ['icon' => 'clock-x', 'color' => 'text-amber-400 border-amber-800/50', 'label' => 'Check-in Closes', 'time' => $tournament->checkin_close_at],
-                            ['icon' => 'zap', 'color' => 'text-emerald-400 border-emerald-800/50', 'label' => 'Tournament Starts', 'time' => $tournament->start_at],
+                            ['icon' => 'shield-check', 'color' => 'text-fuchsia-400 border-fuchsia-800/50', 'label' => 'Entries Lock', 'time' => $tournament->registration_close_at],
+                            ['icon' => 'zap', 'color' => 'text-emerald-400 border-emerald-800/50', 'label' => 'First Matches', 'time' => $tournament->start_at],
+                            ['icon' => 'flag', 'color' => 'text-amber-400 border-amber-800/50', 'label' => 'Estimated End', 'time' => $tournament->end_at],
                         ] as $item)
                             @php
                                 $isPast = $item['time'] && \Illuminate\Support\Carbon::parse($item['time'])->isPast();
@@ -508,8 +511,8 @@
                                 <div class="space-y-1 min-w-0">
                                     <span class="block text-[10px] font-black {{ $isPast ? 'text-zinc-700' : 'text-zinc-500' }} uppercase tracking-widest">{{ $item['label'] }}</span>
                                     <span class="text-sm font-bold {{ $isPast ? 'text-zinc-600 line-through' : 'text-zinc-300' }}">
-                                        {{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->format('M d, Y') : 'TBD' }}
-                                        <span class="text-xs text-zinc-500 ml-1 opacity-60">{{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->format('h:i A') : '' }}</span>
+                                        {{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->setTimezone($tournament->timezone)->format('M d, Y') : 'TBD' }}
+                                        <span class="text-xs text-zinc-500 ml-1 opacity-60">{{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->setTimezone($tournament->timezone)->format('h:i A T') : '' }}</span>
                                     </span>
                                     @if($item['time'] && !$isPast)
                                         <span class="text-[10px] text-zinc-600 font-medium">{{ \Illuminate\Support\Carbon::parse($item['time'])->diffForHumans() }}</span>
@@ -748,7 +751,7 @@
 
                                             <!-- Match Link -->
                                             @if($match->player_a_registration_id || $match->player_b_registration_id)
-                                                <a href="/matches/{{ $match->uuid }}" wire:navigate class="shrink-0 w-9 h-9 flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-cyan-500/40 rounded-xl text-zinc-600 hover:text-cyan-400 transition-all duration-300">
+                                                <a href="/matches/{{ $match->uuid }}" wire:navigate aria-label="Open Match Room" title="Open Match Room" class="shrink-0 w-9 h-9 flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-cyan-500/40 rounded-xl text-zinc-600 hover:text-cyan-400 transition-all duration-300">
                                                     <i data-lucide="external-link" class="w-4 h-4"></i>
                                                 </a>
                                             @endif
@@ -887,7 +890,7 @@
                                                     <!-- Match link -->
                                                     @if($match->player_a_registration_id || $match->player_b_registration_id)
                                                         <a href="/matches/{{ $match->uuid }}" wire:navigate class="flex items-center justify-center gap-1.5 py-2 px-3 bg-zinc-950/40 hover:bg-zinc-900 border-t border-zinc-800/50 text-[8px] font-black text-zinc-600 hover:text-cyan-400 uppercase tracking-widest transition-all duration-200">
-                                                            <span>View Match</span>
+                                                            <span>Match Room</span>
                                                             <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
                                                         </a>
                                                     @endif
@@ -916,7 +919,7 @@
                     <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-indigo-950/10 pointer-events-none"></div>
                     <i data-lucide="git-branch" class="w-16 h-16 mx-auto text-zinc-800 mb-6"></i>
                     <h3 class="text-xl font-black text-zinc-400 font-orbitron tracking-widest uppercase">Bracket Not Generated</h3>
-                    <p class="text-sm font-medium text-zinc-600 mt-4 max-w-sm mx-auto leading-relaxed">Brackets will appear once the tournament organizer generates them after check-in closes.</p>
+                    <p class="text-sm font-medium text-zinc-600 mt-4 max-w-sm mx-auto leading-relaxed">Brackets and Match Rooms appear automatically after tournament entries lock.</p>
                 </div>
             @endif
         </div>

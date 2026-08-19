@@ -1,7 +1,7 @@
 <div class="space-y-8">
     <x-ui.toasts />
 
-    <!-- Team Dashboard Header -->
+    <!-- Squad Dashboard Header -->
     <div class="bg-gradient-to-r from-zinc-900 via-zinc-900 to-fuchsia-950/10 border border-zinc-850 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
         <div class="absolute -top-20 -right-20 w-60 h-60 bg-fuchsia-600/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -11,20 +11,20 @@
                 </div>
                 <div>
                     <h1 class="text-2xl md:text-4xl font-black font-orbitron tracking-wider text-white uppercase">
-                        {{ $team ? $team->name : 'TEAMS HUB' }}
+                        {{ $team ? $team->name : 'SQUADS' }}
                     </h1>
                     <p class="text-xs text-zinc-400 mt-1">
                         @if($team)
-                            Manage your squad, view members, send invitations, and track team status.
+                            Your permanent player group, roles, requests, and Squad Chat.
                         @else
-                            Form a new squad, recruit players, and review pending team invitations.
+                            Create a squad or request to join an active community.
                         @endif
                     </p>
                 </div>
             </div>
 
             @if($team)
-                <div class="bg-zinc-950 border border-zinc-850 rounded-xl px-4 py-2 flex items-center space-x-4">
+                <div class="flex items-center gap-3"><a href="/chat" wire:navigate class="rounded-xl border border-fuchsia-800/60 bg-fuchsia-950/30 px-4 py-3 text-[10px] font-black uppercase tracking-wider text-fuchsia-300 hover:border-fuchsia-500">Open Squad Chat</a><div class="bg-zinc-950 border border-zinc-850 rounded-xl px-4 py-2 flex items-center space-x-4">
                     <div>
                         <span class="block text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Status</span>
                         <span class="text-xs font-black font-orbitron text-emerald-400 uppercase tracking-wider">{{ $team->status }}</span>
@@ -34,7 +34,7 @@
                         <span class="block text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Members</span>
                         <span class="text-xs font-black font-orbitron text-zinc-200">{{ $teamMembers->count() }}</span>
                     </div>
-                </div>
+                </div></div>
             @endif
         </div>
     </div>
@@ -42,12 +42,12 @@
     @if(!$team)
         <!-- NO TEAM STATE -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Create a Team -->
+            <!-- Create a Squad -->
             <div class="lg:col-span-2 bg-zinc-900 border border-zinc-850 rounded-xl p-5 md:p-6 shadow-lg shadow-black/20 space-y-6">
                 <div class="border-b border-zinc-850 pb-3 flex items-center space-x-2">
                     <i data-lucide="user-plus" class="w-5 h-5 text-fuchsia-400"></i>
                     <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase">
-                        CREATE A TEAM
+                        CREATE A SQUAD
                     </h2>
                 </div>
 
@@ -59,7 +59,7 @@
                             id="teamName" 
                             wire:model="teamName" 
                             class="bg-zinc-950 border border-zinc-800 focus:border-fuchsia-500 rounded-lg px-4 py-2.5 text-sm text-zinc-100 w-full focus:outline-none transition-colors"
-                            placeholder="Enter a unique name for your team"
+                            placeholder="Enter a unique squad name"
                         >
                         @error('teamName') <span class="text-xs text-red-400 font-semibold">{{ $message }}</span> @enderror
                     </div>
@@ -68,7 +68,7 @@
                         type="submit" 
                         class="bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white font-bold py-2.5 px-6 rounded-lg transition-all text-xs uppercase tracking-wider shadow-lg shadow-fuchsia-900/10 cursor-pointer"
                     >
-                        Create Team
+                        Create Squad
                     </button>
                 </form>
             </div>
@@ -111,9 +111,24 @@
                 @else
                     <div class="text-center py-12 text-zinc-500">
                         <i data-lucide="mail" class="w-8 h-8 mx-auto text-zinc-650 mb-3"></i>
-                        <p class="text-xs font-semibold">No pending team invitations.</p>
+                        <p class="text-xs font-semibold">No pending squad invitations.</p>
                     </div>
                 @endif
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-zinc-850 bg-zinc-900 p-5 md:p-6">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div><h2 class="font-orbitron text-lg font-bold uppercase tracking-wide text-white">Find a Squad</h2><p class="mt-1 text-xs text-zinc-500">Requests require Leader or Co-Leader approval. You will never be moved between squads automatically.</p></div>
+                <input wire:model.live.debounce.300ms="squadSearch" type="search" placeholder="Search squads" class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-white outline-none focus:border-fuchsia-600">
+            </div>
+            <textarea wire:model="joinRequestMessage" rows="2" maxlength="500" placeholder="Optional message to squad leaders" class="mb-4 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-white outline-none focus:border-fuchsia-600"></textarea>
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                @forelse($squadDirectory as $directorySquad)
+                    <div class="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4"><div class="min-w-0"><strong class="block truncate text-sm text-white">{{ $directorySquad->name }}</strong><span class="text-[10px] uppercase tracking-wider text-zinc-500">{{ $directorySquad->members_count }} members</span></div><button wire:click="requestToJoin({{ $directorySquad->id }})" class="shrink-0 rounded-lg bg-fuchsia-600 px-3 py-2 text-[10px] font-black uppercase text-white hover:bg-fuchsia-500">Request</button></div>
+                @empty
+                    <p class="text-xs text-zinc-500">No squads match your search.</p>
+                @endforelse
             </div>
         </div>
     @else
@@ -125,7 +140,7 @@
                     <div class="flex items-center space-x-2">
                         <i data-lucide="users-round" class="w-5 h-5 text-fuchsia-400"></i>
                         <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase">
-                            TEAM ROSTER
+                            SQUAD MEMBERS
                         </h2>
                     </div>
                     
@@ -154,8 +169,10 @@
                                         </span>
                                         @if($member->role === 'captain')
                                             <span class="text-[8px] font-bold text-amber-400 uppercase tracking-wider bg-amber-950/40 border border-amber-900/60 rounded px-1.5 py-0.5">
-                                                Captain
+                                                Leader
                                             </span>
+                                        @elseif($member->role === 'co_captain')
+                                            <span class="rounded border border-cyan-900/60 bg-cyan-950/40 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-cyan-400">Co-Leader</span>
                                         @endif
                                     </div>
                                     <span class="text-[10px] text-zinc-500 font-semibold uppercase">Joined: {{ $member->joined_at->format('M d, Y') }}</span>
@@ -164,14 +181,15 @@
 
                             @if($team->captain_user_id === auth()->id() && $member->user_id !== auth()->id())
                                 <div class="flex items-center space-x-2">
+                                    <select wire:change="updateMemberRole({{ $member->id }}, $event.target.value)" class="rounded-lg border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-[10px] text-zinc-300"><option value="member" @selected($member->role === 'member')>Member</option><option value="co_captain" @selected($member->role === 'co_captain')>Co-Leader</option></select>
                                     <!-- Transfer Captaincy -->
                                     <button 
                                         wire:click="transferCaptaincy('{{ $member->user->username }}')"
                                         wire:confirm="Are you sure you want to transfer captaincy to this member? You will become a regular member."
                                         class="bg-zinc-950 hover:bg-zinc-850 border border-zinc-800 hover:border-amber-900/60 hover:text-amber-400 text-zinc-400 text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                                        title="Make Captain"
+                                        title="Make Leader"
                                     >
-                                        Transfer Captaincy
+                                        Transfer Leadership
                                     </button>
                                     
                                     <!-- Kick Member -->
@@ -192,6 +210,9 @@
 
             <!-- Right: Settings / Invites -->
             <div class="space-y-8">
+                @if($teamJoinRequests->isNotEmpty())
+                    <div class="space-y-4 rounded-xl border border-cyan-900/40 bg-cyan-950/10 p-5"><h2 class="font-orbitron text-sm font-bold uppercase tracking-wide text-cyan-100">Join Requests</h2>@foreach($teamJoinRequests as $joinRequest)<div class="rounded-lg border border-zinc-800 bg-zinc-950 p-3"><strong class="text-xs text-white">{{ $joinRequest->user->username }}</strong>@if($joinRequest->message)<p class="mt-1 text-[10px] text-zinc-500">{{ $joinRequest->message }}</p>@endif<div class="mt-2 flex gap-2"><button wire:click="reviewJoinRequest('{{ $joinRequest->uuid }}', true)" class="rounded bg-emerald-600 px-2 py-1 text-[9px] font-bold uppercase text-white">Approve</button><button wire:click="reviewJoinRequest('{{ $joinRequest->uuid }}', false)" class="rounded bg-zinc-800 px-2 py-1 text-[9px] font-bold uppercase text-zinc-300">Decline</button></div></div>@endforeach</div>
+                @endif
                 <!-- Captain Controls (Invite & Rename & Disband) -->
                 @if($team->captain_user_id === auth()->id())
                     <!-- Send Outbound Invitations -->
@@ -253,7 +274,7 @@
                         <div class="border-b border-zinc-850 pb-3 flex items-center space-x-2">
                             <i data-lucide="settings" class="w-5 h-5 text-zinc-400"></i>
                             <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase">
-                                TEAM SETTINGS
+                                SQUAD SETTINGS
                             </h2>
                         </div>
 
@@ -299,7 +320,7 @@
                             </h2>
                         </div>
                         <p class="text-xs text-zinc-500 leading-relaxed">
-                            Only the team captain (<span class="text-zinc-300 font-semibold">{{ $team->captain?->username }}</span>) is authorized to invite new players, remove members, transfer captaincy, or update team settings.
+                            Only the Squad Leader (<span class="text-zinc-300 font-semibold">{{ $team->captain?->username }}</span>) can change membership and squad settings. Co-Leaders can review join requests.
                         </p>
                     </div>
                 @endif

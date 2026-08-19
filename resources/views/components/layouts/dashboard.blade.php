@@ -72,7 +72,7 @@
                 ['label' => __('Leaderboard'), 'icon' => 'award',          'url' => '/leaderboards',    'pattern' => 'leaderboards'],
                 ['label' => __('Streams'),     'icon' => 'tv',              'url' => '/streams',         'pattern' => 'streams'],
                 ['label' => __('Chat'),        'icon' => 'message-square',  'url' => '/chat',            'pattern' => 'chat'],
-                ['label' => __('My Teams'),    'icon' => 'users',           'url' => '/teams',           'pattern' => 'teams'],
+                ['label' => __('Squads'),       'icon' => 'users',           'url' => '/teams',           'pattern' => 'teams'],
                 ['label' => __('Wallet'),      'icon' => 'wallet',          'url' => '/wallet',          'pattern' => 'wallet'],
                 ['label' => __('Profile'),     'icon' => 'user-round',      'url' => '/profile',         'pattern' => 'profile'],
                 ['label' => __('Support'),     'icon' => 'headphones',      'url' => '/contact',         'pattern' => 'contact'],
@@ -135,6 +135,7 @@
                     ['label' => __('Leaderboard'), 'icon' => 'award',            'url' => '/leaderboards',     'active' => request()->is('leaderboards')],
                     ['label' => __('Streams'),     'icon' => 'tv',               'url' => '/streams',          'active' => request()->is('streams')],
                     ['label' => __('Chat'),        'icon' => 'message-square',   'url' => '/chat',             'active' => request()->is('chat')],
+                    ['label' => __('Squads'),      'icon' => 'users',            'url' => '/teams',            'active' => request()->is('teams')],
                     ['label' => __('Support'),     'icon' => 'headphones',       'url' => '/contact',          'active' => request()->is('contact')],
                     ['label' => __('Review Us'),   'icon' => 'star',             'url' => '/reviews',          'active' => request()->is('reviews')],
                 ];
