@@ -28,6 +28,7 @@ class NotificationBellTest extends TestCase
         /** @var User $user */
         $user = User::factory()->create(['status' => UserStatus::ACTIVE]);
         $user->assignRole('PLAYER');
+
         return $user;
     }
 
@@ -38,6 +39,7 @@ class NotificationBellTest extends TestCase
             'user_id' => $user->id,
             'read_at' => $read ? now() : null,
         ]);
+
         return $notification;
     }
 
@@ -88,6 +90,23 @@ class NotificationBellTest extends TestCase
             ->assertSet('unreadCount', 0);
 
         $this->assertEquals(0, $user->notifications()->whereNull('read_at')->count());
+    }
+
+    public function test_clicking_an_action_notification_marks_it_read_and_redirects(): void
+    {
+        $user = $this->makeUser();
+        $notification = Notification::factory()->create([
+            'user_id' => $user->id,
+            'action_url' => '/tournaments/example/view',
+            'read_at' => null,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(NotificationBell::class)
+            ->call('openNotification', $notification->id)
+            ->assertRedirect('/tournaments/example/view');
+
+        $this->assertNotNull($notification->fresh()->read_at);
     }
 
     public function test_cannot_mark_another_users_notification(): void

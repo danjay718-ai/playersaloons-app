@@ -72,6 +72,28 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertSeeHtml('hasLost: false');
     }
 
+    public function test_ongoing_participant_sees_direct_match_room_action(): void
+    {
+        $tournament = $this->makeTournament('Live Head to Head', TournamentStatus::ONGOING);
+        [$playerRegistration, $opponentRegistration] = $this->registerPlayers($tournament);
+        $bracket = Bracket::query()->create(['tournament_id' => $tournament->id]);
+        $round = Round::query()->create(['bracket_id' => $bracket->id, 'round_number' => 1]);
+        $match = GameMatch::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'tournament_id' => $tournament->id,
+            'round_id' => $round->id,
+            'player_a_registration_id' => $playerRegistration->id,
+            'player_b_registration_id' => $opponentRegistration->id,
+            'status' => MatchStatus::IN_PROGRESS,
+            'started_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->player)
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSee('Open Match Room & Report Result')
+            ->assertSee("/matches/{$match->uuid}", escape: false);
+    }
+
     public function test_elimination_modal_go_back_resets_tab(): void
     {
         $tournament = $this->makeTournament('Go Back Cup', TournamentStatus::ONGOING);

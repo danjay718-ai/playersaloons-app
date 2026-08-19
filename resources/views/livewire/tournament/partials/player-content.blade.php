@@ -142,7 +142,22 @@
                     </a>
                     <p class="text-center text-[10px] text-zinc-600 font-medium">Guests can view but not join</p>
                 @else
-                    @if($tournament->status->value === 'REGISTRATION_OPEN')
+                    @if($currentMatch)
+                        @php
+                            $currentMatchStatus = $currentMatch->status->value ?? (string) $currentMatch->status;
+                            $currentMatchLabel = match($currentMatchStatus) {
+                                'waiting_for_confirmation' => 'Confirm Match Result',
+                                'disputed' => 'Review Match Dispute',
+                                'ready' => 'Open Match Room',
+                                default => 'Open Match Room & Report Result',
+                            };
+                        @endphp
+                        <a href="/matches/{{ $currentMatch->uuid }}" wire:navigate class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
+                            <i data-lucide="swords" class="w-5 h-5"></i>
+                            <span>{{ $currentMatchLabel }}</span>
+                        </a>
+                        <p class="text-center text-[10px] font-bold uppercase tracking-wider text-cyan-400">Round {{ $currentMatch->round?->round_number ?? '—' }} · {{ str_replace('_', ' ', $currentMatchStatus) }}</p>
+                    @elseif($tournament->status->value === 'REGISTRATION_OPEN')
                         @if($isRegistered)
                             <div class="w-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl py-5 px-8 text-center text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center space-x-3 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
                                 <i data-lucide="shield-check" class="w-5 h-5"></i>

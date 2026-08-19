@@ -267,7 +267,28 @@ class TournamentDetail extends Component
         }
 
         $hasLost = false;
+        $currentMatch = null;
         if ($user && $userRegistration) {
+            // Always expose the participant's actionable match on the overview.
+            // Bracket data remains lazy-loaded, so this focused indexed lookup
+            // avoids loading every round just to provide the Match Room link.
+            $currentMatch = GameMatch::query()
+                ->where('tournament_id', $tournament->id)
+                ->where(function ($query) use ($userRegistration): void {
+                    $query->where('player_a_registration_id', $userRegistration->id)
+                        ->orWhere('player_b_registration_id', $userRegistration->id);
+                })
+                ->whereIn('status', [
+                    MatchStatus::READY,
+                    MatchStatus::IN_PROGRESS,
+                    MatchStatus::RESULT_SUBMITTED,
+                    MatchStatus::WAITING_FOR_CONFIRMATION,
+                    MatchStatus::DISPUTED,
+                ])
+                ->with('round:id,round_number')
+                ->latest('updated_at')
+                ->first(['id', 'uuid', 'round_id', 'status', 'updated_at']);
+
             $hasLost = GameMatch::where('tournament_id', $tournament->id)
                 ->where(function ($query) use ($userRegistration) {
                     $query->where('player_a_registration_id', $userRegistration->id)
@@ -327,6 +348,7 @@ class TournamentDetail extends Component
             'allMatches' => $allMatches,
             'activityLogs' => $activityLogs,
             'hasLost' => $hasLost,
+            'currentMatch' => $currentMatch,
             'streamService' => $streamService,
             'canCancelRegistration' => $canCancelRegistration,
             'canViewRestricted' => $canViewRestricted,

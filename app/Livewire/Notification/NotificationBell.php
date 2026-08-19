@@ -8,7 +8,6 @@ use App\Modules\Community\Models\Notification;
 use App\Modules\Identity\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\RedirectResponse;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -55,7 +54,7 @@ class NotificationBell extends Component
         $this->loadNotifications();
     }
 
-    public function openNotification(int $id): ?RedirectResponse
+    public function openNotification(int $id): void
     {
         /** @var User $user */
         $user = auth()->user();
@@ -63,12 +62,12 @@ class NotificationBell extends Component
         $notification->forceFill(['read_at' => $notification->read_at ?? now()])->save();
 
         if ($notification->action_url !== null && str_starts_with($notification->action_url, '/')) {
-            return redirect()->to($notification->action_url);
+            $this->redirect($notification->action_url, navigate: true);
+
+            return;
         }
 
         $this->loadNotifications();
-
-        return null;
     }
 
     public function markAllRead(): void
