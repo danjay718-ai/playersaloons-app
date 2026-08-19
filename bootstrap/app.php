@@ -6,6 +6,7 @@ use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TranslateRenderedHtml;
 use App\Http\Middleware\UpdateUserOnlineStatus;
 use App\Modules\Operations\Services\ErrorIncidentReporter;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -34,6 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontReport([
+            AuthenticationException::class,
+        ]);
+
         // Central capture covers HTTP, Livewire, console, and queue exceptions.
         // The reporter is failure-safe so database outages still reach Laravel logs.
         $exceptions->report(function (Throwable $exception): void {
@@ -41,6 +46,14 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (Throwable $exception, Request $request) {
+            if ($exception instanceof AuthenticationException) {
+                if ($request->is('api/*') || $request->expectsJson()) {
+                    return response()->json(['message' => 'Unauthenticated.'], 401);
+                }
+
+                return redirect()->guest(route('login'));
+            }
+
             $status = $exception instanceof HttpExceptionInterface
                 ? $exception->getStatusCode()
                 : 500;

@@ -17,6 +17,7 @@ use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -154,6 +155,12 @@ class TournamentSecurityTest extends TestCase
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $completedTournament->uuid])
+            ->assertSee('Completed History Cup');
+
+        Auth::logout();
+
+        $this->get('/tournaments/'.$completedTournament->uuid.'/view')
+            ->assertOk()
             ->assertSee('Completed History Cup');
 
         $this->actingAs($this->player)

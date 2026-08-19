@@ -77,7 +77,7 @@ Route::group([], function () {
     Route::get('/tournaments', PublicTournamentList::class);
     Route::get('/games/{game:slug}', GameShow::class)->name('games.show');
     Route::get('/streams/{id}', StreamWatch::class)->name('streams.watch');
-    Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view.public');
+    Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
     Route::get('/blog', BlogIndex::class)->name('blog.index');
     Route::get('/blog/{slug}', BlogArticleView::class)->name('blog.show');
     Route::get('/news', NewsIndex::class)->name('news.index');
@@ -140,7 +140,6 @@ Route::group([], function () {
             Route::get('/chat/api/users', [ChatController::class, 'users'])->name('chat.users');
             Route::get('/chat/api/players/{uuid}', [ChatController::class, 'playerProfile'])->name('chat.players.show');
             Route::post('/chat/api/players/{uuid}/follow', [ChatController::class, 'followPlayer'])->name('chat.players.follow');
-            Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
             Route::get('/matches/{uuid}', MatchDetail::class);
 
             Route::get('/wallet', WalletDashboard::class)->name('wallet');
