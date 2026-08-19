@@ -49,7 +49,7 @@ class PublicNavigationSeeder extends Seeder
                 'url' => '/teams',
                 'icon' => 'users',
                 'match_pattern' => 'teams*',
-                'visibility' => 'guest_or_player',
+                'visibility' => 'player',
                 'sort_order' => 20,
                 'is_active' => true,
                 'opens_new_tab' => false,

@@ -35,9 +35,47 @@
                         <span class="text-xs font-black font-orbitron text-zinc-200">{{ $teamMembers->count() }}</span>
                     </div>
                 </div></div>
+            @else
+                <a href="#find-team" class="inline-flex items-center gap-2 rounded-xl border border-cyan-700/60 bg-cyan-950/30 px-4 py-3 text-[10px] font-black uppercase tracking-wider text-cyan-300 hover:border-cyan-500">
+                    <i data-lucide="user-search" class="h-4 w-4"></i>
+                    Find a Tournament Team
+                </a>
             @endif
         </div>
     </div>
+
+    <section id="find-team" class="scroll-mt-6 rounded-2xl border border-cyan-900/50 bg-gradient-to-br from-zinc-900 to-cyan-950/10 p-5 md:p-6">
+        <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-[9px] font-black uppercase tracking-[0.24em] text-cyan-400">Temporary competition team</p>
+                <h2 class="mt-1 font-orbitron text-lg font-bold uppercase tracking-wide text-white">Find a Team</h2>
+                <p class="mt-1 max-w-2xl text-xs leading-relaxed text-zinc-500">Choose an open team tournament. On its registration panel, enter your Game ID and select Find a Team. The system will group available players until the required team size is complete.</p>
+            </div>
+            <a href="/tournaments/browse?format=tournament" wire:navigate class="text-[10px] font-black uppercase tracking-wider text-cyan-300 hover:text-cyan-200">Browse all tournaments →</a>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            @forelse($teamFinderTournaments as $finderTournament)
+                <a href="/tournaments/{{ $finderTournament->uuid }}/view" wire:navigate class="group rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 transition-colors hover:border-cyan-700/70 hover:bg-cyan-950/10">
+                    <div class="flex items-start justify-between gap-3">
+                        <span class="rounded-md border border-cyan-900/60 bg-cyan-950/40 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-cyan-300">{{ $finderTournament->team_size }} players/team</span>
+                        <i data-lucide="arrow-up-right" class="h-4 w-4 text-zinc-600 transition-colors group-hover:text-cyan-300"></i>
+                    </div>
+                    <h3 class="mt-3 line-clamp-2 text-sm font-bold text-white">{{ $finderTournament->name }}</h3>
+                    <p class="mt-1 text-[11px] text-zinc-500">{{ $finderTournament->game?->localizedName() ?? 'Game' }} · {{ $finderTournament->platform?->name ?? 'Any platform' }}</p>
+                    <div class="mt-3 flex items-center justify-between text-[10px] text-zinc-600">
+                        <span>{{ $finderTournament->registrations_count }}/{{ $finderTournament->max_participants }} joined</span>
+                        @if($finderTournament->registration_close_at)<span>Closes {{ $finderTournament->registration_close_at->diffForHumans() }}</span>@endif
+                    </div>
+                </a>
+            @empty
+                <div class="sm:col-span-2 xl:col-span-4 rounded-xl border border-dashed border-zinc-800 bg-zinc-950/40 px-5 py-8 text-center">
+                    <i data-lucide="users-round" class="mx-auto h-6 w-6 text-zinc-600"></i>
+                    <p class="mt-2 text-xs font-semibold text-zinc-500">There are no team tournaments accepting players right now.</p>
+                </div>
+            @endforelse
+        </div>
+    </section>
 
     @if(!$team)
         <!-- NO TEAM STATE -->

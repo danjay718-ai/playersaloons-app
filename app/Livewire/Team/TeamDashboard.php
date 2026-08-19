@@ -19,7 +19,9 @@ use App\Modules\Team\Models\Team;
 use App\Modules\Team\Models\TeamInvitation;
 use App\Modules\Team\Models\TeamJoinRequest;
 use App\Modules\Team\Models\TeamMember;
+use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TeamInvitationStatus;
+use App\Shared\Enums\TournamentStatus;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -418,6 +420,7 @@ class TeamDashboard extends Component
                 'teamPendingInvites' => collect(),
                 'teamJoinRequests' => collect(),
                 'squadDirectory' => collect(),
+                'teamFinderTournaments' => collect(),
             ]);
         }
 
@@ -464,6 +467,29 @@ class TeamDashboard extends Component
                 ->orderByDesc('members_count')->orderBy('name')->limit(20)->get()
             : collect();
 
+        // Keep the finder lightweight: only load open team tournaments and the
+        // relations required by the compact discovery cards.
+        $teamFinderTournaments = Tournament::query()
+            ->select([
+                'id', 'uuid', 'name', 'game_id', 'platform_id', 'team_size',
+                'max_participants', 'registration_close_at',
+            ])
+            ->where('status', TournamentStatus::REGISTRATION_OPEN)
+            ->where('team_size', '>', 1)
+            ->where(function ($query): void {
+                $query->whereNull('registration_close_at')
+                    ->orWhere('registration_close_at', '>', now());
+            })
+            ->with([
+                'game:id,slug',
+                'game.translations:id,game_id,locale,name',
+                'platform:id,name',
+            ])
+            ->withCount('registrations')
+            ->orderBy('registration_close_at')
+            ->limit(8)
+            ->get();
+
         $view = view('livewire.team.team-dashboard', [
             'team' => $team,
             'myPendingInvites' => $myPendingInvites,
@@ -471,8 +497,12 @@ class TeamDashboard extends Component
             'teamPendingInvites' => $teamPendingInvites,
             'teamJoinRequests' => $teamJoinRequests,
             'squadDirectory' => $squadDirectory,
+            'teamFinderTournaments' => $teamFinderTournaments,
         ]);
 
-        return $this->resolveView($view)->layout('components.layouts.app', ['title' => 'Squads | PlayerSaloons']);
+        return $this->resolveView($view)->layout('components.layouts.dashboard', [
+            'title' => 'Squads & Teams | PlayerSaloons',
+            'dashboard_title' => 'SQUADS & TEAMS',
+        ]);
     }
 }

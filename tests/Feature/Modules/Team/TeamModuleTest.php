@@ -24,6 +24,18 @@ class TeamModuleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_squad_page_uses_player_layout_and_exposes_team_finder(): void
+    {
+        $player = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($player)
+            ->get('/teams')
+            ->assertOk()
+            ->assertSee('desktop-sidebar', false)
+            ->assertSee('Find a Team')
+            ->assertSee('/teams#find-team', false);
+    }
+
     public function test_can_create_team(): void
     {
         $user = User::factory()->create();
