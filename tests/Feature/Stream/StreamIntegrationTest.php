@@ -166,10 +166,7 @@ class StreamIntegrationTest extends TestCase
             ->test(StreamList::class)
             ->set('streamTitle', 'Road to Finals')
             ->set('twitch_stream_url', 'https://www.twitch.tv/player_saloons')
-            ->set('streamThumbnail', UploadedFile::fake()->createWithContent(
-                'road-to-finals.png',
-                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true),
-            ))
+            ->set('streamThumbnail', $this->pngUpload('road-to-finals.png', 1280, 720))
             ->set('is_public', true)
             ->call('savePlayerStream')
             ->assertHasNoErrors();
@@ -203,6 +200,20 @@ class StreamIntegrationTest extends TestCase
         $this->get('/streams/'.$publishedStream->id)
             ->assertOk()
             ->assertSee('Road to Finals');
+    }
+
+    private function pngUpload(string $name, int $width, int $height): UploadedFile
+    {
+        $chunk = static function (string $type, string $data): string {
+            return pack('N', strlen($data)).$type.$data.pack('N', crc32($type.$data));
+        };
+        $row = "\x00".str_repeat("\x00\x00\x00", $width);
+        $png = "\x89PNG\r\n\x1a\n"
+            .$chunk('IHDR', pack('NNCCCCC', $width, $height, 8, 2, 0, 0, 0))
+            .$chunk('IDAT', gzcompress(str_repeat($row, $height), 9))
+            .$chunk('IEND', '');
+
+        return UploadedFile::fake()->createWithContent($name, $png);
     }
 
     public function test_admin_can_take_down_and_restore_player_streams(): void

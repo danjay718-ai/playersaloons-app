@@ -281,10 +281,7 @@
 
                         <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
                             <div>
-                                <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Stream Thumbnail</label>
-                                <input type="file" wire:model="streamThumbnail" @disabled($streamTakenDown) accept="image/jpeg,image/png,image/webp" class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-xs text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-purple-600 file:px-3 file:py-1.5 file:text-[10px] file:font-black file:uppercase file:text-white disabled:opacity-60">
-                                <p class="mt-1 text-[10px] text-zinc-600">Recommended 16:9 image, max 2 MB.</p>
-                                @error('streamThumbnail') <span class="mt-1 block text-xs text-rose-400">{{ $message }}</span> @enderror
+                                <x-forms.image-crop-upload model="streamThumbnail" label="Stream Thumbnail" :width="1280" :height="720" :max-mb="2" :disabled="$streamTakenDown" />
                             </div>
                             @if($streamThumbnail || $thumbnailUrl)
                                 <div class="aspect-video overflow-hidden rounded-xl border border-zinc-800 bg-black">
@@ -317,9 +314,9 @@
                             </div>
                         </div>
 
-                        <button type="submit" @disabled($streamTakenDown) class="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-[0_0_15px_rgba(147,51,234,0.3)]">
+                        <button type="submit" @disabled($streamTakenDown) wire:loading.attr="disabled" wire:target="streamThumbnail" class="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-[0_0_15px_rgba(147,51,234,0.3)]">
                             <i data-lucide="save" class="w-4 h-4"></i>
-                            Save Stream
+                            <span wire:loading.remove wire:target="streamThumbnail">Save Stream</span><span wire:loading wire:target="streamThumbnail">Uploading Thumbnail...</span>
                         </button>
                     </form>
                 </section>

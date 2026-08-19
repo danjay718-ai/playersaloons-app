@@ -1,4 +1,4 @@
-<div>
+<div x-data="gameManagementUi($wire)">
     <!-- Feedback Alerts -->
     @if(session()->has('success'))
         <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-lg text-sm mb-6 flex items-center">
@@ -9,6 +9,12 @@
 
     <!-- Games Tab Content -->
     @if($tab === 'games')
+        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 class="text-lg font-black text-white">Game Management</h2><p class="mt-1 text-xs text-slate-500">Create games, assign platforms, manage artwork, or safely archive catalog entries.</p></div>
+            <button type="button" x-on:click="openCreateGame()" class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500">
+                <i data-lucide="plus" class="h-4 w-4"></i><span>Add New Game</span>
+            </button>
+        </div>
         <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
@@ -17,6 +23,7 @@
                             <th class="p-4">Game Slug</th>
                             <th class="p-4">Card / Banner</th>
                             <th class="p-4">Name (EN)</th>
+                            <th class="p-4">Platforms</th>
                             <th class="p-4">Description</th>
                             <th class="p-4">Catalog status</th>
                             <th class="p-4 text-right">Actions</th>
@@ -24,20 +31,18 @@
                     </thead>
                     <tbody class="divide-y divide-slate-800/50">
                         @forelse($games as $game)
-                            <tr class="hover:bg-slate-900/40" wire:key="game-{{ $game->id }}">
+                            <tr class="hover:bg-slate-900/40 {{ $game->trashed() ? 'opacity-65' : '' }}" wire:key="game-{{ $game->id }}">
                                 <td class="p-4 font-semibold text-slate-200 font-mono">
                                     {{ $game->slug }}
                                     <span class="block text-[9px] text-slate-500 font-normal mt-0.5">{{ $game->uuid }}</span>
                                 </td>
                                 <td class="p-4">
-                                    @if($game->cardImageUrl())
+                                    @if($game->cardArtworkUrl() || $game->bannerUrl())
                                         <div class="flex gap-2">
-                                            <div class="h-12 w-12 overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
-                                                <img src="{{ $game->cardImageUrl() }}" alt="{{ $game->slug }} card" class="h-full w-full object-cover">
-                                            </div>
+                                            @if($game->cardArtworkUrl())<div class="h-[45px] w-[60px] overflow-hidden rounded-lg border border-slate-800 bg-slate-950"><img src="{{ $game->cardArtworkUrl() }}" alt="{{ $game->slug }} card" loading="lazy" decoding="async" class="h-full w-full object-cover"></div>@endif
                                             @if($game->bannerUrl())
                                                 <div class="h-12 w-20 overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
-                                                    <img src="{{ $game->bannerUrl() }}" alt="{{ $game->slug }} banner" class="h-full w-full object-cover">
+                                                    <img src="{{ $game->bannerUrl() }}" alt="{{ $game->slug }} banner" loading="lazy" decoding="async" class="h-full w-full object-cover">
                                                 </div>
                                             @endif
                                         </div>
@@ -48,27 +53,49 @@
                                 <td class="p-4 text-slate-200 font-semibold">
                                     {{ $game->localizedName() }}
                                 </td>
+                                <td class="p-4"><div class="flex max-w-[180px] flex-wrap gap-1">@forelse($game->platforms as $platform)<span class="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[9px] text-slate-400">{{ $platform->name }}</span>@empty<span class="text-[10px] text-slate-600">All / unassigned</span>@endforelse</div></td>
                                 <td class="p-4 text-slate-400 max-w-[280px] truncate" title="{{ $game->localizedDescription() }}">
                                     {{ $game->localizedDescription() ?? __('No description') }}
                                 </td>
                                 <td class="p-4">
-                                    <button wire:click="toggleGameActive({{ $game->id }})" 
+                                    @if($game->trashed())
+                                        <span class="inline-flex rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-300">Archived</span>
+                                    @else
+                                    <button wire:click="toggleGameActive({{ $game->id }})"
                                             class="inline-flex items-center px-2 py-0.5 rounded border text-[9px] font-bold uppercase transition-colors
                                             {{ $game->is_active 
                                                ? 'bg-emerald-500/10 text-emerald-450 border-emerald-500/20 hover:bg-emerald-500/20' 
                                                : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' }}">
                                         {{ $game->is_active ? 'Active' : 'Disabled' }}
                                     </button>
+                                    @endif
                                 </td>
-                                <td class="p-4 text-right">
-                                    <button wire:click="editGameTranslation({{ $game->id }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit Translations">
+                                <td class="p-4 text-right space-x-1">
+                                    @if($game->trashed())
+                                    <button wire:click="restoreGame({{ $game->id }})" class="rounded-lg border border-emerald-900/50 bg-emerald-950/40 p-1.5 text-emerald-400 hover:text-white" title="Restore Game"><i data-lucide="archive-restore" class="h-4 w-4"></i></button>
+                                    @else
+                                    <button type="button" x-on:click="openEditGame({{ Illuminate\Support\Js::from([
+                                        'id' => $game->id,
+                                        'locale' => 'en',
+                                        'slug' => $game->slug,
+                                        'isActive' => (bool) $game->is_active,
+                                        'bannerPath' => $game->bannerUrl() ?? '',
+                                        'cardImagePath' => $game->cardArtworkUrl() ?? '',
+                                        'platformIds' => $game->platforms->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
+                                        'translations' => $game->translations->mapWithKeys(fn ($translation) => [$translation->locale => [
+                                            'name' => $translation->name,
+                                            'description' => $translation->description ?? '',
+                                        ]])->all(),
+                                    ]) }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit Game">
                                         <i data-lucide="edit" class="w-4 h-4"></i>
                                     </button>
+                                    <button type="button" x-on:click="openGameArchive({{ $game->id }})" wire:loading.attr="disabled" wire:target="confirmDelete('game', {{ $game->id }})" class="rounded-lg border border-red-900/50 bg-red-950/40 p-1.5 text-red-400 hover:text-white disabled:opacity-40" title="Archive Game"><i data-lucide="archive" class="h-4 w-4"></i></button>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="p-8 text-center text-slate-500 italic">No games seeded in database.</td>
+                                <td colspan="7" class="p-8 text-center text-slate-500 italic">No games found. Add the first game to the catalog.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -350,13 +377,13 @@
     @endif
 
     <!-- Game Translation Modal -->
-    @if($showGameModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showGameModal', false)"></div>
-            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+    @if($tab === 'games')
+        <div x-cloak x-show="gameModalOpen" x-on:keydown.escape.window="closeGameModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" x-on:click="closeGameModal()"></div>
+            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-2xl max-h-[92vh] w-full overflow-y-auto shadow-2xl relative z-10">
                 <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Edit Game Translation</h3>
-                    <button wire:click="$set('showGameModal', false)" class="text-slate-400 hover:text-white">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider" x-text="$wire.selectedGameId ? 'Edit Game' : 'Add New Game'"></h3>
+                    <button type="button" x-on:click="closeGameModal()" class="text-slate-400 hover:text-white">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -364,11 +391,16 @@
                 <form wire:submit.prevent="saveGameTranslation" class="p-6 space-y-4 text-xs">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Language Locale</label>
-                        <select wire:model="gameLocale" wire:change="editGameTranslation({{ $selectedGameId }})" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-350 focus:outline-none focus:border-indigo-500">
+                        <select wire:model="gameLocale" x-on:change="switchGameLocale($event.target.value)" x-bind:disabled="!$wire.selectedGameId" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-350 focus:outline-none focus:border-indigo-500 disabled:opacity-60">
                             <option value="en">English (EN)</option>
                             <option value="es">Español (ES)</option>
                             <option value="tl">Tagalog (TL)</option>
                         </select>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Game Slug</label><input type="text" wire:model="gameSlug" placeholder="e.g. valorant" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">@error('gameSlug')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                        <label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900 px-4 py-3"><input type="checkbox" wire:model="gameIsActive" class="rounded border-slate-700 bg-slate-950 text-indigo-500"><span><span class="block text-xs font-bold text-white">Active in catalog</span><span class="mt-0.5 block text-[10px] text-slate-500">Visible to players and tournament creation.</span></span></label>
                     </div>
 
                     <div>
@@ -384,28 +416,31 @@
                     </div>
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Game Card Image</label>
-                            <input type="file" wire:model="gameCardImage" accept="image/jpeg,image/png,image/webp" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300">
-                            <p class="mt-1 text-[10px] text-slate-500">Square or portrait image, max 2 MB.</p>
-                            @error('gameCardImage') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        <div class="space-y-2">
+                            <x-forms.image-crop-upload model="gameCardImage" label="Game Card Image" :width="440" :height="330" :max-mb="2" />
+                            @if($gameCardImage)<img src="{{ $gameCardImage->temporaryUrl() }}" alt="New card preview" decoding="async" class="aspect-[4/3] w-full rounded-lg border border-slate-800 object-cover">@endif
+                            <img x-show="!$wire.gameCardImage && $wire.gameCardImagePath && !$wire.removeGameCardImage" x-bind:src="$wire.gameCardImagePath" alt="Current card" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-lg border border-slate-800 object-cover">
+                            <label x-show="$wire.gameCardImagePath" class="flex items-center gap-2 text-[10px] font-bold text-red-300"><input type="checkbox" wire:model="removeGameCardImage" class="rounded border-slate-700 bg-slate-900 text-red-500"> Remove current card image</label>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Hero Banner</label>
-                            <input type="file" wire:model="gameBannerImage" accept="image/jpeg,image/png,image/webp" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300">
-                            <p class="mt-1 text-[10px] text-slate-500">Wide image, max 4 MB.</p>
-                            @error('gameBannerImage') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        <div class="space-y-2">
+                            <x-forms.image-crop-upload model="gameBannerImage" label="Hero Cover" :width="1920" :height="768" :max-mb="4" />
+                            @if($gameBannerImage)<img src="{{ $gameBannerImage->temporaryUrl() }}" alt="New hero preview" decoding="async" class="aspect-[5/2] w-full rounded-lg border border-slate-800 object-cover">@endif
+                            <img x-show="!$wire.gameBannerImage && $wire.gameBannerPath && !$wire.removeGameBannerImage" x-bind:src="$wire.gameBannerPath" alt="Current hero" loading="lazy" decoding="async" class="aspect-[5/2] w-full rounded-lg border border-slate-800 object-cover">
+                            <label x-show="$wire.gameBannerPath" class="flex items-center gap-2 text-[10px] font-bold text-red-300"><input type="checkbox" wire:model="removeGameBannerImage" class="rounded border-slate-700 bg-slate-900 text-red-500"> Remove current hero cover</label>
                         </div>
                     </div>
 
+                    <fieldset class="rounded-lg border border-slate-800 bg-slate-900/60 p-4"><legend class="px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Supported Platforms {{ $selectedGameId ? '' : '*' }}</legend><div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">@forelse($gamePlatforms as $platform)<label class="flex items-center gap-2 rounded border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300"><input type="checkbox" wire:model="gamePlatformIds" value="{{ $platform->id }}" class="rounded border-slate-700 bg-slate-900 text-indigo-500"> {{ $platform->name }}</label>@empty<p class="col-span-full text-xs text-amber-300">Create platforms first from the Platforms tab.</p>@endforelse</div>@error('gamePlatformIds')<p class="mt-2 text-xs text-red-400">Select at least one supported platform when adding a game.</p>@enderror @error('gamePlatformIds.*')<p class="mt-2 text-xs text-red-400">{{ $message }}</p>@enderror</fieldset>
+
                     <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                        <button type="button" wire:click="$set('showGameModal', false)" 
+                        <button type="button" x-on:click="closeGameModal()"
                                 class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
                             Cancel
                         </button>
-                        <button type="submit" 
-                                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
-                            Save Translation
+                        <button type="submit" wire:loading.attr="disabled" wire:target="gameCardImage,gameBannerImage"
+                                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg disabled:cursor-wait disabled:opacity-50">
+                            <span wire:loading.remove wire:target="gameCardImage,gameBannerImage">Save Game</span>
+                            <span wire:loading wire:target="gameCardImage,gameBannerImage">Uploading Image…</span>
                         </button>
                     </div>
                 </form>
@@ -615,33 +650,47 @@
     @endif
 
     <!-- Delete Confirmation Modal -->
-    @if($showDeleteModal)
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="$set('showDeleteModal', false)"></div>
-            <div class="bg-[#0f172a] border border-red-900/50 rounded-xl max-w-sm w-full overflow-hidden shadow-2xl relative z-10 text-center">
+        <div x-cloak x-show="deleteModalOpen" x-on:keydown.escape.window="closeDeleteModal()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" x-on:click="closeDeleteModal()"></div>
+            <div class="bg-[#0f172a] border border-red-900/50 rounded-xl {{ $deleteTargetType === 'game' ? 'max-w-xl' : 'max-w-sm' }} max-h-[90vh] w-full overflow-y-auto shadow-2xl relative z-10 text-center">
                 <div class="p-6">
                     <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
                         <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-200 mb-2">Confirm Deletion</h3>
-                    <p class="text-sm text-slate-400 mb-6">
-                        Are you sure you want to delete this {{ $deleteTargetType === 'navigation' ? 'navigation item' : $deleteTargetType }}? This action cannot be undone.
-                    </p>
+                    <h3 class="text-lg font-bold text-slate-200 mb-2" x-text="$wire.deleteTargetType === 'game' ? 'Archive Game' : 'Confirm Deletion'"></h3>
+                    <div wire:loading wire:target="confirmDelete" class="mb-6 space-y-3">
+                        <div class="mx-auto h-3 w-4/5 animate-pulse rounded bg-slate-800"></div>
+                        <div class="grid grid-cols-2 gap-3"><div class="h-16 animate-pulse rounded-lg bg-slate-900"></div><div class="h-16 animate-pulse rounded-lg bg-slate-900"></div></div>
+                        <p class="text-xs text-slate-500">Loading affected tournament and player records…</p>
+                    </div>
+                    <div wire:loading.remove wire:target="confirmDelete">
+                    @if($deleteTargetType === 'game' && $gameDeleteImpact)
+                        <p class="text-sm text-slate-400">Archive <strong class="text-white">{{ $gameDeleteImpact['name'] }}</strong>? It will disappear from player-facing catalogs, but all historical data stays intact.</p>
+                        <div class="my-5 grid grid-cols-2 gap-3"><div class="rounded-lg border border-slate-800 bg-slate-950 p-3"><p class="text-xl font-black text-amber-300">{{ $gameDeleteImpact['tournament_count'] }}</p><p class="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-500">Affected tournaments</p></div><div class="rounded-lg border border-slate-800 bg-slate-950 p-3"><p class="text-xl font-black text-cyan-300">{{ $gameDeleteImpact['player_count'] }}</p><p class="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-500">Unique joined players</p></div></div>
+                        @if($gameDeleteImpact['tournaments'] !== [])
+                            <div class="mb-6 max-h-56 overflow-y-auto rounded-lg border border-slate-800 text-left"><div class="sticky top-0 bg-slate-900 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-slate-500">Preserved tournament records</div>@foreach($gameDeleteImpact['tournaments'] as $impactTournament)<div class="flex items-center justify-between gap-3 border-t border-slate-800/70 px-3 py-2.5"><div class="min-w-0"><p class="truncate text-xs font-bold text-slate-200">{{ $impactTournament['name'] }}</p><p class="mt-0.5 text-[9px] uppercase text-slate-600">{{ str_replace('_', ' ', $impactTournament['status']) }}</p></div><span class="shrink-0 text-[10px] text-cyan-300">{{ $impactTournament['registrations'] }} joined</span></div>@endforeach @if($gameDeleteImpact['remaining_tournament_count'] > 0)<div class="border-t border-slate-800 px-3 py-2 text-center text-[10px] text-slate-500">+{{ $gameDeleteImpact['remaining_tournament_count'] }} more preserved tournaments</div>@endif</div>
+                        @endif
+                        @if($gameDeleteImpact['players'] !== [])
+                            <div class="mb-6 text-left"><p class="mb-2 text-[9px] font-bold uppercase tracking-wider text-slate-500">Players with preserved participation</p><div class="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">@foreach($gameDeleteImpact['players'] as $impactPlayer)<span class="rounded border border-cyan-500/15 bg-cyan-500/5 px-2 py-1 text-[10px] text-cyan-200" title="{{ '@'.$impactPlayer['username'] }}">{{ $impactPlayer['display_name'] }}</span>@endforeach @if($gameDeleteImpact['remaining_player_count'] > 0)<span class="px-2 py-1 text-[10px] text-slate-500">+{{ $gameDeleteImpact['remaining_player_count'] }} more</span>@endif</div></div>
+                        @endif
+                    @else
+                        <p class="text-sm text-slate-400 mb-6">Are you sure you want to delete this {{ $deleteTargetType === 'navigation' ? 'navigation item' : $deleteTargetType }}? This action cannot be undone.</p>
+                    @endif
+                    </div>
                     
                     <div class="flex space-x-3 justify-center">
-                        <button type="button" wire:click="$set('showDeleteModal', false)" 
+                        <button type="button" x-on:click="closeDeleteModal()"
                                 class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm px-6 py-2.5 rounded-lg transition-colors">
                             Cancel
                         </button>
-                        <button type="button" wire:click="executeDelete"
+                        <button type="button" wire:click="executeDelete" wire:loading.attr="disabled" wire:target="confirmDelete,executeDelete"
                                 class="bg-red-600 hover:bg-red-500 text-white font-bold text-sm px-6 py-2.5 rounded-lg shadow-[0_4px_12px_rgba(220,38,38,0.2)] transition-colors">
-                            Yes, Delete
+                            {{ $deleteTargetType === 'game' ? 'Archive Game' : 'Yes, Delete' }}
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    @endif
 
     <!-- About Us Tab Content -->
     @if($tab === 'about')

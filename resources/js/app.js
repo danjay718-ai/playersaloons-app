@@ -26,6 +26,255 @@ window.ensurePlayerSaloonsEcho = function () {
     return window.Echo;
 };
 
+window.imageCropUpload = function (config) {
+    return {
+        ...config,
+        cropOpen: false,
+        processing: false,
+        uploading: false,
+        progress: 0,
+        clientError: '',
+        fileName: '',
+        sourceWidth: 0,
+        sourceHeight: 0,
+        zoom: 1,
+        positionX: 0,
+        positionY: 0,
+        image: null,
+        originalFile: null,
+        objectUrl: null,
+        pendingFileName: '',
+
+        async selectFile(event) {
+            const file = event.target.files?.[0];
+            this.clientError = '';
+            this.fileName = '';
+
+            if (!file) return;
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                this.rejectFile('Use a JPG, PNG, or WebP image.');
+                return;
+            }
+            if (file.size > this.sourceMaxBytes) {
+                this.rejectFile(`The source image must not exceed ${Math.round(this.sourceMaxBytes / 1024 / 1024)} MB.`);
+                return;
+            }
+
+            this.releaseObjectUrl();
+            this.objectUrl = URL.createObjectURL(file);
+            const image = new Image();
+            image.src = this.objectUrl;
+
+            try {
+                await image.decode();
+            } catch (_) {
+                this.rejectFile('The selected image could not be read.');
+                return;
+            }
+
+            if (image.naturalWidth < this.width || image.naturalHeight < this.height) {
+                this.rejectFile(`Image is too small. Minimum size is ${this.width} × ${this.height}px.`);
+                return;
+            }
+
+            this.image = image;
+            this.originalFile = file;
+            this.sourceWidth = image.naturalWidth;
+            this.sourceHeight = image.naturalHeight;
+
+            if (this.sourceWidth === this.width && this.sourceHeight === this.height && file.size <= this.maxBytes) {
+                this.uploadFile(file);
+                return;
+            }
+
+            this.zoom = 1;
+            this.positionX = 0;
+            this.positionY = 0;
+            this.cropOpen = true;
+            this.$nextTick(() => this.drawCrop());
+        },
+
+        drawCrop() {
+            if (!this.image || !this.$refs.canvas) return;
+
+            const canvas = this.$refs.canvas;
+            if (canvas.width !== this.width || canvas.height !== this.height) {
+                canvas.width = this.width;
+                canvas.height = this.height;
+            }
+            const context = canvas.getContext('2d');
+            const sourceRatio = this.sourceWidth / this.sourceHeight;
+            const targetRatio = this.width / this.height;
+            let cropWidth;
+            let cropHeight;
+
+            if (sourceRatio > targetRatio) {
+                cropHeight = this.sourceHeight;
+                cropWidth = cropHeight * targetRatio;
+            } else {
+                cropWidth = this.sourceWidth;
+                cropHeight = cropWidth / targetRatio;
+            }
+
+            cropWidth /= this.zoom;
+            cropHeight /= this.zoom;
+            const sourceX = (this.sourceWidth - cropWidth) * ((this.positionX + 100) / 200);
+            const sourceY = (this.sourceHeight - cropHeight) * ((this.positionY + 100) / 200);
+
+            context.clearRect(0, 0, this.width, this.height);
+            context.drawImage(this.image, sourceX, sourceY, cropWidth, cropHeight, 0, 0, this.width, this.height);
+        },
+
+        applyCrop() {
+            if (!this.$refs.canvas || this.processing) return;
+            this.processing = true;
+            this.$refs.canvas.toBlob((blob) => {
+                if (!blob) {
+                    this.processing = false;
+                    this.clientError = 'The cropped image could not be created.';
+                    return;
+                }
+                if (blob.size > this.maxBytes) {
+                    this.processing = false;
+                    this.clientError = `The cropped image still exceeds ${Math.round(this.maxBytes / 1024 / 1024)} MB. Please choose a less detailed source image.`;
+                    return;
+                }
+
+                const baseName = (this.originalFile?.name || 'image').replace(/\.[^.]+$/, '');
+                const croppedFile = new File([blob], `${baseName}-${this.width}x${this.height}.webp`, {
+                    type: 'image/webp',
+                    lastModified: Date.now(),
+                });
+                this.cropOpen = false;
+                this.processing = false;
+                this.uploadFile(croppedFile);
+            }, 'image/webp', 0.9);
+        },
+
+        uploadFile(file) {
+            this.clientError = '';
+            this.pendingFileName = file.name;
+
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            this.$refs.uploadInput.files = transfer.files;
+            this.$refs.uploadInput.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+
+        finishUpload() {
+            this.uploading = false;
+            this.progress = 100;
+            this.fileName = this.pendingFileName;
+            if (this.$refs.input) this.$refs.input.value = '';
+            this.image = null;
+            this.originalFile = null;
+            this.releaseObjectUrl();
+        },
+
+        failUpload() {
+            this.uploading = false;
+            this.clientError = 'Upload failed. Please try again.';
+        },
+
+        cancelCrop() {
+            this.cropOpen = false;
+            this.processing = false;
+            if (this.$refs.input) this.$refs.input.value = '';
+            this.image = null;
+            this.originalFile = null;
+            this.releaseObjectUrl();
+        },
+
+        rejectFile(message) {
+            this.clientError = message;
+            this.cropOpen = false;
+            if (this.$refs.input) this.$refs.input.value = '';
+            this.releaseObjectUrl();
+        },
+
+        releaseObjectUrl() {
+            if (!this.objectUrl) return;
+            URL.revokeObjectURL(this.objectUrl);
+            this.objectUrl = null;
+        },
+
+        destroy() {
+            this.releaseObjectUrl();
+        },
+    };
+};
+
+window.gameManagementUi = function (wire) {
+    const setDeferred = (property, value) => wire.$set(property, value, false);
+
+    return {
+        gameModalOpen: wire.entangle('showGameModal'),
+        deleteModalOpen: wire.entangle('showDeleteModal'),
+        activeGameLocale: 'en',
+        gameTranslations: {},
+
+        assignGame(game) {
+            const locale = game.locale || 'en';
+            const translation = game.translations?.[locale] || { name: '', description: '' };
+
+            this.activeGameLocale = locale;
+            this.gameTranslations = game.translations || {};
+
+            setDeferred('selectedGameId', game.id ?? null);
+            setDeferred('gameLocale', locale);
+            setDeferred('gameName', translation.name || '');
+            setDeferred('gameSlug', game.slug || '');
+            setDeferred('gameDescription', translation.description || '');
+            setDeferred('gameBannerPath', game.bannerPath || '');
+            setDeferred('gameCardImagePath', game.cardImagePath || '');
+            setDeferred('gameIsActive', game.isActive ?? true);
+            setDeferred('gamePlatformIds', game.platformIds || []);
+            setDeferred('removeGameCardImage', false);
+            setDeferred('removeGameBannerImage', false);
+            setDeferred('gameCardImage', null);
+            setDeferred('gameBannerImage', null);
+        },
+
+        openCreateGame() {
+            this.assignGame({
+                locale: 'en',
+                translations: { en: { name: '', description: '' } },
+                isActive: true,
+            });
+            this.gameModalOpen = true;
+        },
+
+        openEditGame(game) {
+            this.assignGame(game);
+            this.gameModalOpen = true;
+        },
+
+        closeGameModal() {
+            this.gameModalOpen = false;
+        },
+
+        switchGameLocale(locale) {
+            const translation = this.gameTranslations[locale] || { name: '', description: '' };
+            this.activeGameLocale = locale;
+            setDeferred('gameLocale', locale);
+            setDeferred('gameName', translation.name || '');
+            setDeferred('gameDescription', translation.description || '');
+        },
+
+        openGameArchive(gameId) {
+            setDeferred('deleteTargetType', 'game');
+            setDeferred('deleteTargetId', gameId);
+            setDeferred('gameDeleteImpact', []);
+            this.deleteModalOpen = true;
+            wire.confirmDelete('game', gameId);
+        },
+
+        closeDeleteModal() {
+            this.deleteModalOpen = false;
+        },
+    };
+};
+
 window.chatConsole = function (config) {
     return {
         endpoints: config.endpoints,

@@ -143,9 +143,8 @@
 
             <div class="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
                 <div>
-                    <label class="mb-1 block text-[10px] font-bold uppercase text-slate-400">Featured Image</label>
-                    <label class="flex aspect-[16/10] cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-700 bg-slate-900 text-center text-xs text-slate-500 hover:border-indigo-500/60">
-                        <input type="file" wire:model="featuredImage" accept="image/*" class="hidden">
+                    <x-forms.image-crop-upload model="featuredImage" label="Featured Image" :width="1200" :height="750" :max-mb="2" />
+                    <div class="mt-3 flex aspect-[16/10] items-center justify-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900 text-center text-xs text-slate-500">
                         @if($featuredImage)
                             <img src="{{ $featuredImage->temporaryUrl() }}" alt="Selected image" class="h-full w-full object-cover">
                         @elseif($pageFeaturedImagePath)
@@ -153,9 +152,8 @@
                         @else
                             <span class="px-4">Click to upload image</span>
                         @endif
-                    </label>
+                    </div>
                     <div wire:loading wire:target="featuredImage" class="mt-2 text-[10px] font-bold uppercase tracking-wider text-indigo-300">Uploading...</div>
-                    @error('featuredImage') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
                 </div>
 
                 <div x-data="{
@@ -234,8 +232,8 @@
                 <button type="button" wire:click="createContent('blog')" class="rounded-lg bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-200 hover:bg-slate-700">
                     Reset
                 </button>
-                <button type="submit" @click="window.dispatchEvent(new CustomEvent('sync-cms-content'))" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500">
-                    Save Content
+                <button type="submit" @click="window.dispatchEvent(new CustomEvent('sync-cms-content'))" wire:loading.attr="disabled" wire:target="featuredImage" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500 disabled:cursor-wait disabled:opacity-50">
+                    <span wire:loading.remove wire:target="featuredImage">Save Content</span><span wire:loading wire:target="featuredImage">Uploading Image...</span>
                 </button>
             </div>
         </form>

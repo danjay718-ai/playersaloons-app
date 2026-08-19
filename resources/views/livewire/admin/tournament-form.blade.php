@@ -182,12 +182,10 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Banner Image (Optional)</label>
-                            <input type="file" wire:model="banner" accept="image/*" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            <x-forms.image-crop-upload model="banner" label="Banner Image (Optional)" :width="1280" :height="720" :max-mb="2" />
                             @if ($banner)
                                 <div class="mt-2 text-xs text-indigo-400">File selected: {{ $banner->getClientOriginalName() }}</div>
                             @endif
-                            @error('banner') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
                         <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
@@ -558,9 +556,10 @@
                         <div x-show="isValidating" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
                     </button>
 
-                    <button type="submit" x-show="step === totalSteps" @click="clearDraft()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase px-8 py-2.5 rounded-lg flex items-center shadow-lg shadow-emerald-500/20 transition-all">
+                    <button type="submit" x-show="step === totalSteps" @click="clearDraft()" wire:loading.attr="disabled" wire:target="banner" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase px-8 py-2.5 rounded-lg flex items-center shadow-lg shadow-emerald-500/20 transition-all disabled:cursor-wait disabled:opacity-50">
                         <i data-lucide="save" class="w-4 h-4 mr-2"></i>
-                        {{ $isEditMode ? 'Save Changes' : 'Create Competition' }}
+                        <span wire:loading.remove wire:target="banner">{{ $isEditMode ? 'Save Changes' : 'Create Competition' }}</span>
+                        <span wire:loading wire:target="banner">Uploading Banner...</span>
                     </button>
                 </div>
             </div>

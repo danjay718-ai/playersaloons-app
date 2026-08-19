@@ -155,39 +155,14 @@
                             <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Player Info</h3>
                         </div>
 
-                        <form wire:submit="updateAvatar"
-                              x-data="{ fileName: '', uploading: false, progress: 0 }"
-                              class="mb-5 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
-                            <label for="avatarFile" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Profile Picture</label>
+                        <form wire:submit="updateAvatar" class="mb-5 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
                             <div class="mt-2 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-                                <input id="avatarFile"
-                                       type="file"
-                                       wire:model="avatarFile"
-                                       accept="image/png,image/jpeg,image/webp"
-                                       x-on:change="fileName = $event.target.files[0]?.name || ''"
-                                       x-on:livewire-upload-start="uploading = true; progress = 0"
-                                       x-on:livewire-upload-finish="uploading = false; progress = 100"
-                                       x-on:livewire-upload-error="uploading = false"
-                                       x-on:livewire-upload-progress="progress = $event.detail.progress"
-                                       class="w-full rounded-lg border border-zinc-800 bg-zinc-950 text-xs text-zinc-300 file:mr-3 file:border-0 file:bg-cyan-500/15 file:px-3 file:py-2.5 file:text-[10px] file:font-black file:uppercase file:tracking-wider file:text-cyan-250 hover:file:bg-cyan-500/25">
+                                <x-forms.image-crop-upload model="avatarFile" label="Profile Picture" :width="512" :height="512" :max-mb="2" />
                                 <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-cyan-100 hover:bg-cyan-500/25 disabled:opacity-60 font-orbitron">
                                     <i data-lucide="image-up" class="w-4 h-4"></i>
                                     Upload
                                 </button>
                             </div>
-                            <div x-show="fileName" x-cloak class="mt-3 rounded-lg border border-cyan-400/20 bg-cyan-500/10 p-3">
-                                <div class="flex items-center justify-between gap-3">
-                                    <div class="min-w-0">
-                                        <p class="text-[9px] font-black uppercase tracking-widest text-cyan-200 font-orbitron">Selected file</p>
-                                        <p class="mt-1 truncate text-xs font-semibold text-zinc-200" x-text="fileName"></p>
-                                    </div>
-                                    <span x-show="uploading" class="shrink-0 text-[10px] font-black uppercase tracking-widest text-cyan-200 font-orbitron" x-text="`${progress}%`"></span>
-                                </div>
-                                <div x-show="uploading" class="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-900">
-                                    <div class="h-full rounded-full bg-cyan-300 transition-all" :style="`width: ${progress}%`"></div>
-                                </div>
-                            </div>
-                            @error('avatarFile') <span class="block pt-2 text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
                         </form>
 
                         <form wire:submit="updateProfile" class="space-y-4">

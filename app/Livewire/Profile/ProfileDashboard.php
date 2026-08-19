@@ -155,7 +155,7 @@ class ProfileDashboard extends Component
         }
 
         $this->validate([
-            'avatarFile' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'avatarFile' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:width=512,height=512'],
         ]);
 
         $action->execute($user, $this->avatarFile);
