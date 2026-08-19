@@ -281,7 +281,7 @@
 
                         <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
                             <div>
-                                <x-forms.image-crop-upload model="streamThumbnail" label="Stream Thumbnail" :width="1280" :height="720" :max-mb="2" :disabled="$streamTakenDown" />
+                                <x-forms.image-crop-upload model="streamThumbnail" label="Stream Thumbnail" :width="960" :height="540" :max-mb="2" :disabled="$streamTakenDown" />
                             </div>
                             @if($streamThumbnail || $thumbnailUrl)
                                 <div class="aspect-video overflow-hidden rounded-xl border border-zinc-800 bg-black">

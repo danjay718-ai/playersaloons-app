@@ -86,7 +86,7 @@ class CmsContentAdmin extends AdminComponent
             'pageExcerpt' => 'nullable|string|max:500',
             'pageContent' => 'required|string',
             'pageIsFeatured' => 'boolean',
-            'featuredImage' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:width=1200,height=750',
+            'featuredImage' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:width=800,height=500',
         ]);
 
         $actor = Auth::user();

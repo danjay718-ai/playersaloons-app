@@ -396,7 +396,7 @@ class CmsAdmin extends AdminComponent
             'gameDescription' => 'nullable|string',
             'gameBannerPath' => 'nullable|string|max:255',
             'gameCardImage' => [Rule::requiredIf($newGameNeedsArtwork), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:width=440,height=330'],
-            'gameBannerImage' => [Rule::requiredIf($newGameNeedsArtwork), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096', 'dimensions:width=1920,height=768'],
+            'gameBannerImage' => [Rule::requiredIf($newGameNeedsArtwork), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:width=1000,height=400'],
             'gameIsActive' => 'boolean',
             'gamePlatformIds' => $this->selectedGameId === null
                 ? ['required', 'array', 'min:1']

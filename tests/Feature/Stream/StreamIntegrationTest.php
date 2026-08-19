@@ -166,7 +166,7 @@ class StreamIntegrationTest extends TestCase
             ->test(StreamList::class)
             ->set('streamTitle', 'Road to Finals')
             ->set('twitch_stream_url', 'https://www.twitch.tv/player_saloons')
-            ->set('streamThumbnail', $this->pngUpload('road-to-finals.png', 1280, 720))
+            ->set('streamThumbnail', $this->pngUpload('road-to-finals.png', 960, 540))
             ->set('is_public', true)
             ->call('savePlayerStream')
             ->assertHasNoErrors();

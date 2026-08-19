@@ -423,7 +423,7 @@
                             <label x-show="$wire.gameCardImagePath" class="flex items-center gap-2 text-[10px] font-bold text-red-300"><input type="checkbox" wire:model="removeGameCardImage" class="rounded border-slate-700 bg-slate-900 text-red-500"> Remove current card image</label>
                         </div>
                         <div class="space-y-2">
-                            <x-forms.image-crop-upload model="gameBannerImage" label="Hero Cover" :width="1920" :height="768" :max-mb="4" />
+                            <x-forms.image-crop-upload model="gameBannerImage" label="Hero Cover" :width="1000" :height="400" :max-mb="2" />
                             @if($gameBannerImage)<img src="{{ $gameBannerImage->temporaryUrl() }}" alt="New hero preview" decoding="async" class="aspect-[5/2] w-full rounded-lg border border-slate-800 object-cover">@endif
                             <img x-show="!$wire.gameBannerImage && $wire.gameBannerPath && !$wire.removeGameBannerImage" x-bind:src="$wire.gameBannerPath" alt="Current hero" loading="lazy" decoding="async" class="aspect-[5/2] w-full rounded-lg border border-slate-800 object-cover">
                             <label x-show="$wire.gameBannerPath" class="flex items-center gap-2 text-[10px] font-bold text-red-300"><input type="checkbox" wire:model="removeGameBannerImage" class="rounded border-slate-700 bg-slate-900 text-red-500"> Remove current hero cover</label>

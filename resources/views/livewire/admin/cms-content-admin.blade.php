@@ -143,7 +143,7 @@
 
             <div class="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
                 <div>
-                    <x-forms.image-crop-upload model="featuredImage" label="Featured Image" :width="1200" :height="750" :max-mb="2" />
+                    <x-forms.image-crop-upload model="featuredImage" label="Featured Image" :width="800" :height="500" :max-mb="2" />
                     <div class="mt-3 flex aspect-[16/10] items-center justify-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900 text-center text-xs text-slate-500">
                         @if($featuredImage)
                             <img src="{{ $featuredImage->temporaryUrl() }}" alt="Selected image" class="h-full w-full object-cover">

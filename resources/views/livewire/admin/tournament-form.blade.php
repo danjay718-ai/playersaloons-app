@@ -182,7 +182,7 @@
                         </div>
 
                         <div>
-                            <x-forms.image-crop-upload model="banner" label="Banner Image (Optional)" :width="1280" :height="720" :max-mb="2" />
+                            <x-forms.image-crop-upload model="banner" label="Banner Image (Optional)" :width="960" :height="540" :max-mb="2" />
                             @if ($banner)
                                 <div class="mt-2 text-xs text-indigo-400">File selected: {{ $banner->getClientOriginalName() }}</div>
                             @endif

@@ -97,7 +97,7 @@ class StreamList extends Component
             'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
             'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
             'is_public' => 'boolean',
-            'streamThumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:width=1280,height=720',
+            'streamThumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:width=960,height=540',
         ]);
 
         if (! $this->hasAnyStreamUrl()) {
