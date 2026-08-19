@@ -1,79 +1,127 @@
-<div class="space-y-8">
+@php
+    $profile = $user->profile;
+    $displayName = $profile?->display_name ?: $user->username;
+    $avatarUrl = $profile?->avatar_url;
+    $xpWithinLevel = $progression->xpWithinLevel();
+    $xpTarget = \App\Modules\Identity\Models\PlayerProgression::XP_PER_LEVEL;
+    $winRate = $stats['matches_played'] > 0 ? (int) round(($stats['wins'] / $stats['matches_played']) * 100) : 0;
+@endphp
+
+<div class="space-y-6" wire:poll.30s.visible>
     <x-player.dashboard-tabs :items="$navItems" />
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div class="space-y-6 lg:col-span-8">
-            <section class="bg-gradient-to-r from-[#170e30] via-[#0e0a24] to-transparent border border-purple-500/20 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(168,85,247,0.05)] relative overflow-hidden">
-                <!-- Glowing sci-fi elements -->
-                <div class="absolute -top-20 -right-20 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="absolute top-0 right-0 w-24 h-24 border-t-2 border-r-2 border-purple-500/20 rounded-tr-2xl pointer-events-none"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 border-b-2 border-l-2 border-purple-500/20 rounded-bl-2xl pointer-events-none"></div>
+    <section class="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-[radial-gradient(circle_at_82%_12%,rgba(124,58,237,.28),transparent_28%),linear-gradient(120deg,#17102d,#0b0816_58%,#08070d)] p-5 shadow-2xl sm:p-7">
+        <div class="absolute inset-0 opacity-20 cyber-grid"></div>
+        <div class="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
+            <div class="flex min-w-0 items-start gap-4 sm:items-center sm:gap-6">
+                <div class="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-violet-400/40 bg-zinc-950 shadow-[0_0_28px_rgba(139,92,246,.25)] sm:h-20 sm:w-20">
+                    @if($avatarUrl)<img src="{{ $avatarUrl }}" alt="{{ $displayName }}" class="h-full w-full object-cover">@else<div class="flex h-full w-full items-center justify-center font-orbitron text-xl font-black text-violet-300">{{ strtoupper(substr($displayName, 0, 2)) }}</div>@endif
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[9px] font-black uppercase tracking-[0.3em] text-violet-300">Player command center</p>
+                    <h1 class="mt-2 truncate font-orbitron text-2xl font-black uppercase text-white sm:text-4xl">Welcome, {{ $displayName }}</h1>
+                    <p class="mt-2 text-xs text-zinc-400">Your competitions, progression, squad activity, and platform updates in one place.</p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <a href="/tournaments/browse" wire:navigate class="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-violet-500"><i data-lucide="search" class="h-3.5 w-3.5"></i>Find Competition</a>
+                        <a href="/my-tournaments" wire:navigate class="inline-flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-950/60 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-zinc-300 transition hover:border-zinc-500 hover:text-white"><i data-lucide="trophy" class="h-3.5 w-3.5"></i>My Tournaments</a>
+                    </div>
+                </div>
+            </div>
 
-                <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-                    <div>
-                        <h2 class="font-orbitron text-2xl md:text-3xl font-black text-white filter drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">WELCOME BACK, {{ strtoupper($user->username) }}!</h2>
-                        <div class="flex items-center gap-4 mt-4">
-                            <p class="text-xs md:text-sm text-zinc-400 font-bold uppercase tracking-widest">Ready for your next challenge?</p>
-                        </div>
+            <div class="rounded-2xl border border-white/10 bg-black/25 p-5 backdrop-blur-sm">
+                <div class="flex items-end justify-between gap-4"><div><p class="text-[9px] font-black uppercase tracking-[0.24em] text-zinc-500">Platform progression</p><p class="mt-2 font-orbitron text-2xl font-black text-white">LEVEL {{ $progression->level }}</p></div><div class="text-right"><p class="font-orbitron text-sm font-black text-violet-300">{{ number_format($progression->experience_points) }} XP</p><p class="mt-1 text-[9px] uppercase tracking-wider text-zinc-600">Lifetime XP</p></div></div>
+                <div class="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800"><div class="h-full rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-400 shadow-[0_0_12px_rgba(168,85,247,.7)]" style="width: {{ $progression->progressPercent() }}%"></div></div>
+                <div class="mt-2 flex justify-between text-[9px] font-bold uppercase tracking-wider text-zinc-500"><span>{{ $xpWithinLevel }} / {{ $xpTarget }} XP</span><span>{{ $xpTarget - $xpWithinLevel }} to next level</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        @foreach([
+            ['label' => 'Active Events', 'value' => $stats['active_tournaments'], 'icon' => 'calendar-check', 'color' => 'text-cyan-300', 'border' => 'border-cyan-500/20'],
+            ['label' => 'Match Record', 'value' => $stats['wins'].'W · '.$stats['losses'].'L', 'icon' => 'swords', 'color' => 'text-violet-300', 'border' => 'border-violet-500/20'],
+            ['label' => 'Win Rate', 'value' => $winRate.'%', 'icon' => 'target', 'color' => 'text-fuchsia-300', 'border' => 'border-fuchsia-500/20'],
+            ['label' => 'Prize Earnings', 'value' => '$'.number_format($stats['earnings'], 2), 'icon' => 'badge-dollar-sign', 'color' => 'text-emerald-300', 'border' => 'border-emerald-500/20'],
+        ] as $metric)
+            <article class="rounded-2xl border {{ $metric['border'] }} bg-zinc-950/65 p-4 shadow-lg sm:p-5">
+                <div class="flex items-center justify-between gap-3"><p class="text-[9px] font-black uppercase tracking-widest text-zinc-600">{{ $metric['label'] }}</p><i data-lucide="{{ $metric['icon'] }}" class="h-4 w-4 {{ $metric['color'] }}"></i></div>
+                <p class="mt-3 truncate font-orbitron text-xl font-black {{ $metric['color'] }} sm:text-2xl">{{ $metric['value'] }}</p>
+            </article>
+        @endforeach
+    </section>
+
+    <div class="grid gap-6 xl:grid-cols-12">
+        <div class="space-y-6 xl:col-span-8">
+            <section class="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/55">
+                <header class="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-5 py-4"><div><p class="text-[9px] font-black uppercase tracking-[0.22em] text-cyan-400">Competition queue</p><h2 class="mt-1 font-orbitron text-base font-black uppercase text-white">Your Active Tournaments</h2></div><a href="/my-tournaments" wire:navigate class="text-[10px] font-black uppercase tracking-wider text-violet-400 hover:text-violet-300">View all →</a></header>
+                @if($activeTournaments !== [])
+                    <div class="divide-y divide-zinc-800/70">
+                        @foreach($activeTournaments as $tournament)
+                            @php $status = $tournament['status']; @endphp
+                            <a href="/tournaments/{{ $tournament['uuid'] }}/view" wire:navigate class="grid gap-3 px-5 py-4 transition hover:bg-violet-500/5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+                                <div class="min-w-0"><div class="flex items-center gap-2"><span class="h-2 w-2 shrink-0 rounded-full {{ $status === 'ONGOING' ? 'animate-pulse bg-red-400' : ($status === 'REGISTRATION_OPEN' ? 'bg-emerald-400' : 'bg-amber-400') }}"></span><h3 class="truncate text-sm font-bold text-zinc-100">{{ $tournament['name'] }}</h3></div><p class="mt-1 truncate pl-4 text-[10px] uppercase tracking-wider text-zinc-600">{{ $tournament['game'] }} · {{ str_replace('_', ' ', $status) }}</p></div>
+                                <div class="text-left sm:text-right"><p class="text-[9px] font-black uppercase tracking-wider text-zinc-600">Starts</p><p class="mt-1 text-xs font-bold text-zinc-300">{{ $tournament['starts_at'] }}</p></div>
+                                <div class="text-left sm:w-16 sm:text-right"><p class="text-[9px] font-black uppercase tracking-wider text-zinc-600">Players</p><p class="mt-1 text-xs font-bold text-cyan-300">{{ $tournament['registrations_count'] }}/{{ $tournament['max_participants'] }}</p></div>
+                            </a>
+                        @endforeach
                     </div>
-                    <div class="text-left sm:text-right">
-                        <span class="block text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-orbitron mb-1">AVAILABLE BALANCE</span>
-                        <div class="text-4xl md:text-5xl font-black font-orbitron tracking-wider text-emerald-450 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]">
-                            ${{ number_format((float)($user->wallet?->cached_balance ?? 0.00), 2) }}
-                        </div>
+                @else
+                    <div class="p-8 text-center"><i data-lucide="calendar-plus" class="mx-auto h-8 w-8 text-zinc-700"></i><p class="mt-3 text-sm font-bold text-zinc-400">Your competition queue is clear.</p><a href="/tournaments/browse" wire:navigate class="mt-2 inline-block text-xs text-violet-400">Browse open tournaments</a></div>
+                @endif
+            </section>
+
+            <section class="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/55">
+                <header class="flex items-center justify-between border-b border-zinc-800 px-5 py-4"><div><p class="text-[9px] font-black uppercase tracking-[0.22em] text-fuchsia-400">Performance feed</p><h2 class="mt-1 font-orbitron text-base font-black uppercase text-white">Recent Matches</h2></div><div class="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-[10px] font-bold text-zinc-500">{{ $stats['matches_played'] }} played</div></header>
+                @if($recentMatches !== [])
+                    <div class="grid gap-3 p-4 sm:grid-cols-2">
+                        @foreach($recentMatches as $match)
+                            <a href="/tournaments/{{ $match['tournament_uuid'] }}/view" wire:navigate class="rounded-xl border border-zinc-800 bg-zinc-900/55 p-4 transition hover:border-violet-500/30"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="truncate text-xs font-bold text-white">{{ $match['tournament'] }}</p><p class="mt-1 text-[10px] text-zinc-600">{{ $match['game'] }} · {{ ucfirst($match['status']) }}</p></div><span class="rounded-md px-2 py-1 text-[9px] font-black uppercase {{ $match['outcome'] === 'win' ? 'bg-emerald-500/10 text-emerald-300' : ($match['outcome'] === 'loss' ? 'bg-rose-500/10 text-rose-300' : 'bg-amber-500/10 text-amber-300') }}">{{ $match['outcome'] }}</span></div><p class="mt-3 text-[9px] uppercase tracking-wider text-zinc-700">Updated {{ $match['updated_at'] }}</p></a>
+                        @endforeach
                     </div>
+                @else
+                    <p class="p-8 text-center text-sm text-zinc-600">Completed and active matches will appear here.</p>
+                @endif
+            </section>
+        </div>
+
+        <aside class="space-y-6 xl:col-span-4">
+            <section class="overflow-hidden rounded-2xl border border-amber-500/20 bg-[linear-gradient(145deg,rgba(120,53,15,.18),rgba(9,9,11,.9))]">
+                <header class="flex items-center justify-between border-b border-amber-500/15 px-5 py-4"><div class="flex items-center gap-2"><span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10"><i data-lucide="megaphone" class="h-4 w-4 text-amber-300"></i></span><div><p class="text-[9px] font-black uppercase tracking-[0.22em] text-amber-400">Official feed</p><h2 class="font-orbitron text-sm font-black uppercase text-white">Announcements</h2></div></div></header>
+                <div class="divide-y divide-amber-500/10">
+                    @forelse($announcements as $announcement)
+                        <article class="px-5 py-4"><div class="flex items-start gap-3"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"></span><div><h3 class="text-xs font-black text-amber-100">{{ $announcement['title'] }}</h3><p class="mt-1.5 line-clamp-3 text-xs leading-5 text-zinc-400">{{ $announcement['message'] }}</p><p class="mt-2 text-[9px] uppercase tracking-wider text-zinc-700">{{ $announcement['created_at'] }}</p></div></div></article>
+                    @empty
+                        <p class="p-6 text-center text-xs text-zinc-600">No active platform announcements.</p>
+                    @endforelse
                 </div>
             </section>
 
-            <x-player.panel title="Recent Matches">
-                <div class="space-y-3">
-                    @forelse($recentMatches as $match)
-                        <x-player.list-row
-                            :title="$match->tournament->name"
-                            :meta="$match->updated_at->format('M d')" />
+            <section class="rounded-2xl border border-emerald-500/15 bg-zinc-950/60 p-5">
+                <div class="flex items-center justify-between"><div><p class="text-[9px] font-black uppercase tracking-[0.22em] text-emerald-400">Squad radar</p><h2 class="mt-1 font-orbitron text-sm font-black uppercase text-white">Following Online</h2></div><span class="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[9px] font-black text-emerald-300">{{ count($onlineFollowing) }} online</span></div>
+                <div class="mt-4 space-y-2">
+                    @forelse($onlineFollowing as $onlinePlayer)
+                        <a href="/chat" wire:navigate class="flex items-center gap-3 rounded-xl border border-zinc-800/70 bg-zinc-900/50 p-2.5 transition hover:border-emerald-500/25"><div class="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-800">@if($onlinePlayer['avatar_url'])<img src="{{ $onlinePlayer['avatar_url'] }}" alt="{{ $onlinePlayer['username'] }}" class="h-full w-full object-cover">@else<div class="flex h-full w-full items-center justify-center text-[10px] font-black text-zinc-400">{{ strtoupper(substr($onlinePlayer['username'], 0, 2)) }}</div>@endif<span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 bg-emerald-400"></span></div><div class="min-w-0"><p class="truncate text-xs font-bold text-zinc-200">{{ $onlinePlayer['display_name'] }}</p><p class="text-[9px] uppercase tracking-wider text-emerald-400">Online now</p></div><i data-lucide="message-circle" class="ml-auto h-3.5 w-3.5 text-zinc-600"></i></a>
                     @empty
-                        <p class="text-xs text-zinc-600">No recent matches found.</p>
+                        <div class="rounded-xl border border-dashed border-zinc-800 p-4 text-center text-xs text-zinc-600">No followed players are online right now.</div>
                     @endforelse
                 </div>
-            </x-player.panel>
+            </section>
 
-            <x-player.panel title="Upcoming Tournaments">
-                <div class="space-y-3">
-                    @forelse($activeTournaments as $tournament)
-                        <x-player.list-row
-                            :title="$tournament->name"
-                            :href="'/tournaments/'.$tournament->uuid.'/view'" />
+            <section class="overflow-hidden rounded-2xl border border-violet-500/15 bg-zinc-950/60">
+                <header class="flex items-center justify-between border-b border-zinc-800 px-5 py-4"><div><p class="text-[9px] font-black uppercase tracking-[0.22em] text-violet-400">Live community</p><h2 class="mt-1 font-orbitron text-sm font-black uppercase text-white">Global Chat</h2></div><a href="/chat" wire:navigate class="text-[9px] font-black uppercase tracking-wider text-violet-400">Open chat →</a></header>
+                <div class="space-y-3 p-4">
+                    @forelse($globalMessages as $message)
+                        <div class="flex items-start gap-2.5"><div class="h-7 w-7 shrink-0 overflow-hidden rounded-full bg-zinc-800">@if($message['avatar_url'])<img src="{{ $message['avatar_url'] }}" alt="" class="h-full w-full object-cover">@else<div class="flex h-full w-full items-center justify-center text-[8px] font-black text-zinc-500">{{ strtoupper(substr($message['username'], 0, 2)) }}</div>@endif</div><div class="min-w-0"><p class="text-[10px] font-black text-violet-300">{{ $message['display_name'] }}</p><p class="line-clamp-2 text-xs leading-5 text-zinc-400">{{ $message['body'] }}</p></div></div>
                     @empty
-                        <p class="text-xs text-zinc-600">No upcoming tournaments.</p>
+                        <p class="py-4 text-center text-xs text-zinc-600">Global chat is quiet. Start the conversation.</p>
                     @endforelse
                 </div>
-            </x-player.panel>
-        </div>
+            </section>
 
-        <div class="space-y-6 lg:col-span-4">
-            <x-player.panel title="Progression">
-                <div class="rounded-xl border border-dashed border-zinc-800 bg-zinc-950/60 p-5 text-sm text-zinc-500">
-                    Player XP and levels are not connected to a backend module yet.
-                </div>
-            </x-player.panel>
-
-            <x-player.panel title="Announcements">
-                <div class="space-y-4 text-xs text-zinc-400">
-                    @forelse($announcements as $announcement)
-                        <article class="space-y-1">
-                            <h4 class="font-bold text-zinc-200">{{ $announcement->title }}</h4>
-                            <p>{{ $announcement->message }}</p>
-                        </article>
-                    @empty
-                        <p>No platform announcements are active.</p>
-                    @endforelse
-                </div>
-            </x-player.panel>
-
-            <x-player.panel padding="p-6" class="flex min-h-48 flex-col items-center justify-center text-center text-zinc-500">
-                <i data-lucide="tv" class="mb-4 h-10 w-10 text-zinc-700"></i>
-                <p class="text-xs">Live broadcast embeds are not implemented yet.</p>
-            </x-player.panel>
-        </div>
+            <section class="grid grid-cols-2 gap-3">
+                <a href="/wallet" wire:navigate class="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4 transition hover:bg-emerald-500/10"><i data-lucide="wallet" class="h-5 w-5 text-emerald-400"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-600">Balance</p><p class="mt-1 font-orbitron text-lg font-black text-emerald-300">${{ number_format($stats['balance'], 2) }}</p></a>
+                <a href="/profile" wire:navigate class="rounded-2xl border border-cyan-500/15 bg-cyan-500/5 p-4 transition hover:bg-cyan-500/10"><i data-lucide="shield-check" class="h-5 w-5 text-cyan-400"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-600">Completed</p><p class="mt-1 font-orbitron text-lg font-black text-cyan-300">{{ $progression->tournaments_completed }} events</p></a>
+            </section>
+        </aside>
     </div>
 </div>

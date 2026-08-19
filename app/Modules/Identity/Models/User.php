@@ -47,6 +47,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property array<int, string>|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
  * @property-read Wallet|null $wallet
+ * @property-read PlayerProgression|null $progression
  * @property-read UserProfile|null $profile
  * @property-read Collection<int, KycSubmission> $kycSubmissions
  * @property-read Collection<int, Notification> $notifications
@@ -144,6 +145,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function wallet(): HasOne
     {
         return $this->hasOne(Wallet::class);
+    }
+
+    public function progression(): HasOne
+    {
+        return $this->hasOne(PlayerProgression::class);
     }
 
     /**
