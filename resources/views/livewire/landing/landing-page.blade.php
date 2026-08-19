@@ -155,8 +155,8 @@
                     @php($translation = $game->translation())
                     <article class="landing-card group relative min-h-[300px] w-[82vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/30 transition-all duration-500 hover:-translate-y-1 hover:border-cyan-500/40 hover:shadow-[0_20px_60px_-15px_rgba(34,211,238,0.18)] sm:min-h-[330px] sm:w-[340px]">
                         <div class="relative h-36 overflow-hidden bg-zinc-950 sm:h-40">
-                            @if($game->banner_path)
-                                <img src="{{ $game->banner_path }}" alt="{{ $game->localizedName() }} banner" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+                            @if($game->bannerUrl())
+                                <img src="{{ $game->bannerUrl() }}" alt="{{ $game->localizedName() }} banner" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
                             @else
                                 <div class="landing-game-card-pattern flex h-full w-full items-center justify-center">
                                     <i data-lucide="gamepad-2" class="h-12 w-12 text-cyan-300/60"></i>

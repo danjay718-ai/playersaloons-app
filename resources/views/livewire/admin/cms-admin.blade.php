@@ -15,7 +15,7 @@
                     <thead>
                         <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
                             <th class="p-4">Game Slug</th>
-                            <th class="p-4">Banner</th>
+                            <th class="p-4">Card / Banner</th>
                             <th class="p-4">Name (EN)</th>
                             <th class="p-4">Description</th>
                             <th class="p-4">Catalog status</th>
@@ -30,9 +30,16 @@
                                     <span class="block text-[9px] text-slate-500 font-normal mt-0.5">{{ $game->uuid }}</span>
                                 </td>
                                 <td class="p-4">
-                                    @if($game->banner_path)
-                                        <div class="h-12 w-24 overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
-                                            <img src="{{ $game->banner_path }}" alt="{{ $game->slug }} banner" class="h-full w-full object-cover">
+                                    @if($game->cardImageUrl())
+                                        <div class="flex gap-2">
+                                            <div class="h-12 w-12 overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
+                                                <img src="{{ $game->cardImageUrl() }}" alt="{{ $game->slug }} card" class="h-full w-full object-cover">
+                                            </div>
+                                            @if($game->bannerUrl())
+                                                <div class="h-12 w-20 overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
+                                                    <img src="{{ $game->bannerUrl() }}" alt="{{ $game->slug }} banner" class="h-full w-full object-cover">
+                                                </div>
+                                            @endif
                                         </div>
                                     @else
                                         <span class="text-[10px] text-slate-600">No banner</span>
@@ -376,11 +383,19 @@
                         @error('gameDescription') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Landing Banner Path</label>
-                        <input type="text" wire:model="gameBannerPath" placeholder="/storage/games/valorant.webp" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        <p class="mt-1 text-[10px] text-slate-500">Used by the landing page game carousel. Leave blank to show the generated pattern fallback.</p>
-                        @error('gameBannerPath') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Game Card Image</label>
+                            <input type="file" wire:model="gameCardImage" accept="image/jpeg,image/png,image/webp" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300">
+                            <p class="mt-1 text-[10px] text-slate-500">Square or portrait image, max 2 MB.</p>
+                            @error('gameCardImage') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Hero Banner</label>
+                            <input type="file" wire:model="gameBannerImage" accept="image/jpeg,image/png,image/webp" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300">
+                            <p class="mt-1 text-[10px] text-slate-500">Wide image, max 4 MB.</p>
+                            @error('gameBannerImage') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
                     </div>
 
                     <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">

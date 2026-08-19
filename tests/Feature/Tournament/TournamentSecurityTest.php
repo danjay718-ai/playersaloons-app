@@ -112,14 +112,11 @@ class TournamentSecurityTest extends TestCase
             ->assertDontSee('Join Tournament');
     }
 
-    /**
-     * Player tournament listing only shows active/joinable statuses.
-     * DRAFT, CANCELLED, COMPLETED tournaments must be excluded.
-     */
+    /** The default Upcoming tab only shows open-registration competitions. */
     public function test_tournament_listing_filters_by_status(): void
     {
-        $this->makeTournament(TournamentStatus::REGISTRATION_OPEN);  // visible
-        $this->makeTournament(TournamentStatus::ONGOING);             // visible
+        $this->makeTournament(TournamentStatus::REGISTRATION_OPEN);  // upcoming
+        $this->makeTournament(TournamentStatus::ONGOING);            // ongoing tab
         $this->makeTournament(TournamentStatus::DRAFT);               // hidden
         $this->makeTournament(TournamentStatus::CANCELLED);           // hidden
         $this->makeTournament(TournamentStatus::COMPLETED);           // hidden
@@ -128,7 +125,7 @@ class TournamentSecurityTest extends TestCase
             ->test(PlayerTournamentList::class)
             ->assertViewHas('tournaments', function ($paginator) {
                 $statuses = $paginator->getCollection()->pluck('status');
-                $hidden = [TournamentStatus::DRAFT, TournamentStatus::CANCELLED, TournamentStatus::COMPLETED];
+                $hidden = [TournamentStatus::DRAFT, TournamentStatus::CANCELLED, TournamentStatus::COMPLETED, TournamentStatus::ONGOING];
 
                 foreach ($hidden as $s) {
                     if ($statuses->contains($s)) {
@@ -136,8 +133,11 @@ class TournamentSecurityTest extends TestCase
                     }
                 }
 
-                return $paginator->total() === 2;
-            });
+                return $paginator->total() === 1;
+            })
+            ->set('activeTab', 'ongoing')
+            ->assertViewHas('tournaments', fn ($paginator) => $paginator->total() === 1
+                && $paginator->first()->status === TournamentStatus::ONGOING);
     }
 
     /**

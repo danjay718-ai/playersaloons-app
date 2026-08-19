@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tournament;
 
+use App\Livewire\Game\GameShow;
 use App\Livewire\Tournament\MyTournamentsList;
 use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
@@ -159,16 +160,37 @@ class PlayerTournamentComponentsTest extends TestCase
 
         Livewire::actingAs($this->player)
             ->test(PlayerTournamentList::class)
-            ->assertViewHas('tournaments', fn ($items) => $items->total() === 3)
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 2)
             ->set('search', 'Clash')
             ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->sort()->values()->all() === collect([$daily->id, $other->id])->sort()->values()->all())
             ->set('gameId', (string) $otherGame->id)
             ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$other->id])
             ->set('search', '')
-            ->set('activeTab', 'weekly')
+            ->set('frequency', 'weekly')
             ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$other->id])
             ->set('gameId', '')
-            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->sort()->values()->all() === collect([$weekly->id, $other->id])->sort()->values()->all());
+            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$other->id])
+            ->set('activeTab', 'ongoing')
+            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$weekly->id]);
+    }
+
+    public function test_discovery_orders_games_by_active_tournaments_and_game_page_shows_featured_events(): void
+    {
+        $otherGame = $this->makeGame('racing', 'Racing');
+        $featured = $this->makeTournament('Featured Arena Cup', TournamentStatus::REGISTRATION_OPEN);
+        $featured->update(['is_featured' => true]);
+        $this->makeTournament('Arena Live Cup', TournamentStatus::ONGOING);
+        $this->makeTournament('Racing Open', TournamentStatus::REGISTRATION_OPEN, 'daily', $otherGame);
+
+        Livewire::test(PlayerTournamentList::class)
+            ->assertViewHas('popularGames', fn ($games) => $games->first()->is($this->game));
+
+        Livewire::test(GameShow::class, ['game' => $this->game])
+            ->assertSee('Arena')
+            ->assertSee('Featured Arena Cup')
+            ->assertSee('Overview')
+            ->assertSee('Browse')
+            ->assertSee('Streams');
     }
 
     private function makeUser(string $role, string $email): User

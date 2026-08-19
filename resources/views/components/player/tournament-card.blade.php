@@ -27,13 +27,13 @@
 @endphp
 
 <article {{ $attributes->class(['player-tournament-card group']) }}>
-    <div class="relative h-44 w-full overflow-hidden">
+    <div class="relative h-36 w-full overflow-hidden">
         <img src="{{ $tournament->banner_url ?? 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=600&auto=format&fit=crop' }}"
              alt="{{ $tournament->name }}"
              class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105">
         <div class="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-transparent to-zinc-950/40"></div>
 
-        <div class="absolute left-4 right-4 top-4 flex items-center justify-between gap-3">
+        <div class="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
                 <span class="player-badge border-cyan-800/50 bg-zinc-950/85 text-cyan-400">
                     {{ $gameName }}
@@ -48,9 +48,9 @@
         </div>
     </div>
 
-    <div class="flex grow flex-col justify-between space-y-5 p-6">
+    <div class="flex grow flex-col justify-between space-y-4 p-5">
         <div class="space-y-3">
-            <h3 class="line-clamp-2 font-orbitron text-xl font-black leading-tight tracking-wide text-white transition-colors duration-300 group-hover:text-cyan-400">
+            <h3 class="line-clamp-2 font-orbitron text-lg font-black leading-tight tracking-wide text-white transition-colors duration-300 group-hover:text-cyan-400">
                 {{ $tournament->name }}
             </h3>
             <div class="flex items-center justify-between gap-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">

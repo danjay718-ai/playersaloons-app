@@ -44,6 +44,7 @@ use App\Livewire\Community\ContactPage;
 use App\Livewire\Community\GlobalChat;
 use App\Livewire\Community\PlayerReviewPage;
 use App\Livewire\Dashboard\PlayerDashboard;
+use App\Livewire\Game\GameShow;
 use App\Livewire\Landing\LandingPage;
 use App\Livewire\Match\HeadToHeadList;
 use App\Livewire\Match\LeaderboardList;
@@ -74,6 +75,8 @@ Route::group([], function () {
     Route::get('/about', AboutPage::class)->name('about');
 
     Route::get('/tournaments', PublicTournamentList::class);
+    Route::get('/games/{game:slug}', GameShow::class)->name('games.show');
+    Route::get('/streams/{id}', StreamWatch::class)->name('streams.watch');
     Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view.public');
     Route::get('/blog', BlogIndex::class)->name('blog.index');
     Route::get('/blog/{slug}', BlogArticleView::class)->name('blog.show');
@@ -127,7 +130,6 @@ Route::group([], function () {
             }
             Route::get('/leaderboards', LeaderboardList::class)->name('leaderboards');
             Route::get('/streams', StreamList::class)->name('streams');
-            Route::get('/streams/{id}', StreamWatch::class)->name('streams.watch');
             Route::get('/chat', GlobalChat::class)->name('chat');
             Route::get('/chat/api/conversations', [ChatController::class, 'conversations'])->name('chat.conversations');
             Route::get('/chat/api/conversations/{uuid}/messages', [ChatController::class, 'messages'])->name('chat.messages');

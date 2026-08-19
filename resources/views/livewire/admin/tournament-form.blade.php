@@ -189,6 +189,14 @@
                             @endif
                             @error('banner') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
+
+                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
+                            <input type="checkbox" wire:model="is_featured" class="mt-0.5 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500/40">
+                            <span>
+                                <span class="block text-xs font-bold uppercase text-amber-300">Featured Tournament</span>
+                                <span class="mt-1 block text-[10px] leading-relaxed text-slate-500">Show this competition in the Featured section of its game page while it is active.</span>
+                            </span>
+                        </label>
                     </div>
 
                     <div class="space-y-6">

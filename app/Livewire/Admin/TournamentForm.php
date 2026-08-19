@@ -68,6 +68,8 @@ class TournamentForm extends AdminComponent
 
     public bool $is_auto_cancel_underfilled = false;
 
+    public bool $is_featured = false;
+
     public ?int $waiting_time = null;
 
     public ?int $waiting_result_time = null;
@@ -132,6 +134,7 @@ class TournamentForm extends AdminComponent
             $this->platform_id = $tournament->platform_id;
             $this->frequency = $tournament->frequency ?? 'daily';
             $this->is_auto_cancel_underfilled = (bool) $tournament->is_auto_cancel_underfilled;
+            $this->is_featured = (bool) $tournament->is_featured;
             $this->waiting_time = $tournament->waiting_time;
             $this->waiting_result_time = $tournament->waiting_result_time;
             $this->team_size = $tournament->team_size ?? 1;
@@ -248,6 +251,7 @@ class TournamentForm extends AdminComponent
             'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
             'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
             'banner' => 'nullable|image|max:2048', // Max 2MB image
+            'is_featured' => 'boolean',
         ]);
 
         if (! $this->isEditMode) {
@@ -278,6 +282,7 @@ class TournamentForm extends AdminComponent
             'frequency' => $this->frequency,
             'timezone' => $this->timezone,
             'is_auto_cancel_underfilled' => $this->is_auto_cancel_underfilled,
+            'is_featured' => $this->is_featured,
             'waiting_time' => $this->waiting_time,
             'waiting_result_time' => $this->waiting_result_time,
             'team_size' => $this->team_size,

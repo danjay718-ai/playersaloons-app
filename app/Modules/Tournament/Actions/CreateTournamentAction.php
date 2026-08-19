@@ -66,6 +66,7 @@ class CreateTournamentAction
                 'winning_points' => $data['winning_points'] ?? null,
                 'is_auto_cancel_underfilled' => $data['is_auto_cancel_underfilled'] ?? false,
                 'banner_url' => $data['banner_url'] ?? null,
+                'is_featured' => $data['is_featured'] ?? false,
                 'created_by' => $creator->getKey(),
             ]);
 

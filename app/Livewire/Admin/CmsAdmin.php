@@ -10,13 +10,16 @@ use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Models\LandingSectionItem;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\CMS\Models\PublicNavigationItem;
+use App\Modules\Operations\Models\SystemSetting;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class CmsAdmin extends AdminComponent
 {
-    use WithPagination;
+    use WithFileUploads, WithPagination;
 
     public string $tab = 'games'; // games | pages | platforms | landing | navigation | about
 
@@ -46,6 +49,10 @@ class CmsAdmin extends AdminComponent
     public string $gameDescription = '';
 
     public string $gameBannerPath = '';
+
+    public $gameCardImage = null;
+
+    public $gameBannerImage = null;
 
     public string $gameLocale = 'en';
 
@@ -131,7 +138,9 @@ class CmsAdmin extends AdminComponent
 
     // About Page forms
     public string $aboutTitle = '';
+
     public string $aboutSubtitle = '';
+
     public string $aboutBody = '';
 
     protected $paginationTheme = 'tailwind';
@@ -155,7 +164,7 @@ class CmsAdmin extends AdminComponent
 
     private function loadAboutSettings(): void
     {
-        $settings = \App\Modules\Operations\Models\SystemSetting::query()->whereIn('key', ['about.title', 'about.subtitle', 'about.body'])->pluck('value', 'key');
+        $settings = SystemSetting::query()->whereIn('key', ['about.title', 'about.subtitle', 'about.body'])->pluck('value', 'key');
         $this->aboutTitle = $settings['about.title'] ?? 'About PlayerSaloons';
         $this->aboutSubtitle = $settings['about.subtitle'] ?? 'Our mission is to revolutionize competitive gaming.';
         $this->aboutBody = $settings['about.body'] ?? '<p>Welcome to PlayerSaloons.</p>';
@@ -174,9 +183,9 @@ class CmsAdmin extends AdminComponent
             'about.subtitle' => $this->aboutSubtitle,
             'about.body' => $this->aboutBody,
         ] as $key => $value) {
-            \App\Modules\Operations\Models\SystemSetting::query()->updateOrCreate(
+            SystemSetting::query()->updateOrCreate(
                 ['key' => $key],
-                ['value' => $value, 'updated_by' => \Illuminate\Support\Facades\Auth::id()]
+                ['value' => $value, 'updated_by' => Auth::id()]
             );
         }
 
@@ -310,6 +319,7 @@ class CmsAdmin extends AdminComponent
         $this->gameName = $translation !== null ? $translation->name : '';
         $this->gameDescription = $translation !== null ? $translation->description : '';
         $this->gameBannerPath = (string) $game->banner_path;
+        $this->reset('gameCardImage', 'gameBannerImage');
         $this->showGameModal = true;
     }
 
@@ -319,6 +329,8 @@ class CmsAdmin extends AdminComponent
             'gameName' => 'required|string|max:255',
             'gameDescription' => 'nullable|string',
             'gameBannerPath' => 'nullable|string|max:255',
+            'gameCardImage' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'gameBannerImage' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
 
         if (! $this->selectedGameId) {
@@ -326,9 +338,20 @@ class CmsAdmin extends AdminComponent
         }
 
         DB::transaction(function (): void {
-            Game::findOrFail($this->selectedGameId)->update([
-                'banner_path' => $this->gameBannerPath !== '' ? $this->gameBannerPath : null,
-            ]);
+            $game = Game::findOrFail($this->selectedGameId);
+            $media = ['banner_path' => $this->gameBannerPath !== '' ? $this->gameBannerPath : null];
+
+            if ($this->gameCardImage) {
+                $media['card_image_path'] = '/storage/'.$this->gameCardImage->store('games/cards', 'public');
+            }
+
+            if ($this->gameBannerImage) {
+                $media['banner_path'] = '/storage/'.$this->gameBannerImage->store('games/banners', 'public');
+            }
+
+            if ($media !== []) {
+                $game->update($media);
+            }
 
             GameTranslation::updateOrCreate([
                 'game_id' => $this->selectedGameId,

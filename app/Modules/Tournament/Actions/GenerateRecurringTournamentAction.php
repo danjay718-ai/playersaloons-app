@@ -134,6 +134,7 @@ final class GenerateRecurringTournamentAction
             'prize_3rd' => $settings['prize_3rd'] ?? null,
             'is_auto_cancel_underfilled' => $template->is_auto_cancel_underfilled,
             'banner_url' => $settings['banner_url'] ?? null,
+            'is_featured' => $settings['is_featured'] ?? false,
         ];
     }
 }

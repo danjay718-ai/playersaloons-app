@@ -85,6 +85,7 @@ class Tournament extends Model implements HasMedia
         'created_by',
         'frequency',
         'banner_url',
+        'is_featured',
         'description',
         'rules',
         'platform_id',
@@ -127,6 +128,7 @@ class Tournament extends Model implements HasMedia
             'team_size' => 'integer',
             'winning_points' => 'integer',
             'is_auto_cancel_underfilled' => 'boolean',
+            'is_featured' => 'boolean',
         ];
     }
 

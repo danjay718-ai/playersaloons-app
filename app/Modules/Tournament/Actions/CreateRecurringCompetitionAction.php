@@ -65,6 +65,7 @@ final class CreateRecurringCompetitionAction
                     'prize_2nd' => $data['prize_2nd'] ?? null,
                     'prize_3rd' => $data['prize_3rd'] ?? null,
                     'banner_url' => $data['banner_url'] ?? null,
+                    'is_featured' => $data['is_featured'] ?? false,
                     'stream_urls' => [
                         'youtube' => $data['youtube_stream_url'] ?? null,
                         'twitch' => $data['twitch_stream_url'] ?? null,
