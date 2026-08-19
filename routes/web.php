@@ -16,6 +16,7 @@ use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\CmsContentAdmin;
 use App\Livewire\Admin\ComplianceAdmin;
 use App\Livewire\Admin\ContactInquiryAdmin;
+use App\Livewire\Admin\ErrorIncidentAdmin;
 use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\NewsletterAdmin;
@@ -65,8 +66,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
-// Player-facing routes (geo-blocking applied)
-Route::middleware('geo.block')->group(function () {
+// Player-facing routes. Country eligibility is enforced at account/profile
+// selection time; requests never wait on a synchronous third-party Geo-IP call.
+Route::group([], function () {
 
     Route::get('/', LandingPage::class);
     Route::get('/about', AboutPage::class)->name('about');
@@ -155,7 +157,7 @@ Route::middleware('geo.block')->group(function () {
 
     }); // end auth middleware
 
-}); // end geo.block middleware group
+}); // end player-facing routes
 
 // Admin Control Panel (auth required, no geo-blocking)
 Route::middleware('auth')->prefix('admin')->group(function () {
@@ -187,6 +189,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
     Route::get('/roles-permissions', RolePermissionAdmin::class)->name('admin.roles-permissions');
     Route::get('/compliance', ComplianceAdmin::class)->name('admin.compliance');
     Route::get('/audit-logs', AuditLogAdmin::class);
+    Route::get('/error-logs', ErrorIncidentAdmin::class)->name('admin.error-logs');
     Route::get('/cms/content', CmsContentAdmin::class)->name('admin.cms.content');
     Route::get('/cms/{section?}', CmsAdmin::class)
         ->whereIn('section', ['landing', 'games', 'platforms', 'navigation', 'about'])

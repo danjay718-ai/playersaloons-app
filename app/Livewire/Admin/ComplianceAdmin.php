@@ -77,7 +77,7 @@ class ComplianceAdmin extends AdminComponent
             $this->showApplyModal = false;
             session()->flash('success', 'Compliance block applied.');
         } catch (\Throwable $exception) {
-            $this->addError('reason', $exception->getMessage());
+            $this->addError('reason', $this->safeError($exception, 'Unable to update the compliance restriction.'));
         }
     }
 

@@ -3,6 +3,26 @@
         <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{{ session('success') }}</div>
     @endif
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-violet-300">Authentication</p>
+        <h2 class="mt-1 text-xl font-bold text-white">Sign-in protection</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-500">Temporarily locks repeated failed sign-ins. This avoids permanent account denial-of-service while slowing credential stuffing and brute-force attempts.</p>
+        <form wire:submit="saveAuthenticationSettings" class="mt-6 space-y-5">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="loginMaxAttempts" class="text-xs font-bold uppercase tracking-wider text-slate-400">Failed attempts</label>
+                    <input id="loginMaxAttempts" wire:model="loginMaxAttempts" type="number" min="3" max="20" required class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                    @error('loginMaxAttempts')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="loginLockoutMinutes" class="text-xs font-bold uppercase tracking-wider text-slate-400">Lockout minutes</label>
+                    <input id="loginLockoutMinutes" wire:model="loginLockoutMinutes" type="number" min="1" max="1440" required class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                    @error('loginLockoutMinutes')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                </div>
+            </div>
+            <button type="submit" class="rounded-lg bg-violet-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-violet-500">Save authentication settings</button>
+        </form>
+    </section>
+    <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <p class="text-[11px] font-bold uppercase tracking-wider text-cyan-300">Tournaments</p>
         <h2 class="mt-1 text-xl font-bold text-white">Result confirmation timeout</h2>
         <p class="mt-2 text-sm text-slate-500">New tournaments inherit this value. Organizers can override it on each tournament.</p>

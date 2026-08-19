@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\HandlesUserFacingErrors;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 abstract class AdminComponent extends Component
 {
+    use HandlesUserFacingErrors;
+
     public function boot(): void
     {
         $user = Auth::user();

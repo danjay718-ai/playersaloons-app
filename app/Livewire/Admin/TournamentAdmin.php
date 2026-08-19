@@ -204,7 +204,7 @@ class TournamentAdmin extends AdminComponent
             };
             session()->flash('success', 'State transition executed successfully.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Transition failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to apply the tournament transition.'));
         }
     }
 
@@ -256,7 +256,7 @@ class TournamentAdmin extends AdminComponent
             $this->closeCancelModal();
             $this->closeDetailModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Cancellation failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to cancel the tournament.'));
         }
     }
 

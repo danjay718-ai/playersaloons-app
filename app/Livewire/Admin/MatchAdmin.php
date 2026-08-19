@@ -208,7 +208,7 @@ class MatchAdmin extends AdminComponent
             session()->flash('success', 'Match result overridden and advanced successfully.');
             $this->closeDetailModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Override failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to override the match result.'));
         }
     }
 
@@ -234,7 +234,7 @@ class MatchAdmin extends AdminComponent
             $this->closeDisputeModal();
             $this->closeDetailModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to resolve dispute: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to resolve the match dispute.'));
         }
     }
 
@@ -258,7 +258,7 @@ class MatchAdmin extends AdminComponent
             session()->flash('success', 'Head-to-head dispute resolved successfully.');
             $this->closeH2HDisputeModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to resolve H2H dispute: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to resolve the head-to-head dispute.'));
         }
     }
 

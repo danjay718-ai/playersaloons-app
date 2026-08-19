@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Wallet;
 
+use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
 use App\Modules\Wallet\Services\DepositFeeCalculator;
 use App\Modules\Wallet\Services\StripeCheckoutService;
@@ -13,6 +14,7 @@ use Livewire\WithPagination;
 
 class WalletDashboard extends Component
 {
+    use HandlesUserFacingErrors;
     use WithPagination;
 
     public string $amount = '';
@@ -57,7 +59,7 @@ class WalletDashboard extends Component
 
             return redirect()->away($checkoutUrl);
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to create the deposit request.'));
         }
     }
 
@@ -77,7 +79,7 @@ class WalletDashboard extends Component
             session()->flash('message', 'Withdrawal request of $'.number_format((float) $this->amount, 2).' submitted successfully and is pending review!');
             $this->reset('amount');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to create the withdrawal request.'));
         }
     }
 

@@ -14,3 +14,4 @@ Schedule::job(new RefreshProviderLiveStatusesJob)->everyTwoMinutes()->withoutOve
 Schedule::job(new ExpireReservationsJob)->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('tournaments:reconcile-lifecycle')->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::command('tournaments:auto-generate')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('errors:prune --days=90')->dailyAt('03:30')->onOneServer();

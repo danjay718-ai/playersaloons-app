@@ -5,10 +5,12 @@ use App\Http\Middleware\SanitizeBroadcastSocketId;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TranslateRenderedHtml;
 use App\Http\Middleware\UpdateUserOnlineStatus;
+use App\Modules\Operations\Services\ErrorIncidentReporter;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,13 +28,56 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', TranslateRenderedHtml::class);
         $middleware->alias([
             'compliance.clear' => EnsureNotComplianceBlocked::class,
-            'geo.block'        => \App\Http\Middleware\BlockRestrictedCountries::class,
         ]);
         $middleware->validateCsrfTokens(except: [
             'stripe/webhook',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Central capture covers HTTP, Livewire, console, and queue exceptions.
+        // The reporter is failure-safe so database outages still reach Laravel logs.
+        $exceptions->report(function (Throwable $exception): void {
+            app(ErrorIncidentReporter::class)->capture($exception);
+        });
+
+        $exceptions->render(function (Throwable $exception, Request $request) {
+            $status = $exception instanceof HttpExceptionInterface
+                ? $exception->getStatusCode()
+                : 500;
+
+            $isServerError = $status >= 500;
+
+            if (! $isServerError && ! in_array($status, [403, 404, 419], true)) {
+                return null;
+            }
+
+            // Avoid filling the incident store with ordinary missing URLs/session
+            // expiry noise while still guaranteeing formal public responses.
+            $referenceId = $status === 403 || $isServerError
+                ? app(ErrorIncidentReporter::class)->capture($exception)
+                : null;
+
+            if ($request->is('api/*') || $request->expectsJson()) {
+                $message = match ($status) {
+                    403 => 'You are not authorized to perform this action.',
+                    404 => 'The requested resource was not found.',
+                    419 => 'Your session has expired. Please try again.',
+                    default => 'We could not complete your request due to an internal error.',
+                };
+
+                return response()->json(array_filter([
+                    'message' => $message,
+                    'reference_id' => $referenceId,
+                ]), $status);
+            }
+
+            $errorView = $isServerError ? 'errors.500' : "errors.{$status}";
+
+            return response()->view($errorView, [
+                'referenceId' => $referenceId,
+            ], $status);
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );

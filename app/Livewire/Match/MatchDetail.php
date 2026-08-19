@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Match;
 
+use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
@@ -23,6 +24,7 @@ use Livewire\WithFileUploads;
 
 class MatchDetail extends Component
 {
+    use HandlesUserFacingErrors;
     use WithFileUploads;
 
     public string $uuid;
@@ -54,7 +56,7 @@ class MatchDetail extends Component
             $action->execute($match, (int) Auth::id());
             session()->flash('message', 'Match result confirmed! The match is now complete.');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to submit the match result.'));
         }
     }
 
@@ -83,7 +85,7 @@ class MatchDetail extends Component
             });
             session()->flash('message', 'Match finalized by administrator.');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to confirm the match result.'));
         }
     }
 
@@ -124,7 +126,7 @@ class MatchDetail extends Component
             session()->flash('message', 'Result submitted successfully!');
             $this->reset(['winnerRegistrationId', 'notes', 'submissionProof']);
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to dispute the match result.'));
         }
     }
 
@@ -149,7 +151,7 @@ class MatchDetail extends Component
             session()->flash('message', 'Dispute opened successfully. Please upload screenshots as evidence below.');
             $this->reset('disputeReason');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to submit match evidence.'));
         }
     }
 
@@ -165,7 +167,7 @@ class MatchDetail extends Component
             $rematch = $action->execute($match, (int) Auth::id());
             session()->flash('message', $rematch ? 'Rematch agreed! A new match is ready.' : 'Rematch requested. Waiting for your opponent to agree.');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to request a rematch.'));
         }
     }
 
@@ -201,7 +203,7 @@ class MatchDetail extends Component
             session()->flash('message', 'Evidence uploaded successfully! The tournament admins will review it.');
             $this->reset('evidenceFile');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to cast the rematch vote.'));
         }
     }
 

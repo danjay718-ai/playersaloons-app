@@ -62,7 +62,7 @@ class WithdrawalAdmin extends AdminComponent
                     app(ReviewWithdrawalAction::class)->execute($withdrawal, $reviewer);
                     session()->flash('info', 'Withdrawal request moved to UNDER REVIEW.');
                 } catch (\Exception $e) {
-                    session()->flash('error', 'Could not start review: '.$e->getMessage());
+                    session()->flash('error', $this->safeError($e, 'Unable to begin the withdrawal review.'));
                 }
             }
         }
@@ -99,7 +99,7 @@ class WithdrawalAdmin extends AdminComponent
             $this->showApproveModal = false;
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Approval failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to approve the withdrawal.'));
         }
     }
 
@@ -132,7 +132,7 @@ class WithdrawalAdmin extends AdminComponent
             $this->showRejectModal = false;
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Rejection failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to reject the withdrawal.'));
         }
     }
 
@@ -158,7 +158,7 @@ class WithdrawalAdmin extends AdminComponent
             session()->flash('success', 'Withdrawal payout marked as PROCESSED.');
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Payout processing failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to process the payout.'));
         }
     }
 

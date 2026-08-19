@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Team;
 
+use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\Identity\Models\User;
 use App\Modules\Team\Actions\AcceptTeamInvitationAction;
 use App\Modules\Team\Actions\CreateTeamAction;
@@ -25,6 +26,8 @@ use Livewire\Component;
 
 class TeamDashboard extends Component
 {
+    use HandlesUserFacingErrors;
+
     // Creating Team
     public string $teamName = '';
 
@@ -64,7 +67,7 @@ class TeamDashboard extends Component
             session()->flash('message', 'Team created successfully!');
             $this->reset('teamName');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to create the team.'));
         }
     }
 
@@ -89,7 +92,7 @@ class TeamDashboard extends Component
             session()->flash('message', 'Team updated successfully!');
             $this->reset('editName');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to update the team.'));
         }
     }
 
@@ -109,7 +112,7 @@ class TeamDashboard extends Component
             $action->execute($team);
             session()->flash('message', 'Team disbanded successfully!');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to delete the team.'));
         }
     }
 
@@ -135,7 +138,7 @@ class TeamDashboard extends Component
             session()->flash('message', "Invitation sent to {$invitedUser->username}!");
             $this->reset('inviteUsername');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to invite that player.'));
         }
     }
 
@@ -156,7 +159,7 @@ class TeamDashboard extends Component
             $action->execute($invitation);
             session()->flash('message', 'Invitation revoked.');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to accept the invitation.'));
         }
     }
 
@@ -185,7 +188,7 @@ class TeamDashboard extends Component
             $action->execute($invitation);
             session()->flash('message', 'Invitation accepted! Welcome to the team.');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to decline the invitation.'));
         }
     }
 
@@ -206,7 +209,7 @@ class TeamDashboard extends Component
             $action->execute($invitation);
             session()->flash('message', 'Invitation declined.');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to remove the team member.'));
         }
     }
 
@@ -227,7 +230,7 @@ class TeamDashboard extends Component
             $action->execute($team, $memberUser);
             session()->flash('message', "{$memberUser->username} was removed from the team.");
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to change the team captain.'));
         }
     }
 
@@ -251,7 +254,7 @@ class TeamDashboard extends Component
             $action->execute($team, $user);
             session()->flash('message', 'You have left the team.');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to leave the team.'));
         }
     }
 
@@ -272,7 +275,7 @@ class TeamDashboard extends Component
             $action->execute($team, $newCaptain);
             session()->flash('message', "Captaincy transferred to {$newCaptain->username}.");
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to update the team member.'));
         }
     }
 

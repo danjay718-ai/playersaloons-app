@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Match;
 
+use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
@@ -27,6 +28,7 @@ use Throwable;
 
 class HeadToHeadList extends Component
 {
+    use HandlesUserFacingErrors;
     use WithFileUploads;
 
     public float $stakeAmount = 10.00;
@@ -269,7 +271,7 @@ class HeadToHeadList extends Component
         $message = match (true) {
             $e instanceof InsufficientBalanceException => 'Insufficient wallet balance for this stake.',
             str_contains($e->getMessage(), 'does not have a wallet') => 'Wallet not found. Please open your Wallet page or contact support before joining H2H duels.',
-            default => $e->getMessage(),
+            default => $this->safeError($e, 'Unable to complete the head-to-head action.'),
         };
 
         session()->flash('h2h_error', $message);

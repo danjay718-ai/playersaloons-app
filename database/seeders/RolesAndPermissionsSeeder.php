@@ -75,6 +75,8 @@ class RolesAndPermissionsSeeder extends Seeder
         'system_settings.view',
         'system_settings.manage',
         'audit_logs.view',
+        'error_incidents.view',
+        'error_incidents.manage',
         'broadcast_messages.manage',
         'contact_inquiries.manage',
 
@@ -239,6 +241,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'system_settings.view',
             'system_settings.manage',
             'audit_logs.view',
+            'error_incidents.view',
+            'error_incidents.manage',
             'broadcast_messages.manage',
             'contact_inquiries.manage',
             // CMS

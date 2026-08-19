@@ -1,6 +1,7 @@
 @php
     $code = $code ?? '500';
     $message = $message ?? '';
+    $referenceId = $referenceId ?? null;
     
     // Dynamically set properties based on code
     switch ($code) {
@@ -124,6 +125,11 @@
             <p class="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
                 {{ $description }}
             </p>
+            @if($referenceId)
+                <p class="mx-auto mt-4 max-w-sm rounded-lg border border-slate-700/70 bg-slate-900/70 px-3 py-2 font-mono text-[10px] tracking-wide text-slate-400">
+                    Support reference: <span class="select-all text-slate-200">{{ $referenceId }}</span>
+                </p>
+            @endif
         </div>
 
         <!-- Actions -->

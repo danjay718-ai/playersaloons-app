@@ -1,1 +1,1 @@
-@include('errors.illustrated', ['code' => '500', 'message' => $exception->getMessage()])
+@include('errors.illustrated', ['code' => '500'])

@@ -55,7 +55,7 @@ class KycAdmin extends AdminComponent
                 app(ReviewKycAction::class)->execute($submission);
                 session()->flash('info', 'Submission is now marked as UNDER REVIEW.');
             } catch (\Exception $e) {
-                session()->flash('error', 'Could not transition state: '.$e->getMessage());
+                session()->flash('error', $this->safeError($e, 'Unable to begin the KYC review.'));
             }
         }
 
@@ -84,7 +84,7 @@ class KycAdmin extends AdminComponent
             session()->flash('success', 'KYC submission approved successfully.');
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Approval failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to approve the KYC submission.'));
         }
     }
 
@@ -121,7 +121,7 @@ class KycAdmin extends AdminComponent
             $this->showRejectModal = false;
             $this->showDetailModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Rejection failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to reject the KYC submission.'));
         }
     }
 

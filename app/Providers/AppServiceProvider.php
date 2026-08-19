@@ -20,6 +20,7 @@ use App\Modules\Wallet\Policies\WalletPolicy;
 use App\Modules\Wallet\Policies\WithdrawalPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Password::defaults(fn (): Password => Password::min(8)
+            ->letters()
+            ->mixedCase()
+            ->numbers());
+
         Gate::define('viewPulse', function ($user = null) {
             if ($user && is_object($user) && method_exists($user, 'hasAnyRole')) {
                 return (bool) call_user_func([$user, 'hasAnyRole'], ['SUPER_ADMIN', 'ADMIN']);

@@ -48,7 +48,7 @@ class AdminProfile extends AdminComponent
         $this->validate([
             'displayName' => ['required', 'string', 'max:100'],
             'bio' => ['nullable', 'string', 'max:500'],
-            'countryCode' => ['nullable', 'string', 'size:2', 'in:' . implode(',', array_keys(config('countries', [])))],
+            'countryCode' => ['nullable', 'string', 'size:2', 'in:'.implode(',', array_keys(config('countries', [])))],
             'timezone' => ['nullable', 'string', 'timezone'],
         ]);
 
@@ -62,7 +62,7 @@ class AdminProfile extends AdminComponent
 
             session()->flash('message', 'Admin profile updated successfully!');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to update the admin profile.'));
         }
     }
 

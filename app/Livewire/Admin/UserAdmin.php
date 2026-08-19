@@ -213,7 +213,7 @@ class UserAdmin extends AdminComponent
             session()->flash('success', 'User suspended successfully.');
             $this->showSuspendModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Suspension failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to suspend the user.'));
         }
     }
 
@@ -234,7 +234,7 @@ class UserAdmin extends AdminComponent
             $action->execute($target, $actor);
             session()->flash('success', 'User account unsuspended.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Unsuspension failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to restore the user.'));
         }
     }
 
@@ -279,7 +279,7 @@ class UserAdmin extends AdminComponent
             }
             $this->showRoleModal = false;
         } catch (\Exception $e) {
-            session()->flash('error', 'Role update failed: '.$e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to update the user role.'));
         }
     }
 

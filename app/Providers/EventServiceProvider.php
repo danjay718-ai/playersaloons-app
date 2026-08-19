@@ -20,6 +20,7 @@ use App\Modules\Match\Events\MatchStarted;
 use App\Modules\Match\Listeners\AdvanceWinnerListener;
 use App\Modules\Match\Listeners\BroadcastBracketUpdateListener;
 use App\Modules\Match\Listeners\NotifyParticipantsListener;
+use App\Modules\Operations\Services\ErrorIncidentReporter;
 use App\Modules\Tournament\Events\TournamentCancelled;
 use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Events\TournamentStarted;
@@ -40,6 +41,8 @@ use App\Modules\Wallet\Listeners\SendDepositNotificationListener;
 use App\Modules\Wallet\Listeners\SendNotificationListener;
 use App\Modules\Wallet\Listeners\SuspendWalletListener;
 use App\Modules\Wallet\Listeners\UnsuspendWalletListener;
+use Illuminate\Console\Events\ScheduledTaskFailed;
+use Illuminate\Queue\Events\JobFailed as QueueJobFailed;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -157,5 +160,19 @@ class EventServiceProvider extends ServiceProvider
         foreach ($this->subscribe as $subscriber) {
             Event::subscribe($subscriber);
         }
+
+        Event::listen(QueueJobFailed::class, function (QueueJobFailed $event): void {
+            app(ErrorIncidentReporter::class)->capture($event->exception, [
+                'connection' => $event->connectionName,
+                'job' => $event->job->resolveName(),
+                'queue' => $event->job->getQueue(),
+            ], 'queue');
+        });
+
+        Event::listen(ScheduledTaskFailed::class, function (ScheduledTaskFailed $event): void {
+            app(ErrorIncidentReporter::class)->capture($event->exception, [
+                'task' => $event->task->getSummaryForDisplay(),
+            ], 'scheduler');
+        });
     }
 }
