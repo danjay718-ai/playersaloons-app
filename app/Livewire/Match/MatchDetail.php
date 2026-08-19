@@ -65,7 +65,7 @@ class MatchDetail extends Component
             $action->execute($match, (int) Auth::id());
             session()->flash('message', 'Match result confirmed! The match is now complete.');
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to submit the match result.'));
+            session()->flash('error', $this->safeError($e, 'Unable to confirm the match result.'));
         }
     }
 
@@ -94,7 +94,7 @@ class MatchDetail extends Component
             });
             session()->flash('message', 'Match finalized by administrator.');
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to confirm the match result.'));
+            session()->flash('error', $this->safeError($e, 'Unable to finalize the match result.'));
         }
     }
 
@@ -197,11 +197,11 @@ class MatchDetail extends Component
             session()->flash('message', 'Result submitted successfully!');
             $this->reset(['winnerRegistrationId', 'notes', 'submissionProof']);
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to dispute the match result.'));
+            session()->flash('error', $this->safeError($e, 'Unable to submit the match result.'));
         }
     }
 
-    public function openDispute(OpenDisputeAction $action)
+    public function openDispute(OpenDisputeAction $action, SubmitEvidenceAction $evidenceAction)
     {
         $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
 
@@ -215,14 +215,22 @@ class MatchDetail extends Component
 
         $this->validate([
             'disputeReason' => 'required|string|min:10',
+            'evidenceFile' => ['nullable', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
         ]);
 
         try {
-            $action->execute($match, (int) Auth::id(), $this->disputeReason);
-            session()->flash('message', 'Dispute opened successfully. Please upload screenshots as evidence below.');
-            $this->reset('disputeReason');
+            $dispute = $action->execute($match, (int) Auth::id(), $this->disputeReason);
+
+            if ($this->evidenceFile) {
+                $evidenceAction->execute($dispute, (int) Auth::id(), $this->evidenceFile);
+            }
+
+            session()->flash('message', $this->evidenceFile
+                ? 'Dispute and proof submitted successfully.'
+                : 'Dispute opened successfully. You may add proof below.');
+            $this->reset(['disputeReason', 'evidenceFile']);
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to submit match evidence.'));
+            session()->flash('error', $this->safeError($e, 'Unable to open the match dispute.'));
         }
     }
 
@@ -274,7 +282,7 @@ class MatchDetail extends Component
             session()->flash('message', 'Evidence uploaded successfully! The tournament admins will review it.');
             $this->reset('evidenceFile');
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to cast the rematch vote.'));
+            session()->flash('error', $this->safeError($e, 'Unable to upload match evidence.'));
         }
     }
 
@@ -283,7 +291,6 @@ class MatchDetail extends Component
         $match = GameMatch::query()
             ->where('uuid', $this->uuid)
             ->with([
-                'tournament',
                 'round',
                 'playerARegistration.user.profile',
                 'playerARegistration.team',
@@ -296,9 +303,11 @@ class MatchDetail extends Component
                 'tournament.game.translations',
                 'tournament.platform',
                 'winnerRegistration.user.profile',
-                'resultSubmissions.user',
+                'resultSubmissions' => fn ($query) => $query
+                    ->with('user:id,username')
+                    ->orderByDesc('submitted_at'),
                 'disputes' => function ($q) {
-                    $q->with('evidence');
+                    $q->with('evidence.uploadedBy:id,username');
                 },
                 'rematchVotes',
             ])
@@ -319,7 +328,7 @@ class MatchDetail extends Component
 
         $activeDispute = $match->disputes->first(fn ($dispute) => $dispute->status !== DisputeStatus::RESOLVED);
 
-        $latestSubmission = $match->resultSubmissions->sortByDesc('created_at')->first();
+        $latestSubmission = $match->resultSubmissions->first();
         $isSubmitter = $user && $latestSubmission && $user->id === $latestSubmission->submitted_by;
 
         $isAdmin = Auth::check() && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Match;
 
+use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Match\MatchDetail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\Identity\Models\User;
@@ -43,6 +45,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class MatchModuleTest extends TestCase
@@ -320,6 +323,54 @@ class MatchModuleTest extends TestCase
         ]);
 
         Event::assertDispatched(TournamentBracketUpdated::class);
+    }
+
+    public function test_player_can_open_dispute_with_proof_from_match_room(): void
+    {
+        Storage::fake('public');
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
+        $proof = UploadedFile::fake()->create('match-proof.jpg', 100, 'image/jpeg');
+
+        Livewire::actingAs($this->playerA)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->assertSee('Return to Tournament')
+            ->assertSee('Ready confirmed — play now')
+            ->set('disputeReason', 'The submitted match information is not accurate.')
+            ->set('evidenceFile', $proof)
+            ->call('openDispute')
+            ->assertHasNoErrors();
+
+        $dispute = $match->disputes()->firstOrFail();
+        $this->assertEquals(DisputeStatus::UNDER_REVIEW, $dispute->status);
+        $this->assertCount(1, $dispute->evidence);
+        Storage::disk('public')->assertExists($dispute->evidence->first()->file_path);
+    }
+
+    public function test_admin_can_apply_timed_compliance_ban_when_resolving_false_proof(): void
+    {
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
+        $dispute = app(OpenDisputeAction::class)->execute(
+            $match,
+            $this->playerB->id,
+            'The opponent submitted deliberately false match proof.'
+        );
+
+        Livewire::actingAs($this->adminUser)
+            ->test(MatchAdmin::class)
+            ->set('selectedDisputeId', $dispute->id)
+            ->set('resolution', 'player_a')
+            ->set('complianceUserId', (string) $this->playerB->id)
+            ->set('complianceBanDays', 14)
+            ->set('complianceBanReason', 'Screenshot metadata proves the uploaded result was deliberately altered.')
+            ->call('resolveDispute')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('compliance_blocks', [
+            'user_id' => $this->playerB->id,
+            'created_by' => $this->adminUser->id,
+            'category' => 'fraud',
+        ]);
+        $this->assertTrue($this->playerB->complianceBlocks()->active()->exists());
     }
 
     /**

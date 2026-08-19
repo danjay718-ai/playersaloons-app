@@ -22,7 +22,11 @@ class ConfirmMatchResultAction
     {
         DB::transaction(function () use ($match, $userId) {
             // 1. Authorization: User must be the opponent (not the submitter)
-            $latestSubmission = $match->resultSubmissions()->latest()->first();
+            $latestSubmission = $match->resultSubmissions()->latest('submitted_at')->first();
+
+            if (! $latestSubmission) {
+                throw new LogicException('No submitted result was found for this match.');
+            }
             $submitterId = $latestSubmission?->submitted_by;
 
             if ($userId === $submitterId) {

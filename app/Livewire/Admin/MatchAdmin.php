@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\CMS\Models\Game;
+use App\Modules\Identity\Actions\ApplyComplianceBlockAction;
+use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\ResolveHeadToHeadDisputeAction;
 use App\Modules\Match\Events\MatchCompleted;
@@ -57,6 +59,12 @@ class MatchAdmin extends AdminComponent
     public ?int $winnerRegistrationId = null;
 
     public string $resolution = '';
+
+    public string $complianceUserId = '';
+
+    public int $complianceBanDays = 7;
+
+    public string $complianceBanReason = '';
 
     public string $h2hResolution = '';
 
@@ -125,6 +133,7 @@ class MatchAdmin extends AdminComponent
     {
         $this->selectedDisputeId = $disputeId;
         $this->resolution = '';
+        $this->resetComplianceBanForm();
         $this->showDisputeModal = true;
     }
 
@@ -132,6 +141,7 @@ class MatchAdmin extends AdminComponent
     {
         $this->showDisputeModal = false;
         $this->selectedDisputeId = null; // free the query on next render
+        $this->resetComplianceBanForm();
     }
 
     public function openH2HDisputeModal(int $matchId): void
@@ -212,16 +222,24 @@ class MatchAdmin extends AdminComponent
         }
     }
 
-    public function resolveDispute(ResolveDisputeAction $resolver): void
+    public function resolveDispute(ResolveDisputeAction $resolver, ApplyComplianceBlockAction $blocker): void
     {
-        $this->validate(['resolution' => 'required|string|in:player_a,player_b,rematch']);
+        $this->validate([
+            'resolution' => 'required|string|in:player_a,player_b,rematch',
+            'complianceUserId' => 'nullable|integer',
+            'complianceBanDays' => 'required_with:complianceUserId|integer|min:1|max:3650',
+            'complianceBanReason' => 'required_with:complianceUserId|nullable|string|min:10|max:1000',
+        ]);
 
         if (! $this->selectedDisputeId) {
             return;
         }
 
-        $dispute = MatchDispute::findOrFail($this->selectedDisputeId);
+        $dispute = MatchDispute::query()
+            ->with(['match.playerARegistration.user', 'match.playerBRegistration.user'])
+            ->findOrFail($this->selectedDisputeId);
         $resolutionEnum = DisputeResolution::from($this->resolution);
+        /** @var User|null $actor */
         $actor = Auth::user();
 
         if (! $actor) {
@@ -229,13 +247,50 @@ class MatchAdmin extends AdminComponent
         }
 
         try {
-            $resolver->execute($dispute, $actor, $resolutionEnum);
-            session()->flash('success', 'Dispute resolved successfully.');
+            DB::transaction(function () use ($resolver, $blocker, $dispute, $actor, $resolutionEnum): void {
+                $resolver->execute($dispute, $actor, $resolutionEnum);
+
+                if ($this->complianceUserId !== '') {
+                    $participantUsers = collect([
+                        $dispute->match->playerARegistration?->user,
+                        $dispute->match->playerBRegistration?->user,
+                    ])->filter();
+                    /** @var User|null $target */
+                    $target = $participantUsers->firstWhere('id', (int) $this->complianceUserId);
+
+                    if (! $target) {
+                        throw new \LogicException('The compliance block target must be a participant in this match.');
+                    }
+
+                    $blocker->execute(
+                        $target,
+                        $actor,
+                        'fraud',
+                        sprintf(
+                            'False match proof (match %s, dispute #%d): %s',
+                            $dispute->match->uuid,
+                            $dispute->id,
+                            trim($this->complianceBanReason)
+                        ),
+                        now()->addDays($this->complianceBanDays)
+                    );
+                }
+            });
+            session()->flash('success', $this->complianceUserId !== ''
+                ? 'Dispute resolved and timed compliance block applied.'
+                : 'Dispute resolved successfully.');
             $this->closeDisputeModal();
             $this->closeDetailModal();
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to resolve the match dispute.'));
         }
+    }
+
+    private function resetComplianceBanForm(): void
+    {
+        $this->complianceUserId = '';
+        $this->complianceBanDays = 7;
+        $this->complianceBanReason = '';
     }
 
     public function resolveH2HDispute(ResolveHeadToHeadDisputeAction $resolver): void

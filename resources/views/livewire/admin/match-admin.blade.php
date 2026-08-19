@@ -604,6 +604,40 @@
                             @error('resolution') <span class="text-red-400 text-xs mt-2 block">{{ $message }}</span> @enderror
                         </div>
 
+                        @if(Auth::user()?->hasAnyRole(['ADMIN', 'SUPER_ADMIN']))
+                            <div class="rounded-xl border border-red-900/50 bg-red-950/20 p-4 space-y-3">
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-red-300">Optional compliance ban</h4>
+                                    <p class="mt-1 text-[10px] leading-relaxed text-red-300/70">Use only when the reviewed proof establishes that a player deliberately submitted false evidence. The account will be blocked from member areas for the selected period.</p>
+                                </div>
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                    <div class="sm:col-span-2">
+                                        <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Player to ban</label>
+                                        <select wire:model="complianceUserId" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-200">
+                                            <option value="">No compliance ban</option>
+                                            @if($resolveDispute->match->playerARegistration?->user)
+                                                <option value="{{ $resolveDispute->match->playerARegistration->user->id }}">Player A — {{ $resolveDispute->match->playerARegistration->user->username }}</option>
+                                            @endif
+                                            @if($resolveDispute->match->playerBRegistration?->user)
+                                                <option value="{{ $resolveDispute->match->playerBRegistration->user->id }}">Player B — {{ $resolveDispute->match->playerBRegistration->user->username }}</option>
+                                            @endif
+                                        </select>
+                                        @error('complianceUserId') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Ban duration (days)</label>
+                                        <input wire:model="complianceBanDays" type="number" min="1" max="3650" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-200">
+                                        @error('complianceBanDays') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Reason and evidence finding</label>
+                                    <textarea wire:model="complianceBanReason" rows="2" placeholder="Explain what was proven false and which evidence supports the finding..." class="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-200 placeholder-slate-600"></textarea>
+                                    @error('complianceBanReason') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="pt-2 border-t border-slate-800 flex justify-end gap-3">
                             <button type="button" wire:click="closeDisputeModal"
                                     class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
