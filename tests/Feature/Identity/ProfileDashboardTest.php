@@ -13,6 +13,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -56,6 +57,31 @@ class ProfileDashboardTest extends TestCase
             ->assertSee('Account')
             ->assertSee('Security')
             ->assertSee('Comms');
+    }
+
+    public function test_uploaded_avatar_is_displayed_in_the_dashboard_topbar(): void
+    {
+        $this->user->forceFill(['email_verified_at' => now()])->save();
+        $this->user->profile()->create([
+            'uuid' => Str::uuid()->toString(),
+            'display_name' => $this->user->username,
+            'avatar_url' => '/storage/avatars/'.$this->user->id.'/avatar.webp',
+        ]);
+
+        $this->actingAs($this->user)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSeeHtml('<img src="/storage/avatars/'.$this->user->id.'/avatar.webp" alt="oldhandle" class="h-full w-full object-cover">');
+    }
+
+    public function test_dashboard_topbar_falls_back_to_username_initials_without_an_avatar(): void
+    {
+        $this->user->forceFill(['email_verified_at' => now()])->save();
+
+        $this->actingAs($this->user)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('OL');
     }
 
     public function test_player_can_update_public_profile_info(): void
