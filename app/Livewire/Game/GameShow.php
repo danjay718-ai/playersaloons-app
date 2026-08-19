@@ -57,6 +57,11 @@ class GameShow extends Component
 
     public function render()
     {
+        $platforms = $this->game->platforms()->where('platforms.is_active', true)->orderBy('platforms.name')->get();
+        if ($platforms->isEmpty()) {
+            $platforms = Platform::query()->where('is_active', true)->orderBy('name')->get();
+        }
+
         $featured = $this->baseTournamentQuery()
             ->where('is_featured', true)
             ->whereIn('status', array_merge($this->statuses('upcoming'), $this->statuses('ongoing')))
@@ -84,7 +89,7 @@ class GameShow extends Component
             'featuredTournaments' => $featured,
             'tournaments' => $tournaments,
             'streams' => $streams,
-            'platforms' => Platform::query()->where('is_active', true)->orderBy('name')->get(),
+            'platforms' => $platforms,
         ]);
 
         return Auth::check()

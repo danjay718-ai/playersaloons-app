@@ -149,7 +149,7 @@ class Tournament extends Model implements HasMedia
      */
     public function game(): BelongsTo
     {
-        return $this->belongsTo(Game::class);
+        return $this->belongsTo(Game::class)->withTrashed();
     }
 
     /**

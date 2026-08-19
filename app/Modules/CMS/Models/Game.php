@@ -6,7 +6,9 @@ use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 /**
@@ -20,6 +22,8 @@ use Illuminate\Support\Str;
  */
 class Game extends Model
 {
+    use SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -70,6 +74,11 @@ class Game extends Model
         return $this->hasMany(Tournament::class);
     }
 
+    public function platforms(): BelongsToMany
+    {
+        return $this->belongsToMany(Platform::class)->withTimestamps();
+    }
+
     public function bannerUrl(): ?string
     {
         return $this->mediaUrl($this->banner_path);
@@ -77,7 +86,12 @@ class Game extends Model
 
     public function cardImageUrl(): ?string
     {
-        return $this->mediaUrl($this->card_image_path ?: $this->banner_path);
+        return $this->cardArtworkUrl() ?: $this->bannerUrl();
+    }
+
+    public function cardArtworkUrl(): ?string
+    {
+        return $this->mediaUrl($this->card_image_path);
     }
 
     private function mediaUrl(?string $path): ?string

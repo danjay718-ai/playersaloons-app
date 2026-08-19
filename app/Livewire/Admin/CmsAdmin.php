@@ -10,10 +10,12 @@ use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Models\LandingSectionItem;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\CMS\Models\PublicNavigationItem;
+use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
@@ -46,15 +48,31 @@ class CmsAdmin extends AdminComponent
 
     public string $gameName = '';
 
+    public string $gameSlug = '';
+
     public string $gameDescription = '';
 
     public string $gameBannerPath = '';
+
+    public string $gameCardImagePath = '';
 
     public $gameCardImage = null;
 
     public $gameBannerImage = null;
 
+    public bool $gameIsActive = true;
+
+    /** @var list<int> */
+    public array $gamePlatformIds = [];
+
+    public bool $removeGameCardImage = false;
+
+    public bool $removeGameBannerImage = false;
+
     public string $gameLocale = 'en';
+
+    /** @var array<string, mixed> */
+    public array $gameDeleteImpact = [];
 
     // Platform modals / forms
     public bool $showPlatformModal = false;
@@ -209,6 +227,10 @@ class CmsAdmin extends AdminComponent
         $this->deleteTargetType = $type;
         $this->deleteTargetId = $id;
         $this->showDeleteModal = true;
+
+        if ($type === 'game') {
+            $this->loadGameDeleteImpact($id);
+        }
     }
 
     public function executeDelete(): void
@@ -221,11 +243,14 @@ class CmsAdmin extends AdminComponent
             $this->deletePlatform($this->deleteTargetId);
         } elseif ($this->deleteTargetType === 'navigation') {
             $this->deleteNavigationItem($this->deleteTargetId);
+        } elseif ($this->deleteTargetType === 'game') {
+            $this->archiveGame($this->deleteTargetId);
         }
 
         $this->showDeleteModal = false;
         $this->deleteTargetId = null;
         $this->deleteTargetType = '';
+        $this->gameDeleteImpact = [];
     }
 
     // --- PLATFORM ACTIONS ---
@@ -300,6 +325,19 @@ class CmsAdmin extends AdminComponent
     }
 
     // --- GAME ACTIONS ---
+    public function updatedGameName(string $name): void
+    {
+        if ($this->selectedGameId === null) {
+            $this->gameSlug = Str::slug($name);
+        }
+    }
+
+    public function openGameCreateModal(): void
+    {
+        $this->resetGameForm();
+        $this->showGameModal = true;
+    }
+
     public function toggleGameActive(int $gameId): void
     {
         $game = Game::findOrFail($gameId);
@@ -312,34 +350,80 @@ class CmsAdmin extends AdminComponent
     public function editGameTranslation(int $gameId): void
     {
         $this->selectedGameId = $gameId;
-        $game = Game::findOrFail($gameId);
+        $game = Game::query()
+            ->with(['translations', 'platforms:id'])
+            ->findOrFail($gameId);
         /** @var GameTranslation|null $translation */
-        $translation = $game->translations()->where('locale', $this->gameLocale)->first();
+        $translation = $game->translations->firstWhere('locale', $this->gameLocale);
 
         $this->gameName = $translation !== null ? $translation->name : '';
+        $this->gameSlug = $game->slug;
         $this->gameDescription = $translation !== null ? $translation->description : '';
-        $this->gameBannerPath = (string) $game->banner_path;
+        $this->gameBannerPath = (string) ($game->bannerUrl() ?? '');
+        $this->gameCardImagePath = (string) ($game->cardArtworkUrl() ?? '');
+        $this->gameIsActive = (bool) $game->is_active;
+        $this->gamePlatformIds = $game->platforms->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        $this->removeGameCardImage = false;
+        $this->removeGameBannerImage = false;
         $this->reset('gameCardImage', 'gameBannerImage');
         $this->showGameModal = true;
     }
 
-    public function saveGameTranslation(): void
+    public function loadSelectedGameTranslation(): void
     {
-        $this->validate([
-            'gameName' => 'required|string|max:255',
-            'gameDescription' => 'nullable|string',
-            'gameBannerPath' => 'nullable|string|max:255',
-            'gameCardImage' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'gameBannerImage' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-        ]);
-
-        if (! $this->selectedGameId) {
+        if ($this->selectedGameId === null) {
             return;
         }
 
+        $translation = GameTranslation::query()
+            ->where('game_id', $this->selectedGameId)
+            ->where('locale', $this->gameLocale)
+            ->first();
+
+        $this->gameName = $translation?->name ?? '';
+        $this->gameDescription = $translation?->description ?? '';
+    }
+
+    public function saveGameTranslation(): void
+    {
+        $newGameNeedsArtwork = $this->selectedGameId === null
+            && $this->gameCardImage === null
+            && $this->gameBannerImage === null;
+
+        $this->validate([
+            'gameName' => 'required|string|max:255',
+            'gameSlug' => ['required', 'string', 'max:150', 'alpha_dash', Rule::unique('games', 'slug')->ignore($this->selectedGameId)],
+            'gameDescription' => 'nullable|string',
+            'gameBannerPath' => 'nullable|string|max:255',
+            'gameCardImage' => [Rule::requiredIf($newGameNeedsArtwork), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:width=440,height=330'],
+            'gameBannerImage' => [Rule::requiredIf($newGameNeedsArtwork), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096', 'dimensions:width=1920,height=768'],
+            'gameIsActive' => 'boolean',
+            'gamePlatformIds' => $this->selectedGameId === null
+                ? ['required', 'array', 'min:1']
+                : ['array'],
+            'gamePlatformIds.*' => 'integer|exists:platforms,id',
+            'removeGameCardImage' => 'boolean',
+            'removeGameBannerImage' => 'boolean',
+        ], [
+            'gameCardImage.required' => 'Upload either a game card image or a hero cover.',
+            'gameBannerImage.required' => 'Upload either a hero cover or a game card image.',
+        ]);
+
         DB::transaction(function (): void {
-            $game = Game::findOrFail($this->selectedGameId);
-            $media = ['banner_path' => $this->gameBannerPath !== '' ? $this->gameBannerPath : null];
+            $game = $this->selectedGameId
+                ? Game::query()->findOrFail($this->selectedGameId)
+                : Game::query()->create([
+                    'uuid' => Str::uuid()->toString(),
+                    'slug' => Str::slug($this->gameSlug),
+                    'is_active' => $this->gameIsActive,
+                ]);
+
+            $media = [
+                'slug' => Str::slug($this->gameSlug),
+                'is_active' => $this->gameIsActive,
+                'card_image_path' => $this->removeGameCardImage ? null : ($this->gameCardImagePath !== '' ? $this->gameCardImagePath : null),
+                'banner_path' => $this->removeGameBannerImage ? null : ($this->gameBannerPath !== '' ? $this->gameBannerPath : null),
+            ];
 
             if ($this->gameCardImage) {
                 $media['card_image_path'] = '/storage/'.$this->gameCardImage->store('games/cards', 'public');
@@ -349,21 +433,107 @@ class CmsAdmin extends AdminComponent
                 $media['banner_path'] = '/storage/'.$this->gameBannerImage->store('games/banners', 'public');
             }
 
-            if ($media !== []) {
-                $game->update($media);
-            }
+            $game->update($media);
+            $game->platforms()->sync($this->gamePlatformIds);
 
             GameTranslation::updateOrCreate([
-                'game_id' => $this->selectedGameId,
+                'game_id' => $game->id,
                 'locale' => $this->gameLocale,
             ], [
                 'name' => $this->gameName,
                 'description' => $this->gameDescription,
             ]);
+
+            $this->selectedGameId = (int) $game->id;
         });
 
-        session()->flash('success', 'Game translation saved successfully.');
+        session()->flash('success', 'Game saved successfully.');
         $this->showGameModal = false;
+        $this->resetGameForm();
+    }
+
+    public function archiveGame(int $gameId): void
+    {
+        $game = Game::query()->findOrFail($gameId);
+        $game->update(['is_active' => false]);
+        $game->delete();
+
+        session()->flash('success', 'Game archived. Historical tournaments and player records were preserved.');
+    }
+
+    public function restoreGame(int $gameId): void
+    {
+        Game::onlyTrashed()->findOrFail($gameId)->restore();
+
+        session()->flash('success', 'Game restored as disabled. Activate it when it is ready for display.');
+    }
+
+    private function loadGameDeleteImpact(int $gameId): void
+    {
+        $game = Game::query()->findOrFail($gameId);
+        $tournamentQuery = DB::table('tournaments')->where('game_id', $gameId);
+        $tournamentCount = (clone $tournamentQuery)->count();
+        $tournaments = $tournamentQuery
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get(['id', 'name', 'status']);
+        $registrationCounts = DB::table('tournament_registrations')
+            ->whereIn('tournament_id', $tournaments->pluck('id'))
+            ->selectRaw('tournament_id, COUNT(*) as total')
+            ->groupBy('tournament_id')
+            ->pluck('total', 'tournament_id');
+        $directPlayers = DB::table('tournament_registrations')
+            ->join('tournaments', 'tournaments.id', '=', 'tournament_registrations.tournament_id')
+            ->where('tournaments.game_id', $gameId)
+            ->whereNotNull('user_id')
+            ->pluck('tournament_registrations.user_id');
+        $rosterPlayers = DB::table('tournament_registration_members')
+            ->join('tournament_registrations', 'tournament_registrations.id', '=', 'tournament_registration_members.registration_id')
+            ->join('tournaments', 'tournaments.id', '=', 'tournament_registrations.tournament_id')
+            ->where('tournaments.game_id', $gameId)
+            ->pluck('tournament_registration_members.user_id');
+        $playerIds = $directPlayers->merge($rosterPlayers)->unique()->values();
+        $players = User::query()
+            ->with('profile')
+            ->whereKey($playerIds)
+            ->orderBy('username')
+            ->limit(50)
+            ->get()
+            ->map(fn (User $user): array => [
+                'username' => $user->username,
+                'display_name' => $user->profile?->display_name ?: $user->username,
+            ]);
+
+        $this->gameDeleteImpact = [
+            'name' => $game->localizedName('en'),
+            'tournament_count' => $tournamentCount,
+            'remaining_tournament_count' => max(0, $tournamentCount - $tournaments->count()),
+            'player_count' => $playerIds->count(),
+            'players' => $players->all(),
+            'remaining_player_count' => max(0, $playerIds->count() - $players->count()),
+            'tournaments' => $tournaments->map(fn ($tournament): array => [
+                'name' => (string) $tournament->name,
+                'status' => (string) $tournament->status,
+                'registrations' => (int) ($registrationCounts[$tournament->id] ?? 0),
+            ])->all(),
+        ];
+    }
+
+    private function resetGameForm(): void
+    {
+        $this->selectedGameId = null;
+        $this->gameName = '';
+        $this->gameSlug = '';
+        $this->gameDescription = '';
+        $this->gameBannerPath = '';
+        $this->gameCardImagePath = '';
+        $this->gameLocale = 'en';
+        $this->gameIsActive = true;
+        $this->gamePlatformIds = [];
+        $this->removeGameCardImage = false;
+        $this->removeGameBannerImage = false;
+        $this->reset('gameCardImage', 'gameBannerImage');
+        $this->resetValidation();
     }
 
     public function selectLandingSection(int $sectionId): void
@@ -601,7 +771,13 @@ class CmsAdmin extends AdminComponent
             ],
             'about' => [],
             default => [
-                'games' => Game::with('translations')->paginate(10, ['*'], 'games_page'),
+                'games' => Game::withTrashed()
+                    ->with([
+                        'translations:id,game_id,locale,name,description',
+                        'platforms:id,name',
+                    ])
+                    ->paginate(10, ['id', 'uuid', 'slug', 'banner_path', 'card_image_path', 'is_active', 'deleted_at'], 'games_page'),
+                'gamePlatforms' => Platform::query()->orderBy('name')->get(['id', 'name']),
             ],
         };
 

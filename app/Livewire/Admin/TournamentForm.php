@@ -250,7 +250,7 @@ class TournamentForm extends AdminComponent
             'youtube_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('youtube')],
             'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
             'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
-            'banner' => 'nullable|image|max:2048', // Max 2MB image
+            'banner' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:width=1280,height=720',
             'is_featured' => 'boolean',
         ]);
 
@@ -386,8 +386,22 @@ class TournamentForm extends AdminComponent
 
     public function render()
     {
-        $games = Game::with('translations')->get();
-        $platforms = Platform::where('is_active', true)->orderBy('name')->get();
+        $games = Game::query()->withTrashed()
+            ->with('translations')
+            ->where(fn ($query) => $query->where('is_active', true)->when($this->game_id > 0, fn ($games) => $games->orWhere('id', $this->game_id)))
+            ->get();
+        $platforms = $this->game_id > 0
+            ? Game::query()->withTrashed()->find($this->game_id)?->platforms()->where('platforms.is_active', true)->orderBy('platforms.name')->get()
+            : null;
+
+        if ($platforms === null || $platforms->isEmpty()) {
+            $platforms = Platform::where('is_active', true)->orderBy('name')->get();
+        } elseif ($this->platform_id && ! $platforms->contains('id', $this->platform_id)) {
+            $currentPlatform = Platform::query()->find($this->platform_id);
+            if ($currentPlatform) {
+                $platforms->push($currentPlatform);
+            }
+        }
 
         return view('livewire.admin.tournament-form', [
             'games' => $games,

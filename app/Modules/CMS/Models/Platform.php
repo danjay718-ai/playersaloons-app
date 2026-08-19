@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\CMS\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Platform extends Model
 {
@@ -19,5 +20,10 @@ class Platform extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function games(): BelongsToMany
+    {
+        return $this->belongsToMany(Game::class)->withTimestamps();
     }
 }

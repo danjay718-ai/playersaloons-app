@@ -107,7 +107,7 @@ class HeadToHeadMatch extends Model
 
     public function game(): BelongsTo
     {
-        return $this->belongsTo(Game::class);
+        return $this->belongsTo(Game::class)->withTrashed();
     }
 
     public function platform(): BelongsTo

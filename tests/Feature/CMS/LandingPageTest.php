@@ -7,13 +7,18 @@ namespace Tests\Feature\CMS;
 use App\Livewire\Admin\CmsAdmin;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\LandingSection;
+use App\Modules\CMS\Models\Platform;
 use App\Modules\CMS\Models\PublicNavigationItem;
 use App\Modules\Identity\Models\User;
+use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\TournamentStatus;
 use App\Shared\Enums\UserStatus;
 use Database\Seeders\LandingPageSeeder;
 use Database\Seeders\PublicNavigationSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -132,6 +137,87 @@ class LandingPageTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_create_a_game_with_platforms_and_edit_its_catalog_display(): void
+    {
+        Storage::fake('public');
+        $admin = $this->adminUser();
+        $pc = Platform::query()->create(['name' => 'PC', 'slug' => 'pc', 'is_active' => true]);
+        $console = Platform::query()->create(['name' => 'Console', 'slug' => 'console', 'is_active' => true]);
+
+        Livewire::actingAs($admin)
+            ->test(CmsAdmin::class)
+            ->call('openGameCreateModal')
+            ->set('gameName', 'Arena Legends')
+            ->set('gameSlug', 'arena-legends')
+            ->set('gameDescription', 'Cross-platform arena competition.')
+            ->set('gamePlatformIds', [$pc->id, $console->id])
+            ->set('gameCardImage', $this->pngUpload('arena-legends.png', 440, 330))
+            ->call('saveGameTranslation')
+            ->assertHasNoErrors();
+
+        $game = Game::query()->where('slug', 'arena-legends')->firstOrFail();
+        $this->assertSame([$pc->id, $console->id], $game->platforms()->orderBy('platforms.id')->pluck('platforms.id')->all());
+        $this->assertDatabaseHas('game_translations', ['game_id' => $game->id, 'name' => 'Arena Legends']);
+
+        $game->update(['card_image_path' => '/storage/games/cards/old.webp', 'banner_path' => '/storage/games/banners/old.webp']);
+        $game->platforms()->detach();
+
+        Livewire::actingAs($admin)
+            ->test(CmsAdmin::class)
+            ->call('editGameTranslation', $game->id)
+            ->set('gameIsActive', false)
+            ->set('removeGameCardImage', true)
+            ->set('removeGameBannerImage', true)
+            ->call('saveGameTranslation')
+            ->assertHasNoErrors();
+
+        $game->refresh();
+        $this->assertFalse($game->is_active);
+        $this->assertNull($game->card_image_path);
+        $this->assertNull($game->banner_path);
+    }
+
+    public function test_archiving_a_game_previews_impact_and_preserves_tournament_history(): void
+    {
+        $admin = $this->adminUser();
+        $player = User::factory()->create(['status' => UserStatus::ACTIVE]);
+        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'legacy-arena', 'is_active' => true]);
+        $game->translations()->create(['locale' => 'en', 'name' => 'Legacy Arena']);
+        $tournament = Tournament::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'game_id' => $game->id,
+            'name' => 'Legacy Finals',
+            'slug' => 'legacy-finals',
+            'status' => TournamentStatus::COMPLETED,
+            'entry_fee' => 0,
+            'max_participants' => 8,
+            'min_participants' => 2,
+            'created_by' => $admin->id,
+        ]);
+        $tournament->registrations()->create([
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $player->id,
+            'status' => 'confirmed',
+            'payment_status' => 'free',
+            'registered_at' => now(),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(CmsAdmin::class)
+            ->call('confirmDelete', 'game', $game->id)
+            ->assertSet('gameDeleteImpact.tournament_count', 1)
+            ->assertSet('gameDeleteImpact.player_count', 1)
+            ->assertSee('Legacy Finals')
+            ->assertSee($player->username)
+            ->call('executeDelete')
+            ->assertHasNoErrors();
+
+        $this->assertSoftDeleted('games', ['id' => $game->id]);
+        $this->assertDatabaseHas('tournaments', ['id' => $tournament->id, 'game_id' => $game->id]);
+        $this->assertDatabaseHas('tournament_registrations', ['tournament_id' => $tournament->id, 'user_id' => $player->id]);
+        $this->assertSame('Legacy Arena', $tournament->fresh()->game->localizedName('en'));
+    }
+
     public function test_admin_can_manage_public_navigation_items(): void
     {
         $admin = $this->adminUser();
@@ -181,5 +267,19 @@ class LandingPageTest extends TestCase
         $user->assignRole('ADMIN');
 
         return $user;
+    }
+
+    private function pngUpload(string $name, int $width, int $height): UploadedFile
+    {
+        $chunk = static function (string $type, string $data): string {
+            return pack('N', strlen($data)).$type.$data.pack('N', crc32($type.$data));
+        };
+        $row = "\x00".str_repeat("\x00\x00\x00", $width);
+        $png = "\x89PNG\r\n\x1a\n"
+            .$chunk('IHDR', pack('NNCCCCC', $width, $height, 8, 2, 0, 0, 0))
+            .$chunk('IDAT', gzcompress(str_repeat($row, $height), 9))
+            .$chunk('IEND', '');
+
+        return UploadedFile::fake()->createWithContent($name, $png);
     }
 }
