@@ -342,7 +342,7 @@
                     </h2>
                     <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8 space-y-6">
                         @if($tournament->description)
-                            <div class="text-zinc-300 font-medium leading-relaxed whitespace-pre-line">{{ $tournament->description }}</div>
+                            <x-ui.collapsible-rich-text :content="$tournament->description" :threshold="500" :preview-height="220" />
                         @else
                             <p class="text-zinc-500 italic">No description provided.</p>
                         @endif
@@ -458,23 +458,7 @@
                     </h2>
                     <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
                         @if($tournament->rules)
-                            @php
-                                $ruleLines = array_filter(array_map('trim', preg_split('/\r?\n/', $tournament->rules)));
-                            @endphp
-                            @if(count($ruleLines) > 1)
-                                <ul class="space-y-4">
-                                    @foreach($ruleLines as $rule)
-                                        <li class="flex items-start space-x-4 group">
-                                            <div class="w-6 h-6 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center mt-0.5 group-hover:border-fuchsia-500 transition-colors duration-300 shrink-0">
-                                                <i data-lucide="check" class="w-3.5 h-3.5 text-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                                            </div>
-                                            <span class="text-zinc-400 group-hover:text-zinc-200 transition-colors font-medium">{{ ltrim($rule, '-•*· ') }}</span>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @else
-                                <p class="text-zinc-400 font-medium leading-relaxed">{{ $tournament->rules }}</p>
-                            @endif
+                            <x-ui.collapsible-rich-text :content="$tournament->rules" :threshold="900" :preview-height="420" />
                         @else
                             <!-- Default rules when none specified -->
                             <ul class="space-y-4">

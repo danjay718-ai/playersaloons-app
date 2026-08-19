@@ -12,6 +12,7 @@ use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Tournament\Actions\CreateRecurringCompetitionAction;
 use App\Modules\Tournament\Actions\CreateTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Support\DefaultTournamentRules;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Carbon\CarbonImmutable;
@@ -156,7 +157,7 @@ class TournamentForm extends AdminComponent
 
     protected function getDefaultRules(): string
     {
-        return '<ul><li>Respect all players and admins.</li><li>Ensure a stable internet connection.</li><li>Check-in is required 15 mins before start.</li><li>Disputes must be submitted with screenshots.</li><li>Unsportsmanlike behavior will result in disqualification.</li></ul>';
+        return DefaultTournamentRules::html();
     }
 
     public function updatedCompetitionType(string $type): void
