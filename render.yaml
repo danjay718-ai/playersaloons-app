@@ -7,7 +7,7 @@ services:
     dockerContext: .
     region: singapore
     plan: starter
-    healthCheckPath: /
+    healthCheckPath: /up
     envVars:
       - key: SERVICE_TYPE
         value: web

@@ -45,12 +45,15 @@ COPY docker/nginx/prod.conf /etc/nginx/http.d/default.conf
 
 # Copy startup script
 COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh
+COPY docker/healthcheck.sh /healthcheck.sh
+RUN chmod +x /start.sh /healthcheck.sh
 
 # Permissions
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD ["/healthcheck.sh"]
 
 CMD ["/start.sh"]

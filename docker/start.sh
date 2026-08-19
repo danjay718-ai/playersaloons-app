@@ -34,8 +34,10 @@ fi
 
 # ─── Scheduler ───────────────────────────────────────────────────────────────
 if [ "$SERVICE_TYPE" = "scheduler" ]; then
+    touch /tmp/scheduler-heartbeat
     while true; do
         php artisan schedule:run --no-interaction
+        touch /tmp/scheduler-heartbeat
         sleep 60
     done
 fi
