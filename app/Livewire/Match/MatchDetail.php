@@ -14,6 +14,7 @@ use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Actions\VoteForRematchAction;
 use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Match\Services\MatchReadinessService;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchStatus;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +39,14 @@ class MatchDetail extends Component
     public ?TemporaryUploadedFile $evidenceFile = null;
 
     public ?TemporaryUploadedFile $submissionProof = null;
+
+    public string $lobbyCode = '';
+
+    public string $lobbyPassword = '';
+
+    public string $serverRegion = '';
+
+    public string $lobbyInstructions = '';
 
     public function confirmResult(ConfirmMatchResultAction $action)
     {
@@ -92,6 +101,68 @@ class MatchDetail extends Component
     public function mount(string $uuid): void
     {
         $this->uuid = $uuid;
+        $match = GameMatch::query()->where('uuid', $uuid)->firstOrFail([
+            'lobby_code', 'lobby_password', 'server_region', 'lobby_instructions',
+        ]);
+        $this->lobbyCode = (string) ($match->lobby_code ?? '');
+        $this->lobbyPassword = (string) ($match->lobby_password ?? '');
+        $this->serverRegion = (string) ($match->server_region ?? '');
+        $this->lobbyInstructions = (string) ($match->lobby_instructions ?? '');
+    }
+
+    public function markReady(MatchReadinessService $readiness): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        try {
+            $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
+            $readiness->markReady($match, (int) Auth::id());
+            session()->flash('message', 'You are ready. We will notify you when the match starts.');
+        } catch (\Exception $e) {
+            session()->flash('error', $this->safeError($e, 'Unable to update your ready status.'));
+        }
+    }
+
+    public function reportOpponentNotHere(MatchReadinessService $readiness): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        try {
+            $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
+            $readiness->reportOpponentAbsent($match, (int) Auth::id());
+            session()->flash('message', 'Extra Wait Time started. Your opponent has been notified.');
+        } catch (\Exception $e) {
+            session()->flash('error', $this->safeError($e, 'Unable to report the absent opponent.'));
+        }
+    }
+
+    public function saveMatchRoomDetails(): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (! $user?->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
+            abort(403);
+        }
+
+        $data = $this->validate([
+            'lobbyCode' => 'nullable|string|max:191',
+            'lobbyPassword' => 'nullable|string|max:191',
+            'serverRegion' => 'nullable|string|max:64',
+            'lobbyInstructions' => 'nullable|string|max:2000',
+        ]);
+
+        $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
+        $match->update([
+            'lobby_code' => trim($data['lobbyCode']) ?: null,
+            'lobby_password' => trim($data['lobbyPassword']) ?: null,
+            'server_region' => trim($data['serverRegion']) ?: null,
+            'lobby_instructions' => trim($data['lobbyInstructions']) ?: null,
+        ]);
+        session()->flash('message', 'Match Room details saved.');
     }
 
     public function submitResult(SubmitMatchResultAction $action)
@@ -216,8 +287,14 @@ class MatchDetail extends Component
                 'round',
                 'playerARegistration.user.profile',
                 'playerARegistration.team',
+                'playerARegistration.rosterMembers',
+                'playerARegistration.tournamentTeam.members.user:id,username',
                 'playerBRegistration.user.profile',
                 'playerBRegistration.team',
+                'playerBRegistration.rosterMembers',
+                'playerBRegistration.tournamentTeam.members.user:id,username',
+                'tournament.game.translations',
+                'tournament.platform',
                 'winnerRegistration.user.profile',
                 'resultSubmissions.user',
                 'disputes' => function ($q) {
@@ -240,11 +317,9 @@ class MatchDetail extends Component
             || $match->playerBRegistration?->includesUser($user->id)
         );
 
-        $activeDispute = $match->disputes()
-            ->where('status', '!=', DisputeStatus::RESOLVED->value)
-            ->first();
+        $activeDispute = $match->disputes->first(fn ($dispute) => $dispute->status !== DisputeStatus::RESOLVED);
 
-        $latestSubmission = $match->resultSubmissions()->latest()->first();
+        $latestSubmission = $match->resultSubmissions->sortByDesc('created_at')->first();
         $isSubmitter = $user && $latestSubmission && $user->id === $latestSubmission->submitted_by;
 
         $isAdmin = Auth::check() && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
@@ -256,6 +331,6 @@ class MatchDetail extends Component
             'isSubmitter' => $isSubmitter,
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
-        ])->layout($layout, ['title' => 'Match Hub | PlayerSaloons', 'dashboard_title' => 'MATCH HUB']);
+        ])->layout($layout, ['title' => 'Match Room | PlayerSaloons', 'dashboard_title' => 'MATCH ROOM']);
     }
 }

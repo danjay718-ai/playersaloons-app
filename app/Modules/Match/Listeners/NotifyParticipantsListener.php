@@ -13,6 +13,7 @@ use App\Modules\Match\Events\MatchRematchCreated;
 use App\Modules\Match\Events\MatchResultSubmitted;
 use App\Modules\Match\Events\MatchStarted;
 use App\Modules\Match\Models\GameMatch;
+use Illuminate\Support\Collection;
 
 class NotifyParticipantsListener
 {
@@ -43,7 +44,11 @@ class NotifyParticipantsListener
         }
 
         /** @var GameMatch|null $match */
-        $match = GameMatch::query()->find($matchId);
+        $match = GameMatch::query()->with([
+            'tournament', 'playerARegistration.user.notificationPreference', 'playerARegistration.rosterMembers.user.notificationPreference',
+            'playerBRegistration.user.notificationPreference', 'playerBRegistration.rosterMembers.user.notificationPreference', 'winnerRegistration.user',
+            'disputes:id,match_id',
+        ])->find($matchId);
         if ($match === null) {
             return;
         }
@@ -51,37 +56,33 @@ class NotifyParticipantsListener
         $tournament = $match->tournament;
         $playerAUser = $match->playerARegistration?->user;
         $playerBUser = $match->playerBRegistration?->user;
+        $playerAUsers = $this->registrationUsers($match->playerARegistration);
+        $playerBUsers = $this->registrationUsers($match->playerBRegistration);
+        $matchUrl = "/matches/{$match->uuid}";
 
         if ($event instanceof MatchCreated) {
             // Match Ready notification
-            if ($playerAUser !== null) {
+            foreach ($playerAUsers as $recipient) {
                 $opponentName = $playerBUser ? $playerBUser->username : 'Opponent';
-                $this->notificationService->send($playerAUser, 'match_ready', 'Match Ready', "Your match against {$opponentName} in tournament '{$tournament->name}' is now ready.");
+                $this->notificationService->send($recipient, 'match_ready', 'Match Ready', "Your match against {$opponentName} in tournament '{$tournament->name}' is now ready.", $matchUrl);
             }
-            if ($playerBUser !== null) {
+            foreach ($playerBUsers as $recipient) {
                 $opponentName = $playerAUser ? $playerAUser->username : 'Opponent';
-                $this->notificationService->send($playerBUser, 'match_ready', 'Match Ready', "Your match against {$opponentName} in tournament '{$tournament->name}' is now ready.");
+                $this->notificationService->send($recipient, 'match_ready', 'Match Ready', "Your match against {$opponentName} in tournament '{$tournament->name}' is now ready.", $matchUrl);
             }
         } elseif ($event instanceof MatchRematchCreated) {
             // Rematch created (dispute resolved)
-            if ($playerAUser !== null) {
-                $this->notificationService->send($playerAUser, 'match_rematch', 'Rematch Scheduled', "A dispute on your match in tournament '{$tournament->name}' was resolved with a rematch. A new match is ready.");
-            }
-            if ($playerBUser !== null) {
-                $this->notificationService->send($playerBUser, 'match_rematch', 'Rematch Scheduled', "A dispute on your match in tournament '{$tournament->name}' was resolved with a rematch. A new match is ready.");
+            foreach ($playerAUsers->merge($playerBUsers)->unique('id') as $recipient) {
+                $this->notificationService->send($recipient, 'match_rematch', 'Rematch Scheduled', "A dispute on your match in tournament '{$tournament->name}' was resolved with a rematch. A new match is ready.", $matchUrl);
             }
         } elseif ($event instanceof MatchStarted) {
-            if ($playerAUser !== null) {
-                $this->notificationService->send($playerAUser, 'match_started', 'Match Started', "Your match in tournament '{$tournament->name}' has started.");
-            }
-            if ($playerBUser !== null) {
-                $this->notificationService->send($playerBUser, 'match_started', 'Match Started', "Your match in tournament '{$tournament->name}' has started.");
+            foreach ($playerAUsers->merge($playerBUsers)->unique('id') as $recipient) {
+                $this->notificationService->send($recipient, 'match_started', 'Match Started', "Your match in tournament '{$tournament->name}' has started. Open the Match Room now.", $matchUrl);
             }
         } elseif ($event instanceof MatchResultSubmitted) {
-            $playerAUserId = $playerAUser !== null ? $playerAUser->id : 0;
-            $opponentUser = ($event->submittedByUserId === $playerAUserId) ? $playerBUser : $playerAUser;
-            if ($opponentUser !== null) {
-                $this->notificationService->send($opponentUser, 'match_result_submitted', 'Match Result Submitted', "A match result has been submitted for your match in tournament '{$tournament->name}'. Please verify or dispute it.");
+            $opponents = $match->playerARegistration?->includesUser($event->submittedByUserId) ? $playerBUsers : $playerAUsers;
+            foreach ($opponents as $opponent) {
+                $this->notificationService->send($opponent, 'match_result_submitted', 'Match Result Submitted', "A match result has been submitted for your match in tournament '{$tournament->name}'. Please verify or dispute it.", $matchUrl);
             }
         } elseif ($event instanceof MatchCompleted) {
             $winnerName = 'Participant';
@@ -90,30 +91,37 @@ class NotifyParticipantsListener
             }
 
             // Check if the match had a dispute
-            $wasDisputed = $match->disputes()->exists();
+            $wasDisputed = $match->disputes->isNotEmpty();
             $title = 'Match Completed';
             $message = $wasDisputed
                 ? "The dispute for your match in tournament '{$tournament->name}' has been resolved. Winner: {$winnerName}."
                 : "Your match in tournament '{$tournament->name}' has completed. Winner: {$winnerName}.";
 
-            if ($playerAUser !== null) {
-                $this->notificationService->send($playerAUser, 'match_completed', $title, $message);
-            }
-            if ($playerBUser !== null) {
-                $this->notificationService->send($playerBUser, 'match_completed', $title, $message);
+            foreach ($playerAUsers->merge($playerBUsers)->unique('id') as $recipient) {
+                $this->notificationService->send($recipient, 'match_completed', $title, $message, $matchUrl);
             }
         } elseif ($event instanceof MatchForfeited) {
-            $winnerUser = ($event->forfeitedByRegistrationId === $match->player_a_registration_id) ? $playerBUser : $playerAUser;
-            if ($winnerUser !== null) {
-                $this->notificationService->send($winnerUser, 'match_forfeited', 'Opponent Forfeited', "Your opponent has forfeited the match in tournament '{$tournament->name}'. You won!");
+            $winnerUsers = ($event->forfeitedByRegistrationId === $match->player_a_registration_id) ? $playerBUsers : $playerAUsers;
+            foreach ($winnerUsers as $winnerUser) {
+                $this->notificationService->send($winnerUser, 'match_forfeited', 'Opponent Forfeited', "Your opponent has forfeited the match in tournament '{$tournament->name}'. You won!", $matchUrl);
             }
         } elseif ($event instanceof MatchDisputed) {
-            if ($playerAUser !== null) {
-                $this->notificationService->send($playerAUser, 'match_disputed', 'Match Disputed', "A dispute has been opened for your match in tournament '{$tournament->name}'. Please upload your evidence.");
-            }
-            if ($playerBUser !== null) {
-                $this->notificationService->send($playerBUser, 'match_disputed', 'Match Disputed', "A dispute has been opened for your match in tournament '{$tournament->name}'. Please upload your evidence.");
+            foreach ($playerAUsers->merge($playerBUsers)->unique('id') as $recipient) {
+                $this->notificationService->send($recipient, 'match_disputed', 'Match Disputed', "A dispute has been opened for your match in tournament '{$tournament->name}'. Please upload your evidence.", $matchUrl);
             }
         }
+    }
+
+    private function registrationUsers(mixed $registration): Collection
+    {
+        if ($registration === null) {
+            return collect();
+        }
+
+        return collect([$registration->user])
+            ->merge($registration->rosterMembers->pluck('user'))
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 }

@@ -35,7 +35,7 @@
                     class="block w-full px-4 py-3 bg-zinc-950/80 border border-zinc-800 rounded-xl text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all duration-300 appearance-none cursor-pointer">
                     <option value="">All Statuses</option>
                     <option value="REGISTRATION_OPEN">Registration Open</option>
-                    <option value="CHECKIN_OPEN">Check-in Open</option>
+                    <option value="CHECKIN_OPEN">Preparing Matches</option>
                     <option value="ONGOING">Ongoing</option>
                     <option value="COMPLETED">Completed</option>
                 </select>

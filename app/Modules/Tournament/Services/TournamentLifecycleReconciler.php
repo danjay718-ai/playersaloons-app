@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Services;
 
+use App\Modules\Tournament\Actions\AutoPrepareTournamentParticipantsAction;
 use App\Modules\Tournament\Actions\CancelTournamentAction;
 use App\Modules\Tournament\Actions\CloseCheckinAction;
 use App\Modules\Tournament\Actions\CloseRegistrationAction;
@@ -11,7 +12,9 @@ use App\Modules\Tournament\Actions\GenerateBracketAction;
 use App\Modules\Tournament\Actions\OpenCheckinAction;
 use App\Modules\Tournament\Actions\OpenRegistrationAction;
 use App\Modules\Tournament\Actions\StartTournamentAction;
+use App\Modules\Tournament\Events\TournamentExtraRegistrationStarted;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\DB;
 
@@ -25,6 +28,7 @@ final class TournamentLifecycleReconciler
         private readonly GenerateBracketAction $generateBracket,
         private readonly StartTournamentAction $startTournament,
         private readonly CancelTournamentAction $cancelTournament,
+        private readonly AutoPrepareTournamentParticipantsAction $autoPrepareParticipants,
     ) {}
 
     /**
@@ -84,6 +88,47 @@ final class TournamentLifecycleReconciler
             return false;
         }
 
+        $confirmedCount = $tournament->registrations()
+            ->where('status', RegistrationStatus::CONFIRMED)
+            ->count();
+
+        if ($confirmedCount < (int) $tournament->min_participants) {
+            $extraMinutes = (int) ($tournament->extra_registration_minutes ?? 0);
+
+            if ($extraMinutes > 0 && $tournament->extra_registration_started_at === null) {
+                $now = now();
+                $newDeadline = $now->copy()->addMinutes($extraMinutes);
+
+                // Shift downstream estimates by exactly the one-time extension.
+                // Existing entries are immediately locked and cannot leave.
+                $tournament->registrations()
+                    ->where('status', RegistrationStatus::CONFIRMED)
+                    ->whereNull('locked_at')
+                    ->update(['locked_at' => $now, 'updated_at' => $now]);
+
+                $tournament->forceFill([
+                    'extra_registration_started_at' => $now,
+                    'registration_close_at' => $newDeadline,
+                    'checkin_open_at' => $newDeadline,
+                    'checkin_close_at' => $newDeadline,
+                    'start_at' => $tournament->start_at?->copy()->addMinutes($extraMinutes),
+                    'end_at' => $tournament->end_at?->copy()->addMinutes($extraMinutes),
+                ])->save();
+
+                TournamentExtraRegistrationStarted::dispatch((int) $tournament->getKey(), $extraMinutes);
+
+                return true;
+            }
+
+            $this->cancelTournament->execute(
+                $tournament,
+                null,
+                'Automatically cancelled: minimum registrations were not reached after Extra Registration Time.',
+            );
+
+            return true;
+        }
+
         $this->closeRegistration->execute($tournament);
 
         return true;
@@ -96,6 +141,7 @@ final class TournamentLifecycleReconciler
         }
 
         $this->openCheckin->execute($tournament);
+        $this->autoPrepareParticipants->execute($tournament);
 
         return true;
     }
@@ -109,17 +155,10 @@ final class TournamentLifecycleReconciler
         $participantCount = $tournament->participants()->count();
 
         if ($participantCount < $tournament->min_participants) {
-            if (! $tournament->is_auto_cancel_underfilled) {
-                // Keep the state actionable for an administrator. Silently
-                // advancing would generate an invalid bracket; silently
-                // cancelling would violate the explicit opt-in policy.
-                return false;
-            }
-
             $this->cancelTournament->execute(
                 $tournament,
                 null,
-                'Auto-cancelled: minimum checked-in participants not met.',
+                'Automatically cancelled: minimum locked registrations were not met.',
             );
 
             return true;
@@ -132,10 +171,8 @@ final class TournamentLifecycleReconciler
 
     private function generateBracketIfDue(Tournament $tournament): bool
     {
-        if ($tournament->start_at === null || $tournament->start_at->isFuture()) {
-            return false;
-        }
-
+        // Generate Match Rooms immediately after entries lock. Their individual
+        // Get Ready timers can run before the tournament's first-match time.
         $this->generateBracket->execute($tournament);
 
         return true;

@@ -11,9 +11,13 @@ use App\Modules\Community\Models\ChatConversation;
 use App\Modules\Community\Models\ChatMessage;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\PlayerProgressionService;
+use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Listeners\AwardTournamentExperienceListener;
+use App\Modules\Tournament\Models\Bracket;
+use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,13 +53,14 @@ class PlayerDashboardTest extends TestCase
     {
         foreach (range(1, 5) as $number) {
             $tournament = $this->tournament("Completed Cup {$number}", TournamentStatus::COMPLETED);
-            $tournament->registrations()->create([
+            $registration = $tournament->registrations()->create([
                 'uuid' => Str::uuid()->toString(),
                 'user_id' => $this->player->id,
                 'status' => 'confirmed',
                 'payment_status' => 'free',
                 'registered_at' => now(),
             ]);
+            $this->recordPlayedMatch($tournament, $registration->id);
         }
 
         $service = app(PlayerProgressionService::class);
@@ -115,13 +120,14 @@ class PlayerDashboardTest extends TestCase
     public function test_tournament_completion_listener_is_idempotent(): void
     {
         $tournament = $this->tournament('Listener Cup', TournamentStatus::COMPLETED);
-        $tournament->registrations()->create([
+        $registration = $tournament->registrations()->create([
             'uuid' => Str::uuid()->toString(),
             'user_id' => $this->player->id,
             'status' => 'confirmed',
             'payment_status' => 'free',
             'registered_at' => now(),
         ]);
+        $this->recordPlayedMatch($tournament, $registration->id);
 
         $listener = app(AwardTournamentExperienceListener::class);
         $listener->handle(new TournamentCompleted($tournament->id));
@@ -150,6 +156,29 @@ class PlayerDashboardTest extends TestCase
             'start_at' => now()->addDay(),
             'completed_at' => $status === TournamentStatus::COMPLETED ? now() : null,
             'created_by' => $this->admin->id,
+        ]);
+    }
+
+    private function recordPlayedMatch(Tournament $tournament, int $registrationId): void
+    {
+        $bracket = Bracket::query()->create([
+            'tournament_id' => $tournament->id,
+            'generated_at' => now()->subHour(),
+            'created_at' => now()->subHour(),
+        ]);
+        $round = Round::query()->create([
+            'bracket_id' => $bracket->id,
+            'round_number' => 1,
+            'created_at' => now()->subHour(),
+        ]);
+        GameMatch::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'tournament_id' => $tournament->id,
+            'round_id' => $round->id,
+            'player_a_registration_id' => $registrationId,
+            'status' => MatchStatus::COMPLETED,
+            'started_at' => now()->subMinutes(30),
+            'completed_at' => now()->subMinutes(10),
         ]);
     }
 }

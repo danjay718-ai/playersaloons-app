@@ -19,7 +19,9 @@ class AutoStartMatchesListener
             ->get();
 
         foreach ($matches as $match) {
-            $this->startMatchAction->execute($match);
+            if ($match->player_a_ready_at !== null && $match->player_b_ready_at !== null) {
+                $this->startMatchAction->execute($match);
+            }
         }
     }
 }

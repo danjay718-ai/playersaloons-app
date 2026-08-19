@@ -20,6 +20,7 @@ use App\Modules\Match\Events\MatchStarted;
 use App\Modules\Match\Listeners\AdvanceWinnerListener;
 use App\Modules\Match\Listeners\BroadcastBracketUpdateListener;
 use App\Modules\Match\Listeners\NotifyParticipantsListener;
+use App\Modules\Match\Listeners\PrepareMatchRoomListener;
 use App\Modules\Operations\Services\ErrorIncidentReporter;
 use App\Modules\Tournament\Events\TournamentCancelled;
 use App\Modules\Tournament\Events\TournamentCompleted;
@@ -112,6 +113,7 @@ class EventServiceProvider extends ServiceProvider
 
         // ── Match ───────────────────────────────────────────────────────────
         MatchCreated::class => [
+            PrepareMatchRoomListener::class,
             NotifyParticipantsListener::class,
         ],
         MatchStarted::class => [

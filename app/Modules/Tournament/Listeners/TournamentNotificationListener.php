@@ -6,7 +6,10 @@ namespace App\Modules\Tournament\Listeners;
 
 use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\User;
+use App\Modules\Tournament\Events\TournamentCancelled;
 use App\Modules\Tournament\Events\TournamentCheckinOpened;
+use App\Modules\Tournament\Events\TournamentCompleted;
+use App\Modules\Tournament\Events\TournamentExtraRegistrationStarted;
 use App\Modules\Tournament\Events\TournamentSeatReserved;
 use App\Modules\Tournament\Events\TournamentStarted;
 use App\Modules\Tournament\Models\Tournament;
@@ -14,6 +17,7 @@ use App\Modules\Wallet\Events\PrizeAwarded;
 use App\Modules\Wallet\Models\Wallet;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Collection;
 
 class TournamentNotificationListener
 {
@@ -33,7 +37,7 @@ class TournamentNotificationListener
      */
     public function handleTournamentSeatReserved(TournamentSeatReserved $event): void
     {
-        $tournament = Tournament::query()->find($event->tournamentId);
+        $tournament = $this->tournamentWithPlayers($event->tournamentId);
         $user = User::query()->find($event->userId);
 
         if ($tournament !== null && $user !== null) {
@@ -41,7 +45,26 @@ class TournamentNotificationListener
                 $user,
                 'registration_confirmed',
                 'Registration Confirmed',
-                "You have successfully registered for the tournament '{$tournament->name}'."
+                "You have successfully registered for the tournament '{$tournament->name}'.",
+                "/tournaments/{$tournament->uuid}/view",
+            );
+        }
+    }
+
+    public function handleExtraRegistrationStarted(TournamentExtraRegistrationStarted $event): void
+    {
+        $tournament = $this->tournamentWithPlayers($event->tournamentId);
+        if ($tournament === null) {
+            return;
+        }
+
+        foreach ($this->registeredUsers($tournament) as $user) {
+            $this->notificationService->send(
+                $user,
+                'extra_registration_started',
+                'Extra Registration Time Started',
+                "'{$tournament->name}' needs more players. Your entry is secured and the schedule has moved by {$event->durationMinutes} minutes.",
+                "/tournaments/{$tournament->uuid}/view",
             );
         }
     }
@@ -51,22 +74,20 @@ class TournamentNotificationListener
      */
     public function handleTournamentCheckinOpened(TournamentCheckinOpened $event): void
     {
-        $tournament = Tournament::query()->find($event->tournamentId);
+        $tournament = $this->tournamentWithPlayers($event->tournamentId);
         if ($tournament === null) {
             return;
         }
 
-        // Send check-in reminder to all registered users
-        foreach ($tournament->registrations as $registration) {
-            $user = $registration->user;
-            if ($user !== null) {
-                $this->notificationService->send(
-                    $user,
-                    'checkin_reminder',
-                    'Check-in Reminder',
-                    "Check-in is now open for tournament '{$tournament->name}'. Please check in before check-in closes."
-                );
-            }
+        // The legacy check-in state now represents automatic entry locking.
+        foreach ($this->registeredUsers($tournament) as $user) {
+            $this->notificationService->send(
+                $user,
+                'tournament_entries_locked',
+                'Tournament Entry Locked',
+                "Your entry for '{$tournament->name}' is secured. Match Rooms are now being prepared.",
+                "/tournaments/{$tournament->uuid}/view",
+            );
         }
     }
 
@@ -75,22 +96,44 @@ class TournamentNotificationListener
      */
     public function handleTournamentStarted(TournamentStarted $event): void
     {
-        $tournament = Tournament::query()->find($event->tournamentId);
+        $tournament = $this->tournamentWithPlayers($event->tournamentId);
         if ($tournament === null) {
             return;
         }
 
         // Send started notification to all participants/registered users
-        foreach ($tournament->registrations as $registration) {
-            $user = $registration->user;
-            if ($user !== null) {
-                $this->notificationService->send(
-                    $user,
-                    'tournament_started',
-                    'Tournament Started',
-                    "Tournament '{$tournament->name}' has started! Brackets are now generated."
-                );
-            }
+        foreach ($this->registeredUsers($tournament) as $user) {
+            $this->notificationService->send(
+                $user,
+                'tournament_started',
+                'Tournament Started',
+                "Tournament '{$tournament->name}' has started. Open your Match Room for current instructions.",
+                "/tournaments/{$tournament->uuid}/view",
+            );
+        }
+    }
+
+    public function handleTournamentCompleted(TournamentCompleted $event): void
+    {
+        $tournament = $this->tournamentWithPlayers($event->tournamentId);
+        if ($tournament === null) {
+            return;
+        }
+
+        foreach ($this->registeredUsers($tournament) as $user) {
+            $this->notificationService->send($user, 'tournament_completed', 'Tournament Completed', "'{$tournament->name}' is complete. Your results, prizes, and XP are now being finalized.", "/tournaments/{$tournament->uuid}/view");
+        }
+    }
+
+    public function handleTournamentCancelled(TournamentCancelled $event): void
+    {
+        $tournament = $this->tournamentWithPlayers($event->tournamentId);
+        if ($tournament === null) {
+            return;
+        }
+
+        foreach ($this->registeredUsers($tournament) as $user) {
+            $this->notificationService->send($user, 'tournament_cancelled', 'Tournament Cancelled', "'{$tournament->name}' was cancelled. Any eligible paid entry will be refunded automatically.", "/tournaments/{$tournament->uuid}/view");
         }
     }
 
@@ -130,13 +173,39 @@ class TournamentNotificationListener
         );
 
         $events->listen(
+            TournamentExtraRegistrationStarted::class,
+            [self::class, 'handleExtraRegistrationStarted']
+        );
+
+        $events->listen(
             TournamentStarted::class,
             [self::class, 'handleTournamentStarted']
         );
+
+        $events->listen(TournamentCompleted::class, [self::class, 'handleTournamentCompleted']);
+        $events->listen(TournamentCancelled::class, [self::class, 'handleTournamentCancelled']);
 
         $events->listen(
             PrizeAwarded::class,
             [self::class, 'handlePrizeAwarded']
         );
+    }
+
+    private function tournamentWithPlayers(int $tournamentId): ?Tournament
+    {
+        return Tournament::query()->with([
+            'registrations.user.notificationPreference',
+            'registrations.rosterMembers.user.notificationPreference',
+        ])->find($tournamentId);
+    }
+
+    /** @return Collection<int, User> */
+    private function registeredUsers(Tournament $tournament): Collection
+    {
+        return $tournament->registrations
+            ->flatMap(fn ($registration) => collect([$registration->user])->merge($registration->rosterMembers->pluck('user')))
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 }

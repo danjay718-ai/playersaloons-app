@@ -2,11 +2,13 @@
 
 use App\Modules\Match\Jobs\AutoForfeitJob;
 use App\Modules\Match\Jobs\ExpireHeadToHeadMatchesJob;
+use App\Modules\Match\Jobs\ReconcileMatchReadinessJob;
 use App\Modules\Stream\Jobs\RefreshProviderLiveStatusesJob;
 use App\Modules\Tournament\Jobs\ExpireReservationsJob;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::job(new AutoForfeitJob)->everyMinute()->withoutOverlapping()->onOneServer();
+Schedule::job(new ReconcileMatchReadinessJob)->everyMinute()->withoutOverlapping()->onOneServer();
 if (config('features.player_wager.enabled')) {
     Schedule::job(new ExpireHeadToHeadMatchesJob)->everyMinute()->withoutOverlapping();
 }

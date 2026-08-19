@@ -208,7 +208,7 @@ class NotificationServiceTest extends TestCase
     /**
      * Test check-in reminder notification.
      */
-    public function test_checkin_reminder_notification(): void
+    public function test_entry_lock_notification(): void
     {
         Event::fake([BroadcastNotification::class]);
 
@@ -243,8 +243,8 @@ class NotificationServiceTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->user->id,
-            'type' => 'checkin_reminder',
-            'title' => 'Check-in Reminder',
+            'type' => 'tournament_entries_locked',
+            'title' => 'Tournament Entry Locked',
         ]);
     }
 

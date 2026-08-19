@@ -32,7 +32,7 @@
         {{-- Notification List --}}
         <div class="max-h-60 overflow-y-auto">
             @forelse($notifications as $notification)
-                <button wire:click="markAsRead({{ $notification->id }})"
+                <button wire:click="openNotification({{ $notification->id }})"
                         class="w-full text-left block px-4 py-3 hover:bg-purple-950/20 border-b border-purple-500/5 transition-colors {{ is_null($notification->read_at) ? 'bg-purple-950/10' : '' }}">
                     <div class="flex items-start space-x-3">
                         <div class="p-1.5 bg-purple-900/30 rounded-lg text-purple-400 mt-0.5 flex-shrink-0">
@@ -53,6 +53,9 @@
                             </p>
                             <p class="text-[10px] text-zinc-500 mt-0.5 line-clamp-2">{{ $notification->message }}</p>
                             <p class="text-[9px] text-zinc-600 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                            @if($notification->action_url)
+                                <p class="mt-1 text-[9px] font-black uppercase tracking-wider text-purple-400">Open details →</p>
+                            @endif
                         </div>
                         @if(is_null($notification->read_at))
                             <div class="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-fuchsia-500 mt-1.5"></div>

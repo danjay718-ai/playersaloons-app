@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property-read string $type
  * @property-read string $title
  * @property-read string $message
+ * @property-read string|null $action_url
  * @property-read Carbon|null $read_at
  * @property-read Carbon $created_at
  */
@@ -33,6 +34,7 @@ class NotificationResource extends JsonResource
             'type' => $this->type,
             'title' => $this->title,
             'message' => $this->message,
+            'action_url' => $this->action_url,
             'read_at' => $this->read_at,
             'created_at' => $this->created_at,
         ];

@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Listeners;
 
-use App\Modules\Match\Actions\StartMatchAction;
 use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Modules\Tournament\Actions\CompleteTournamentAction;
 use App\Modules\Tournament\Models\Round;
 use App\Shared\Enums\MatchStatus;
-use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\DB;
 
 class AdvanceWinnerListener
@@ -19,7 +17,6 @@ class AdvanceWinnerListener
     public function __construct(
         private readonly MatchStateMachine $stateMachine,
         private readonly CompleteTournamentAction $completeTournamentAction,
-        private readonly StartMatchAction $startMatchAction
     ) {}
 
     /**
@@ -96,10 +93,8 @@ class AdvanceWinnerListener
                 $this->stateMachine->transition($nextMatch, MatchStatus::READY);
                 MatchCreated::dispatch((int) $nextMatch->getKey(), (int) $nextMatch->tournament_id, (int) $nextMatch->round_id);
 
-                // Auto-start the match if the tournament is already ongoing
-                if ($match->tournament->status === TournamentStatus::ONGOING) {
-                    $this->startMatchAction->execute($nextMatch);
-                }
+                // MatchCreated prepares the next round's Get Ready timer and
+                // starts it only after both sides satisfy their ready choice.
             }
         });
     }

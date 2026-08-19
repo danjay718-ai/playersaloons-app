@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Community\Models;
 
-use Database\Factories\NotificationFactory;
 use App\Modules\Identity\Models\User;
+use Database\Factories\NotificationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +19,7 @@ class Notification extends Model
     {
         return NotificationFactory::new();
     }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -30,6 +31,7 @@ class Notification extends Model
         'type',
         'title',
         'message',
+        'action_url',
         'read_at',
     ];
 

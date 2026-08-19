@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Livewire\Notification;
 
 use App\Modules\Community\Models\Notification;
+use App\Modules\Identity\Models\User;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\RedirectResponse;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -23,7 +26,7 @@ class NotificationBell extends Component
 
     private function loadNotifications(): void
     {
-        /** @var \App\Modules\Identity\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $this->notifications = $user->notifications()
@@ -44,7 +47,7 @@ class NotificationBell extends Component
 
     public function markAsRead(int $id): void
     {
-        /** @var \App\Modules\Identity\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $user->notifications()->where('id', $id)->whereNull('read_at')->update(['read_at' => now()]);
@@ -52,9 +55,25 @@ class NotificationBell extends Component
         $this->loadNotifications();
     }
 
+    public function openNotification(int $id): ?RedirectResponse
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        $notification = $user->notifications()->findOrFail($id);
+        $notification->forceFill(['read_at' => $notification->read_at ?? now()])->save();
+
+        if ($notification->action_url !== null && str_starts_with($notification->action_url, '/')) {
+            return redirect()->to($notification->action_url);
+        }
+
+        $this->loadNotifications();
+
+        return null;
+    }
+
     public function markAllRead(): void
     {
-        /** @var \App\Modules\Identity\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $user->notifications()->whereNull('read_at')->update(['read_at' => now()]);
@@ -62,7 +81,7 @@ class NotificationBell extends Component
         $this->loadNotifications();
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('livewire.notification.notification-bell');
     }

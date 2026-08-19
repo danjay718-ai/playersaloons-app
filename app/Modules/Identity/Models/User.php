@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Models;
 
 use App\Modules\Community\Models\Notification;
+use App\Modules\Community\Models\NotificationPreference;
 use App\Modules\Identity\Services\UserPresenceService;
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Wallet\Models\Wallet;
@@ -168,6 +169,12 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
+    }
+
+    /** Preference is eager-loaded by bulk notification listeners to avoid N+1 reads. */
+    public function notificationPreference(): HasOne
+    {
+        return $this->hasOne(NotificationPreference::class);
     }
 
     /**

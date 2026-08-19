@@ -28,6 +28,13 @@ class CloseRegistrationAction
         return DB::transaction(function () use ($tournament): Tournament {
             $this->stateMachine->transition($tournament, TournamentStatus::REGISTRATION_CLOSED);
 
+            $lockedAt = now();
+            $tournament->registrations()
+                ->where('status', RegistrationStatus::CONFIRMED)
+                ->whereNull('locked_at')
+                ->update(['locked_at' => $lockedAt, 'updated_at' => $lockedAt]);
+            $tournament->forceFill(['registration_locked_at' => $lockedAt])->save();
+
             // Calculate final prize pool
             $paidCount = $tournament->registrations()
                 ->where('status', RegistrationStatus::CONFIRMED)

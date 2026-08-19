@@ -65,7 +65,9 @@ final class ReconcileTournamentLifecycle extends Command
                     ->where('status', TournamentStatus::CHECKIN_OPEN)
                     ->where('checkin_close_at', '<=', now()))
                 ->orWhere(fn (Builder $due) => $due
-                    ->whereIn('status', [TournamentStatus::CHECKIN_CLOSED, TournamentStatus::BRACKET_GENERATED])
+                    ->where('status', TournamentStatus::CHECKIN_CLOSED))
+                ->orWhere(fn (Builder $due) => $due
+                    ->where('status', TournamentStatus::BRACKET_GENERATED)
                     ->where('start_at', '<=', now()));
         });
     }

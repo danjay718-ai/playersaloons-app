@@ -38,6 +38,10 @@ class CancelRegistrationAction
             throw new \LogicException('Registration can only be cancelled while registration is open.');
         }
 
+        if ($registration->locked_at !== null || $tournament->extra_registration_started_at !== null) {
+            throw new \LogicException('Registration is locked and can no longer be cancelled.');
+        }
+
         if ($registration->status === RegistrationStatus::CANCELLED) {
             throw new \LogicException('Registration is already cancelled.');
         }

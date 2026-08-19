@@ -54,6 +54,7 @@ class IssueRefundsListener
             $registrations = TournamentRegistration::query()
                 ->where('tournament_id', $tournament->getKey())
                 ->where('payment_status', PaymentStatus::PAID)
+                ->with('user.wallet')
                 ->get();
 
             $entryFee = (float) ($tournament->entry_fee ?? '0.00');
