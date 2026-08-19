@@ -43,6 +43,14 @@ class ContactPage extends Component
             $this->name = $user->profile?->display_name ?: $user->username;
             $this->email = $user->email;
         }
+
+        $reference = request()->query('reference');
+
+        if (is_string($reference) && preg_match('/\AERR-[A-Z0-9-]{8,64}\z/', $reference) === 1) {
+            $this->category = 'bug';
+            $this->subject = 'System error report '.$reference;
+            $this->message = "I encountered a system error.\n\nSupport reference: {$reference}\n\nWhat I was doing when it happened: ";
+        }
     }
 
     public function submit(NotificationService $notificationService): void

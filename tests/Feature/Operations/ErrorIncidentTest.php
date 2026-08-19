@@ -38,6 +38,10 @@ class ErrorIncidentTest extends TestCase
 
         $response->assertStatus(500)
             ->assertSee('Support reference:')
+            ->assertSee('Go to Home Page')
+            ->assertSee('Report This Issue')
+            ->assertSee('/contact?reference=ERR-', false)
+            ->assertDontSee('Return to Terminal')
             ->assertDontSee('do-not-expose');
 
         $incident = ErrorIncident::query()->firstOrFail();

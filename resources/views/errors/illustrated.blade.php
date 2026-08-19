@@ -135,14 +135,18 @@
         <!-- Actions -->
         <div class="pt-4 flex flex-col gap-3 max-w-xs mx-auto">
             @php
-                $dashboardUrl = auth()->check() 
-                    ? (auth()->user()->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']) ? '/admin' : '/dashboard')
-                    : '/';
+                $isStaff = auth()->check() && auth()->user()->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']);
             @endphp
-            
-            <a href="{{ $dashboardUrl }}" class="w-full bg-gradient-to-r {{ $c['btn_bg'] }} text-white font-bold py-3 rounded-xl border text-xs uppercase tracking-widest font-orbitron cursor-pointer transition-all">
-                Return to Terminal
+
+            <a href="{{ $isStaff ? '/admin' : '/' }}" class="w-full bg-gradient-to-r {{ $c['btn_bg'] }} text-white font-bold py-3 rounded-xl border text-xs uppercase tracking-widest font-orbitron cursor-pointer transition-all">
+                {{ $isStaff ? 'Return to Admin' : 'Go to Home Page' }}
             </a>
+
+            @if($code === '500')
+                <a href="{{ route('contact', array_filter(['reference' => $referenceId])) }}" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold py-3 rounded-xl text-xs uppercase tracking-widest font-orbitron cursor-pointer transition-all">
+                    Report This Issue
+                </a>
+            @endif
             
             @if($code === '403' && auth()->check())
                 <form method="POST" action="{{ route('logout') }}" class="w-full m-0">

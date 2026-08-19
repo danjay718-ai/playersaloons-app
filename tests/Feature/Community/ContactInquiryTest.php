@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Community;
 
-use App\Livewire\Admin\ContactInquiryAdmin;
 use App\Livewire\Admin\AdminDashboard;
+use App\Livewire\Admin\ContactInquiryAdmin;
 use App\Livewire\Community\ContactPage;
 use App\Modules\Community\Models\ContactInquiry;
 use App\Modules\Identity\Models\User;
+use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
-use App\Modules\Wallet\Models\Wallet;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -70,6 +70,15 @@ class ContactInquiryTest extends TestCase
             'status' => 'new',
             'user_id' => null,
         ]);
+    }
+
+    public function test_error_report_link_prefills_the_support_reference(): void
+    {
+        Livewire::withQueryParams(['reference' => 'ERR-01M0CW29C2E6X8T7Z5JCZVHXWR'])
+            ->test(ContactPage::class)
+            ->assertSet('category', 'bug')
+            ->assertSet('subject', 'System error report ERR-01M0CW29C2E6X8T7Z5JCZVHXWR')
+            ->assertSet('message', fn (string $message): bool => str_contains($message, 'Support reference: ERR-01M0CW29C2E6X8T7Z5JCZVHXWR'));
     }
 
     public function test_player_contact_inquiry_links_account_and_notifies_staff(): void
