@@ -13,11 +13,12 @@ use App\Shared\Enums\TournamentStatus;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class StreamList extends Component
 {
-    use WithPagination;
+    use WithFileUploads, WithPagination;
 
     // ── Player stream form ──────────────────────────────────────────────
     public ?string $streamTitle = null;
@@ -35,6 +36,10 @@ class StreamList extends Component
     public ?int $game_id = null;
 
     public ?string $takedownReason = null;
+
+    public $streamThumbnail = null;
+
+    public ?string $thumbnailUrl = null;
 
     // ── Browse tab state ────────────────────────────────────────────────
     /** 'all' | 'game:{id}' | 'tournaments' */
@@ -67,6 +72,7 @@ class StreamList extends Component
         $this->youtube_stream_url = $playerStreams->get('youtube')?->source_url;
         $this->twitch_stream_url = $playerStreams->get('twitch')?->source_url;
         $this->facebook_stream_url = $playerStreams->get('facebook')?->source_url;
+        $this->thumbnailUrl = $firstStream?->thumbnail_url;
     }
 
     public function setTab(string $tab): void
@@ -91,6 +97,7 @@ class StreamList extends Component
             'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
             'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
             'is_public' => 'boolean',
+            'streamThumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         if (! $this->hasAnyStreamUrl()) {
@@ -109,6 +116,11 @@ class StreamList extends Component
             session()->flash('error', 'Your stream is currently taken down by admin review.');
 
             return;
+        }
+
+        if ($this->streamThumbnail) {
+            $path = $this->streamThumbnail->store('streams/thumbnails/'.$user->getKey(), 'public');
+            $this->thumbnailUrl = '/storage/'.$path;
         }
 
         $this->syncPlayerStreamChannel($user, 'youtube', $this->youtube_stream_url);
@@ -405,6 +417,7 @@ class StreamList extends Component
             'description' => $this->nullableText($this->streamDescription),
             'game_id' => $this->game_id,
             'is_public' => $this->is_public,
+            'thumbnail_url' => $this->thumbnailUrl,
         ]);
 
         $changes = $streamChannel->getDirty();

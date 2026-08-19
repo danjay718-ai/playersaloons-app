@@ -49,15 +49,20 @@ class StreamWatch extends Component
         $this->canModerate = $user?->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT_AGENT']) ?? false;
 
         // Admins can view any public/taken-down stream; players only see public, not-taken-down
-        $query = StreamChannel::query()->with(['user.profile', 'game.translations']);
+        $query = StreamChannel::query()->with(['user.profile', 'game.translations', 'tournament.game.translations']);
 
-        if ($this->canModerate) {
+        if ($this->isAdminView) {
+            abort_unless($this->canModerate, 403);
             $query->whereNotNull('user_id'); // Any player stream
         } else {
             $query->where('is_public', true)->whereNull('taken_down_at');
         }
 
         $this->streamChannel = $query->findOrFail($id);
+
+        if ($this->streamChannel->game === null && $this->streamChannel->tournament?->game !== null) {
+            $this->streamChannel->setRelation('game', $this->streamChannel->tournament->game);
+        }
 
         // Track viewer (players only)
         if (! $this->canModerate) {
@@ -336,7 +341,7 @@ class StreamWatch extends Component
 
         $layout = $this->isAdminView
             ? 'components.layouts.admin'
-            : 'components.layouts.dashboard';
+            : (Auth::check() ? 'components.layouts.dashboard' : 'components.layouts.app');
 
         $layoutData = $this->isAdminView
             ? [
@@ -352,10 +357,11 @@ class StreamWatch extends Component
         // Both queries are bounded and eager-load every relation used by cards.
         $gameStreams = collect();
         $gameCompetitions = collect();
-        if (! $this->isAdminView && $this->streamChannel->game_id !== null) {
+        $gameId = $this->streamChannel->game_id ?? $this->streamChannel->tournament?->game_id;
+        if (! $this->isAdminView && $gameId !== null) {
             $gameStreams = StreamChannel::query()
                 ->with('user.profile')
-                ->where('game_id', $this->streamChannel->game_id)
+                ->where('game_id', $gameId)
                 ->where('is_public', true)
                 ->whereNull('taken_down_at')
                 ->whereKeyNot($this->streamChannel->id)
@@ -364,7 +370,7 @@ class StreamWatch extends Component
                 ->get();
 
             $gameCompetitions = Tournament::query()
-                ->where('game_id', $this->streamChannel->game_id)
+                ->where('game_id', $gameId)
                 ->whereIn('status', [
                     TournamentStatus::PUBLISHED,
                     TournamentStatus::REGISTRATION_OPEN,

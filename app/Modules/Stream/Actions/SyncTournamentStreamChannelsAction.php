@@ -58,6 +58,8 @@ final class SyncTournamentStreamChannelsAction
         $streamChannel->fill([
             'source_url' => $url,
             'title' => $tournament->name,
+            'game_id' => $tournament->game_id,
+            'thumbnail_url' => $tournament->banner_url,
             'is_public' => true,
         ]);
         $changes = $streamChannel->getDirty();

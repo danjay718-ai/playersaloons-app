@@ -2,7 +2,7 @@
 <div
     x-data="{
         featuredIndex: 0,
-        featuredStreams: @js($featuredStreams->map(fn($s) => ['id' => $s->id, 'title' => $s->title ?? 'Live Stream', 'description' => $s->description ?? '', 'viewer_count' => $s->viewer_count, 'total_views' => $s->total_views, 'streamer' => $s->user?->profile?->display_name ?? $s->user?->username ?? 'Player', 'game' => $s->game?->localizedName() ?? 'Gaming', 'provider' => $s->provider, 'badge' => $s->is_live ? 'LIVE' : 'VOD'])->values()),
+        featuredStreams: @js($featuredStreams->map(fn($s) => ['id' => $s->id, 'title' => $s->title ?? 'Live Stream', 'description' => $s->description ?? '', 'thumbnail_url' => $s->thumbnail_url, 'viewer_count' => $s->viewer_count, 'total_views' => $s->total_views, 'streamer' => $s->user?->profile?->display_name ?? $s->user?->username ?? 'Player', 'game' => $s->game?->localizedName() ?? 'Gaming', 'provider' => $s->provider, 'badge' => $s->is_live ? 'LIVE' : 'VOD'])->values()),
         autoplay: null,
         showMyStream: false,
         modalStream: null,
@@ -53,6 +53,9 @@
         >
             {{-- Background thumbnail blur --}}
             <div class="absolute inset-0 z-0">
+                <template x-if="currentFeatured()?.thumbnail_url">
+                    <img :src="currentFeatured().thumbnail_url" alt="" class="absolute inset-0 h-full w-full scale-105 object-cover opacity-60 blur-sm">
+                </template>
                 <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-[#05030c]"></div>
                 <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
             </div>
@@ -137,6 +140,7 @@
                                 class="flex-shrink-0 w-24 sm:w-28 rounded-lg overflow-hidden transition-all duration-300 cursor-pointer"
                             >
                                 <div class="aspect-video bg-zinc-900 relative">
+                                    <template x-if="s.thumbnail_url"><img :src="s.thumbnail_url" alt="" class="absolute inset-0 h-full w-full object-cover"></template>
                                     <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-900/50 to-fuchsia-900/50">
                                         <i data-lucide="tv" class="w-6 h-6 text-purple-400"></i>
                                     </div>
@@ -275,6 +279,20 @@
                             @error('streamDescription') <span class="mt-1 block text-xs text-rose-400">{{ $message }}</span> @enderror
                         </div>
 
+                        <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-end">
+                            <div>
+                                <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Stream Thumbnail</label>
+                                <input type="file" wire:model="streamThumbnail" @disabled($streamTakenDown) accept="image/jpeg,image/png,image/webp" class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-xs text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-purple-600 file:px-3 file:py-1.5 file:text-[10px] file:font-black file:uppercase file:text-white disabled:opacity-60">
+                                <p class="mt-1 text-[10px] text-zinc-600">Recommended 16:9 image, max 2 MB.</p>
+                                @error('streamThumbnail') <span class="mt-1 block text-xs text-rose-400">{{ $message }}</span> @enderror
+                            </div>
+                            @if($streamThumbnail || $thumbnailUrl)
+                                <div class="aspect-video overflow-hidden rounded-xl border border-zinc-800 bg-black">
+                                    <img src="{{ $streamThumbnail ? $streamThumbnail->temporaryUrl() : $thumbnailUrl }}" alt="Stream thumbnail preview" class="h-full w-full object-cover">
+                                </div>
+                            @endif
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
@@ -370,6 +388,9 @@
 
                                 {{-- Thumbnail area --}}
                                 <a href="{{ $isAdminView ? route('admin.streams.watch', $playerStream->id) : (! $isTakenDown ? route('streams.watch', $playerStream->id) : '#') }}" wire:navigate class="block relative aspect-video bg-zinc-900 overflow-hidden">
+                                    @if($playerStream->thumbnail_url)
+                                        <img src="{{ $playerStream->thumbnail_url }}" alt="{{ $playerStream->title ?? $streamerName.' stream' }}" class="absolute inset-0 h-full w-full object-cover">
+                                    @endif
                                     <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-900/30 to-fuchsia-900/30">
                                         <i data-lucide="{{ $stream['icon'] }}" class="w-10 h-10 text-zinc-600 group-hover:text-purple-400 transition-colors duration-300"></i>
                                     </div>
@@ -531,6 +552,9 @@
                         @foreach($streamItems as $stream)
                             <article class="group flex flex-col rounded-xl overflow-hidden border border-zinc-800/60 bg-zinc-950 hover:border-purple-500/40 transition-all duration-300 hover:shadow-[0_0_20px_rgba(147,51,234,0.15)]">
                                 <div class="relative aspect-video bg-zinc-900">
+                                    @if($tournament->banner_url)
+                                        <img src="{{ $tournament->banner_url }}" alt="{{ $tournament->name }}" class="absolute inset-0 h-full w-full object-cover">
+                                    @endif
                                     <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-900/30 to-blue-900/30">
                                         <i data-lucide="swords" class="w-10 h-10 text-zinc-600"></i>
                                     </div>

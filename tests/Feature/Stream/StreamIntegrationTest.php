@@ -19,7 +19,9 @@ use Database\Seeders\GamesTableSeeder;
 use Database\Seeders\GameTrailerStreamSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -158,10 +160,16 @@ class StreamIntegrationTest extends TestCase
 
     public function test_player_can_publish_stream_and_other_players_can_view_it(): void
     {
+        Storage::fake('public');
+
         Livewire::actingAs($this->player)
             ->test(StreamList::class)
             ->set('streamTitle', 'Road to Finals')
             ->set('twitch_stream_url', 'https://www.twitch.tv/player_saloons')
+            ->set('streamThumbnail', UploadedFile::fake()->createWithContent(
+                'road-to-finals.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true),
+            ))
             ->set('is_public', true)
             ->call('savePlayerStream')
             ->assertHasNoErrors();
@@ -180,6 +188,8 @@ class StreamIntegrationTest extends TestCase
             'description' => 'stream_created',
         ]);
         $publishedStream = StreamChannel::query()->where('user_id', $this->player->id)->sole();
+        $this->assertStringStartsWith('/storage/streams/thumbnails/'.$this->player->id.'/', (string) $publishedStream->thumbnail_url);
+        Storage::disk('public')->assertExists(str_replace('/storage/', '', (string) $publishedStream->thumbnail_url));
 
         $viewer = $this->createUserWithRole('PLAYER', 'viewer@example.com');
 
@@ -189,6 +199,10 @@ class StreamIntegrationTest extends TestCase
             ->assertSee('Road to Finals')
             ->assertSee($this->player->username)
             ->assertSee('/streams/'.$publishedStream->id, false);
+
+        $this->get('/streams/'.$publishedStream->id)
+            ->assertOk()
+            ->assertSee('Road to Finals');
     }
 
     public function test_admin_can_take_down_and_restore_player_streams(): void

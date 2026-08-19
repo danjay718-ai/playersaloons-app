@@ -220,7 +220,7 @@
                         </button>
 
                         {{-- Back --}}
-                        <a href="{{ $isAdminView ? '/admin/streams' : route('streams') }}" wire:navigate
+                        <a href="{{ $isAdminView ? '/admin/streams' : (auth()->check() ? route('streams') : ($streamChannel->game ? route('games.show', $streamChannel->game->slug).'?tab=streams' : '/tournaments')) }}" wire:navigate
                            class="flex items-center gap-1.5 {{ $isAdminView ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-zinc-900 border-zinc-700 text-zinc-400' }} border hover:border-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl transition-all duration-200">
                             <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
                             Back
@@ -251,8 +251,8 @@
                     @php $gameDescript = $streamChannel->game->localizedDescription(); @endphp
                     <div class="rounded-xl {{ $isAdminView ? 'bg-slate-900/70 border-slate-800' : 'bg-zinc-900/80 border-zinc-800' }} border p-4">
                         <div class="flex items-center gap-3 mb-3">
-                            @if($streamChannel->game->banner_path)
-                                <img src="{{ asset('storage/' . $streamChannel->game->banner_path) }}" alt="{{ $streamChannel->game->localizedName() }}" class="w-10 h-10 rounded-lg object-cover">
+                            @if($streamChannel->game->bannerUrl())
+                                <img src="{{ $streamChannel->game->bannerUrl() }}" alt="{{ $streamChannel->game->localizedName() }}" class="w-10 h-10 rounded-lg object-cover">
                             @else
                                 <div class="w-10 h-10 rounded-lg {{ $isAdminView ? 'bg-indigo-900/30' : 'bg-purple-900/30' }} flex items-center justify-center">
                                     <i data-lucide="gamepad-2" class="w-5 h-5 {{ $isAdminView ? 'text-indigo-400' : 'text-purple-400' }}"></i>
@@ -289,6 +289,7 @@
                                             @php $gsName = $gs->user?->profile?->display_name ?? $gs->user?->username ?? 'Player'; @endphp
                                             <a href="{{ route('streams.watch', $gs->id) }}" wire:navigate class="group block rounded-lg overflow-hidden border border-zinc-800 hover:border-purple-500/40 transition-all duration-200">
                                                 <div class="aspect-video bg-gradient-to-br from-purple-900/20 to-fuchsia-900/20 flex items-center justify-center relative">
+                                                    @if($gs->thumbnail_url)<img src="{{ $gs->thumbnail_url }}" alt="{{ $gs->title ?? $gsName }}" class="absolute inset-0 h-full w-full object-cover">@endif
                                                     <i data-lucide="play" class="w-6 h-6 text-zinc-600 group-hover:text-purple-400 transition-colors"></i>
                                                     @if($gs->viewer_count > 0)
                                                         <span class="absolute bottom-1 left-1 bg-black/70 text-red-400 text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
