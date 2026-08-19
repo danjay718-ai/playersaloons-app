@@ -1,6 +1,16 @@
 # PlayerSaloons — MVP Progress
 
-**Last Updated**: 2026-08-18 (v1.115) | **Branch**: `main`
+**Last Updated**: 2026-08-19 (v1.116) | **Branch**: `main`
+
+---
+## ✅ Centralized Error Operations & Automatic PWA Releases (v1.116)
+
+- **Formal error boundary**: Global HTTP/Livewire/API exception rendering now returns sanitized 403/404/419/500 copy. Reportable 403/500 incidents receive support references; raw exception messages were removed from error pages and broad Livewire catches.
+- **Incident recorder**: Added privacy-aware `error_incidents` persistence with 15-minute fingerprint grouping, occurrence counts, hashed IPs, safe context allowlisting, SQL/query-binding omission, normal Laravel-log fallback, and 90-day scheduled pruning.
+- **Async coverage**: Queue and scheduler failure listeners attach safe job/task context to centralized incidents.
+- **Admin Error Logs**: Added ADMIN/SUPER_ADMIN-only `/admin/error-logs`, consistent with Tournament Management filtering/table/pagination. Supports search, status/level/source/date filters, details, stack traces, resolution notes, and reopen.
+- **PWA releases**: Vite now generates `public/sw.js` and `public/pwa-version.json` from a content-derived release hash. Waiting updates show a shared **Update now** prompt and activate only after confirmation.
+- **Verification scope**: Focused incident tests cover public redaction/reference behavior, grouping, secret removal, RBAC, and resolution. Frontend production build verifies service-worker generation. No full regression suite was requested.
 
 ---
 ## ✅ Platform H2H, Recurrence, Lifecycle, and Player Performance Hardening (v1.115)

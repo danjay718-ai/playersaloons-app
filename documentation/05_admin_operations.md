@@ -319,6 +319,24 @@ Head-to-head results maintain a game-specific ELO rating used by automatic match
 *   **Middleware**: `BlockRestrictedCountries` running on global routes (except `/admin*` and system internals).
 *   **Functionality**: Resolves player IPs via `stevebauman/location`. If the country code is in the blocked list, access is denied with a 403 screen displaying the admin's custom block message for that country. Admin UI manages the blocked countries list and instantly resets the cached active blocklist upon change.
 
+## 20. Centralized Error Operations
+
+*   **Admin Route**: `/admin/error-logs`; restricted by `error_incidents.view` / `error_incidents.manage`, assigned only to ADMIN and SUPER_ADMIN.
+*   **UI Component**: `app/Livewire/Admin/ErrorIncidentAdmin.php` with the same URL-backed filters, per-page selector, table treatment, detail modal, and custom pagination used by Tournament Management.
+*   **Persistence**: `ErrorIncidentReporter` stores sanitized exception metadata in `error_incidents`, groups identical unresolved fingerprints within 15 minutes, hashes IP addresses, excludes query bindings/request payloads, and strips common secrets.
+*   **Public Contract**: Unhandled web/API 403 and 500 responses contain formal copy and a support reference, never the raw exception message. Ordinary 404/419 responses use formal copy without creating noisy incidents.
+*   **Caught Actions**: Player/admin Livewire catches use `HandlesUserFacingErrors` so technical exceptions are reported and only a formal message plus reference reaches the browser.
+*   **Async Coverage**: Queue failures and scheduled-task failures add job/task context through `EventServiceProvider`. Standard Laravel logs remain the fallback if incident persistence fails (including database outages).
+*   **Retention**: `errors:prune --days=90` runs daily at 03:30. Minimum accepted retention is seven days.
+*   **Sensitive Data Rule**: Passwords, tokens, authorization headers, cookies, KYC documents, request bodies, SQL statements, and SQL bindings must never be added to incident context.
+
+## 21. PWA Release Updates
+
+*   **Build Source**: `resources/js/service-worker.js` is the maintained template; `public/sw.js` is generated during `npm run build`.
+*   **Release Version**: The Vite plugin hashes output filenames plus fixed manifest/logo/icon content and emits the same release into the service-worker cache name and `public/pwa-version.json` receipt.
+*   **Runtime UX**: A waiting worker dispatches `pwa-update-ready`; shared public/player layouts show `pwa-update-prompt` with **Update now** and **Later** actions.
+*   **Activation Safety**: The new worker only calls `skipWaiting()` after user confirmation, then `controllerchange` performs one refresh. HTML remains network-only; content-hashed build assets remain cache-first.
+
 ## 🧪 Isolated Test Cases
 ### 1. Security & Guards
 *   **Role Protection**: `test_non_admin_cannot_access_admin_dashboard` / `test_player_cannot_access_staff_activity_dashboard`

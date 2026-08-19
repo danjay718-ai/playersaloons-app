@@ -1,6 +1,6 @@
 # PlayerSaloons — Feature Map
 
-**Last Updated**: 2026-08-18 (v1.115)
+**Last Updated**: 2026-08-19 (v1.116)
 
 Quick-reference for developers. Maps every feature to its route, Livewire component, backend actions, and test coverage.
 
@@ -84,6 +84,7 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | `GET /admin/users` | `app/Livewire/Admin/UserAdmin.php` | User list: suspend, roles, wallet view |
 | `GET /admin/compliance` | `app/Livewire/Admin/ComplianceAdmin.php` | Apply, search, inspect, expire, and revoke auditable player compliance blocks |
 | `GET /admin/audit-logs` | `app/Livewire/Admin/AuditLogAdmin.php` | Spatie activity log viewer with filters |
+| `GET /admin/error-logs` | `app/Livewire/Admin/ErrorIncidentAdmin.php` | ADMIN/SUPER_ADMIN-only sanitized exception dashboard with search, source/state/date filters, occurrence grouping, pagination, stack details, and resolve/reopen workflow |
 | `GET /admin/cms/{section?}` | `app/Livewire/Admin/CmsAdmin.php` | CMS section pages for Landing Page (`landing`), Games (`games`), Platforms (`platforms`), Navigation (`navigation`), and About Us (`about`); renders only the active section data |
 | `GET /admin/translations` | `app/Livewire/Admin/TranslationAdmin.php` | Translation manager for UI phrase keys; imports `lang/*.json`, edits `translation_strings`, fills missing values, and exports JSON runtime files |
 | `GET /admin/policies` | `app/Livewire/Admin/PolicyAdmin.php` | Dedicated policy editor for Terms and Conditions, Cookie Policy, Privacy Policy, Refund and Cancellation Policy, and Disclaimer |
@@ -144,8 +145,8 @@ For step-by-step user flows and file-level details, see `/documentation/`.
 | Landing page | `resources/views/livewire/landing/landing-page.blade.php` | Esports-themed dynamic landing: full-viewport video hero with `id="hero-video"` for JS replay fallback, CMS-editable sections, horizontal snap-scroll game carousel (`.landing-games-scroll`), glassmorphism cards, animated fade-in content, gradient CTA banner, and managed footer. |
 | Landing CSS design system | `resources/css/app.css` (`.landing-*` classes) | All landing styles are prefixed `landing-`. Key classes: `.landing-page-root` (outer overflow clip), `.landing-hero`, `.landing-main-pattern`, `.landing-section-overflow-clip` (sections with decorative orbs), `.landing-games-scroll` (the only permitted horizontal scroll), `.landing-gradient-text`, `.landing-section-title`, `.landing-section-kicker`, `.landing-card`, `.landing-stat-card`, `.landing-cta-primary`, `.landing-fade-in` (+ delay variants), `.landing-top-glow`. |
 | Scroll-aware nav JS | `resources/js/app.js` — `initPublicNav()` | Detects `.landing-hero` presence. If found: registers a passive scroll listener and toggles `.nav-transparent` / `.nav-solid` on `#public-nav` at a 60 px threshold. If not found (non-landing pages): always applies `.nav-solid`. Cleans up previous scroll listeners on Livewire SPA navigation to avoid memory leaks. |
-| Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, scroll-aware nav, hero video replay fallback, native PWA install prompt, service worker registration, and lazy authenticated Echo setup. |
-| PWA manifest/service worker | `public/manifest.json`, `public/sw.js`, `public/icon-192.png`, `public/icon-512.png` | Installable app metadata, square PWA icons, static asset caching, and network-only HTML navigation so stale landing pages are not served after logout. |
+| Public shell behavior | `resources/js/app.js` | Handles public mobile burger menu, scroll-aware nav, hero video replay fallback, native PWA install prompt, update-ready notification/application, service worker registration, and lazy authenticated Echo setup. |
+| PWA manifest/service worker | `public/manifest.json`, `resources/js/service-worker.js`, `vite.config.js`, `public/sw.js` | Installable app metadata and network-only HTML navigation. Each production frontend build derives a release hash from Vite output plus fixed PWA assets, generates the deployable service worker/version receipt, and prompts controlled refresh instead of silently replacing an active session. |
 | Horizontal scroll containment | `html, body { overflow-x: hidden }` in `app.css` | Global guard. Decorative sections use `overflow-x: clip`. The only intentional horizontal scroll is `.landing-games-scroll`. |
 
 ### Localization Runtime
