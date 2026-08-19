@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Profile;
 
+use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\Community\Models\NotificationPreference;
+use App\Modules\Compliance\Services\CountryEligibilityService;
 use App\Modules\Identity\Actions\DisableTwoFactorAction;
 use App\Modules\Identity\Actions\EnableTwoFactorAction;
 use App\Modules\Identity\Actions\SubmitKycAction;
@@ -18,16 +20,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Throwable;
 
 class ProfileDashboard extends Component
 {
-    use WithFileUploads;
+    use HandlesUserFacingErrors, WithFileUploads;
 
     // Profile Details
     public string $displayName = '';
+
+    public string $fullName = '';
 
     public string $bio = '';
 
@@ -96,6 +101,7 @@ class ProfileDashboard extends Component
 
         $profile = $user->profile;
         if ($profile) {
+            $this->fullName = $profile->full_name ?? '';
             $this->displayName = $profile->display_name ?? '';
             $this->bio = $profile->bio ?? '';
             $this->countryCode = $profile->country_code ?? '';
@@ -168,7 +174,7 @@ class ProfileDashboard extends Component
 
         $this->validate([
             'currentPassword' => ['required', 'string'],
-            'newPassword' => ['required', 'string', 'min:8', 'same:newPasswordConfirmation'],
+            'newPassword' => ['required', 'string', 'same:newPasswordConfirmation', Password::defaults()],
             'newPasswordConfirmation' => ['required', 'string'],
         ]);
 
@@ -247,14 +253,16 @@ class ProfileDashboard extends Component
         }
 
         $this->validate([
+            'fullName' => ['nullable', 'string', 'min:2', 'max:150', 'regex:/^[\pL\pM][\pL\pM .\'\-]*$/u'],
             'displayName' => ['required', 'string', 'max:100'],
             'bio' => ['nullable', 'string', 'max:500'],
-            'countryCode' => ['nullable', 'string', 'size:2', 'in:' . implode(',', array_keys(config('countries', [])))],
+            'countryCode' => ['nullable', 'string', 'size:2', Rule::in(array_keys(app(CountryEligibilityService::class)->selectableCountries()))],
             'timezone' => ['nullable', 'string', 'timezone'],
         ]);
 
         try {
             $action->execute($user, [
+                'full_name' => trim($this->fullName) ?: null,
                 'display_name' => $this->displayName,
                 'bio' => $this->bio,
                 'country_code' => $this->countryCode,
@@ -263,7 +271,7 @@ class ProfileDashboard extends Component
 
             session()->flash('message', 'Profile updated successfully!');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to update the profile.'));
         }
     }
 
@@ -287,7 +295,7 @@ class ProfileDashboard extends Component
             $this->forgetProfileCaches((int) $user->id);
             $this->dispatch('profile-kyc-submitted');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to submit the KYC document.'));
         }
     }
 
@@ -312,7 +320,7 @@ class ProfileDashboard extends Component
             $this->forgetProfileCaches((int) $user->id);
             session()->flash('message', 'Notification preferences updated successfully!');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to update notification preferences.'));
         }
     }
 
@@ -341,6 +349,7 @@ class ProfileDashboard extends Component
                 'user' => null,
                 'latestKyc' => null,
                 'timezoneOptions' => [],
+                'countries' => [],
             ]);
         }
 
@@ -350,6 +359,7 @@ class ProfileDashboard extends Component
             'user' => $user,
             'latestKyc' => $latestKyc,
             'timezoneOptions' => $this->timezoneOptions(),
+            'countries' => app(CountryEligibilityService::class)->selectableCountries(),
         ])->layout('components.layouts.dashboard', [
             'title' => 'My Profile | PlayerSaloons',
             'dashboard_title' => 'USER PROFILE',

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Identity;
 
+use App\Livewire\Auth\Register;
+use App\Modules\Compliance\Models\BlockedCountry;
+use App\Modules\Compliance\Services\CountryEligibilityService;
 use App\Modules\Identity\Actions\RegisterUserAction;
 use App\Modules\Identity\Events\UserRegistered;
 use App\Modules\Identity\Models\User;
@@ -25,6 +28,12 @@ class RegisterUserActionTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
     }
 
+    protected function tearDown(): void
+    {
+        app(CountryEligibilityService::class)->forget();
+        parent::tearDown();
+    }
+
     public function test_player_can_register_successfully(): void
     {
         Event::fake([UserRegistered::class]);
@@ -33,7 +42,9 @@ class RegisterUserActionTest extends TestCase
             'email' => 'player@example.com',
             'username' => 'player_one',
             'password' => 'secret-password',
+            'full_name' => 'Player Legal Name',
             'display_name' => 'Player One',
+            'country_code' => 'PH',
         ]);
 
         $this->assertInstanceOf(User::class, $user);
@@ -48,7 +59,9 @@ class RegisterUserActionTest extends TestCase
 
         $this->assertDatabaseHas('user_profiles', [
             'user_id' => $user->getKey(),
+            'full_name' => 'Player Legal Name',
             'display_name' => 'Player One',
+            'country_code' => 'PH',
         ]);
 
         Event::assertDispatched(UserRegistered::class, function (UserRegistered $e) use ($user): bool {
@@ -75,7 +88,7 @@ class RegisterUserActionTest extends TestCase
 
     public function test_registration_fails_with_invalid_email(): void
     {
-        Livewire::test(\App\Livewire\Auth\Register::class)
+        Livewire::test(Register::class)
             ->set('username', 'validuser')
             ->set('email', 'not-an-email')
             ->set('password', 'secret-password')
@@ -92,7 +105,7 @@ class RegisterUserActionTest extends TestCase
             'password' => 'secret-password',
         ]);
 
-        Livewire::test(\App\Livewire\Auth\Register::class)
+        Livewire::test(Register::class)
             ->set('username', 'taken_user')
             ->set('email', 'second@example.com')
             ->set('password', 'secret-password')
@@ -103,7 +116,7 @@ class RegisterUserActionTest extends TestCase
 
     public function test_registration_requires_policy_acceptance_and_age_confirmation(): void
     {
-        Livewire::test(\App\Livewire\Auth\Register::class)
+        Livewire::test(Register::class)
             ->set('username', 'consent_user')
             ->set('email', 'consent@example.com')
             ->set('password', 'secret-password')
@@ -119,11 +132,13 @@ class RegisterUserActionTest extends TestCase
     {
         Notification::fake();
 
-        Livewire::test(\App\Livewire\Auth\Register::class)
+        Livewire::test(Register::class)
             ->set('username', 'consented_user')
+            ->set('full_name', 'Consented User')
+            ->set('countryCode', 'PH')
             ->set('email', 'consented@example.com')
-            ->set('password', 'secret-password')
-            ->set('password_confirmation', 'secret-password')
+            ->set('password', 'Valid123')
+            ->set('password_confirmation', 'Valid123')
             ->set('accepted_policies', true)
             ->set('age_confirmed', true)
             ->set('newsletter_subscribed', true)
@@ -138,6 +153,52 @@ class RegisterUserActionTest extends TestCase
         $this->assertNotNull($user->age_confirmed_at);
         $this->assertTrue($user->newsletter_subscribed);
         $this->assertNotNull($user->newsletter_subscribed_at);
+        $this->assertSame('Consented User', $user->profile?->full_name);
+        $this->assertSame('consented_user', $user->profile?->display_name);
+        $this->assertSame('PH', $user->profile?->country_code);
         Notification::assertSentTo($user, VerifyEmailNotification::class);
+    }
+
+    public function test_registration_rejects_weak_passwords(): void
+    {
+        Livewire::test(Register::class)
+            ->set('username', 'secure_user')
+            ->set('full_name', 'Secure User')
+            ->set('countryCode', 'PH')
+            ->set('email', 'secure@example.com')
+            ->set('password', 'weakpassword')
+            ->set('password_confirmation', 'weakpassword')
+            ->set('accepted_policies', true)
+            ->set('age_confirmed', true)
+            ->call('register')
+            ->assertHasErrors(['password']);
+    }
+
+    public function test_registration_requires_full_name_and_country(): void
+    {
+        Livewire::test(Register::class)
+            ->set('username', 'identity_user')
+            ->set('email', 'identity@example.com')
+            ->set('password', 'Valid123')
+            ->set('password_confirmation', 'Valid123')
+            ->set('accepted_policies', true)
+            ->set('age_confirmed', true)
+            ->call('register')
+            ->assertHasErrors(['full_name', 'countryCode']);
+    }
+
+    public function test_blocked_country_is_not_selectable_or_accepted(): void
+    {
+        BlockedCountry::query()->create([
+            'country_code' => 'PH',
+            'country_name' => 'Philippines',
+        ]);
+        app(CountryEligibilityService::class)->forget();
+
+        Livewire::test(Register::class)
+            ->assertDontSee('Philippines')
+            ->set('countryCode', 'PH')
+            ->call('register')
+            ->assertHasErrors(['countryCode']);
     }
 }

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Auth;
 
+use App\Modules\Compliance\Services\CountryEligibilityService;
 use App\Modules\Identity\Actions\RegisterUserAction;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 
 class Register extends Component
@@ -18,7 +21,7 @@ class Register extends Component
 
     public string $password_confirmation = '';
 
-    public string $display_name = '';
+    public string $full_name = '';
 
     public bool $accepted_policies = false;
 
@@ -36,15 +39,6 @@ class Register extends Component
         $this->referrerId = is_numeric($ref) && (int) $ref > 0 ? (int) $ref : null;
     }
 
-    protected array $rules = [
-        'username' => ['required', 'string', 'alpha_dash', 'min:3', 'max:30', 'unique:users,username'],
-        'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-        'password' => ['required', 'string', 'min:8', 'confirmed'],
-        'display_name' => ['nullable', 'string', 'max:100'],
-        'accepted_policies' => ['accepted'],
-        'age_confirmed' => ['accepted'],
-    ];
-
     protected array $messages = [
         'accepted_policies.accepted' => 'You must accept the Cookie Policy, Terms & Conditions, and Privacy Policy to create an account.',
         'age_confirmed.accepted' => 'You must confirm that you are 18 years or older to create an account.',
@@ -52,26 +46,34 @@ class Register extends Component
 
     public function register(RegisterUserAction $action)
     {
-        $countryCodes = implode(',', array_keys(config('countries', [])));
+        $countryCodes = array_keys(app(CountryEligibilityService::class)->selectableCountries());
 
-        $this->validate(array_merge($this->rules, [
-            'countryCode' => ['nullable', 'string', 'size:2', 'in:' . $countryCodes],
-        ]));
+        $validated = $this->validate([
+            'username' => ['required', 'string', 'alpha_dash', 'min:3', 'max:30', 'unique:users,username'],
+            'email' => ['required', 'email:rfc', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'confirmed', Password::defaults()],
+            'full_name' => ['required', 'string', 'min:2', 'max:150', 'regex:/^[\pL\pM][\pL\pM .\'\-]*$/u'],
+            'countryCode' => ['required', 'string', 'size:2', Rule::in($countryCodes)],
+            'accepted_policies' => ['accepted'],
+            'age_confirmed' => ['accepted'],
+            'newsletter_subscribed' => ['boolean'],
+        ]);
 
         $acceptedAt = now();
 
         $user = $action->execute([
-            'email' => $this->email,
-            'username' => $this->username,
+            'email' => mb_strtolower(trim($validated['email'])),
+            'username' => trim($validated['username']),
             'password' => $this->password,
-            'display_name' => $this->display_name ?: null,
+            'full_name' => trim($validated['full_name']),
+            'display_name' => trim($validated['username']),
             'accepted_terms_at' => $acceptedAt,
             'accepted_privacy_policy_at' => $acceptedAt,
             'accepted_cookie_policy_at' => $acceptedAt,
             'age_confirmed_at' => $acceptedAt,
             'newsletter_subscribed' => $this->newsletter_subscribed,
             'newsletter_subscribed_at' => $this->newsletter_subscribed ? $acceptedAt : null,
-            'country_code' => $this->countryCode ?: null,
+            'country_code' => $validated['countryCode'],
             'policy_acceptance_ip' => request()->ip(),
             'policy_acceptance_user_agent' => substr((string) request()->userAgent(), 0, 2000),
             'referrer_id' => $this->referrerId,
@@ -85,7 +87,9 @@ class Register extends Component
 
     public function render()
     {
-        return view('livewire.auth.register')
+        return view('livewire.auth.register', [
+            'countries' => app(CountryEligibilityService::class)->selectableCountries(),
+        ])
             ->layout('components.layouts.app', ['title' => 'Register | PlayerSaloons']);
     }
 }

@@ -3,12 +3,13 @@
 namespace App\Livewire\Admin;
 
 use App\Modules\Compliance\Models\BlockedCountry;
+use App\Modules\Compliance\Services\CountryEligibilityService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 
 class BlockedCountriesAdmin extends AdminComponent
 {
     public string $countryCode = '';
+
     public string $message = 'Our services are currently not available in your region due to regulatory restrictions.';
 
     public function boot(): void
@@ -22,7 +23,7 @@ class BlockedCountriesAdmin extends AdminComponent
     public function addCountry(): void
     {
         $this->validate([
-            'countryCode' => ['required', 'string', 'size:2', 'in:' . implode(',', array_keys(config('countries', [])))],
+            'countryCode' => ['required', 'string', 'size:2', 'in:'.implode(',', array_keys(config('countries', [])))],
             'message' => ['required', 'string', 'max:1000'],
         ]);
 
@@ -37,8 +38,8 @@ class BlockedCountriesAdmin extends AdminComponent
             ]
         );
 
-        Cache::forget('blocked_countries');
-        
+        app(CountryEligibilityService::class)->forget();
+
         $this->reset(['countryCode']);
         $this->message = 'Our services are currently not available in your region due to regulatory restrictions.';
         session()->flash('success', 'Blocked country added/updated successfully.');
@@ -47,15 +48,16 @@ class BlockedCountriesAdmin extends AdminComponent
     public function removeCountry(string $code): void
     {
         BlockedCountry::where('country_code', $code)->delete();
-        Cache::forget('blocked_countries');
+        app(CountryEligibilityService::class)->forget();
         session()->flash('success', "Unblocked $code successfully.");
     }
 
     public function render()
     {
         $blocked = BlockedCountry::with('updatedBy')->orderBy('country_name')->get();
+
         return view('livewire.admin.blocked-countries-admin', [
-            'blockedCountries' => $blocked
+            'blockedCountries' => $blocked,
         ])->layout('components.layouts.admin', ['admin_title' => 'Geo-Blocking']);
     }
 }

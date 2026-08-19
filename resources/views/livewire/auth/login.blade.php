@@ -1,5 +1,6 @@
-<div class="min-h-[70vh] flex items-center justify-center py-6 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 shadow-2xl shadow-violet-950/10 relative overflow-hidden">
+<div class="relative min-h-[70vh] overflow-hidden flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
+    <x-auth.arena-background />
+    <div class="max-w-md w-full space-y-8 bg-zinc-900/95 border border-zinc-700/80 rounded-2xl p-6 md:p-8 shadow-2xl shadow-violet-950/30 backdrop-blur-sm relative overflow-hidden">
         
         <!-- Decorative subtle background gradients -->
         <div class="absolute -top-10 -right-10 w-40 h-40 bg-violet-600/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -25,7 +26,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
                             <i data-lucide="user" class="w-4 h-4"></i>
                         </span>
-                        <input wire:model="identity" id="identity" name="identity" type="text" required 
+                        <input wire:model="identity" id="identity" name="identity" type="text" autocomplete="username" maxlength="255" required
                             class="block w-full pl-9 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all duration-200"
                             placeholder="you@example.com or username">
                     </div>
@@ -44,7 +45,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
                             <i data-lucide="lock" class="w-4 h-4"></i>
                         </span>
-                        <input wire:model="password" id="password" name="password" type="password" autocomplete="current-password" required 
+                        <input wire:model="password" id="password" name="password" type="password" autocomplete="current-password" minlength="1" required
                             class="block w-full pl-9 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all duration-200"
                             placeholder="••••••••">
                     </div>
@@ -57,6 +58,11 @@
                     <label for="remember" class="ml-2 block text-xs text-zinc-400 font-medium select-none">
                         Remember me on this device
                     </label>
+                </div>
+
+                <div class="flex items-start gap-2 rounded-lg border border-violet-400/15 bg-violet-500/5 px-3 py-2.5 text-[11px] leading-5 text-zinc-400">
+                    <i data-lucide="shield-check" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300"></i>
+                    <span>Repeated failed attempts trigger a temporary security lock. Password reset remains available above.</span>
                 </div>
             </div>
 

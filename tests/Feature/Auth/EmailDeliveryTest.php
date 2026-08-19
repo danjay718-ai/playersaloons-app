@@ -31,9 +31,11 @@ class EmailDeliveryTest extends TestCase
 
         Livewire::test(Register::class)
             ->set('username', 'verify_user')
+            ->set('full_name', 'Verify User')
+            ->set('countryCode', 'PH')
             ->set('email', 'verify@example.com')
-            ->set('password', 'secret-password')
-            ->set('password_confirmation', 'secret-password')
+            ->set('password', 'Valid123')
+            ->set('password_confirmation', 'Valid123')
             ->set('accepted_policies', true)
             ->set('age_confirmed', true)
             ->call('register')

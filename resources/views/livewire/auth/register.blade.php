@@ -1,18 +1,39 @@
-<div class="min-h-[calc(100vh-6rem)] bg-zinc-950 px-4 py-8 sm:px-6 lg:px-8">
+<div class="relative min-h-[calc(100vh-6rem)] overflow-hidden bg-zinc-950/70 px-4 py-8 sm:px-6 lg:px-8">
+    <x-auth.arena-background />
     <div
-        class="mx-auto grid w-full max-w-5xl overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl shadow-black/30 lg:grid-cols-[0.9fr_1.1fr]"
+        class="relative mx-auto grid w-full max-w-5xl overflow-hidden rounded-xl border border-zinc-700/80 bg-zinc-900/95 shadow-2xl shadow-violet-950/30 backdrop-blur-sm lg:grid-cols-[0.9fr_1.1fr]"
         x-data="{
-            username: @entangle('username').live,
-            email: @entangle('email').live,
-            password: @entangle('password').live,
-            passwordConfirmation: @entangle('password_confirmation').live,
-            acceptedPolicies: @entangle('accepted_policies').live,
-            ageConfirmed: @entangle('age_confirmed').live,
+            username: @entangle('username'),
+            fullName: @entangle('full_name'),
+            countryCode: @entangle('countryCode'),
+            email: @entangle('email'),
+            password: @entangle('password'),
+            passwordConfirmation: @entangle('password_confirmation'),
+            acceptedPolicies: @entangle('accepted_policies'),
+            ageConfirmed: @entangle('age_confirmed'),
+            get passwordChecks() {
+                return {
+                    length: this.password.length >= 8,
+                    lower: /[a-z]/.test(this.password),
+                    upper: /[A-Z]/.test(this.password),
+                    number: /[0-9]/.test(this.password),
+                };
+            },
+            get passwordScore() { return Object.values(this.passwordChecks).filter(Boolean).length; },
+            get passwordStrong() { return this.passwordScore === 4; },
+            get strengthLabel() {
+                if (!this.password) return 'Enter a password';
+                if (this.passwordScore <= 1) return 'Weak';
+                if (this.passwordScore <= 3) return 'Almost there';
+                return 'Strong password';
+            },
             get canSubmit() {
-                return this.username.trim() !== ''
-                    && this.email.trim() !== ''
-                    && this.password !== ''
-                    && this.passwordConfirmation !== ''
+                return /^[A-Za-z0-9_-]{3,30}$/.test(this.username)
+                    && this.fullName.trim().length >= 2
+                    && !/[0-9<>]/.test(this.fullName)
+                    && this.countryCode !== ''
+                    && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)
+                    && this.passwordStrong
                     && this.password === this.passwordConfirmation
                     && this.acceptedPolicies
                     && this.ageConfirmed;
@@ -68,7 +89,7 @@
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
                                 <i data-lucide="at-sign" class="h-4 w-4"></i>
                             </span>
-                            <input x-model="username" id="username" name="username" type="text" autocomplete="username" required
+                            <input x-model="username" id="username" name="username" type="text" autocomplete="username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_-]+"
                                 class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-600 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
                                 placeholder="player_name">
                         </div>
@@ -76,29 +97,30 @@
                     </div>
 
                     <div>
-                        <label for="display_name" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Display Name</label>
+                        <label for="full_name" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Full Legal Name</label>
                         <div class="mt-1.5 relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
                                 <i data-lucide="user" class="h-4 w-4"></i>
                             </span>
-                            <input wire:model="display_name" id="display_name" name="display_name" type="text"
+                            <input x-model="fullName" id="full_name" name="full_name" type="text" autocomplete="name" required minlength="2" maxlength="150"
                                 class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-600 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
-                                placeholder="Optional">
+                                placeholder="As shown on your ID">
                         </div>
-                        @error('display_name') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                        <p class="mt-1 text-[11px] text-zinc-500">Used privately for identity verification.</p>
+                        @error('full_name') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
                 <div>
-                    <label for="countryCode" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Country <span class="text-zinc-600 font-normal normal-case">(optional)</span></label>
+                    <label for="countryCode" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Country</label>
                     <div class="mt-1.5 relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 pointer-events-none">
                             <i data-lucide="globe" class="h-4 w-4"></i>
                         </span>
-                        <select wire:model="countryCode" id="countryCode" name="countryCode"
+                        <select x-model="countryCode" id="countryCode" name="countryCode" required
                             class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-3 text-sm text-zinc-200 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 appearance-none">
                             <option value="">Select your country</option>
-                            @foreach(config('countries') as $code => $name)
+                            @foreach($countries as $code => $name)
                                 <option value="{{ $code }}">{{ $name }} ({{ $code }})</option>
                             @endforeach
                         </select>
@@ -112,7 +134,7 @@
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
                             <i data-lucide="mail" class="h-4 w-4"></i>
                         </span>
-                        <input x-model="email" id="email" name="email" type="email" autocomplete="email" required
+                        <input x-model="email" id="email" name="email" type="email" autocomplete="email" required maxlength="255"
                             class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-600 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
                             placeholder="you@example.com">
                     </div>
@@ -126,10 +148,16 @@
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
                                 <i data-lucide="lock" class="h-4 w-4"></i>
                             </span>
-                            <input x-model="password" id="password" name="password" type="password" autocomplete="new-password" required
+                            <input x-model="password" id="password" name="password" type="password" autocomplete="new-password" required minlength="8" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}"
                                 class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-600 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
-                                placeholder="Minimum 8 characters">
+                                placeholder="8+ characters">
                         </div>
+                        <div class="mt-2 flex gap-1" aria-hidden="true">
+                            <template x-for="step in 4" :key="step">
+                                <span class="h-1 flex-1 rounded-full transition-colors" :class="step <= passwordScore ? (passwordStrong ? 'bg-emerald-400' : 'bg-amber-400') : 'bg-zinc-800'"></span>
+                            </template>
+                        </div>
+                        <p class="mt-1 text-xs font-semibold" :class="passwordStrong ? 'text-emerald-300' : (password ? 'text-amber-300' : 'text-zinc-500')" x-text="strengthLabel" aria-live="polite"></p>
                         @error('password') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
                     </div>
 
@@ -139,11 +167,20 @@
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
                                 <i data-lucide="lock-keyhole" class="h-4 w-4"></i>
                             </span>
-                            <input x-model="passwordConfirmation" id="password_confirmation" name="password_confirmation" type="password" required
+                            <input x-model="passwordConfirmation" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required minlength="8"
                                 class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-600 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
                                 placeholder="Repeat password">
                         </div>
+                        <p x-show="passwordConfirmation" class="mt-1 text-xs font-semibold" :class="password === passwordConfirmation ? 'text-emerald-300' : 'text-red-300'" x-text="password === passwordConfirmation ? 'Passwords match' : 'Passwords do not match'" aria-live="polite"></p>
+                        @error('password_confirmation') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
                     </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 rounded-lg border border-zinc-800 bg-zinc-950/70 p-3 text-[11px] sm:grid-cols-4">
+                    <span :class="passwordChecks.length ? 'text-emerald-300' : 'text-zinc-500'">8+ characters</span>
+                    <span :class="passwordChecks.lower ? 'text-emerald-300' : 'text-zinc-500'">Lowercase</span>
+                    <span :class="passwordChecks.upper ? 'text-emerald-300' : 'text-zinc-500'">Uppercase</span>
+                    <span :class="passwordChecks.number ? 'text-emerald-300' : 'text-zinc-500'">Number</span>
                 </div>
 
                 <div class="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950 p-4">

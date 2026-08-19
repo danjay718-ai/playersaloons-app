@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Auth;
 
+use App\Livewire\Admin\SystemSettingsAdmin;
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard\PlayerDashboard;
 use App\Modules\Identity\Models\User;
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
@@ -122,5 +124,62 @@ class LoginRedirectTest extends TestCase
             ->set('password', 'wrongpassword')
             ->call('login')
             ->assertHasErrors(['identity']);
+    }
+
+    public function test_repeated_failures_temporarily_lock_the_account(): void
+    {
+        $this->createUser('PLAYER', 'locked@test.com');
+        SystemSetting::query()->where('key', 'auth.login_max_attempts')->update(['value' => '3']);
+
+        $login = Livewire::test(Login::class)
+            ->set('identity', 'locked@test.com')
+            ->set('password', 'incorrect-password');
+
+        $login->call('login');
+        $login->call('login');
+        $login->call('login')
+            ->assertHasErrors(['identity'])
+            ->assertSee('Too many sign-in attempts');
+
+        $login->set('password', 'Password@1234!')
+            ->call('login')
+            ->assertNoRedirect()
+            ->assertSee('Too many sign-in attempts');
+    }
+
+    public function test_suspended_user_cannot_sign_in(): void
+    {
+        $user = $this->createUser('PLAYER', 'suspended@test.com');
+        $user->update(['status' => UserStatus::SUSPENDED]);
+
+        Livewire::test(Login::class)
+            ->set('identity', 'suspended@test.com')
+            ->set('password', 'Password@1234!')
+            ->call('login')
+            ->assertHasErrors(['identity'])
+            ->assertNoRedirect();
+
+        $this->assertGuest();
+    }
+
+    public function test_admin_can_configure_login_lockout_policy(): void
+    {
+        $admin = $this->createUser('ADMIN', 'security-admin@test.com');
+
+        Livewire::actingAs($admin)
+            ->test(SystemSettingsAdmin::class)
+            ->set('loginMaxAttempts', 7)
+            ->set('loginLockoutMinutes', 30)
+            ->call('saveAuthenticationSettings')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('system_settings', [
+            'key' => 'auth.login_max_attempts',
+            'value' => '7',
+        ]);
+        $this->assertDatabaseHas('system_settings', [
+            'key' => 'auth.login_lockout_minutes',
+            'value' => '30',
+        ]);
     }
 }

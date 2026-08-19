@@ -8,6 +8,7 @@ use Illuminate\Auth\Events\PasswordReset as PasswordResetEvent;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Livewire\Component;
 
 class PasswordReset extends Component
@@ -22,11 +23,14 @@ class PasswordReset extends Component
 
     public bool $isResetMode = false;
 
-    protected array $rules = [
-        'email' => ['required', 'email', 'exists:users,email'],
-        'token' => ['required_if:isResetMode,true', 'string'],
-        'password' => ['required_if:isResetMode,true', 'string', 'min:8', 'confirmed'],
-    ];
+    protected function rules(): array
+    {
+        return [
+            'email' => ['required', 'email', 'exists:users,email'],
+            'token' => ['required_if:isResetMode,true', 'string'],
+            'password' => ['required_if:isResetMode,true', 'string', 'confirmed', PasswordRule::defaults()],
+        ];
+    }
 
     public function mount(?string $token = null): void
     {
@@ -75,6 +79,7 @@ class PasswordReset extends Component
 
         if ($status === Password::PASSWORD_RESET) {
             session()->flash('message', __($status));
+
             return redirect()->to('/login');
         }
 

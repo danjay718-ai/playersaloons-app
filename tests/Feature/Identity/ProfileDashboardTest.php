@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Identity;
 
 use App\Livewire\Profile\ProfileDashboard;
+use App\Modules\Compliance\Models\BlockedCountry;
+use App\Modules\Compliance\Services\CountryEligibilityService;
 use App\Modules\Identity\Events\EmailVerified;
 use App\Modules\Identity\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -32,6 +34,12 @@ class ProfileDashboardTest extends TestCase
             'password' => Hash::make('password'),
         ]);
         $this->user->assignRole('PLAYER');
+    }
+
+    protected function tearDown(): void
+    {
+        app(CountryEligibilityService::class)->forget();
+        parent::tearDown();
     }
 
     public function test_player_profile_page_renders_game_profile_without_inline_kyc_form(): void
@@ -70,6 +78,22 @@ class ProfileDashboardTest extends TestCase
         ]);
     }
 
+    public function test_blocked_country_is_not_selectable_or_accepted_in_profile(): void
+    {
+        BlockedCountry::query()->create([
+            'country_code' => 'PH',
+            'country_name' => 'Philippines',
+        ]);
+        app(CountryEligibilityService::class)->forget();
+
+        Livewire::actingAs($this->user)
+            ->test(ProfileDashboard::class)
+            ->assertDontSee('Philippines')
+            ->set('countryCode', 'PH')
+            ->call('updateProfile')
+            ->assertHasErrors(['countryCode']);
+    }
+
     public function test_player_can_update_account_and_email_requires_reverification(): void
     {
         $this->user->forceFill(['email_verified_at' => now()])->save();
@@ -105,12 +129,12 @@ class ProfileDashboardTest extends TestCase
         Livewire::actingAs($this->user)
             ->test(ProfileDashboard::class)
             ->set('currentPassword', 'password')
-            ->set('newPassword', 'new-password')
-            ->set('newPasswordConfirmation', 'new-password')
+            ->set('newPassword', 'Valid123')
+            ->set('newPasswordConfirmation', 'Valid123')
             ->call('updatePassword')
             ->assertHasNoErrors();
 
-        $this->assertTrue(Hash::check('new-password', (string) $this->user->fresh()->password));
+        $this->assertTrue(Hash::check('Valid123', (string) $this->user->fresh()->password));
     }
 
     public function test_comms_loadout_preferences_are_persisted(): void

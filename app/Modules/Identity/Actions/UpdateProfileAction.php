@@ -14,7 +14,7 @@ class UpdateProfileAction
     /**
      * Update a user's profile fields.
      *
-     * @param  array{display_name?: string|null, bio?: string|null, country_code?: string|null, timezone?: string|null}  $data
+     * @param  array{full_name?: string|null, display_name?: string|null, bio?: string|null, country_code?: string|null, timezone?: string|null}  $data
      */
     public function execute(User $user, array $data): UserProfile
     {
