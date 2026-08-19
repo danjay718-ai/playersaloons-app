@@ -146,7 +146,7 @@ class PlayerTournamentComponentsTest extends TestCase
             ->set('tSubTab', 'history')
             ->assertViewHas('tournaments', fn ($items) => $items->total() === 3);
 
-        $this->assertSame(7, $matchQueries, 'Match query count should remain constant as tournament cards increase.');
+        $this->assertSame(3, $matchQueries, 'Match query count should remain constant as tournament cards increase.');
     }
 
     public function test_player_tournament_list_filtering(): void

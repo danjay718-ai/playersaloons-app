@@ -200,7 +200,7 @@
                     <p class="mt-2 max-w-2xl text-sm text-slate-400">Review player-created streams and take down abusive or invalid broadcasts.</p>
                 </div>
                 <div class="rounded-2xl border border-slate-700 bg-slate-900 text-slate-400 px-4 py-3 text-[10px] font-black uppercase tracking-widest">
-                    {{ $playerStreams->count() }} stream{{ $playerStreams->count() === 1 ? '' : 's' }}
+                    {{ $playerStreams->total() }} stream{{ $playerStreams->total() === 1 ? '' : 's' }}
                 </div>
             </div>
         @endif
@@ -208,8 +208,8 @@
         {{-- ── Player: My Stream setup ── --}}
         @if(! $isAdminView && auth()->user()?->hasRole('PLAYER'))
             @php
-                $ownStream = $playerStreams->firstWhere('user_id', auth()->id());
-                $streamTakenDown = $playerStreams->where('user_id', auth()->id())->whereNotNull('taken_down_at')->isNotEmpty();
+                $ownStream = $ownStreams->first();
+                $streamTakenDown = $ownStreams->whereNotNull('taken_down_at')->isNotEmpty();
             @endphp
 
             <div x-data="{ open: @js((bool)$ownStream) }">
@@ -317,7 +317,7 @@
                 <h2 class="text-lg font-black font-orbitron text-white uppercase tracking-widest">
                     {{ $isAdminView ? 'All Streams' : 'Browse Streams' }}
                 </h2>
-                <span class="text-xs text-zinc-500">{{ $playerStreams->count() }} stream{{ $playerStreams->count() === 1 ? '' : 's' }}</span>
+                <span class="text-xs text-zinc-500">{{ $playerStreams->total() }} stream{{ $playerStreams->total() === 1 ? '' : 's' }}</span>
             </div>
 
             {{-- ── Tab bar ── --}}
@@ -484,6 +484,12 @@
                         @endif
                     @endforeach
                 </div>
+
+                @if($browsedStreams->hasPages())
+                    <div class="mt-6">
+                        {{ $browsedStreams->links() }}
+                    </div>
+                @endif
 
                 {{-- Admin takedown reason box --}}
                 @if($canModerateStreams)

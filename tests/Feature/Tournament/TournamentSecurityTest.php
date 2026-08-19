@@ -9,10 +9,10 @@ use App\Livewire\Tournament\TournamentDetail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
-use App\Modules\Wallet\Models\Wallet;
 use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
@@ -26,7 +26,9 @@ class TournamentSecurityTest extends TestCase
     use RefreshDatabase;
 
     private User $player;
+
     private User $admin;
+
     private Game $game;
 
     protected function setUp(): void
@@ -38,16 +40,16 @@ class TournamentSecurityTest extends TestCase
         $this->seed(SystemSettingsSeeder::class);
 
         $this->player = $this->makeUser('PLAYER', 'player@example.com');
-        $this->admin  = $this->makeUser('ADMIN', 'admin@example.com');
+        $this->admin = $this->makeUser('ADMIN', 'admin@example.com');
 
         $this->game = Game::query()->create([
-            'uuid'      => Str::uuid()->toString(),
-            'slug'      => 'test-game',
+            'uuid' => Str::uuid()->toString(),
+            'slug' => 'test-game',
             'is_active' => true,
         ]);
         $this->game->translations()->create([
-            'locale'      => 'en',
-            'name'        => 'Test Game',
+            'locale' => 'en',
+            'name' => 'Test Game',
             'description' => 'desc',
         ]);
     }
@@ -56,20 +58,20 @@ class TournamentSecurityTest extends TestCase
     {
         /** @var User $user */
         $user = User::query()->create([
-            'uuid'              => Str::uuid()->toString(),
-            'email'             => $email,
-            'username'          => explode('@', $email)[0],
-            'password'          => bcrypt('password'),
+            'uuid' => Str::uuid()->toString(),
+            'email' => $email,
+            'username' => explode('@', $email)[0],
+            'password' => bcrypt('password'),
             'email_verified_at' => now(),
-            'status'            => UserStatus::ACTIVE,
+            'status' => UserStatus::ACTIVE,
         ]);
         $user->assignRole($role);
 
         Wallet::query()->create([
-            'uuid'           => Str::uuid()->toString(),
-            'user_id'        => $user->id,
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->id,
             'cached_balance' => '0.00',
-            'status'         => WalletStatus::ACTIVE,
+            'status' => WalletStatus::ACTIVE,
         ]);
 
         return $user;
@@ -78,16 +80,16 @@ class TournamentSecurityTest extends TestCase
     private function makeTournament(TournamentStatus $status): Tournament
     {
         return Tournament::query()->create([
-            'uuid'             => Str::uuid()->toString(),
-            'game_id'          => $this->game->id,
-            'name'             => 'Test Cup',
-            'slug'             => 'test-cup-' . Str::random(4),
-            'status'           => $status,
-            'entry_fee'        => '0.00',
-            'prize_pool'       => '0.00',
+            'uuid' => Str::uuid()->toString(),
+            'game_id' => $this->game->id,
+            'name' => 'Test Cup',
+            'slug' => 'test-cup-'.Str::random(4),
+            'status' => $status,
+            'entry_fee' => '0.00',
+            'prize_pool' => '0.00',
             'max_participants' => 8,
             'min_participants' => 2,
-            'created_by'       => $this->admin->id,
+            'created_by' => $this->admin->id,
         ]);
     }
 
@@ -168,15 +170,15 @@ class TournamentSecurityTest extends TestCase
         $tournament = $this->makeTournament(TournamentStatus::REGISTRATION_OPEN);
 
         $nonParticipant = $this->makeUser('PLAYER', 'outsider@example.com');
-        $participant    = $this->makeUser('PLAYER', 'insider@example.com');
+        $participant = $this->makeUser('PLAYER', 'insider@example.com');
 
         // Register insider
         $tournament->registrations()->create([
-            'uuid'           => Str::uuid()->toString(),
-            'user_id'        => $participant->id,
-            'status'         => 'confirmed',
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $participant->id,
+            'status' => 'confirmed',
             'payment_status' => 'free',
-            'registered_at'  => now(),
+            'registered_at' => now(),
         ]);
 
         // Non-participant: tabs should be disabled (cursor-not-allowed)
@@ -188,6 +190,6 @@ class TournamentSecurityTest extends TestCase
         // Gate resolves true → @can block renders the clickable button
         Livewire::actingAs($participant)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
-            ->assertSeeHtml("@click=\"activeTab = 'participants'\"");
+            ->assertSeeHtml("@click=\"selectTab('participants')\"");
     }
 }

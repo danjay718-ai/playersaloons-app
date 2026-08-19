@@ -11,12 +11,14 @@ use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
 use Closure;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class StreamList extends Component
 {
+    use WithPagination;
+
     // ── Player stream form ──────────────────────────────────────────────
     public ?string $streamTitle = null;
 
@@ -70,6 +72,7 @@ class StreamList extends Component
     public function setTab(string $tab): void
     {
         $this->activeTab = $tab;
+        $this->resetPage();
     }
 
     public function savePlayerStream(): void
@@ -252,7 +255,14 @@ class StreamList extends Component
         }
 
         // ── All public player streams for browse ────────────────────────────
-        $playerStreams = StreamChannel::query()
+        $ownStreams = $user?->hasRole('PLAYER')
+            ? StreamChannel::query()
+                ->where('user_id', $user->getKey())
+                ->whereNull('tournament_id')
+                ->get()
+            : collect();
+
+        $playerStreamQuery = StreamChannel::query()
             ->with(['user.profile', 'takenDownBy', 'game.translations'])
             ->whereNotNull('user_id')
             ->whereNull('tournament_id')
@@ -267,10 +277,14 @@ class StreamList extends Component
                     }
                 });
             })
+            ->when(str_starts_with($this->activeTab, 'game:'), function ($query): void {
+                $query->where('game_id', (int) substr($this->activeTab, 5));
+            })
             ->orderByRaw('case when taken_down_at is null then 0 else 1 end')
             ->orderByDesc('viewer_count')
-            ->latest()
-            ->get();
+            ->latest();
+
+        $playerStreams = $playerStreamQuery->paginate(12);
 
         // ── Games with active streams ────────────────────────────────────────
         $games = Game::query()
@@ -284,12 +298,8 @@ class StreamList extends Component
             ->orderBy('slug')
             ->get();
 
-        // ── Streams filtered by active game tab ─────────────────────────────
+        // The game filter is applied in SQL before pagination.
         $browsedStreams = $playerStreams;
-        if (str_starts_with($this->activeTab, 'game:')) {
-            $gameId = (int) substr($this->activeTab, 5);
-            $browsedStreams = $playerStreams->filter(fn ($s) => (int) $s->game_id === $gameId)->values();
-        }
 
         // ── Tournament broadcasts ───────────────────────────────────────────
         $tournaments = Tournament::query()
@@ -303,6 +313,7 @@ class StreamList extends Component
             ->with('streamChannels')
             ->orderByRaw("case when status = 'ONGOING' then 0 when status = 'BRACKET_GENERATED' then 1 when status = 'COMPLETED' then 3 else 2 end")
             ->orderBy('start_at')
+            ->limit(12)
             ->get();
 
         // ── Games with translations for form dropdown ───────────────────────
@@ -315,6 +326,7 @@ class StreamList extends Component
         return view('livewire.stream.stream-list', [
             'featuredStreams' => $featuredStreams,
             'playerStreams' => $playerStreams,
+            'ownStreams' => $ownStreams,
             'browsedStreams' => $browsedStreams,
             'tournaments' => $tournaments,
             'games' => $games,

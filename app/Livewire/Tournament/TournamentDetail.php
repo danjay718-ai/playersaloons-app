@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Tournament;
 
+use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Team\Models\Team;
@@ -23,12 +24,17 @@ use Spatie\Activitylog\Models\Activity;
 
 class TournamentDetail extends Component
 {
+    use HandlesUserFacingErrors;
+
     public string $uuid;
 
     public string $layout = 'components.layouts.dashboard';
 
     #[Url]
     public string $activeTab = 'overview';
+
+    /** @var array<string, bool> */
+    public array $loadedSections = [];
 
     public function mount(string $uuid): void
     {
@@ -52,6 +58,20 @@ class TournamentDetail extends Component
         }
 
         return Tournament::query()->where('status', '!=', TournamentStatus::DRAFT->value);
+    }
+
+    public function loadSection(string $tab): void
+    {
+        $section = match ($tab) {
+            'participants', 'team-lobby' => 'participants',
+            'fixtures', 'bracket' => 'bracket',
+            'activity' => 'activity',
+            default => null,
+        };
+
+        if ($section !== null) {
+            $this->loadedSections[$section] = true;
+        }
     }
 
     public function register(RegisterForTournamentAction $action)
@@ -79,7 +99,7 @@ class TournamentDetail extends Component
             $action->execute($tournament, $user, $team);
             session()->flash('message', $team ? "Successfully registered {$team->name}!" : 'Successfully joined the tournament! You can form a team in the Team Lobby.');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to register for this tournament.'));
         }
     }
 
@@ -96,7 +116,7 @@ class TournamentDetail extends Component
             $action->execute($tournament, $user);
             session()->flash('message', 'Successfully checked in!');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to complete tournament check-in.'));
         }
     }
 
@@ -125,7 +145,7 @@ class TournamentDetail extends Component
             $action->execute($registration, $user);
             session()->flash('message', 'Registration cancelled successfully. Any entry fee has been refunded to your wallet.');
         } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
+            session()->flash('error', $this->safeError($e, 'Unable to update the tournament stream.'));
         }
     }
 
@@ -168,19 +188,29 @@ class TournamentDetail extends Component
 
         $canViewRestricted = $user?->can('viewRestrictedDetails', $tournament) ?? false;
 
-        if ($canViewRestricted) {
-            // Large participant/bracket graphs are only loaded for users who
-            // may render them. This prevents non-participants from paying the
-            // query and hydration cost of data they cannot see.
+        $participantsLoaded = $canViewRestricted && isset($this->loadedSections['participants']);
+        $bracketLoaded = $canViewRestricted && isset($this->loadedSections['bracket']);
+        $activityLoaded = $canViewRestricted && isset($this->loadedSections['activity']);
+
+        if ($participantsLoaded) {
             $tournament->load([
                 'registrations' => fn ($query) => $query
                     ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
                     ->with(['user.profile', 'team']),
+            ]);
+        } else {
+            $tournament->setRelation('registrations', collect());
+        }
+
+        if ($bracketLoaded) {
+            $tournament->load([
                 'brackets.rounds.matches.playerARegistration.user',
                 'brackets.rounds.matches.playerBRegistration.user',
                 'brackets.rounds.matches.winnerRegistration.user',
                 'brackets.rounds.matches.round',
             ]);
+        } else {
+            $tournament->setRelation('brackets', collect());
         }
 
         $hasLost = false;
@@ -199,18 +229,19 @@ class TournamentDetail extends Component
         // Reuse the already eager-loaded bracket graph for both tabs. The old
         // implementation fetched rounds and matches a second time on every
         // Livewire render, which became increasingly expensive as brackets grew.
-        $rounds = $canViewRestricted ? ($tournament->brackets->first()?->rounds
+        $rounds = $bracketLoaded ? ($tournament->brackets->first()?->rounds
             ->sortBy('round_number')
             ->values() ?? collect()) : collect();
         $allMatches = $rounds->flatMap->matches
             ->sortBy(fn (GameMatch $match): string => sprintf('%010d:%010d', $match->round_id, $match->id))
             ->values();
 
-        $activityLogs = $canViewRestricted
+        $activityLogs = $activityLoaded
             ? Activity::query()
                 ->where('subject_type', Tournament::class)
                 ->where('subject_id', $tournament->id)
                 ->orderBy('created_at', 'desc')
+                ->limit(50)
                 ->get()
             : collect();
 
@@ -232,6 +263,9 @@ class TournamentDetail extends Component
             'streamService' => $streamService,
             'canCancelRegistration' => $canCancelRegistration,
             'canViewRestricted' => $canViewRestricted,
+            'participantsLoaded' => $participantsLoaded,
+            'bracketLoaded' => $bracketLoaded,
+            'activityLoaded' => $activityLoaded,
         ])->layout($this->layout, ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
     }
 }

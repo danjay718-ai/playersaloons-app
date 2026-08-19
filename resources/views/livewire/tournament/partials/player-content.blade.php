@@ -23,11 +23,30 @@
          showEliminationModal: false,
          showCancelModal: false,
          bracketView: 'bracket',
+         loadedSections: @js(array_keys($loadedSections ?? [])),
+         loadingSection: null,
+         sectionFor(tab) {
+             if (['participants', 'team-lobby'].includes(tab)) return 'participants';
+             if (['fixtures', 'bracket'].includes(tab)) return 'bracket';
+             if (tab === 'activity') return 'activity';
+             return null;
+         },
+         selectTab(tab) {
+             this.activeTab = tab;
+             const section = this.sectionFor(tab);
+             if (!section || this.loadedSections.includes(section)) return;
+             this.loadingSection = section;
+             this.$wire.loadSection(tab).then(() => {
+                 if (!this.loadedSections.includes(section)) this.loadedSections.push(section);
+                 this.loadingSection = null;
+             });
+         },
      }" 
      x-init="
          if (!canViewRestricted && !['overview', 'streams'].includes(activeTab)) {
              activeTab = 'overview';
          }
+         if (canViewRestricted) selectTab(activeTab);
          $watch('activeTab', value => { 
              localStorage.setItem('tournament_tab_{{ $tournament->id }}', value);
              if (value === 'bracket' && hasLost && !acknowledgedElimination) {
@@ -290,7 +309,7 @@
             @php $isRestrictedTab = in_array($tab['id'], ['participants', 'team-lobby', 'fixtures', 'bracket', 'activity'], true); @endphp
             <button
                 @if(!$isRestrictedTab || $canViewRestricted)
-                    @click="activeTab = '{{ $tab['id'] }}'"
+                    @click="selectTab('{{ $tab['id'] }}')"
                     :class="activeTab === '{{ $tab['id'] }}' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
                 @else
                     disabled title="Only competition participants can view this section"
@@ -304,6 +323,12 @@
 
     <!-- Tabs Content -->
     <div class="relative min-h-[500px]">
+
+        <div x-show="loadingSection !== null" x-cloak class="absolute inset-x-0 top-16 z-20 flex justify-center">
+            <div class="rounded-xl border border-zinc-800 bg-zinc-950/90 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-400 shadow-2xl">
+                Loading tournament data…
+            </div>
+        </div>
 
         <!-- ===== OVERVIEW TAB ===== -->
         <div x-show="activeTab === 'overview'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 lg:grid-cols-3 gap-10">

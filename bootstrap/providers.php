@@ -12,7 +12,7 @@ $providers = [
 ];
 
 // Telescope is a dev dependency — only register when installed
-if (class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
+if (env('TELESCOPE_ENABLED', false) && class_exists(Laravel\Telescope\TelescopeServiceProvider::class)) {
     $providers[] = TelescopeServiceProvider::class;
 }
 
