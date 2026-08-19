@@ -24,6 +24,34 @@ body {
 ─────────────────────────────────── */
 [x-cloak] { display: none !important; }
 
+/* Lightweight auth arena motion: text/CSS only, with reduced-motion support. */
+@keyframes auth-ascii-drift {
+    0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.55; }
+    50% { transform: translate3d(12px, -10px, 0); opacity: 1; }
+}
+
+@keyframes auth-ascii-drift-reverse {
+    0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.5; }
+    50% { transform: translate3d(-12px, 10px, 0); opacity: 0.9; }
+}
+
+@keyframes auth-ascii-ticker {
+    from { transform: translate3d(-8%, 0, 0); }
+    to { transform: translate3d(8%, 0, 0); }
+}
+
+.auth-ascii-drift { animation: auth-ascii-drift 9s ease-in-out infinite; }
+.auth-ascii-drift-reverse { animation: auth-ascii-drift-reverse 11s ease-in-out infinite; }
+.auth-ascii-ticker { animation: auth-ascii-ticker 14s ease-in-out infinite alternate; }
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-ascii-drift,
+    .auth-ascii-drift-reverse,
+    .auth-ascii-ticker {
+        animation: none;
+    }
+}
+
 /* ═══════════════════════════════════════════════════════
    LANDING PAGE — PUBLIC NAVIGATION (transparent → solid)
 ══════════════════════════════════════════════════════════ */

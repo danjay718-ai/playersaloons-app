@@ -36,6 +36,7 @@
     </main>
 
     @include('components.layouts.partials.public-footer')
+    <x-pwa-update-prompt />
 
     @livewireScripts
 </body>

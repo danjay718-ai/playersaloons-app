@@ -395,33 +395,9 @@
         </div>
     </nav>
 
+    <x-pwa-update-prompt />
     @livewireScripts
 
-    <!-- Lucide Icons initialization -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        document.addEventListener('livewire:navigated', () => {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        });
-        document.addEventListener('livewire:init', () => {
-            Livewire.hook('morph.updated', ({ el, component }) => {
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-            });
-            Livewire.hook('message.processed', (message, component) => {
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-            });
-        });
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        });
-    </script>
 </body>
 </html>

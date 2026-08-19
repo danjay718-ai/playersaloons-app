@@ -94,6 +94,7 @@
                             'label' => 'System',
                             'items' => [
                                 ['label' => 'Audit Logs', 'icon' => 'file-text', 'url' => '/admin/audit-logs'],
+                                ['label' => 'Error Logs', 'icon' => 'bug', 'url' => '/admin/error-logs', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
                                 ['label' => 'Notifications', 'icon' => 'megaphone', 'url' => '/admin/notifications'],
                                 ['label' => 'Contact Inquiries', 'icon' => 'inbox', 'url' => '/admin/contact-inquiries'],
                                 ['label' => 'Newsletters', 'icon' => 'mail', 'url' => '/admin/newsletters'],
@@ -111,6 +112,7 @@
                         <p class="px-4 pb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600">{{ $section['label'] }}</p>
                         <div class="space-y-1.5">
                             @foreach($section['items'] as $item)
+                                @continue(isset($item['roles']) && ! auth()->user()?->hasAnyRole($item['roles']))
                                 @php
                                     $itemPath = parse_url($item['url'], PHP_URL_PATH) ?: $item['url'];
                                     $isActive = request()->is(ltrim($itemPath, '/')) || (request()->is('admin') && $itemPath === '/admin');
@@ -254,6 +256,7 @@
                         <p class="px-4 pb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600">{{ $section['label'] }}</p>
                         <div class="space-y-1.5">
                             @foreach($section['items'] as $item)
+                                @continue(isset($item['roles']) && ! auth()->user()?->hasAnyRole($item['roles']))
                                 @php
                                     $itemPath = parse_url($item['url'], PHP_URL_PATH) ?: $item['url'];
                                     $isActive = request()->is(ltrim($itemPath, '/')) || (request()->is('admin') && $itemPath === '/admin');

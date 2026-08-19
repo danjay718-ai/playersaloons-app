@@ -314,15 +314,8 @@ document.addEventListener('livewire:navigated', () => {
 });
 
 document.addEventListener('livewire:init', () => {
-    Livewire.hook('morph.updated', () => {
-        refreshLucideIcons();
-    });
-
     Livewire.hook('message.processed', (message, component) => {
         refreshLucideIcons();
-
-        initPublicShell();
-        initPlayerShell();
     });
 });
 
@@ -677,21 +670,53 @@ function refreshLucideIcons() {
 function initPublicPwaInstall() {
     if ('serviceWorker' in navigator && !window.__playerSaloonsServiceWorkerRegistered) {
         window.__playerSaloonsServiceWorkerRegistered = true;
-        const serviceWorkerCacheVersion = 'playersaloons-v3';
-
         let refreshingForServiceWorker = false;
+        let serviceWorkerRegistration = null;
+        const notifyUpdateReady = () => {
+            window.dispatchEvent(new CustomEvent('pwa-update-ready'));
+            document.querySelectorAll('[data-pwa-update-prompt]').forEach(prompt => prompt.classList.remove('hidden'));
+        };
+
+        document.querySelectorAll('[data-pwa-update-prompt]').forEach(prompt => {
+            if (prompt.dataset.bound === 'true') return;
+            prompt.dataset.bound = 'true';
+            prompt.querySelector('[data-pwa-update-now]')?.addEventListener('click', () => {
+                window.dispatchEvent(new CustomEvent('pwa-apply-update'));
+            });
+            prompt.querySelector('[data-pwa-update-later]')?.addEventListener('click', () => {
+                prompt.classList.add('hidden');
+            });
+        });
+
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (refreshingForServiceWorker) return;
-            if (sessionStorage.getItem('playerSaloonsSwRefreshed') === serviceWorkerCacheVersion) return;
 
             refreshingForServiceWorker = true;
-            sessionStorage.setItem('playerSaloonsSwRefreshed', serviceWorkerCacheVersion);
             window.location.reload();
+        });
+
+        window.addEventListener('pwa-apply-update', () => {
+            serviceWorkerRegistration?.waiting?.postMessage({ type: 'SKIP_WAITING' });
         });
 
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js')
-                .then(registration => registration.update())
+                .then(registration => {
+                    serviceWorkerRegistration = registration;
+
+                    if (registration.waiting) notifyUpdateReady();
+
+                    registration.addEventListener('updatefound', () => {
+                        const installingWorker = registration.installing;
+                        installingWorker?.addEventListener('statechange', () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                notifyUpdateReady();
+                            }
+                        });
+                    });
+
+                    return registration.update();
+                })
                 .catch(err => console.error('SW registration failed:', err));
         });
     }
