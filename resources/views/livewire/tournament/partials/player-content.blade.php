@@ -828,8 +828,9 @@
                                     @foreach($round->matches as $mIdx => $match)
                                         @php
                                             $matchStatus = $match->status->value ?? $match->status;
-                                            $isMatchOngoing = in_array($matchStatus, ['ONGOING', 'READY']);
-                                            $isMatchCompleted = in_array($matchStatus, ['COMPLETED', 'FORFEITED']);
+                                            $isMatchOngoing = in_array($matchStatus, ['ready', 'in_progress', 'result_submitted', 'waiting_for_confirmation']);
+                                            $isMatchCompleted = in_array($matchStatus, ['completed', 'forfeited']);
+                                            $isMatchDisputed = $matchStatus === 'disputed';
                                             $playerAUser = $match->playerARegistration?->user;
                                             $playerBUser = $match->playerBRegistration?->user;
                                             $isPlayerAWinner = $match->winner_registration_id && $match->winner_registration_id === $match->player_a_registration_id;
@@ -844,15 +845,10 @@
                                                     <!-- Top of pair: draw right connector going down -->
                                                     <div class="absolute right-0 top-1/2 bottom-0 w-3 border-t border-r border-zinc-700/60 rounded-tr-lg" style="right: -12px; top: 50%; height: 50%;"></div>
                                                 @else
-                                                    <!-- Bottom of pair: draw right connector going up + arrow -->
+                                                    <!-- Bottom of pair: draw right connector going up -->
                                                     <div class="absolute right-0 top-0 w-3 border-b border-r border-zinc-700/60 rounded-br-lg" style="right: -12px; height: 50%;"></div>
-                                                    <!-- Horizontal arrow to next round -->
-                                                    <div class="absolute flex items-center" style="right: -36px; top: -50%; height: 200%;">
-                                                        <div class="h-px bg-zinc-700/60" style="width: 24px;"></div>
-                                                        <svg width="6" height="8" viewBox="0 0 6 8" fill="none" class="shrink-0 text-zinc-600">
-                                                            <path d="M0 0L6 4L0 8" fill="currentColor"/>
-                                                        </svg>
-                                                    </div>
+                                                    <!-- Plain line to the next matchup -->
+                                                    <div class="absolute h-px bg-zinc-700/60" style="right: -36px; top: 50%; width: 24px;"></div>
                                                 @endif
                                             @endif
 
@@ -862,8 +858,8 @@
                                                     <!-- Match header -->
                                                     <div class="flex items-center justify-between px-3 py-2 border-b border-zinc-800/50 bg-zinc-950/50">
                                                         <span class="text-[8px] font-black text-zinc-700 uppercase tracking-widest">#{{ $match->id }}</span>
-                                                        <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full {{ $isMatchOngoing ? 'text-cyan-400 bg-cyan-950/50' : ($isMatchCompleted ? 'text-zinc-600 bg-zinc-900' : 'text-fuchsia-500 bg-fuchsia-950/30') }}">
-                                                            {{ $isMatchOngoing ? '● Live' : ($isMatchCompleted ? 'Fin.' : 'Pending') }}
+                                                        <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full {{ $isMatchOngoing ? 'text-cyan-400 bg-cyan-950/50' : ($isMatchCompleted ? 'text-emerald-400 bg-emerald-950/30' : ($isMatchDisputed ? 'text-red-400 bg-red-950/30' : 'text-fuchsia-500 bg-fuchsia-950/30')) }}">
+                                                            {{ $isMatchOngoing ? '● Live' : ($isMatchCompleted ? 'Done' : ($isMatchDisputed ? 'Disputed' : 'Pending')) }}
                                                         </span>
                                                     </div>
 
@@ -916,12 +912,10 @@
                                 </div>
                             </div>
 
-                            <!-- Arrow connector between rounds -->
+                            <!-- Connector line between rounds -->
                             @if(!$isLast)
                                 <div class="flex items-center justify-center shrink-0" style="width: 36px; align-self: center;">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-zinc-700">
-                                        <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
+                                    <div class="h-px w-6 bg-zinc-700/70"></div>
                                 </div>
                             @endif
                         @endforeach

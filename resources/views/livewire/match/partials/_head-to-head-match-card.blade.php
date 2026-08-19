@@ -6,7 +6,7 @@
     $gameName = $match->game->localizedName();
 @endphp
 
-<article class="group relative overflow-hidden rounded-2xl border border-purple-500/20 bg-zinc-950/80 p-1 shadow-[0_0_15px_rgba(168,85,247,0.05)] backdrop-blur-md transition-all hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]">
+<article id="duel-{{ $match->uuid }}" class="group relative scroll-mt-6 overflow-hidden rounded-2xl border border-purple-500/20 bg-zinc-950/80 p-1 shadow-[0_0_15px_rgba(168,85,247,0.05)] backdrop-blur-md transition-all hover:border-purple-500/40 hover:shadow-[0_0_25px_rgba(168,85,247,0.15)]">
     <!-- Decorative background glow -->
     <div class="absolute -inset-24 bg-gradient-to-r from-purple-900/20 via-transparent to-cyan-900/20 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"></div>
 

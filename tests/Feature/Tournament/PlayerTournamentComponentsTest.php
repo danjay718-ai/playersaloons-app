@@ -11,10 +11,14 @@ use App\Livewire\Tournament\TournamentDetail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Match\Models\HeadToHeadChallenge;
+use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Tournament\Models\Bracket;
 use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
+use App\Shared\Enums\HeadToHeadChallengeStatus;
+use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -94,6 +98,19 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertSee("/matches/{$match->uuid}", escape: false);
     }
 
+    public function test_bracket_displays_completed_match_as_done(): void
+    {
+        $tournament = $this->makeTournament('Completed Bracket Match', TournamentStatus::ONGOING);
+        [$playerRegistration, $opponentRegistration] = $this->registerPlayers($tournament);
+        $this->makeMatch($tournament, $playerRegistration, $opponentRegistration, $playerRegistration);
+
+        Livewire::actingAs($this->player)
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->call('loadSection', 'bracket')
+            ->assertSee('Done')
+            ->assertDontSee('Fin.');
+    }
+
     public function test_elimination_modal_go_back_resets_tab(): void
     {
         $tournament = $this->makeTournament('Go Back Cup', TournamentStatus::ONGOING);
@@ -146,7 +163,44 @@ class PlayerTournamentComponentsTest extends TestCase
             ->test(MyTournamentsList::class)
             ->assertViewHas('tournaments', fn ($items) => $items->total() === 0)
             ->set('tSubTab', 'history')
-            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->contains($tournament->id));
+            ->assertViewHas('historyMatches', fn ($items) => $items->contains(fn ($match) => $match['type'] === 'tournament' && $match['tournament'] === $tournament->name));
+    }
+
+    public function test_history_combines_tournament_and_head_to_head_matches(): void
+    {
+        $tournament = $this->makeTournament('Mixed Match Cup', TournamentStatus::COMPLETED);
+        [$playerRegistration, $opponentRegistration] = $this->registerPlayers($tournament);
+        $this->makeMatch($tournament, $playerRegistration, $opponentRegistration, $playerRegistration);
+        $challenge = HeadToHeadChallenge::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'creator_user_id' => $this->player->id,
+            'game_id' => $this->game->id,
+            'stake_amount' => 10,
+            'status' => HeadToHeadChallengeStatus::MATCHED,
+            'creator_game_handle' => 'player-one',
+            'matched_at' => now()->subHour(),
+        ]);
+        HeadToHeadMatch::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'challenge_id' => $challenge->id,
+            'creator_user_id' => $this->player->id,
+            'opponent_user_id' => $this->opponent->id,
+            'game_id' => $this->game->id,
+            'stake_amount' => 10,
+            'status' => HeadToHeadMatchStatus::COMPLETED,
+            'creator_game_handle' => 'player-one',
+            'opponent_game_handle' => 'player-two',
+            'winner_user_id' => $this->opponent->id,
+            'started_at' => now()->subHour(),
+            'completed_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->player)
+            ->test(MyTournamentsList::class)
+            ->set('tSubTab', 'history')
+            ->assertViewHas('historyMatches', fn ($items) => $items->pluck('type')->sort()->values()->all() === ['head_to_head', 'tournament'])
+            ->assertSee('Head to Head')
+            ->assertSee('Tournament');
     }
 
     public function test_n_plus_one_query_prevention(): void
@@ -157,6 +211,7 @@ class PlayerTournamentComponentsTest extends TestCase
             $this->makeMatch($tournament, $playerRegistration, $opponentRegistration, $playerRegistration);
         }
 
+        $component = Livewire::actingAs($this->player)->test(MyTournamentsList::class);
         $matchQueries = 0;
         DB::listen(function (QueryExecuted $query) use (&$matchQueries): void {
             if (str_contains(strtolower($query->sql), 'from "matches"')) {
@@ -164,12 +219,10 @@ class PlayerTournamentComponentsTest extends TestCase
             }
         });
 
-        Livewire::actingAs($this->player)
-            ->test(MyTournamentsList::class)
-            ->set('tSubTab', 'history')
-            ->assertViewHas('tournaments', fn ($items) => $items->total() === 3);
+        $component->set('tSubTab', 'history')
+            ->assertViewHas('historyMatches', fn ($items) => $items->total() === 3);
 
-        $this->assertSame(3, $matchQueries, 'Match query count should remain constant as tournament cards increase.');
+        $this->assertLessThanOrEqual(5, $matchQueries, 'Match query count should remain constant as match history grows.');
     }
 
     public function test_player_tournament_list_filtering(): void

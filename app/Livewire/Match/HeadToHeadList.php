@@ -45,6 +45,10 @@ class HeadToHeadList extends Component
 
     public string $activeTab = 'open';
 
+    protected $queryString = [
+        'activeTab' => ['except' => 'open'],
+    ];
+
     public ?int $resultWinnerUserId = null;
 
     public string $resultNotes = '';

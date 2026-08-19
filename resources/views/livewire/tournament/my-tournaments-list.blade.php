@@ -68,104 +68,38 @@
             </div>
         @endif
     @else
-        <!-- History List View -->
-        @if($tournaments->count() > 0)
-            <div class="space-y-6">
-                @foreach($tournaments as $tournament)
+        <!-- Unified Match History -->
+        @if($historyMatches->count() > 0)
+            <div class="grid gap-4 md:grid-cols-2">
+                @foreach($historyMatches as $historyMatch)
                     @php
-                        $userReg = $tournament->registrations->first();
-                        $matchesForTournament = $userMatches->get($tournament->id) ?? collect();
+                        $isTournamentMatch = $historyMatch['type'] === 'tournament';
+                        $resultClasses = match($historyMatch['result']) {
+                            'won' => 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+                            'lost' => 'border-red-500/30 bg-red-500/10 text-red-400',
+                            default => 'border-zinc-700 bg-zinc-800 text-zinc-400',
+                        };
                     @endphp
-
-                    <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/80 rounded-3xl p-6 md:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:border-zinc-700/60 transition-all duration-300">
-                        <!-- Tournament Info -->
-                        <div class="space-y-3 min-w-[280px] lg:max-w-xs">
-                            <div class="flex items-center space-x-3">
-                                <span class="text-[9px] font-black text-cyan-400 uppercase tracking-widest bg-zinc-950/85 border border-cyan-800/50 rounded-full px-2.5 py-1">
-                                    {{ $tournament->game->localizedName() }}
+                    <a href="{{ $historyMatch['href'] }}" wire:navigate class="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-5 transition hover:border-cyan-500/35 hover:bg-zinc-900/80">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-widest {{ $isTournamentMatch ? 'border-cyan-700/60 bg-cyan-950/30 text-cyan-300' : 'border-fuchsia-700/60 bg-fuchsia-950/30 text-fuchsia-300' }}">
+                                    {{ $historyMatch['label'] }}
                                 </span>
-                                @php
-                                    $histColors = [
-                                        'COMPLETED' => 'text-zinc-400 border-zinc-800 bg-zinc-950/80',
-                                        'CANCELLED' => 'text-red-400 border-red-900/50 bg-red-950/20',
-                                        'REFUNDED' => 'text-orange-400 border-orange-900/50 bg-orange-950/20',
-                                    ];
-                                    $histVal = $tournament->status->value ?? $tournament->status;
-                                    $histColor = $histColors[$histVal] ?? 'text-zinc-400 border-zinc-800 bg-zinc-950/80';
-                                @endphp
-                                <span class="text-[9px] font-black uppercase tracking-widest border rounded-full px-2.5 py-1 {{ $histColor }}">
-                                    {{ str_replace('_', ' ', $histVal) }}
-                                </span>
+                                <span class="rounded-full border {{ $resultClasses }} px-2.5 py-1 text-[9px] font-black uppercase tracking-widest">{{ $historyMatch['result'] }}</span>
                             </div>
-                            
-                            <h3 class="text-xl font-black text-white font-orbitron tracking-wide leading-tight">
-                                {{ $tournament->name }}
-                            </h3>
-
-                            <div class="flex items-center space-x-2 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                                <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-                                <span>Ended: {{ $tournament->completed_at ? $tournament->completed_at->format('M d, Y') : ($tournament->cancelled_at ? $tournament->cancelled_at->format('M d, Y') : 'N/A') }}</span>
-                            </div>
+                            <i data-lucide="arrow-up-right" class="h-4 w-4 text-zinc-600 transition-colors group-hover:text-cyan-300"></i>
                         </div>
-
-                        <!-- Match Records -->
-                        <div class="flex-grow">
-                            @if($matchesForTournament->count() > 0)
-                                <div class="space-y-3">
-                                    <span class="block text-[9px] font-bold text-zinc-650 uppercase tracking-[0.2em] mb-1">Match History</span>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        @foreach($matchesForTournament as $match)
-                                            @php
-                                                $matchStatus = $match->status->value ?? $match->status;
-                                                $opponent = $match->player_a_registration_id === $userReg->id 
-                                                    ? ($match->playerBRegistration?->user?->username ?? 'Waiting...')
-                                                    : ($match->playerARegistration?->user?->username ?? 'Waiting...');
-                                                
-                                                $isWinner = $match->winner_registration_id === $userReg->id;
-                                                $isLoser = $match->winner_registration_id && $match->winner_registration_id !== $userReg->id;
-                                            @endphp
-                                            <a href="/matches/{{ $match->uuid }}" wire:navigate class="bg-zinc-950/60 border border-zinc-800/80 hover:border-cyan-500/30 rounded-2xl p-4 flex items-center justify-between gap-4 transition">
-                                                <div class="truncate">
-                                                    <span class="block text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Round {{ $match->round->round_number }}</span>
-                                                    <span class="block text-xs font-bold text-zinc-200 truncate">vs {{ $opponent }}</span>
-                                                </div>
-
-                                                <div>
-                                                    @if($isWinner)
-                                                        <span class="flex items-center space-x-1 text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full px-3 py-1">
-                                                            <i data-lucide="trophy" class="w-3 h-3"></i>
-                                                            <span>WON</span>
-                                                        </span>
-                                                    @elseif($isLoser)
-                                                        <span class="flex items-center space-x-1 text-[9px] font-black uppercase tracking-widest bg-red-500/10 border border-red-500/30 text-red-400 rounded-full px-3 py-1">
-                                                            <i data-lucide="skull" class="w-3 h-3"></i>
-                                                            <span>LOST</span>
-                                                        </span>
-                                                    @else
-                                                        <span class="text-[9px] font-black uppercase tracking-widest bg-zinc-800 border border-zinc-700 text-zinc-400 rounded-full px-3 py-1">
-                                                            {{ str_replace('_', ' ', $matchStatus) }}
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @else
-                                <div class="bg-zinc-950/40 border border-dashed border-zinc-800/80 rounded-2xl p-4 text-center">
-                                    <span class="text-xs font-medium text-zinc-500">No matches contested in this event.</span>
-                                </div>
-                            @endif
+                        <div class="mt-4">
+                            <p class="text-[10px] font-black uppercase tracking-wider text-zinc-500">{{ $historyMatch['game'] }}{{ $historyMatch['round'] ? ' · Round '.$historyMatch['round'] : '' }}</p>
+                            <h3 class="mt-1 truncate text-base font-black text-white">vs {{ $historyMatch['opponent'] }}</h3>
+                            @if($historyMatch['tournament'])<p class="mt-1 truncate text-xs text-zinc-500">{{ $historyMatch['tournament'] }}</p>@endif
                         </div>
-
-                        <!-- Action -->
-                        <div class="flex items-center lg:justify-end min-w-[150px]">
-                            <a href="/tournaments/{{ $tournament->uuid }}/view" wire:navigate
-                               class="w-full lg:w-auto text-center px-6 py-3 rounded-xl border border-zinc-800 hover:border-cyan-500/50 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-cyan-500/10 transition-all duration-300 whitespace-nowrap">
-                                View Tournament
-                            </a>
+                        <div class="mt-4 flex items-center justify-between border-t border-zinc-800/70 pt-3 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                            <span>{{ $historyMatch['date']?->format('M d, Y · g:i A') }}</span>
+                            <span class="text-cyan-400">View Match</span>
                         </div>
-                    </div>
+                    </a>
                 @endforeach
             </div>
         @else
@@ -175,7 +109,7 @@
                 </div>
                 <h3 class="text-xl font-black text-zinc-200 font-orbitron tracking-wider">NO HISTORY FOUND</h3>
                 <p class="mt-2 text-sm text-zinc-500 max-w-sm mx-auto font-medium">
-                    You have no past tournaments logged in this console directory. Complete active events to write history files.
+                    Completed tournament matches and head-to-head duels will appear here.
                 </p>
             </div>
         @endif
@@ -183,6 +117,6 @@
 
     <!-- Pagination -->
     <div class="mt-12 py-6 border-t border-zinc-900/50">
-        {{ $tournaments->links() }}
+        {{ $tSubTab === 'active' ? $tournaments->links() : $historyMatches->links() }}
     </div>
 </div>
