@@ -17,6 +17,7 @@ use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Carbon\CarbonImmutable;
 use Closure;
+use DateTimeZone;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithFileUploads;
 
@@ -57,6 +58,16 @@ class TournamentForm extends AdminComponent
 
     public string $start_at = '';
 
+    public string $tournament_end_at = '';
+
+    public int $registration_duration_value = 10;
+
+    public string $registration_duration_unit = 'minutes';
+
+    public int $extra_registration_value = 30;
+
+    public string $extra_registration_unit = 'minutes';
+
     public string $description = '';
 
     public string $rules = '';
@@ -67,11 +78,19 @@ class TournamentForm extends AdminComponent
 
     public string $timezone = 'UTC';
 
-    public bool $is_auto_cancel_underfilled = false;
+    public bool $is_auto_cancel_underfilled = true;
 
     public bool $is_featured = false;
 
     public ?int $waiting_time = null;
+
+    public int $match_ready_value = 10;
+
+    public string $match_ready_unit = 'minutes';
+
+    public int $match_extra_wait_value = 10;
+
+    public string $match_extra_wait_unit = 'minutes';
 
     public ?int $waiting_result_time = null;
 
@@ -85,6 +104,10 @@ class TournamentForm extends AdminComponent
 
     public ?int $winning_points = null;
 
+    public int $play_xp = 100;
+
+    public int $winner_bonus_xp = 50;
+
     public ?string $youtube_stream_url = null;
 
     public ?string $twitch_stream_url = null;
@@ -95,6 +118,7 @@ class TournamentForm extends AdminComponent
 
     public function mount(?int $id = null): void
     {
+        $this->timezone = (string) config('app.tournament_timezone', 'UTC');
         $this->rules = $this->getDefaultRules();
         $this->waiting_result_time = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
 
@@ -123,12 +147,14 @@ class TournamentForm extends AdminComponent
             $this->min_participants = (int) $tournament->min_participants;
             $this->entry_fee = (string) $tournament->entry_fee;
             $this->prize_pool = (string) $tournament->prize_pool;
-            $this->timezone = $tournament->template?->timezone ?? 'UTC';
+            $this->timezone = $tournament->timezone ?: ($tournament->template?->timezone ?? (string) config('app.tournament_timezone', 'UTC'));
             $this->registration_open_at = $this->formatScheduleDate($tournament->registration_open_at);
-            $this->registration_close_at = $this->formatScheduleDate($tournament->registration_close_at);
-            $this->checkin_open_at = $this->formatScheduleDate($tournament->checkin_open_at);
-            $this->checkin_close_at = $this->formatScheduleDate($tournament->checkin_close_at);
             $this->start_at = $this->formatScheduleDate($tournament->start_at);
+            $this->tournament_end_at = $this->formatScheduleDate($tournament->end_at ?? $tournament->start_at?->copy()->addDay());
+            [$this->registration_duration_value, $this->registration_duration_unit] = $this->splitDuration((int) ($tournament->registration_duration_minutes ?: 10));
+            [$this->extra_registration_value, $this->extra_registration_unit] = $this->splitDuration((int) ($tournament->extra_registration_minutes ?: 30));
+            [$this->match_ready_value, $this->match_ready_unit] = $this->splitDuration((int) ($tournament->match_ready_minutes ?: $tournament->waiting_time ?: 10));
+            [$this->match_extra_wait_value, $this->match_extra_wait_unit] = $this->splitDuration((int) ($tournament->match_extra_wait_minutes ?: 10));
 
             $this->description = $tournament->description ?? '';
             $this->rules = (string) ($tournament->getAttribute('rules') ?: $this->getDefaultRules());
@@ -143,6 +169,8 @@ class TournamentForm extends AdminComponent
             $this->prize_2nd = $tournament->prize_2nd !== null ? (string) $tournament->prize_2nd : null;
             $this->prize_3rd = $tournament->prize_3rd !== null ? (string) $tournament->prize_3rd : null;
             $this->winning_points = $tournament->winning_points;
+            $this->play_xp = (int) ($tournament->play_xp ?: 100);
+            $this->winner_bonus_xp = (int) ($tournament->winner_bonus_xp ?: $tournament->winning_points ?: 50);
             $streamChannels = $tournament->streamChannels()->get()->keyBy('provider');
             $this->youtube_stream_url = $streamChannels->get('youtube')?->source_url;
             $this->twitch_stream_url = $streamChannels->get('twitch')?->source_url;
@@ -152,6 +180,27 @@ class TournamentForm extends AdminComponent
             $firstGame = Game::first();
             $this->game_id = $firstGame !== null ? $firstGame->id : 0;
             $this->frequency = 'one-time';
+            $now = CarbonImmutable::now($this->timezone)->startOfMinute();
+            $this->registration_open_at = $now->format('Y-m-d\TH:i');
+            $this->tournament_end_at = $now->addDay()->format('Y-m-d\TH:i');
+        }
+    }
+
+    public function updatingTimezone(string $newTimezone): void
+    {
+        if (! in_array($newTimezone, DateTimeZone::listIdentifiers(), true)) {
+            return;
+        }
+
+        $oldTimezone = $this->timezone;
+        foreach (['registration_open_at', 'tournament_end_at'] as $field) {
+            if ($this->{$field} === '') {
+                continue;
+            }
+
+            $this->{$field} = CarbonImmutable::createFromFormat('Y-m-d\TH:i', $this->{$field}, $oldTimezone)
+                ->setTimezone($newTimezone)
+                ->format('Y-m-d\TH:i');
         }
     }
 
@@ -176,28 +225,36 @@ class TournamentForm extends AdminComponent
                 'name' => 'required|string|max:255',
                 'game_id' => 'required|exists:games,id',
                 'competition_type' => 'required|in:tournament,head_to_head',
+                'platform_id' => 'required|exists:platforms,id',
+                'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
+            ],
+            2 => [
                 'description' => 'required|string|min:10',
                 'rules' => 'required|string|min:10',
             ],
-            2 => [
-                'platform_id' => 'required|exists:platforms,id',
-                'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
-                'timezone' => 'required|timezone:all',
+            3 => [
                 'team_size' => 'required|integer|min:1',
-                'winning_points' => 'nullable|integer|min:0',
+                'play_xp' => 'required|integer|min:0|max:1000000',
+                'winner_bonus_xp' => 'required|integer|min:0|max:1000000',
+                'match_ready_value' => 'required|integer|min:1|max:365',
+                'match_ready_unit' => 'required|in:minutes,hours,days',
+                'match_extra_wait_value' => 'required|integer|min:1|max:365',
+                'match_extra_wait_unit' => 'required|in:minutes,hours,days',
                 'waiting_result_time' => 'required|integer|min:1',
                 'youtube_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('youtube')],
                 'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
                 'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
             ],
-            3 => [
-                'registration_open_at' => 'required|date',
-                'registration_close_at' => 'required|date|after:registration_open_at',
-                'checkin_open_at' => 'required|date|after:registration_close_at',
-                'checkin_close_at' => 'required|date|after:checkin_open_at',
-                'start_at' => 'required|date|after:checkin_close_at',
-            ],
             4 => [
+                'timezone' => 'required|timezone:all',
+                'registration_open_at' => 'required|date',
+                'tournament_end_at' => 'required|date|after:registration_open_at',
+                'registration_duration_value' => 'required|integer|min:1|max:365',
+                'registration_duration_unit' => 'required|in:minutes,hours,days',
+                'extra_registration_value' => 'required|integer|min:0|max:365',
+                'extra_registration_unit' => 'required|in:minutes,hours,days',
+            ],
+            5 => [
                 'entry_fee' => 'required|numeric|min:0',
                 'prize_pool' => 'required|numeric|min:0',
                 'min_participants' => 'required|integer|min:2',
@@ -231,10 +288,7 @@ class TournamentForm extends AdminComponent
             'entry_fee' => 'required|numeric|min:0',
             'prize_pool' => 'required|numeric|min:0',
             'registration_open_at' => 'required|date',
-            'registration_close_at' => 'required|date|after:registration_open_at',
-            'checkin_open_at' => 'required|date|after:registration_close_at',
-            'checkin_close_at' => 'required|date|after:checkin_open_at',
-            'start_at' => 'required|date|after:checkin_close_at',
+            'tournament_end_at' => 'required|date|after:registration_open_at',
             'description' => 'required|string',
             'rules' => 'required|string',
             'platform_id' => 'required|exists:platforms,id',
@@ -244,10 +298,20 @@ class TournamentForm extends AdminComponent
             'waiting_time' => 'nullable|integer|min:0',
             'waiting_result_time' => 'required|integer|min:1',
             'team_size' => 'required|integer|min:1',
+            'registration_duration_value' => 'required|integer|min:1|max:365',
+            'registration_duration_unit' => 'required|in:minutes,hours,days',
+            'extra_registration_value' => 'required|integer|min:0|max:365',
+            'extra_registration_unit' => 'required|in:minutes,hours,days',
+            'match_ready_value' => 'required|integer|min:1|max:365',
+            'match_ready_unit' => 'required|in:minutes,hours,days',
+            'match_extra_wait_value' => 'required|integer|min:1|max:365',
+            'match_extra_wait_unit' => 'required|in:minutes,hours,days',
             'prize_1st' => 'nullable|numeric|min:0',
             'prize_2nd' => 'nullable|numeric|min:0',
             'prize_3rd' => 'nullable|numeric|min:0',
             'winning_points' => 'nullable|integer|min:0',
+            'play_xp' => 'required|integer|min:0|max:1000000',
+            'winner_bonus_xp' => 'required|integer|min:0|max:1000000',
             'youtube_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('youtube')],
             'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
             'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
@@ -255,12 +319,31 @@ class TournamentForm extends AdminComponent
             'is_featured' => 'boolean',
         ]);
 
-        if (! $this->isEditMode) {
-            $this->validate(['start_at' => 'after:now']);
+        $allocatedPrizes = (float) ($this->prize_1st ?: 0) + (float) ($this->prize_2nd ?: 0) + (float) ($this->prize_3rd ?: 0);
+        if ($allocatedPrizes > (float) $this->prize_pool) {
+            $this->addError('prize_1st', 'The combined place prizes cannot exceed the prize pool.');
+
+            return;
         }
 
         $creator = Auth::user();
         if (! $creator) {
+            return;
+        }
+
+        // Admin inputs are wall-clock values in the selected tournament timezone.
+        // We convert once at the boundary and persist UTC instants in the database.
+        $registrationStartsAt = $this->parseScheduleDate($this->registration_open_at);
+        $registrationDuration = $this->durationInMinutes($this->registration_duration_value, $this->registration_duration_unit);
+        $extraRegistration = $this->durationInMinutes($this->extra_registration_value, $this->extra_registration_unit);
+        $matchReady = $this->durationInMinutes($this->match_ready_value, $this->match_ready_unit);
+        $matchExtraWait = $this->durationInMinutes($this->match_extra_wait_value, $this->match_extra_wait_unit);
+        $registrationClosesAt = $registrationStartsAt->addMinutes($registrationDuration);
+        $firstMatchAt = $registrationClosesAt->addMinutes($matchReady);
+        $tournamentEndsAt = $this->parseScheduleDate($this->tournament_end_at);
+        if ($tournamentEndsAt->lessThanOrEqualTo($firstMatchAt)) {
+            $this->addError('tournament_end_at', 'Tournament Ends must be after the estimated first match.');
+
             return;
         }
 
@@ -272,25 +355,34 @@ class TournamentForm extends AdminComponent
             'min_participants' => $this->min_participants,
             'entry_fee' => $this->entry_fee,
             'prize_pool' => $this->prize_pool,
-            'registration_open_at' => $this->parseScheduleDate($this->registration_open_at),
-            'registration_close_at' => $this->parseScheduleDate($this->registration_close_at),
-            'checkin_open_at' => $this->parseScheduleDate($this->checkin_open_at),
-            'checkin_close_at' => $this->parseScheduleDate($this->checkin_close_at),
-            'start_at' => $this->parseScheduleDate($this->start_at),
+            'registration_open_at' => $registrationStartsAt,
+            'registration_close_at' => $registrationClosesAt,
+            // Legacy timestamps remain populated while the state machine is
+            // migrated to automatic readiness; there is no player check-in UI.
+            'checkin_open_at' => $registrationClosesAt,
+            'checkin_close_at' => $registrationClosesAt,
+            'start_at' => $firstMatchAt,
+            'end_at' => $tournamentEndsAt,
+            'registration_duration_minutes' => $registrationDuration,
+            'extra_registration_minutes' => $extraRegistration,
             'description' => $this->description,
             'rules' => $this->rules,
             'platform_id' => $this->platform_id,
             'frequency' => $this->frequency,
             'timezone' => $this->timezone,
-            'is_auto_cancel_underfilled' => $this->is_auto_cancel_underfilled,
+            'is_auto_cancel_underfilled' => true,
             'is_featured' => $this->is_featured,
             'waiting_time' => $this->waiting_time,
+            'match_ready_minutes' => $matchReady,
+            'match_extra_wait_minutes' => $matchExtraWait,
             'waiting_result_time' => $this->waiting_result_time,
             'team_size' => $this->team_size,
             'prize_1st' => $this->prize_1st,
             'prize_2nd' => $this->prize_2nd,
             'prize_3rd' => $this->prize_3rd,
             'winning_points' => $this->winning_points,
+            'play_xp' => $this->play_xp,
+            'winner_bonus_xp' => $this->winner_bonus_xp,
             'youtube_stream_url' => $this->nullableUrl($this->youtube_stream_url),
             'twitch_stream_url' => $this->nullableUrl($this->twitch_stream_url),
             'facebook_stream_url' => $this->nullableUrl($this->facebook_stream_url),
@@ -324,11 +416,15 @@ class TournamentForm extends AdminComponent
                     $data['platform_id'],
                     $data['frequency'],
                     $data['is_auto_cancel_underfilled'],
-                    $data['winning_points']
+                    $data['winning_points'],
+                    $data['play_xp'],
+                    $data['winner_bonus_xp'],
+                    $data['prize_1st'],
+                    $data['prize_2nd'],
+                    $data['prize_3rd']
                 );
             }
 
-            unset($data['timezone']);
             unset($data['youtube_stream_url'], $data['twitch_stream_url'], $data['facebook_stream_url']);
             $tournament->update($data);
             $syncStreams->execute($tournament, $this->streamUrls(), $creator);
@@ -375,6 +471,29 @@ class TournamentForm extends AdminComponent
         return $value === null ? '' : CarbonImmutable::instance($value)->setTimezone($this->timezone)->format('Y-m-d\TH:i');
     }
 
+    private function durationInMinutes(int $value, string $unit): int
+    {
+        return $value * match ($unit) {
+            'days' => 1440,
+            'hours' => 60,
+            default => 1,
+        };
+    }
+
+    /** @return array{int, string} */
+    private function splitDuration(int $minutes): array
+    {
+        if ($minutes > 0 && $minutes % 1440 === 0) {
+            return [(int) ($minutes / 1440), 'days'];
+        }
+
+        if ($minutes > 0 && $minutes % 60 === 0) {
+            return [(int) ($minutes / 60), 'hours'];
+        }
+
+        return [$minutes, 'minutes'];
+    }
+
     /** @return array<string, string|null> */
     private function streamUrls(): array
     {
@@ -407,16 +526,7 @@ class TournamentForm extends AdminComponent
         return view('livewire.admin.tournament-form', [
             'games' => $games,
             'platforms' => $platforms,
-            'timezones' => [
-                'UTC',
-                'Asia/Manila',
-                'Asia/Singapore',
-                'Asia/Tokyo',
-                'Australia/Sydney',
-                'Europe/London',
-                'America/Los_Angeles',
-                'America/New_York',
-            ],
+            'timezones' => DateTimeZone::listIdentifiers(),
         ])->layout('components.layouts.admin', [
             'admin_title' => $this->isEditMode ? 'Edit Competition' : 'Create Competition',
         ]);

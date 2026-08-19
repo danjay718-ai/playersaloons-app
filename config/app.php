@@ -65,7 +65,11 @@ return [
     |
     */
 
+    // Keep framework/database timestamps in UTC. Administrators can change the
+    // default tournament wall-clock timezone independently through APP_TIMEZONE.
     'timezone' => 'UTC',
+
+    'tournament_timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

@@ -432,6 +432,17 @@
 
                     <fieldset class="rounded-lg border border-slate-800 bg-slate-900/60 p-4"><legend class="px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Supported Platforms {{ $selectedGameId ? '' : '*' }}</legend><div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">@forelse($gamePlatforms as $platform)<label class="flex items-center gap-2 rounded border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300"><input type="checkbox" wire:model="gamePlatformIds" value="{{ $platform->id }}" class="rounded border-slate-700 bg-slate-900 text-indigo-500"> {{ $platform->name }}</label>@empty<p class="col-span-full text-xs text-amber-300">Create platforms first from the Platforms tab.</p>@endforelse</div>@error('gamePlatformIds')<p class="mt-2 text-xs text-red-400">Select at least one supported platform when adding a game.</p>@enderror @error('gamePlatformIds.*')<p class="mt-2 text-xs text-red-400">{{ $message }}</p>@enderror</fieldset>
 
+                    <fieldset class="rounded-lg border border-cyan-900/40 bg-cyan-950/10 p-4">
+                        <legend class="px-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300">Player Connection Details</legend>
+                        <p class="mb-3 text-[10px] leading-relaxed text-slate-500">Shown when a player registers and inside the Match Room. IDs remain flexible text because every game uses a different format.</p>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div><label class="block text-[10px] font-bold uppercase text-slate-400">Game ID Label</label><input wire:model="gameIdLabel" type="text" placeholder="Game ID / In-Game Name" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white">@error('gameIdLabel')<span class="text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                            <div><label class="block text-[10px] font-bold uppercase text-slate-400">Example</label><input wire:model="gameIdExample" type="text" placeholder="e.g. PlayerName#1234" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white"></div>
+                            <div class="sm:col-span-2"><label class="block text-[10px] font-bold uppercase text-slate-400">How Players Connect</label><select wire:model="gameConnectionMethod" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white"><option value="player_invite">Add or invite the opponent</option><option value="lobby_code">Use a lobby code</option><option value="server_room">Join a server or room</option><option value="admin_instructions">Follow organizer instructions</option></select></div>
+                            <div class="sm:col-span-2"><label class="block text-[10px] font-bold uppercase text-slate-400">Player Instructions</label><textarea wire:model="gameIdInstructions" rows="2" placeholder="Where to find the ID and how opponents should connect." class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white"></textarea></div>
+                        </div>
+                    </fieldset>
+
                     <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
                         <button type="button" x-on:click="closeGameModal()"
                                 class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">

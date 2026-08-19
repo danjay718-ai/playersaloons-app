@@ -34,6 +34,7 @@ class Game extends Model
         'slug',
         'banner_path',
         'card_image_path',
+        'game_id_settings',
         'is_active',
     ];
 
@@ -46,6 +47,7 @@ class Game extends Model
     {
         return [
             'is_active' => 'boolean',
+            'game_id_settings' => 'array',
         ];
     }
 

@@ -62,6 +62,14 @@ class CmsAdmin extends AdminComponent
 
     public bool $gameIsActive = true;
 
+    public string $gameIdLabel = 'Game ID / In-Game Name';
+
+    public string $gameIdExample = '';
+
+    public string $gameIdInstructions = '';
+
+    public string $gameConnectionMethod = 'player_invite';
+
     /** @var list<int> */
     public array $gamePlatformIds = [];
 
@@ -362,6 +370,11 @@ class CmsAdmin extends AdminComponent
         $this->gameBannerPath = (string) ($game->bannerUrl() ?? '');
         $this->gameCardImagePath = (string) ($game->cardArtworkUrl() ?? '');
         $this->gameIsActive = (bool) $game->is_active;
+        $gameIdSettings = (array) ($game->game_id_settings['default'] ?? []);
+        $this->gameIdLabel = (string) ($gameIdSettings['label'] ?? 'Game ID / In-Game Name');
+        $this->gameIdExample = (string) ($gameIdSettings['example'] ?? '');
+        $this->gameIdInstructions = (string) ($gameIdSettings['instructions'] ?? '');
+        $this->gameConnectionMethod = (string) ($gameIdSettings['connection_method'] ?? 'player_invite');
         $this->gamePlatformIds = $game->platforms->pluck('id')->map(fn ($id): int => (int) $id)->all();
         $this->removeGameCardImage = false;
         $this->removeGameBannerImage = false;
@@ -398,6 +411,10 @@ class CmsAdmin extends AdminComponent
             'gameCardImage' => [Rule::requiredIf($newGameNeedsArtwork), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:width=440,height=330'],
             'gameBannerImage' => [Rule::requiredIf($newGameNeedsArtwork), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:width=1000,height=400'],
             'gameIsActive' => 'boolean',
+            'gameIdLabel' => 'required|string|max:80',
+            'gameIdExample' => 'nullable|string|max:120',
+            'gameIdInstructions' => 'nullable|string|max:1000',
+            'gameConnectionMethod' => 'required|in:player_invite,lobby_code,server_room,admin_instructions',
             'gamePlatformIds' => $this->selectedGameId === null
                 ? ['required', 'array', 'min:1']
                 : ['array'],
@@ -423,6 +440,14 @@ class CmsAdmin extends AdminComponent
                 'is_active' => $this->gameIsActive,
                 'card_image_path' => $this->removeGameCardImage ? null : ($this->gameCardImagePath !== '' ? $this->gameCardImagePath : null),
                 'banner_path' => $this->removeGameBannerImage ? null : ($this->gameBannerPath !== '' ? $this->gameBannerPath : null),
+                'game_id_settings' => [
+                    'default' => [
+                        'label' => trim($this->gameIdLabel),
+                        'example' => trim($this->gameIdExample),
+                        'instructions' => trim($this->gameIdInstructions),
+                        'connection_method' => $this->gameConnectionMethod,
+                    ],
+                ],
             ];
 
             if ($this->gameCardImage) {
@@ -529,6 +554,10 @@ class CmsAdmin extends AdminComponent
         $this->gameCardImagePath = '';
         $this->gameLocale = 'en';
         $this->gameIsActive = true;
+        $this->gameIdLabel = 'Game ID / In-Game Name';
+        $this->gameIdExample = '';
+        $this->gameIdInstructions = '';
+        $this->gameConnectionMethod = 'player_invite';
         $this->gamePlatformIds = [];
         $this->removeGameCardImage = false;
         $this->removeGameBannerImage = false;

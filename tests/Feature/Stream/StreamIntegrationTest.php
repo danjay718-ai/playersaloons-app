@@ -130,7 +130,7 @@ class StreamIntegrationTest extends TestCase
             ->set('team_size', 1)
             ->set('waiting_result_time', 10)
             ->set('youtube_stream_url', 'https://www.twitch.tv/player_saloons')
-            ->call('validateStep', 2)
+            ->call('validateStep', 3)
             ->assertHasErrors(['youtube_stream_url']);
     }
 

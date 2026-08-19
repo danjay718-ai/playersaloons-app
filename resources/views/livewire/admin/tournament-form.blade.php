@@ -1,605 +1,174 @@
-<div x-data="{ 
-    step: @entangle('step').live,
-    totalSteps: 4,
-    isValidating: false,
-    
-    // Auto-save/Load Draft Logic
-    init() {
-        if (!this.$wire.isEditMode) {
-            const draft = localStorage.getItem('tournament_draft');
-            if (draft) {
-                const data = JSON.parse(draft);
-                // Simple mapping for non-rich text fields
-                $wire.name = data.name || '';
-                $wire.game_id = data.game_id || 0;
-                $wire.competition_type = data.competition_type || 'tournament';
-                $wire.platform_id = data.platform_id || 0;
-                $wire.frequency = data.frequency || 'one-time';
-                $wire.timezone = data.timezone || 'UTC';
-                $wire.team_size = data.team_size || 1;
-                $wire.youtube_stream_url = data.youtube_stream_url || null;
-                $wire.twitch_stream_url = data.twitch_stream_url || null;
-                $wire.facebook_stream_url = data.facebook_stream_url || null;
-                // Rich text will be handled by their respective components
+<div
+    x-data="{
+        step: @entangle('step').live,
+        totalSteps: 5,
+        busy: false,
+        validationTick: 0,
+        editorValidity: { description: false, rules: false },
+        isStepComplete(stepNumber) {
+            this.validationTick;
+            if (stepNumber === 2) {
+                return this.editorValidity.description && this.editorValidity.rules;
             }
-        }
-    },
 
-    saveDraft() {
-        if (this.$wire.isEditMode) return;
-        const data = {
-            name: $wire.name,
-            game_id: $wire.game_id,
-            competition_type: $wire.competition_type,
-            platform_id: $wire.platform_id,
-            frequency: $wire.frequency,
-            timezone: $wire.timezone,
-            team_size: $wire.team_size,
-            description: $wire.description,
-            rules: $wire.rules,
-            youtube_stream_url: $wire.youtube_stream_url,
-            twitch_stream_url: $wire.twitch_stream_url,
-            facebook_stream_url: $wire.facebook_stream_url
-        };
-        localStorage.setItem('tournament_draft', JSON.stringify(data));
-    },
+            const section = this.$refs.form?.querySelector(`[data-step='${stepNumber}']`);
+            if (!section) return false;
 
-    clearDraft() {
-        localStorage.removeItem('tournament_draft');
-    },
-
-    get isStepReady() {
-        if (this.step === 1) {
-            return $wire.name.trim().length > 0 && $wire.game_id > 0;
+            return [...section.querySelectorAll('input, select, textarea')]
+                .filter(field => !field.disabled)
+                .every(field => {
+                    if (field.dataset.invalidZero === 'true' && Number(field.value) <= 0) return false;
+                    return (!field.required && field.value === '') || field.checkValidity();
+                });
+        },
+        async next() {
+            if (!this.isStepComplete(this.step)) return;
+            window.dispatchEvent(new CustomEvent('sync-tournament-editors'));
+            await new Promise(resolve => setTimeout(resolve, 75));
+            this.busy = true;
+            try {
+                await $wire.validateStep(this.step);
+                if (this.step < this.totalSteps) this.step++;
+            } finally { this.busy = false; }
+        },
+        previous() { if (this.step > 1) this.step--; },
+        async save() {
+            window.dispatchEvent(new CustomEvent('sync-tournament-editors'));
+            await new Promise(resolve => setTimeout(resolve, 75));
+            this.busy = true;
+            try { await $wire.saveTournament(); } finally { this.busy = false; }
         }
-        if (this.step === 2) {
-            return $wire.platform_id && $wire.platform_id > 0 && $wire.frequency && $wire.team_size >= 1 && $wire.waiting_result_time > 0;
-        }
-        if (this.step === 3) {
-            return $wire.registration_open_at && 
-                   $wire.registration_close_at && 
-                   $wire.checkin_open_at && 
-                   $wire.checkin_close_at && 
-                   $wire.start_at;
-        }
-        if (this.step === 4) {
-            return $wire.entry_fee !== '' && $wire.prize_pool !== '';
-        }
-        return true;
-    },
-
-    async nextStep() { 
-        if (this.step === 1) {
-            window.dispatchEvent(new CustomEvent('sync-quill'));
-            // Small delay to ensure Livewire catches the synced data
-            await new Promise(r => setTimeout(r, 100));
-        }
-
-        this.saveDraft(); // Save progress locally
-
-        this.isValidating = true;
-        try {
-            await $wire.validateStep(this.step);
-            if(this.step < this.totalSteps) this.step++;
-            this.isValidating = false;
-        } catch (e) {
-            this.isValidating = false;
-        }
-    },
-    prevStep() { if(this.step > 1) this.step-- }
-}">
-    <!-- Step title and description updated -->
-
-    <div class="mb-6 flex justify-between items-center">
+    }"
+    @input="validationTick++"
+    @change="validationTick++"
+    @tournament-editor-validity.window="editorValidity[$event.detail.field] = $event.detail.valid"
+    class="w-full"
+>
+    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-            <h2 class="text-xl font-bold text-white">{{ $isEditMode ? 'Edit Competition' : 'Create New Competition' }}</h2>
-            <p class="text-sm text-slate-400 mt-1">Step <span x-text="step"></span> of <span x-text="totalSteps"></span>: 
-                <span x-show="step === 1">Identity & Content</span>
-                <span x-show="step === 2">Competition Settings</span>
-                <span x-show="step === 3">Schedule & Logistics</span>
-                <span x-show="step === 4">Stakes, Prizes & Capacity</span>
+            <h1 class="text-2xl font-black tracking-tight text-white">{{ $isEditMode ? 'Edit Tournament' : 'Create Tournament' }}</h1>
+            <p class="mt-1 text-sm text-slate-400">
+                <span x-text="`Step ${step} of ${totalSteps}`"></span><span class="mx-2 text-slate-700">•</span>
+                <span x-show="step === 1">Tournament Details</span><span x-show="step === 2">Description & Rules</span>
+                <span x-show="step === 3">Players & Match Settings</span><span x-show="step === 4">Dates & Timezone</span>
+                <span x-show="step === 5">Fees & Prizes</span>
             </p>
         </div>
-        <div class="flex items-center space-x-3">
-            <a href="{{ route('admin.tournaments') }}" wire:navigate class="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm px-4 py-2.5 rounded-lg flex items-center transition-colors">
-                <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
-                <span>Exit</span>
-            </a>
-        </div>
-    </div>
-
-    <!-- Wizard Progress Bar -->
-    <div class="max-w-4xl mx-auto mb-8">
-        <div class="relative">
-            <div class="overflow-hidden h-1.5 mb-4 text-xs flex rounded bg-slate-800">
-                <div :style="'width: ' + (step / totalSteps * 100) + '%'" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-500"></div>
-            </div>
-            <div class="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                <span :class="step >= 1 ? 'text-indigo-400' : ''">Identity</span>
-                <span :class="step >= 2 ? 'text-indigo-400' : ''">Settings</span>
-                <span :class="step >= 3 ? 'text-indigo-400' : ''">Schedule</span>
-                <span :class="step >= 4 ? 'text-indigo-400' : ''">Prizes</span>
-            </div>
-        </div>
+        <a href="{{ route('admin.tournaments') }}" wire:navigate class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-800">
+            <i data-lucide="arrow-left" class="h-4 w-4"></i> Exit
+        </a>
     </div>
 
     @if ($isLocked)
-        <div class="bg-amber-900/40 border border-amber-500/50 text-amber-200 px-4 py-3 rounded-lg mb-6 flex items-start max-w-4xl mx-auto">
-            <i data-lucide="lock" class="w-5 h-5 mr-3 mt-0.5 flex-shrink-0"></i>
-            <div>
-                <p class="text-sm font-bold uppercase tracking-wide">Limited Edit Mode Active</p>
-                <p class="text-xs mt-1 text-amber-200/80">Critical fields like fees, prizes, and team configuration are locked. You can still update the description, rules, banner, and schedule.</p>
-            </div>
+        <div class="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+            Core tournament fields are locked because registration has already started. Schedule, content, timezone, and live stream links may still be updated.
         </div>
     @endif
 
-    <!-- Feedback Alerts -->
-    @if (session()->has('success'))
-        <div class="bg-emerald-900/50 border border-emerald-500/50 text-emerald-400 px-4 py-3 rounded-lg mb-6 flex items-start max-w-4xl mx-auto">
-            <i data-lucide="check-circle-2" class="w-5 h-5 mr-3 mt-0.5 flex-shrink-0"></i>
-            <p class="text-sm font-medium">{{ session('success') }}</p>
-        </div>
-    @endif
-
-    <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-2xl relative z-10 max-w-4xl mx-auto">
-        <form wire:submit.prevent="saveTournament">
-            
-            <!-- STEP 1: Identity & Content -->
-            <div x-show="step === 1" class="p-6 space-y-6" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-6">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center">
-                                <span>Competition Type <span class="text-red-500">*</span></span>
-                                @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                            </label>
-                            <select wire:model.live="competition_type" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <option value="tournament">Tournament</option>
-                                <option value="head_to_head">Head-to-Head (automatic 1v1)</option>
-                            </select>
-                            <p class="text-[10px] text-slate-500 mt-1">Platform H2H uses the tournament lifecycle with exactly two solo-player slots.</p>
-                            @error('competition_type') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Competition Name <span class="text-red-500">*</span></label>
-                            <input type="text" wire:model="name" placeholder="e.g. Pro League Summer 2026" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            @error('name') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center">
-                                <span>Game <span class="text-red-500">*</span></span>
-                                @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                            </label>
-                            <select wire:model="game_id" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <option value="">Select Game</option>
-                                @foreach($games as $game)
-                                    <option value="{{ $game->id }}">{{ $game->translations->first()?->name ?? $game->slug }}</option>
-                                @endforeach
-                            </select>
-                            @error('game_id') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <x-forms.image-crop-upload model="banner" label="Banner Image (Optional)" :width="960" :height="540" :max-mb="2" />
-                            @if ($banner)
-                                <div class="mt-2 text-xs text-indigo-400">File selected: {{ $banner->getClientOriginalName() }}</div>
-                            @endif
-                        </div>
-
-                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
-                            <input type="checkbox" wire:model="is_featured" class="mt-0.5 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500/40">
-                            <span>
-                                <span class="block text-xs font-bold uppercase text-amber-300">Featured Tournament</span>
-                                <span class="mt-1 block text-[10px] leading-relaxed text-slate-500">Show this competition in the Featured section of its game page while it is active.</span>
-                            </span>
-                        </label>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div wire:ignore 
-                             x-data="{ 
-                                quill: null 
-                             }" 
-                             @sync-quill.window="if (quill) { $wire.description = quill.root.innerHTML }"
-                             x-init="
-                                const bootDescriptionEditor = () => {
-                                    if (quill) {
-                                        return;
-                                    }
-
-                                    if (typeof window.Quill === 'undefined') {
-                                        window.setTimeout(bootDescriptionEditor, 75);
-
-                                        return;
-                                    }
-
-                                    quill = new Quill($refs.editor, {
-                                        theme: 'snow',
-                                        placeholder: 'Write a compelling description...',
-                                        modules: {
-                                            toolbar: [['bold', 'italic', 'underline'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']]
-                                        }
-                                    });
-                                    quill.root.innerHTML = $wire.description;
-                                };
-
-                                bootDescriptionEditor();
-                             ">
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Description <span class="text-red-500">*</span></label>
-                            <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-                                <div x-ref="editor" class="text-slate-100 min-h-[120px] border-none ql-custom-dark"></div>
-                            </div>
-                            @error('description') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div wire:ignore 
-                             x-data="{ 
-                                quill: null 
-                             }" 
-                             @sync-quill.window="if (quill) { $wire.rules = quill.root.innerHTML }"
-                             x-init="
-                                const bootRulesEditor = () => {
-                                    if (quill) {
-                                        return;
-                                    }
-
-                                    if (typeof window.Quill === 'undefined') {
-                                        window.setTimeout(bootRulesEditor, 75);
-
-                                        return;
-                                    }
-
-                                    quill = new Quill($refs.editor, {
-                                        theme: 'snow',
-                                        placeholder: 'Define tournament rules...',
-                                        modules: {
-                                            toolbar: [['bold', 'italic'], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['clean']]
-                                        }
-                                    });
-                                    quill.root.innerHTML = $wire.rules;
-                                };
-
-                                bootRulesEditor();
-                             ">
-                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1 flex justify-between">
-                                <span>Rules <span class="text-red-500">*</span></span>
-                            </label>
-                            <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-                                <div x-ref="editor" class="text-slate-100 min-h-[120px] border-none ql-custom-dark"></div>
-                            </div>
-                            @error('rules') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- STEP 2: Tournament Settings -->
-            <div x-show="step === 2" class="p-6 space-y-6" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center">
-                                    <span>Platform <span class="text-red-500">*</span></span>
-                                    @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                                </label>
-                                <select wire:model="platform_id" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <option value="">No Specific Platform</option>
-                                    @foreach($platforms as $plat)
-                                        <option value="{{ $plat->id }}">{{ $plat->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('platform_id') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center">
-                                    <span>Frequency <span class="text-red-500">*</span></span>
-                                    @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                                </label>
-                                <select wire:model="frequency" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <option value="one-time">One-time / Single Event</option>
-                                    <option value="daily">Daily Recurring</option>
-                                    <option value="weekly">Weekly Recurring</option>
-                                    <option value="monthly">Monthly Recurring</option>
-                                </select>
-                                @error('frequency') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div class="col-span-2 mt-2">
-                                <label class="flex items-start space-x-3 cursor-pointer">
-                                    <div class="relative mt-0.5">
-                                        <input type="checkbox" wire:model="is_auto_cancel_underfilled" class="sr-only" @disabled($isLocked)>
-                                        <div class="w-10 h-6 bg-slate-800 rounded-full shadow-inner transition-colors" :class="$wire.is_auto_cancel_underfilled ? 'bg-indigo-500' : ''"></div>
-                                        <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform" :class="$wire.is_auto_cancel_underfilled ? 'translate-x-4' : ''"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-xs font-bold text-slate-300 uppercase flex items-center">
-                                            Auto-Cancel & Refund
-                                            @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                                        </div>
-                                        <p class="text-[10px] text-slate-500 normal-case mt-0.5">Automatically cancels the tournament and refunds entry fees if min participants are not met by start time.</p>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center">
-                                    <span>Team Size <span class="text-red-500">*</span></span>
-                                    @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                                </label>
-                                <input type="number" wire:model="team_size" @disabled($isLocked || $competition_type === 'head_to_head') min="1" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <p class="text-[9px] text-slate-500 mt-1 italic">Individual players per team (1 = Solo, 2 = Duo)</p>
-                                @error('team_size') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-400 uppercase mb-1 flex items-center">
-                                    <span>Winning Points</span>
-                                    @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                                </label>
-                                <input type="number" wire:model="winning_points" @disabled($isLocked) class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                                @error('winning_points') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div class="bg-indigo-900/10 border border-indigo-500/20 p-4 rounded-lg">
-                            <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-4 flex items-center">
-                                <i data-lucide="clock" class="w-4 h-4 mr-2"></i> Match Wait Timings
-                            </h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Acceptance Wait (m)</label>
-                                    <input type="number" wire:model="waiting_time" placeholder="15" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                                    @error('waiting_time') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Result Wait (m) <span class="text-red-500">*</span></label>
-                                    <input type="number" wire:model="waiting_result_time" placeholder="e.g. 30" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                                    @error('waiting_result_time') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-                            <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
-                                <i data-lucide="info" class="w-3 h-3 inline mr-1"></i>
-                                Acceptance wait is the time players have to join a match after it's ready. Result wait is the time allowed to submit scores.
-                            </p>
-                        </div>
-
-                        <div class="bg-slate-950/60 border border-slate-800 p-4 rounded-lg">
-                            <h4 class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-4 flex items-center">
-                                <i data-lucide="broadcast" class="w-4 h-4 mr-2"></i> Broadcast Embeds
-                            </h4>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">YouTube Stream URL</label>
-                                    <input type="url" wire:model="youtube_stream_url" placeholder="https://www.youtube.com/watch?v=..." class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
-                                    @error('youtube_stream_url') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Twitch Stream URL</label>
-                                    <input type="url" wire:model="twitch_stream_url" placeholder="https://www.twitch.tv/channelname" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
-                                    @error('twitch_stream_url') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Facebook Live URL</label>
-                                    <input type="url" wire:model="facebook_stream_url" placeholder="https://www.facebook.com/.../videos/..." class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
-                                    @error('facebook_stream_url') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-                            <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
-                                Use public HTTPS stream URLs. PlayerSaloons embeds the provider player and keeps an external fallback link.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- STEP 3: Schedule & Logistics -->
-            <div x-show="step === 3" class="p-6 space-y-6" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4">
-                <div class="max-w-sm">
-                    <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Schedule Timezone <span class="text-red-500">*</span></label>
-                    <select wire:model="timezone" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        @foreach($timezones as $timezoneOption)
-                            <option value="{{ $timezoneOption }}">{{ $timezoneOption }}</option>
-                        @endforeach
-                    </select>
-                    <p class="text-[9px] text-slate-500 mt-1">All dates are persisted in UTC and generated in this wall-clock timezone.</p>
-                    @error('timezone') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="space-y-6">
-                        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center">
-                            <i data-lucide="calendar" class="w-4 h-4 mr-2 text-indigo-400"></i> Registration Window <span class="text-red-500 ml-1">*</span>
-                        </h4>
-                        <p class="text-[9px] text-slate-500 mb-4 italic">Registration must close before check-in can begin.</p>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Opens At <span class="text-red-500">*</span></label>
-                                <input type="datetime-local" wire:model="registration_open_at" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                                @error('registration_open_at') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Closes At <span class="text-red-500">*</span></label>
-                                <input type="datetime-local" wire:model="registration_close_at" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                                @error('registration_close_at') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-
-                        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center pt-4">
-                            <i data-lucide="user-check" class="w-4 h-4 mr-2 text-indigo-400"></i> Check-in Window <span class="text-red-500 ml-1">*</span>
-                        </h4>
-                        <p class="text-[9px] text-slate-500 mb-4 italic">Check-in must start after registration ends and close before the tournament begins.</p>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Opens At <span class="text-red-500">*</span></label>
-                                <input type="datetime-local" wire:model="checkin_open_at" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                                @error('checkin_open_at') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Closes At <span class="text-red-500">*</span></label>
-                                <input type="datetime-local" wire:model="checkin_close_at" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                                @error('checkin_close_at') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-6 flex flex-col justify-center">
-                        <div class="bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-2xl flex flex-col items-center text-center">
-                            <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-indigo-500/20">
-                                <i data-lucide="play" class="w-6 h-6 text-white fill-current"></i>
-                            </div>
-                            <h4 class="text-sm font-bold text-slate-200 uppercase tracking-widest mb-2">Competition Start <span class="text-red-500">*</span></h4>
-                            <p class="text-[10px] text-slate-500 mb-4 max-w-[240px]">This is when the first matches are generated. Must be after the check-in window ends.</p>
-                            
-                            <input type="datetime-local" wire:model="start_at" class="w-full max-w-xs bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 text-center font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-                            @error('start_at') <span class="text-red-400 text-[10px] mt-2 block">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- STEP 4: Stakes, Prizes & Capacity -->
-            <div x-show="step === 4" class="p-6 space-y-6" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Left: Stakes & Capacity -->
-                    <div class="space-y-6">
-                        <div class="bg-slate-900/50 p-5 rounded-xl border border-slate-800 space-y-5">
-                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Entry & Capacity</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center">
-                                        <span>Entry Fee ($)</span>
-                                        @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                                    </label>
-                                    <input type="text" wire:model="entry_fee" @disabled($isLocked) class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
-                                    @error('entry_fee') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                                </div>
-                                <div></div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center">
-                                        <span>Min Players</span>
-                                        @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                                    </label>
-                                    <input type="number" wire:model="min_participants" @disabled($isLocked || $competition_type === 'head_to_head') class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
-                                    @error('min_participants') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center">
-                                        <span>Max Players <span class="text-red-500">*</span></span>
-                                        @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-slate-500"></i> @endif
-                                    </label>
-                                    <input type="number" wire:model="max_participants" @disabled($isLocked || $competition_type === 'head_to_head') class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
-                                    <p class="text-[9px] text-slate-600 mt-1 italic">H2H is fixed to two players.</p>
-                                    @error('max_participants') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right: Prize Pool Breakdown -->
-                    <div class="space-y-6">
-                        <div class="bg-emerald-900/10 p-5 rounded-xl border border-emerald-500/20 space-y-5">
-                            <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center">
-                                <i data-lucide="trophy" class="w-4 h-4 mr-2"></i> Prizes & Rewards
-                            </h4>
-                            <div>
-                                <label class="block text-[10px] font-bold text-emerald-500/70 uppercase mb-1 flex items-center">
-                                    <span>Total Prize Pool ($)</span>
-                                    @if($isLocked) <i data-lucide="lock" class="w-2.5 h-2.5 ml-1 text-emerald-500/50"></i> @endif
-                                </label>
-                                <input type="text" wire:model="prize_pool" @disabled($isLocked) placeholder="0.00" class="w-full bg-slate-950 border border-emerald-500/20 rounded px-4 py-3 text-lg font-black text-emerald-400 focus:outline-none focus:border-emerald-500 disabled:opacity-50 transition-all">
-                                @error('prize_pool') <span class="text-red-400 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div class="grid grid-cols-3 gap-3 pt-2">
-                                <div>
-                                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">1st Place</label>
-                                    <input type="text" wire:model="prize_1st" @disabled($isLocked) placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
-                                </div>
-                                <div>
-                                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">2nd Place</label>
-                                    <input type="text" wire:model="prize_2nd" @disabled($isLocked) placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
-                                </div>
-                                <div>
-                                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">3rd Place</label>
-                                    <input type="text" wire:model="prize_3rd" @disabled($isLocked) placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Wizard Controls -->
-            <div class="px-6 py-4 bg-[#0b0f19] border-t border-slate-800 flex justify-between items-center">
-                <button type="button" x-show="step > 1" @click="prevStep()" class="text-slate-400 hover:text-white font-bold text-xs uppercase flex items-center transition-colors">
-                    <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i>
-                    Back
-                </button>
-                <div x-show="step === 1"></div> <!-- Spacer -->
-
-                <div class="flex space-x-3">
-                    <button type="button" x-show="step < totalSteps" @click="nextStep()" 
-                            :disabled="isValidating || !isStepReady"
-                            wire:loading.attr="disabled"
-                            wire:target="validateStep"
-                            class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-6 py-2.5 rounded-lg flex items-center shadow-lg shadow-indigo-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-                        <span x-show="!isValidating">Next Step</span>
-                        <span x-show="isValidating">Validating...</span>
-                        <i x-show="!isValidating" data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
-                        <div x-show="isValidating" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
-                    </button>
-
-                    <button type="submit" x-show="step === totalSteps" @click="clearDraft()" wire:loading.attr="disabled" wire:target="banner" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase px-8 py-2.5 rounded-lg flex items-center shadow-lg shadow-emerald-500/20 transition-all disabled:cursor-wait disabled:opacity-50">
-                        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
-                        <span wire:loading.remove wire:target="banner">{{ $isEditMode ? 'Save Changes' : 'Create Competition' }}</span>
-                        <span wire:loading wire:target="banner">Uploading Banner...</span>
-                    </button>
-                </div>
-            </div>
-        </form>
+    <div class="mb-6 grid grid-cols-5 gap-2">
+        @foreach (['Details', 'Content', 'Match Setup', 'Schedule', 'Prizes'] as $number => $label)
+            <button type="button" @click="if ({{ $number + 1 }} < step) step = {{ $number + 1 }}" class="group text-left">
+                <span class="mb-2 block h-1.5 rounded-full transition" :class="step >= {{ $number + 1 }} ? 'bg-indigo-500' : 'bg-slate-800'"></span>
+                <span class="hidden text-[10px] font-bold uppercase tracking-wider sm:block" :class="step >= {{ $number + 1 }} ? 'text-indigo-300' : 'text-slate-600'">{{ $label }}</span>
+            </button>
+        @endforeach
     </div>
 
-    <!-- Custom CSS for Quill styling in dark mode -->
+    <form x-ref="form" x-on:submit.prevent="save" class="w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 shadow-2xl">
+        <section data-step="1" x-show="step === 1" x-cloak class="p-5 md:p-8">
+            <div class="mb-6"><h2 class="text-lg font-black text-white">Tournament Details</h2><p class="mt-1 text-sm text-slate-500">Choose the game, platform, and schedule frequency players will see.</p></div>
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
+                <div class="xl:col-span-2"><label class="field-label">Tournament Name *</label><input wire:model="name" type="text" required maxlength="255" placeholder="e.g. Summer Championship" class="form-field">@error('name') <p class="field-error">{{ $message }}</p> @enderror</div>
+                <div><label class="field-label">Type *</label><select wire:model.live="competition_type" required @disabled($isLocked) class="form-field"><option value="tournament">Tournament</option><option value="head_to_head">Head-to-Head</option></select>@error('competition_type') <p class="field-error">{{ $message }}</p> @enderror</div>
+                <div><label class="field-label">Game *</label><select wire:model.live="game_id" required data-invalid-zero="true" @disabled($isLocked) class="form-field"><option value="0">Select a game</option>@foreach($games as $game)<option value="{{ $game->id }}">{{ $game->translations->first()?->name ?? $game->slug }}</option>@endforeach</select>@error('game_id') <p class="field-error">{{ $message }}</p> @enderror</div>
+                <div><label class="field-label">Platform *</label><select wire:model="platform_id" required @disabled($isLocked) class="form-field"><option value="">Select a platform</option>@foreach($platforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select>@error('platform_id') <p class="field-error">{{ $message }}</p> @enderror</div>
+                <div><label class="field-label">Frequency *</label><select wire:model="frequency" required @disabled($isLocked) class="form-field"><option value="one-time">One Time</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>@error('frequency') <p class="field-error">{{ $message }}</p> @enderror</div>
+                <div class="lg:col-span-2"><x-forms.image-crop-upload model="banner" label="Tournament Banner (Optional)" :width="960" :height="540" :max-mb="2" /></div>
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"><input wire:model="is_featured" type="checkbox" class="mt-0.5 rounded border-slate-700 bg-slate-900 text-amber-500"><span><span class="block text-xs font-black uppercase text-amber-300">Featured Tournament</span><span class="mt-1 block text-xs leading-relaxed text-slate-500">Display this in the Featured section of the game page.</span></span></label>
+            </div>
+        </section>
+
+        <section data-step="2" x-show="step === 2" x-cloak class="space-y-6 p-5 md:p-8">
+            <div><h2 class="text-lg font-black text-white">Description & Rules</h2><p class="mt-1 text-sm text-slate-500">Each editor scrolls inside the card so the whole wizard stays compact.</p></div>
+            @foreach ([['description', 'Description', 'Explain the tournament format and what players can expect.'], ['rules', 'Tournament Rules', 'The general PlayerSaloons rules are prefilled and can be adjusted.']] as [$property, $label, $placeholder])
+                <div wire:ignore x-data="{ editor: null }" @sync-tournament-editors.window="if (editor) $wire.{{ $property }} = editor.root.innerHTML" x-init="
+                    const boot = () => {
+                        if (editor) return;
+                        if (typeof window.Quill === 'undefined') { setTimeout(boot, 75); return; }
+                        editor = new Quill($refs.editor, { theme: 'snow', placeholder: @js($placeholder), modules: { toolbar: [['bold','italic','underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] } });
+                        editor.root.innerHTML = $wire.{{ $property }} || '';
+                        const reportValidity = () => window.dispatchEvent(new CustomEvent('tournament-editor-validity', { detail: { field: @js($property), valid: editor.getText().trim().length >= 10 } }));
+                        editor.on('text-change', reportValidity);
+                        reportValidity();
+                    }; boot();
+                ">
+                    <label class="field-label">{{ $label }} *</label><div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900"><div x-ref="editor" class="ql-custom-dark h-56 overflow-y-auto text-slate-100"></div></div>
+                </div>
+                @error($property) <p class="-mt-4 field-error">{{ $message }}</p> @enderror
+            @endforeach
+        </section>
+
+        <section data-step="3" x-show="step === 3" x-cloak class="p-5 md:p-8">
+            <div class="mb-6"><h2 class="text-lg font-black text-white">Players & Match Settings</h2><p class="mt-1 text-sm text-slate-500">Configure team size, experience, match timing, and tournament streams.</p></div>
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+                <div><label class="field-label">Team Size *</label><input wire:model="team_size" required @disabled($isLocked) type="number" min="1" class="form-field"><p class="field-help">Use 1 for solo play.</p>@error('team_size')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Play XP *</label><input wire:model="play_xp" required type="number" min="0" max="1000000" class="form-field"><p class="field-help">For players who actually compete.</p>@error('play_xp')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Winner Bonus XP *</label><input wire:model="winner_bonus_xp" required type="number" min="0" max="1000000" class="form-field"><p class="field-help">Added to the champion's Play XP.</p>@error('winner_bonus_xp')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Result Submission Time *</label><input wire:model="waiting_result_time" required type="number" min="1" class="form-field"><p class="field-help">Minutes allowed to confirm a result.</p>@error('waiting_result_time')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="xl:col-span-2"><label class="field-label">Get Ready Time *</label><div class="grid grid-cols-[1fr_auto] gap-2"><input wire:model="match_ready_value" required type="number" min="1" max="365" class="form-field"><select wire:model="match_ready_unit" required class="form-field"><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></div><p class="field-help">Used before every match in every round.</p></div>
+                <div class="xl:col-span-2"><label class="field-label">Extra Wait Time *</label><div class="grid grid-cols-[1fr_auto] gap-2"><input wire:model="match_extra_wait_value" required type="number" min="1" max="365" class="form-field"><select wire:model="match_extra_wait_unit" required class="form-field"><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></div><p class="field-help">Final allowance after an opponent is reported absent.</p></div>
+                <div class="md:col-span-2 xl:col-span-4 flex items-start gap-3 rounded-xl border border-emerald-800/40 bg-emerald-950/15 p-4"><i data-lucide="shield-check" class="mt-0.5 h-4 w-4 text-emerald-400"></i><span><span class="block text-xs font-black uppercase text-emerald-200">Automatic Player Protection</span><span class="mt-1 block text-xs text-slate-500">The system first uses Extra Registration Time. If the minimum is still not reached, it cancels the tournament and refunds paid entries automatically.</span></span></div>
+                <div class="md:col-span-2 xl:col-span-4 mt-2 border-t border-slate-800 pt-5"><h3 class="font-bold text-white">Live Stream Links</h3><p class="mt-1 text-xs text-slate-500">Optional tournament broadcasts shown inside PlayerSaloons.</p></div>
+                <div><label class="field-label">YouTube</label><input wire:model="youtube_stream_url" type="url" placeholder="https://youtube.com/..." class="form-field">@error('youtube_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Twitch</label><input wire:model="twitch_stream_url" type="url" placeholder="https://twitch.tv/..." class="form-field">@error('twitch_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Facebook</label><input wire:model="facebook_stream_url" type="url" placeholder="https://facebook.com/..." class="form-field">@error('facebook_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
+            </div>
+        </section>
+
+        <section data-step="4" x-show="step === 4" x-cloak class="p-5 md:p-8">
+            <div class="mb-6"><h2 class="text-lg font-black text-white">Dates & Timezone</h2><p class="mt-1 text-sm text-slate-500">Times below use the selected timezone. Player displays can convert them locally; storage remains UTC.</p></div>
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <div class="lg:col-span-2"><label class="field-label">Tournament Timezone *</label><select wire:model.live="timezone" required class="form-field">@foreach($timezones as $zone)<option value="{{ $zone }}">{{ $zone }}</option>@endforeach</select>@error('timezone')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Registration Starts *</label><input wire:model="registration_open_at" required type="datetime-local" class="form-field">@error('registration_open_at')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Tournament Ends *</label><input wire:model="tournament_end_at" required type="datetime-local" class="form-field">@error('tournament_end_at')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Registration Duration *</label><div class="grid grid-cols-[1fr_auto] gap-2"><input wire:model="registration_duration_value" required type="number" min="1" max="365" class="form-field"><select wire:model="registration_duration_unit" required class="form-field"><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></div><p class="field-help">Entries lock when this duration ends.</p></div>
+                <div><label class="field-label">Extra Registration Time *</label><div class="grid grid-cols-[1fr_auto] gap-2"><input wire:model="extra_registration_value" required type="number" min="0" max="365" class="form-field"><select wire:model="extra_registration_unit" required class="form-field"><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></div><p class="field-help">Used once only if the minimum is not reached.</p></div>
+                <div class="lg:col-span-2 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 text-xs leading-relaxed text-slate-400">The estimated first match begins after Registration Duration plus Get Ready Time. If Extra Registration Time is needed, the first match and estimated end move by the same amount.</div>
+            </div>
+        </section>
+
+        <section data-step="5" x-show="step === 5" x-cloak class="p-5 md:p-8">
+            <div class="mb-6"><h2 class="text-lg font-black text-white">Fees, Capacity & Prizes</h2><p class="mt-1 text-sm text-slate-500">Place prizes share one prize pool and can never exceed it.</p></div>
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+                <div><label class="field-label">Entry Fee *</label><input wire:model="entry_fee" required @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('entry_fee')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Prize Pool *</label><input wire:model.live.debounce.250ms="prize_pool" required @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_pool')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Minimum Players *</label><input wire:model="min_participants" required @disabled($isLocked || $competition_type === 'head_to_head') type="number" min="2" class="form-field">@error('min_participants')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">Maximum Players *</label><input wire:model="max_participants" required @disabled($isLocked || $competition_type === 'head_to_head') type="number" min="2" class="form-field">@error('max_participants')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label text-amber-300">1st Place</label><input wire:model.live.debounce.250ms="prize_1st" @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_1st')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">2nd Place</label><input wire:model.live.debounce.250ms="prize_2nd" @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_2nd')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label text-orange-300">3rd Place</label><input wire:model.live.debounce.250ms="prize_3rd" @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_3rd')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4"><p class="text-xs font-bold uppercase text-slate-500">Prize Allocation</p><p class="mt-2 text-xl font-black" :class="((Number($wire.prize_1st)||0)+(Number($wire.prize_2nd)||0)+(Number($wire.prize_3rd)||0)) <= (Number($wire.prize_pool)||0) ? 'text-emerald-400' : 'text-red-400'" x-text="`${((Number($wire.prize_1st)||0)+(Number($wire.prize_2nd)||0)+(Number($wire.prize_3rd)||0)).toFixed(2)} / ${(Number($wire.prize_pool)||0).toFixed(2)}`"></p></div>
+            </div>
+        </section>
+
+        <footer class="flex items-center justify-between border-t border-slate-800 bg-slate-950 px-5 py-4 md:px-8">
+            <button x-show="step > 1" type="button" @click="previous" class="rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-bold text-slate-300 hover:bg-slate-900">Back</button><span x-show="step === 1"></span>
+            <button x-show="step < totalSteps" type="button" @click="next" :disabled="busy || !isStepComplete(step)" class="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-black text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"><span x-show="!busy">Continue</span><span x-show="busy">Checking…</span></button>
+            <button x-show="step === totalSteps" type="submit" :disabled="busy || !isStepComplete(step)" class="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-black text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"><span x-show="!busy">{{ $isEditMode ? 'Save Changes' : 'Create Tournament' }}</span><span x-show="busy">Saving…</span></button>
+        </footer>
+    </form>
+
     <style>
-        .ql-custom-dark .ql-editor {
-            color: #f1f5f9 !important;
-            min-height: 150px;
-        }
-        .ql-toolbar.ql-snow {
-            border-color: #1e293b !important;
-            background: #0f172a !important;
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
-        }
-        .ql-container.ql-snow {
-            border-color: #1e293b !important;
-            background: #0b0f19 !important;
-            border-bottom-left-radius: 0.5rem;
-            border-bottom-right-radius: 0.5rem;
-        }
-        .ql-snow .ql-stroke {
-            stroke: #94a3b8 !important;
-        }
-        .ql-snow .ql-fill {
-            fill: #94a3b8 !important;
-        }
-        .ql-snow .ql-picker {
-            color: #94a3b8 !important;
-        }
-        .ql-editor.ql-blank::before {
-            color: #475569 !important;
-            font-style: normal !important;
-        }
-        .ql-editor {
-            font-family: inherit !important;
-            font-size: 0.875rem !important;
-        }
+        [x-cloak] { display: none !important; }
+        .field-label { margin-bottom: .5rem; display: block; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .025em; color: rgb(148 163 184); }
+        .field-help { margin-top: .25rem; font-size: .6875rem; color: rgb(100 116 139); }
+        .field-error { margin-top: .25rem; font-size: .75rem; color: rgb(248 113 113); }
+        .form-field { width: 100%; border-radius: .5rem; border: 1px solid rgb(30 41 59); background: rgb(15 23 42); padding: .625rem .75rem; font-size: .875rem; color: white; outline: none; }
+        .form-field:focus { border-color: rgb(99 102 241); }
+        .form-field:disabled { cursor: not-allowed; opacity: .5; }
+        .ql-custom-dark .ql-editor { height: 14rem; overflow-y: auto; color: rgb(241 245 249); }
+        .ql-toolbar.ql-snow, .ql-container.ql-snow { border-color: rgb(30 41 59) !important; }
+        .ql-snow .ql-stroke { stroke: rgb(148 163 184) !important; }
+        .ql-snow .ql-fill { fill: rgb(148 163 184) !important; }
     </style>
 </div>
