@@ -15,9 +15,11 @@ use App\Livewire\Admin\TournamentForm;
 use App\Livewire\Admin\UserAdmin;
 use App\Livewire\Admin\WithdrawalAdmin;
 use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Models\Wallet;
@@ -167,7 +169,7 @@ class AdminPanelTest extends TestCase
         $response->assertDontSee('System: Maintenance');
 
         // 2. Set maintenance mode to true and check
-        \App\Modules\Operations\Models\SystemSetting::where('key', 'system.maintenance_mode')->update(['value' => 'true']);
+        SystemSetting::where('key', 'system.maintenance_mode')->update(['value' => 'true']);
 
         $response = $this->actingAs($this->admin)->get('/admin');
         $response->assertStatus(200);
@@ -201,7 +203,7 @@ class AdminPanelTest extends TestCase
      */
     public function test_tournament_admin_can_create_tournament(): void
     {
-        $platform = \App\Modules\CMS\Models\Platform::query()->create(['name' => 'PC', 'slug' => 'pc']);
+        $platform = Platform::query()->create(['name' => 'PC', 'slug' => 'pc']);
 
         Livewire::actingAs($this->admin)
             ->test(TournamentForm::class)
@@ -215,6 +217,9 @@ class AdminPanelTest extends TestCase
             ->set('waiting_result_time', 10)
             ->set('entry_fee', '10.00')
             ->set('prize_pool', '150.00')
+            ->set('prize_1st', '100.00')
+            ->set('prize_2nd', '')
+            ->set('prize_3rd', '')
             ->set('min_participants', 4)
             ->set('max_participants', 16)
             ->set('registration_open_at', now()->addMinutes(5)->format('Y-m-d\TH:i'))
@@ -228,6 +233,9 @@ class AdminPanelTest extends TestCase
             'name' => 'New Admin Cup',
             'game_id' => $this->game->id,
             'status' => TournamentStatus::DRAFT->value,
+            'prize_1st' => '100.00',
+            'prize_2nd' => null,
+            'prize_3rd' => null,
         ]);
     }
 

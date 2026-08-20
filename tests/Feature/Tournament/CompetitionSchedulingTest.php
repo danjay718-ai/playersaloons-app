@@ -73,6 +73,25 @@ final class CompetitionSchedulingTest extends TestCase
         $this->assertSame(1, $competition->team_size);
     }
 
+    public function test_creation_normalizes_blank_optional_prizes_to_null(): void
+    {
+        $competition = app(CreateTournamentAction::class)->execute([
+            ...$this->baseData(),
+            'prize_1st' => '100.00',
+            'prize_2nd' => '',
+            'prize_3rd' => '',
+        ], $this->creator);
+
+        $this->assertSame('100.00', $competition->prize_1st);
+        $this->assertNull($competition->prize_2nd);
+        $this->assertNull($competition->prize_3rd);
+        $this->assertDatabaseHas('tournaments', [
+            'id' => $competition->id,
+            'prize_2nd' => null,
+            'prize_3rd' => null,
+        ]);
+    }
+
     public function test_reconciler_catches_up_due_states_and_cancels_an_opted_in_underfilled_competition(): void
     {
         $competition = app(CreateTournamentAction::class)->execute([
