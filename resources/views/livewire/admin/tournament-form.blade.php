@@ -8,7 +8,7 @@
         isStepValid(stepNumber) {
             void this.validationTick; // tracked by Alpine for reactivity
             if (stepNumber === 2) {
-                return this.editorValidity.description && this.editorValidity.rules;
+                return true;
             }
             const section = this.$refs.form?.querySelector(`[data-step='${stepNumber}']`);
             if (!section) return false;
@@ -107,8 +107,8 @@
         </section>
 
         <section data-step="2" x-show="step === 2" x-cloak class="space-y-6 p-5 md:p-8">
-            <div><h2 class="text-lg font-black text-white">Description & Rules</h2><p class="mt-1 text-sm text-slate-500">Each editor scrolls inside the card so the whole wizard stays compact.</p></div>
-            @foreach ([['description', 'Description', 'Explain the tournament format and what players can expect.'], ['rules', 'Tournament Rules', 'The general PlayerSaloons rules are prefilled and can be adjusted.']] as [$property, $label, $placeholder])
+            <div><h2 class="text-lg font-black text-white">Description & Rules</h2><p class="mt-1 text-sm text-slate-500">Both are optional. PlayerSaloons shows the standard fallback when either is left blank.</p></div>
+            @foreach ([['description', 'Description (Optional)', 'Explain the tournament format and what players can expect.'], ['rules', 'Tournament Rules (Optional)', 'Add rules specific to this tournament.']] as [$property, $label, $placeholder])
                 <div wire:ignore
                     x-data="{ editor: null, booted: false }"
                     @sync-tournament-editors.window="if (editor) $wire.{{ $property }} = editor.root.innerHTML"
@@ -134,10 +134,7 @@
                                     }
                                 });
                                 editor.root.innerHTML = $wire.{{ $property }} || '';
-                                const reportValidity = () => {
-                                    const valid = editor.getText().trim().length >= 10;
-                                    window.dispatchEvent(new CustomEvent('tournament-editor-validity', { detail: { field: @js($property), valid } }));
-                                };
+                                const reportValidity = () => window.dispatchEvent(new CustomEvent('tournament-editor-validity', { detail: { field: @js($property), valid: true } }));
                                 editor.on('text-change', reportValidity);
                                 reportValidity();
                             };
@@ -145,7 +142,7 @@
                         }
                     "
                 >
-                    <label class="field-label">{{ $label }} *</label>
+                    <label class="field-label">{{ $label }}</label>
                     <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
                         <div x-ref="editor" class="ql-custom-dark h-56 overflow-y-auto text-slate-100"></div>
                     </div>

@@ -210,8 +210,8 @@ class AdminPanelTest extends TestCase
             ->set('name', 'New Admin Cup')
             ->set('game_id', $this->game->id)
             ->set('platform_id', $platform->id)
-            ->set('description', 'A test tournament description for admin cup.')
-            ->set('rules', '<ul><li>Follow the rules.</li></ul>')
+            ->set('description', '<p><br></p>')
+            ->set('rules', '<p><br></p>')
             ->set('frequency', 'one-time')
             ->set('team_size', 1)
             ->set('waiting_result_time', 10)
@@ -236,6 +236,8 @@ class AdminPanelTest extends TestCase
             'prize_1st' => '100.00',
             'prize_2nd' => null,
             'prize_3rd' => null,
+            'description' => null,
+            'rules' => null,
         ]);
     }
 

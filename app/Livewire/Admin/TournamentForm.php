@@ -12,7 +12,6 @@ use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Tournament\Actions\CreateRecurringCompetitionAction;
 use App\Modules\Tournament\Actions\CreateTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
-use App\Modules\Tournament\Support\DefaultTournamentRules;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Carbon\CarbonImmutable;
@@ -117,7 +116,6 @@ class TournamentForm extends AdminComponent
     public function mount(?int $id = null): void
     {
         $this->timezone = (string) config('app.tournament_timezone', 'UTC');
-        $this->rules = $this->getDefaultRules();
         $this->waiting_result_time = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
 
         if ($id) {
@@ -155,7 +153,7 @@ class TournamentForm extends AdminComponent
             [$this->match_extra_wait_value, $this->match_extra_wait_unit] = $this->splitDuration((int) ($tournament->match_extra_wait_minutes ?: 10));
 
             $this->description = $tournament->description ?? '';
-            $this->rules = (string) ($tournament->getAttribute('rules') ?: $this->getDefaultRules());
+            $this->rules = (string) ($tournament->getAttribute('rules') ?? '');
             $this->platform_id = $tournament->platform_id;
             $this->frequency = $tournament->frequency ?? 'daily';
             $this->is_auto_cancel_underfilled = (bool) $tournament->is_auto_cancel_underfilled;
@@ -202,11 +200,6 @@ class TournamentForm extends AdminComponent
         }
     }
 
-    protected function getDefaultRules(): string
-    {
-        return DefaultTournamentRules::html();
-    }
-
     public function updatedCompetitionType(string $type): void
     {
         if ($type === CompetitionType::HEAD_TO_HEAD->value) {
@@ -227,8 +220,8 @@ class TournamentForm extends AdminComponent
                 'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
             ],
             2 => [
-                'description' => 'required|string|min:10',
-                'rules' => 'required|string|min:10',
+                'description' => 'nullable|string',
+                'rules' => 'nullable|string',
             ],
             3 => [
                 'team_size' => 'required|integer|min:1',
@@ -287,8 +280,8 @@ class TournamentForm extends AdminComponent
             'prize_pool' => 'required|numeric|min:0',
             'registration_open_at' => 'required|date',
             'tournament_end_at' => 'required|date|after:registration_open_at',
-            'description' => 'required|string',
-            'rules' => 'required|string',
+            'description' => 'nullable|string',
+            'rules' => 'nullable|string',
             'platform_id' => 'required|exists:platforms,id',
             'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
             'timezone' => 'required|timezone:all',
@@ -363,8 +356,8 @@ class TournamentForm extends AdminComponent
             'end_at' => $tournamentEndsAt,
             'registration_duration_minutes' => $registrationDuration,
             'extra_registration_minutes' => $extraRegistration,
-            'description' => $this->description,
-            'rules' => $this->rules,
+            'description' => $this->nullableRichText($this->description),
+            'rules' => $this->nullableRichText($this->rules),
             'platform_id' => $this->platform_id,
             'frequency' => $this->frequency,
             'timezone' => $this->timezone,
@@ -457,6 +450,14 @@ class TournamentForm extends AdminComponent
         $url = is_string($url) ? trim($url) : '';
 
         return $url === '' ? null : $url;
+    }
+
+    private function nullableRichText(string $content): ?string
+    {
+        $plainText = html_entity_decode(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $plainText = preg_replace('/\\x{00A0}/u', ' ', $plainText) ?? $plainText;
+
+        return trim($plainText) === '' ? null : $content;
     }
 
     private function parseScheduleDate(string $value): CarbonImmutable
