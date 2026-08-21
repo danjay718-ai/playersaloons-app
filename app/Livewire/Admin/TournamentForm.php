@@ -31,8 +31,6 @@ class TournamentForm extends AdminComponent
 
     public ?int $tournamentId = null;
 
-    public int $step = 1;
-
     // Form fields
     public string $name = '';
 
@@ -96,11 +94,11 @@ class TournamentForm extends AdminComponent
 
     public int $team_size = 1;
 
-    public ?string $prize_1st = null;
+    public ?string $prize_1st = '0.00';
 
-    public ?string $prize_2nd = null;
+    public ?string $prize_2nd = '0.00';
 
-    public ?string $prize_3rd = null;
+    public ?string $prize_3rd = '0.00';
 
     public ?int $winning_points = null;
 
@@ -165,9 +163,9 @@ class TournamentForm extends AdminComponent
             $this->waiting_time = $tournament->waiting_time;
             $this->waiting_result_time = $tournament->waiting_result_time;
             $this->team_size = $tournament->team_size ?? 1;
-            $this->prize_1st = $tournament->prize_1st !== null ? (string) $tournament->prize_1st : null;
-            $this->prize_2nd = $tournament->prize_2nd !== null ? (string) $tournament->prize_2nd : null;
-            $this->prize_3rd = $tournament->prize_3rd !== null ? (string) $tournament->prize_3rd : null;
+            $this->prize_1st = $tournament->prize_1st !== null ? (string) $tournament->prize_1st : '0.00';
+            $this->prize_2nd = $tournament->prize_2nd !== null ? (string) $tournament->prize_2nd : '0.00';
+            $this->prize_3rd = $tournament->prize_3rd !== null ? (string) $tournament->prize_3rd : '0.00';
             $this->winning_points = $tournament->winning_points;
             $this->play_xp = (int) ($tournament->play_xp ?: 100);
             $this->winner_bonus_xp = (int) ($tournament->winner_bonus_xp ?: $tournament->winning_points ?: 50);

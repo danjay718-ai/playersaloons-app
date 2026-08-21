@@ -169,6 +169,7 @@ window.imageCropUpload = function (config) {
             this.image = null;
             this.originalFile = null;
             this.releaseObjectUrl();
+            window.dispatchEvent(new CustomEvent('image-crop-upload-finished'));
         },
 
         failUpload() {

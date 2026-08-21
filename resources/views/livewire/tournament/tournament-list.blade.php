@@ -11,6 +11,57 @@
         </div>
     </div>
 
+    <!-- Tab Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button wire:click="$set('status', '')"
+            class="group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-300 {{ $status === '' ? 'border-cyan-500/60 bg-cyan-500/10 shadow-lg shadow-cyan-500/10' : 'border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-800/40' }}">
+            <div class="flex items-center gap-2 mb-1.5">
+                <i data-lucide="layout-grid" class="w-4 h-4 {{ $status === '' ? 'text-cyan-400' : 'text-zinc-500 group-hover:text-zinc-300' }} transition-colors"></i>
+                <span class="text-[10px] font-bold uppercase tracking-widest {{ $status === '' ? 'text-cyan-300' : 'text-zinc-500 group-hover:text-zinc-400' }} transition-colors">All</span>
+            </div>
+            <p class="text-lg font-black {{ $status === '' ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200' }} transition-colors">Tournaments</p>
+            @if($status === '')
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-400 to-violet-500"></div>
+            @endif
+        </button>
+
+        <button wire:click="$set('status', 'REGISTRATION_OPEN')"
+            class="group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-300 {{ $status === 'REGISTRATION_OPEN' ? 'border-emerald-500/60 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-800/40' }}">
+            <div class="flex items-center gap-2 mb-1.5">
+                <i data-lucide="door-open" class="w-4 h-4 {{ $status === 'REGISTRATION_OPEN' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300' }} transition-colors"></i>
+                <span class="text-[10px] font-bold uppercase tracking-widest {{ $status === 'REGISTRATION_OPEN' ? 'text-emerald-300' : 'text-zinc-500 group-hover:text-zinc-400' }} transition-colors">Open</span>
+            </div>
+            <p class="text-lg font-black {{ $status === 'REGISTRATION_OPEN' ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200' }} transition-colors">Registration</p>
+            @if($status === 'REGISTRATION_OPEN')
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-cyan-400"></div>
+            @endif
+        </button>
+
+        <button wire:click="$set('status', 'ONGOING')"
+            class="group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-300 {{ $status === 'ONGOING' ? 'border-violet-500/60 bg-violet-500/10 shadow-lg shadow-violet-500/10' : 'border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-800/40' }}">
+            <div class="flex items-center gap-2 mb-1.5">
+                <i data-lucide="swords" class="w-4 h-4 {{ $status === 'ONGOING' ? 'text-violet-400' : 'text-zinc-500 group-hover:text-zinc-300' }} transition-colors"></i>
+                <span class="text-[10px] font-bold uppercase tracking-widest {{ $status === 'ONGOING' ? 'text-violet-300' : 'text-zinc-500 group-hover:text-zinc-400' }} transition-colors">Live</span>
+            </div>
+            <p class="text-lg font-black {{ $status === 'ONGOING' ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200' }} transition-colors">Ongoing</p>
+            @if($status === 'ONGOING')
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-400 to-fuchsia-500"></div>
+            @endif
+        </button>
+
+        <button wire:click="$set('status', 'CHECKIN_OPEN')"
+            class="group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-300 {{ $status === 'CHECKIN_OPEN' ? 'border-amber-500/60 bg-amber-500/10 shadow-lg shadow-amber-500/10' : 'border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-800/40' }}">
+            <div class="flex items-center gap-2 mb-1.5">
+                <i data-lucide="clock" class="w-4 h-4 {{ $status === 'CHECKIN_OPEN' ? 'text-amber-400' : 'text-zinc-500 group-hover:text-zinc-300' }} transition-colors"></i>
+                <span class="text-[10px] font-bold uppercase tracking-widest {{ $status === 'CHECKIN_OPEN' ? 'text-amber-300' : 'text-zinc-500 group-hover:text-zinc-400' }} transition-colors">Soon</span>
+            </div>
+            <p class="text-lg font-black {{ $status === 'CHECKIN_OPEN' ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200' }} transition-colors">Preparing</p>
+            @if($status === 'CHECKIN_OPEN')
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 to-orange-400"></div>
+            @endif
+        </button>
+    </div>
+
     <!-- Filters Section (Glassmorphism) -->
     <div class="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 rounded-2xl p-4 md:p-6 shadow-2xl shadow-black/60 relative overflow-hidden group">
         <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-violet-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
@@ -26,19 +77,6 @@
                         class="block w-full pl-10 pr-4 py-3 bg-zinc-950/80 border border-zinc-800 rounded-xl text-sm text-zinc-200 placeholder-zinc-700 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-300"
                         placeholder="Search tournament name...">
                 </div>
-            </div>
-
-            <!-- Status Filter -->
-            <div>
-                <label for="status" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2.5 ml-1">Status</label>
-                <select wire:model.live="status" id="status"
-                    class="block w-full px-4 py-3 bg-zinc-950/80 border border-zinc-800 rounded-xl text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all duration-300 appearance-none cursor-pointer">
-                    <option value="">All Statuses</option>
-                    <option value="REGISTRATION_OPEN">Registration Open</option>
-                    <option value="CHECKIN_OPEN">Preparing Matches</option>
-                    <option value="ONGOING">Ongoing</option>
-                    <option value="COMPLETED">Completed</option>
-                </select>
             </div>
 
             <!-- Game Filter -->

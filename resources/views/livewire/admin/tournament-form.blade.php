@@ -1,47 +1,65 @@
 <div
     x-data="{
-        step: @entangle('step').live,
+        step: 1,
         totalSteps: 5,
         busy: false,
         validationTick: 0,
         editorValidity: { description: false, rules: false },
-        isStepComplete(stepNumber) {
-            this.validationTick;
+        isStepValid(stepNumber) {
+            void this.validationTick; // tracked by Alpine for reactivity
             if (stepNumber === 2) {
                 return this.editorValidity.description && this.editorValidity.rules;
             }
-
             const section = this.$refs.form?.querySelector(`[data-step='${stepNumber}']`);
             if (!section) return false;
-
             return [...section.querySelectorAll('input, select, textarea')]
-                .filter(field => !field.disabled)
-                .every(field => {
-                    if (field.dataset.invalidZero === 'true' && Number(field.value) <= 0) return false;
-                    return (!field.required && field.value === '') || field.checkValidity();
+                .filter(f => !f.disabled)
+                .every(f => {
+                    if (f.dataset.invalidZero === 'true' && Number(f.value) <= 0) return false;
+                    return (!f.required && f.value === '') || f.checkValidity();
                 });
         },
+        get canContinue() {
+            return !this.busy && this.isStepValid(this.step);
+        },
+        recheckValidity() {
+            // x-show toggles display but the DOM node persists — a small timeout
+            // lets the browser finish any transition before we query fields.
+            setTimeout(() => { this.validationTick++; }, 50);
+        },
         async next() {
-            if (!this.isStepComplete(this.step)) return;
+            if (!this.isStepValid(this.step)) return;
             window.dispatchEvent(new CustomEvent('sync-tournament-editors'));
-            await new Promise(resolve => setTimeout(resolve, 75));
+            await new Promise(r => setTimeout(r, 75));
             this.busy = true;
             try {
                 await $wire.validateStep(this.step);
-                if (this.step < this.totalSteps) this.step++;
+                if (this.step < this.totalSteps) {
+                    this.step++;
+                    this.recheckValidity();
+                }
+            } catch(e) {
+                // validation errors stay on the page; step does not advance
             } finally { this.busy = false; }
         },
-        previous() { if (this.step > 1) this.step--; },
+        previous() {
+            if (this.step > 1) {
+                this.step--;
+                this.recheckValidity();
+            }
+        },
         async save() {
             window.dispatchEvent(new CustomEvent('sync-tournament-editors'));
-            await new Promise(resolve => setTimeout(resolve, 75));
+            await new Promise(r => setTimeout(r, 75));
             this.busy = true;
             try { await $wire.saveTournament(); } finally { this.busy = false; }
         }
     }"
-    @input="validationTick++"
-    @change="validationTick++"
-    @tournament-editor-validity.window="editorValidity[$event.detail.field] = $event.detail.valid"
+    x-init="recheckValidity()"
+    @input="validationTick++; recheckValidity()"
+    @change="validationTick++; recheckValidity()"
+    @image-crop-upload-finished.window="recheckValidity()"
+    @tournament-editor-validity.window="editorValidity[$event.detail.field] = $event.detail.valid; recheckValidity()"
     class="w-full"
 >
     <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -67,7 +85,7 @@
 
     <div class="mb-6 grid grid-cols-5 gap-2">
         @foreach (['Details', 'Content', 'Match Setup', 'Schedule', 'Prizes'] as $number => $label)
-            <button type="button" @click="if ({{ $number + 1 }} < step) step = {{ $number + 1 }}" class="group text-left">
+            <button type="button" @click="if ({{ $number + 1 }} < step) { step = {{ $number + 1 }}; recheckValidity(); }" class="group text-left">
                 <span class="mb-2 block h-1.5 rounded-full transition" :class="step >= {{ $number + 1 }} ? 'bg-indigo-500' : 'bg-slate-800'"></span>
                 <span class="hidden text-[10px] font-bold uppercase tracking-wider sm:block" :class="step >= {{ $number + 1 }} ? 'text-indigo-300' : 'text-slate-600'">{{ $label }}</span>
             </button>
@@ -91,18 +109,46 @@
         <section data-step="2" x-show="step === 2" x-cloak class="space-y-6 p-5 md:p-8">
             <div><h2 class="text-lg font-black text-white">Description & Rules</h2><p class="mt-1 text-sm text-slate-500">Each editor scrolls inside the card so the whole wizard stays compact.</p></div>
             @foreach ([['description', 'Description', 'Explain the tournament format and what players can expect.'], ['rules', 'Tournament Rules', 'The general PlayerSaloons rules are prefilled and can be adjusted.']] as [$property, $label, $placeholder])
-                <div wire:ignore x-data="{ editor: null }" @sync-tournament-editors.window="if (editor) $wire.{{ $property }} = editor.root.innerHTML" x-init="
-                    const boot = () => {
-                        if (editor) return;
-                        if (typeof window.Quill === 'undefined') { setTimeout(boot, 75); return; }
-                        editor = new Quill($refs.editor, { theme: 'snow', placeholder: @js($placeholder), modules: { toolbar: [['bold','italic','underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] } });
-                        editor.root.innerHTML = $wire.{{ $property }} || '';
-                        const reportValidity = () => window.dispatchEvent(new CustomEvent('tournament-editor-validity', { detail: { field: @js($property), valid: editor.getText().trim().length >= 10 } }));
-                        editor.on('text-change', reportValidity);
-                        reportValidity();
-                    }; boot();
-                ">
-                    <label class="field-label">{{ $label }} *</label><div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900"><div x-ref="editor" class="ql-custom-dark h-56 overflow-y-auto text-slate-100"></div></div>
+                <div wire:ignore
+                    x-data="{ editor: null, booted: false }"
+                    @sync-tournament-editors.window="if (editor) $wire.{{ $property }} = editor.root.innerHTML"
+                    x-effect="
+                        if (step === 2 && !booted) {
+                            booted = true;
+                            const boot = () => {
+                                if (typeof window.Quill === 'undefined') { setTimeout(boot, 75); return; }
+                                editor = new Quill($refs.editor, {
+                                    theme: 'snow',
+                                    placeholder: @js($placeholder),
+                                    modules: {
+                                        toolbar: [
+                                            [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
+                                            [{ header: [1, 2, 3, 4, 5, 6, false] }],
+                                            ['bold', 'italic', 'underline', 'strike'],
+                                            [{ color: [] }, { background: [] }],
+                                            [{ list: 'ordered' }, { list: 'bullet' }, { indent: '-1' }, { indent: '+1' }],
+                                            [{ align: [] }],
+                                            ['link', 'blockquote', 'code-block'],
+                                            ['clean']
+                                        ]
+                                    }
+                                });
+                                editor.root.innerHTML = $wire.{{ $property }} || '';
+                                const reportValidity = () => {
+                                    const valid = editor.getText().trim().length >= 10;
+                                    window.dispatchEvent(new CustomEvent('tournament-editor-validity', { detail: { field: @js($property), valid } }));
+                                };
+                                editor.on('text-change', reportValidity);
+                                reportValidity();
+                            };
+                            boot();
+                        }
+                    "
+                >
+                    <label class="field-label">{{ $label }} *</label>
+                    <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+                        <div x-ref="editor" class="ql-custom-dark h-56 overflow-y-auto text-slate-100"></div>
+                    </div>
                 </div>
                 @error($property) <p class="-mt-4 field-error">{{ $message }}</p> @enderror
             @endforeach
@@ -153,8 +199,8 @@
 
         <footer class="flex items-center justify-between border-t border-slate-800 bg-slate-950 px-5 py-4 md:px-8">
             <button x-show="step > 1" type="button" @click="previous" class="rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-bold text-slate-300 hover:bg-slate-900">Back</button><span x-show="step === 1"></span>
-            <button x-show="step < totalSteps" type="button" @click="next" :disabled="busy || !isStepComplete(step)" class="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-black text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"><span x-show="!busy">Continue</span><span x-show="busy">Checking…</span></button>
-            <button x-show="step === totalSteps" type="submit" :disabled="busy || !isStepComplete(step)" class="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-black text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"><span x-show="!busy">{{ $isEditMode ? 'Save Changes' : 'Create Tournament' }}</span><span x-show="busy">Saving…</span></button>
+            <button x-show="step < totalSteps" type="button" @click="next" :disabled="!canContinue" class="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-black text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"><span x-show="!busy">Continue</span><span x-show="busy">Checking…</span></button>
+            <button x-show="step === totalSteps" type="submit" :disabled="!canContinue" class="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-black text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"><span x-show="!busy">{{ $isEditMode ? 'Save Changes' : 'Create Tournament' }}</span><span x-show="busy">Saving…</span></button>
         </footer>
     </form>
 
@@ -166,9 +212,30 @@
         .form-field { width: 100%; border-radius: .5rem; border: 1px solid rgb(30 41 59); background: rgb(15 23 42); padding: .625rem .75rem; font-size: .875rem; color: white; outline: none; }
         .form-field:focus { border-color: rgb(99 102 241); }
         .form-field:disabled { cursor: not-allowed; opacity: .5; }
-        .ql-custom-dark .ql-editor { height: 14rem; overflow-y: auto; color: rgb(241 245 249); }
+
+        /* Quill dark theme */
         .ql-toolbar.ql-snow, .ql-container.ql-snow { border-color: rgb(30 41 59) !important; }
+        .ql-toolbar.ql-snow { background: rgb(2 6 23); border-radius: .75rem .75rem 0 0; flex-wrap: wrap; }
+        .ql-container.ql-snow { border-radius: 0 0 .75rem .75rem; }
         .ql-snow .ql-stroke { stroke: rgb(148 163 184) !important; }
         .ql-snow .ql-fill { fill: rgb(148 163 184) !important; }
+        .ql-snow .ql-picker { color: rgb(148 163 184) !important; }
+        .ql-snow .ql-picker-label { color: rgb(148 163 184) !important; border-color: rgb(30 41 59) !important; }
+        .ql-snow .ql-picker-label:hover, .ql-snow .ql-picker-label.ql-active { color: rgb(255 255 255) !important; }
+        .ql-snow .ql-picker-options { background: rgb(15 23 42) !important; border-color: rgb(30 41 59) !important; border-radius: .5rem; box-shadow: 0 4px 20px rgba(0,0,0,.6); }
+        .ql-snow .ql-picker-item { color: rgb(148 163 184) !important; }
+        .ql-snow .ql-picker-item:hover, .ql-snow .ql-picker-item.ql-selected { color: rgb(255 255 255) !important; background: rgb(30 41 59) !important; }
+        .ql-snow .ql-tooltip { background: rgb(15 23 42) !important; border-color: rgb(30 41 59) !important; color: rgb(226 232 240) !important; box-shadow: 0 4px 16px rgba(0,0,0,.5); border-radius: .5rem; }
+        .ql-snow .ql-tooltip input[type=text] { background: rgb(2 6 23); border-color: rgb(30 41 59); color: white; border-radius: .25rem; }
+        .ql-snow .ql-tooltip a { color: rgb(99 102 241) !important; }
+        .ql-toolbar.ql-snow .ql-formats { margin-right: .5rem; }
+        .ql-snow button:hover .ql-stroke, .ql-snow button.ql-active .ql-stroke { stroke: rgb(255 255 255) !important; }
+        .ql-snow button:hover .ql-fill, .ql-snow button.ql-active .ql-fill { fill: rgb(255 255 255) !important; }
+        .ql-custom-dark .ql-editor { min-height: 14rem; overflow-y: auto; color: rgb(241 245 249); font-size: .875rem; line-height: 1.6; }
+        .ql-editor.ql-blank::before { color: rgb(100 116 139) !important; font-style: italic; }
+
+        /* Color / background picker swatches */
+        .ql-snow .ql-color-picker .ql-picker-label svg,
+        .ql-snow .ql-background .ql-picker-label svg { width: 16px; height: 16px; }
     </style>
 </div>

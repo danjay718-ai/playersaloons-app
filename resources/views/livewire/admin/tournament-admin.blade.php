@@ -17,6 +17,65 @@
         </a>
     </div>
 
+    <!-- Status Tab Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {{-- Active --}}
+        <button wire:click="$set('statusTab', 'active')"
+            class="group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-200 {{ $statusTab === 'active' ? 'border-indigo-500/60 bg-indigo-500/10 shadow-lg shadow-indigo-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-800/60' }}">
+            <div class="flex items-center justify-between mb-2">
+                <i data-lucide="zap" class="w-4 h-4 {{ $statusTab === 'active' ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-400' }} transition-colors"></i>
+                <span class="text-xs font-black {{ $statusTab === 'active' ? 'text-indigo-300' : 'text-slate-600 group-hover:text-slate-400' }} tabular-nums transition-colors">{{ $countActive }}</span>
+            </div>
+            <p class="text-sm font-bold {{ $statusTab === 'active' ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }} transition-colors">Active</p>
+            <p class="text-[10px] {{ $statusTab === 'active' ? 'text-indigo-400/70' : 'text-slate-600' }} transition-colors mt-0.5">Draft → Ongoing</p>
+            @if($statusTab === 'active')
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-b-xl"></div>
+            @endif
+        </button>
+
+        {{-- Completed --}}
+        <button wire:click="$set('statusTab', 'completed')"
+            class="group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-200 {{ $statusTab === 'completed' ? 'border-emerald-500/60 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-800/60' }}">
+            <div class="flex items-center justify-between mb-2">
+                <i data-lucide="trophy" class="w-4 h-4 {{ $statusTab === 'completed' ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400' }} transition-colors"></i>
+                <span class="text-xs font-black {{ $statusTab === 'completed' ? 'text-emerald-300' : 'text-slate-600 group-hover:text-slate-400' }} tabular-nums transition-colors">{{ $countCompleted }}</span>
+            </div>
+            <p class="text-sm font-bold {{ $statusTab === 'completed' ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }} transition-colors">Completed</p>
+            <p class="text-[10px] {{ $statusTab === 'completed' ? 'text-emerald-400/70' : 'text-slate-600' }} transition-colors mt-0.5">Finished tournaments</p>
+            @if($statusTab === 'completed')
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-b-xl"></div>
+            @endif
+        </button>
+
+        {{-- Cancelled / Refunded --}}
+        <button wire:click="$set('statusTab', 'cancelled')"
+            class="group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-200 {{ $statusTab === 'cancelled' ? 'border-red-500/60 bg-red-500/10 shadow-lg shadow-red-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-800/60' }}">
+            <div class="flex items-center justify-between mb-2">
+                <i data-lucide="x-circle" class="w-4 h-4 {{ $statusTab === 'cancelled' ? 'text-red-400' : 'text-slate-600 group-hover:text-slate-400' }} transition-colors"></i>
+                <span class="text-xs font-black {{ $statusTab === 'cancelled' ? 'text-red-300' : 'text-slate-600 group-hover:text-slate-400' }} tabular-nums transition-colors">{{ $countCancelled }}</span>
+            </div>
+            <p class="text-sm font-bold {{ $statusTab === 'cancelled' ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }} transition-colors">Cancelled</p>
+            <p class="text-[10px] {{ $statusTab === 'cancelled' ? 'text-red-400/70' : 'text-slate-600' }} transition-colors mt-0.5">Cancelled & refunded</p>
+            @if($statusTab === 'cancelled')
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500 rounded-b-xl"></div>
+            @endif
+        </button>
+
+        {{-- All --}}
+        <button wire:click="$set('statusTab', 'all')"
+            class="group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-200 {{ $statusTab === 'all' ? 'border-slate-500/60 bg-slate-500/10 shadow-lg shadow-slate-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-800/60' }}">
+            <div class="flex items-center justify-between mb-2">
+                <i data-lucide="layers" class="w-4 h-4 {{ $statusTab === 'all' ? 'text-slate-300' : 'text-slate-600 group-hover:text-slate-400' }} transition-colors"></i>
+                <span class="text-xs font-black {{ $statusTab === 'all' ? 'text-slate-200' : 'text-slate-600 group-hover:text-slate-400' }} tabular-nums transition-colors">{{ $countAll }}</span>
+            </div>
+            <p class="text-sm font-bold {{ $statusTab === 'all' ? 'text-white' : 'text-slate-400 group-hover:text-slate-200' }} transition-colors">All</p>
+            <p class="text-[10px] {{ $statusTab === 'all' ? 'text-slate-400/70' : 'text-slate-600' }} transition-colors mt-0.5">Every tournament</p>
+            @if($statusTab === 'all')
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-400 rounded-b-xl"></div>
+            @endif
+        </button>
+    </div>
+
     <!-- Filters Card -->
     <div class="bg-[#0f172a] border border-slate-800 rounded-xl p-4 mb-6">
         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Filter Tournaments</h2>
