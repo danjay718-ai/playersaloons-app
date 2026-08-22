@@ -115,6 +115,13 @@
                 @endforeach
             </select>
 
+            <select wire:model.live="competitionTypeFilter"
+                    class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                <option value="">Tournament &amp; Head-to-Head</option>
+                <option value="tournament">Tournament</option>
+                <option value="head_to_head">Head-to-Head</option>
+            </select>
+
             <div class="flex items-center gap-2">
                 <input type="date" wire:model.live="startDateFilter" 
                        class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">

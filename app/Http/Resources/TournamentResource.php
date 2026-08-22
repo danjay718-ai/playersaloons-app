@@ -36,12 +36,19 @@ class TournamentResource extends JsonResource
             'start_at' => $this->start_at,
             'completed_at' => $this->completed_at,
             'cancelled_at' => $this->cancelled_at,
-            'game' => [
-                'uuid' => $this->game->uuid,
-                'name' => $this->game->translations()->where('locale', app()->getLocale())->first()?->name
-                    ?? $this->game->translations()->where('locale', 'en')->first()?->name
-                    ?? $this->game->slug,
-            ],
+            'game' => $this->whenLoaded('game', function () {
+                $translations = $this->game->relationLoaded('translations')
+                    ? $this->game->translations
+                    : $this->game->translations()->get();
+                $locale = app()->getLocale();
+
+                return [
+                    'uuid' => $this->game->uuid,
+                    'name' => $translations->firstWhere('locale', $locale)?->name
+                        ?? $translations->firstWhere('locale', 'en')?->name
+                        ?? $this->game->slug,
+                ];
+            }),
         ];
     }
 }

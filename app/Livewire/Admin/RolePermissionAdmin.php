@@ -9,6 +9,23 @@ use Spatie\Permission\Models\Permission;
 
 class RolePermissionAdmin extends AdminComponent
 {
+    /** @var array<int, string> */
+    private const PLAYER_PERMISSION_NAMES = [
+        'tournaments.view',
+        'tournaments.register',
+        'matches.view',
+        'matches.submit_result',
+        'disputes.open',
+        'teams.view',
+        'teams.create',
+        'teams.manage',
+        'teams.invite',
+        'teams.remove_member',
+        'wallets.view',
+        'wallets.request_withdrawal',
+        'cms.view',
+        'games.view',
+    ];
     public $activeRoleId = null;
 
     public function mount()
@@ -45,7 +62,11 @@ class RolePermissionAdmin extends AdminComponent
     public function render()
     {
         $roles = Role::with('permissions')->orderBy('name')->get();
-        $allPermissions = Permission::orderBy('name')->get();
+        $activeRole = $roles->firstWhere('id', $this->activeRoleId);
+        $allPermissions = Permission::query()
+            ->when($activeRole?->name === 'PLAYER', fn ($query) => $query->whereIn('name', self::PLAYER_PERMISSION_NAMES))
+            ->orderBy('name')
+            ->get();
 
         // Group permissions based on prefixes (e.g., 'manage_users' -> 'manage' or 'user')
         // We'll group by the first word before an underscore or dash.

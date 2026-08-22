@@ -87,6 +87,7 @@ class ChatService
             );
 
             $team->members()
+                ->with('user')
                 ->where('status', 'active')
                 ->get()
                 ->each(function ($member) use ($conversation): void {

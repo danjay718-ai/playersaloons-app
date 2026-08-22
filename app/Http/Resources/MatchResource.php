@@ -22,24 +22,24 @@ class MatchResource extends JsonResource
     {
         return [
             'uuid' => $this->uuid,
-            'tournament_uuid' => $this->tournament->uuid,
-            'round_number' => $this->round->round_number,
+            'tournament_uuid' => $this->whenLoaded('tournament', fn () => $this->tournament->uuid),
+            'round_number' => $this->whenLoaded('round', fn () => $this->round->round_number),
             'status' => $this->status->value ?? $this->status,
             'scheduled_at' => $this->scheduled_at,
             'started_at' => $this->started_at,
             'completed_at' => $this->completed_at,
-            'player_a' => $this->playerARegistration?->user ? [
+            'player_a' => $this->whenLoaded('playerARegistration', fn () => $this->playerARegistration?->user ? [
                 'uuid' => $this->playerARegistration->user->uuid,
                 'username' => $this->playerARegistration->user->username,
-            ] : null,
-            'player_b' => $this->playerBRegistration?->user ? [
+            ] : null),
+            'player_b' => $this->whenLoaded('playerBRegistration', fn () => $this->playerBRegistration?->user ? [
                 'uuid' => $this->playerBRegistration->user->uuid,
                 'username' => $this->playerBRegistration->user->username,
-            ] : null,
-            'winner' => $this->winnerRegistration?->user ? [
+            ] : null),
+            'winner' => $this->whenLoaded('winnerRegistration', fn () => $this->winnerRegistration?->user ? [
                 'uuid' => $this->winnerRegistration->user->uuid,
                 'username' => $this->winnerRegistration->user->username,
-            ] : null,
+            ] : null),
         ];
     }
 }

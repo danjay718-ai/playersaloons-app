@@ -38,7 +38,7 @@
                 <div class="mb-3 flex items-center gap-2"><i data-lucide="swords" class="h-4 w-4 text-cyan-300"></i><h2 class="text-xs font-black uppercase tracking-widest text-white">Your Match Rooms</h2></div>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($activeMatchRooms as $match)
-                        <a href="/matches/{{ $match->uuid }}" wire:navigate class="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3 transition hover:border-cyan-500/40">
+                        <a href="/matches/{{ $match->uuid }}" wire:navigate wire:key="match-room-{{ $match->uuid }}" class="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3 transition hover:border-cyan-500/40">
                             <div class="min-w-0"><p class="truncate text-xs font-bold text-zinc-100">{{ $match->tournament->name }}</p><p class="mt-1 text-[9px] font-black uppercase tracking-wider text-cyan-400">{{ str_replace('_', ' ', $match->status->value) }}</p></div>
                             <span class="shrink-0 text-[9px] font-black uppercase text-cyan-300">Open →</span>
                         </a>
@@ -49,7 +49,9 @@
         @if($tournaments->count() > 0)
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 @foreach($tournaments as $tournament)
+                    <div wire:key="tournament-{{ $tournament->uuid }}">
                     <x-player.tournament-card :tournament="$tournament" action-label="View Tournament" />
+                    </div>
                 @endforeach
             </div>
         @else
@@ -80,7 +82,7 @@
                             default => 'border-zinc-700 bg-zinc-800 text-zinc-400',
                         };
                     @endphp
-                    <a href="{{ $historyMatch['href'] }}" wire:navigate class="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-5 transition hover:border-cyan-500/35 hover:bg-zinc-900/80">
+                    <a href="{{ $historyMatch['href'] }}" wire:navigate wire:key="history-{{ $historyMatch['type'] }}-{{ $loop->index }}" class="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-5 transition hover:border-cyan-500/35 hover:bg-zinc-900/80">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex flex-wrap items-center gap-2">
                                 <span class="rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-widest {{ $isTournamentMatch ? 'border-cyan-700/60 bg-cyan-950/30 text-cyan-300' : 'border-fuchsia-700/60 bg-fuchsia-950/30 text-fuchsia-300' }}">

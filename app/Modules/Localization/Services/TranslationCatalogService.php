@@ -21,6 +21,7 @@ final class TranslationCatalogService
     public function syncFromJsonFiles(): int
     {
         $synced = 0;
+        $now = now();
 
         foreach (array_keys($this->supportedLanguages()) as $locale) {
             $path = lang_path($locale.'.json');
@@ -32,17 +33,24 @@ final class TranslationCatalogService
                 $translations = [];
             }
 
+            $rows = [];
             foreach ($translations as $key => $text) {
                 if (! is_string($key)) {
                     continue;
                 }
 
-                TranslationString::query()->updateOrCreate(
-                    ['key' => $key, 'locale' => $locale],
-                    ['text' => is_scalar($text) ? (string) $text : null],
-                );
-
+                $rows[] = [
+                    'key' => $key,
+                    'locale' => $locale,
+                    'text' => is_scalar($text) ? (string) $text : null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
                 $synced++;
+            }
+
+            if ($rows !== []) {
+                TranslationString::query()->upsert($rows, ['key', 'locale'], ['text', 'updated_at']);
             }
         }
 
@@ -57,13 +65,24 @@ final class TranslationCatalogService
             ->where('locale', 'en')
             ->pluck('key');
 
+        $now = now();
+        $rows = [];
+
         foreach ($keys as $key) {
             foreach (array_keys($this->supportedLanguages()) as $locale) {
-                TranslationString::query()->firstOrCreate(
-                    ['key' => $key, 'locale' => $locale],
-                    ['text' => $locale === 'en' ? $key : null],
-                );
+                $rows[] = [
+                    'key' => $key,
+                    'locale' => $locale,
+                    'text' => $locale === 'en' ? $key : null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
+        }
+
+        if ($rows !== []) {
+            // Only insert if missing — don't overwrite existing translations
+            TranslationString::query()->upsert($rows, ['key', 'locale'], []);
         }
     }
 

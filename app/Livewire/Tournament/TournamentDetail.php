@@ -165,7 +165,7 @@ class TournamentDetail extends Component
             $action->execute($registration, $user);
             session()->flash('message', 'Registration cancelled successfully. Any entry fee has been refunded to your wallet.');
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to update the tournament stream.'));
+            session()->flash('error', $this->safeError($e, 'Unable to cancel the tournament registration.'));
         }
     }
 

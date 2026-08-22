@@ -28,6 +28,26 @@ class UserPolicy
         return $user->hasPermissionTo('users.suspend');
     }
 
+    public function create(User $user): bool
+    {
+        return $user->hasPermissionTo('users.create');
+    }
+
+    public function update(User $user, User $target): bool
+    {
+        return $user->hasPermissionTo('users.update');
+    }
+
+    public function delete(User $user, User $target): bool
+    {
+        return $user->hasPermissionTo('users.delete');
+    }
+
+    public function resetPassword(User $user, User $target): bool
+    {
+        return $user->hasPermissionTo('users.reset_password');
+    }
+
     /**
      * Determine whether the user can unsuspend another user.
      */

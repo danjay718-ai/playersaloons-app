@@ -1,4 +1,4 @@
-<div>
+<div x-data="{ createModal: null }" @user-created.window="createModal = null">
     <!-- Tabs -->
     <div class="flex space-x-1 border-b border-slate-800 mb-6 relative">
         <div wire:loading wire:target="setTab" class="absolute top-0 right-0 p-3">
@@ -47,6 +47,12 @@
                        class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full sm:w-48">
             @endif
         </div>
+        @can('create', \App\Modules\Identity\Models\User::class)
+            <div class="flex w-full gap-2 sm:w-auto">
+                <button type="button" @click="createModal = 'player'" class="flex-1 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-indigo-300 transition hover:bg-indigo-500/20 sm:flex-none">Add Player</button>
+                <button type="button" @click="createModal = 'user'" class="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-indigo-500 sm:flex-none">Add User</button>
+            </div>
+        @endcan
     </div>
 
     <!-- Feedback Alerts -->
@@ -124,12 +130,9 @@
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                     </button>
                                     <div x-show="open" x-transition style="display: none;" class="absolute right-0 mt-2 w-40 bg-slate-800 rounded-lg shadow-xl z-50 border border-slate-700 py-1 overflow-hidden">
-                                        <button wire:click="editUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white uppercase font-bold tracking-wider transition-colors relative">
-                                            Edit Data
-                                        </button>
-                                        <button wire:click="prepareResetPassword({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white uppercase font-bold tracking-wider transition-colors">
-                                            Reset Password
-                                        </button>
+                                        @can('update', $usr)<button wire:click="editUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white uppercase font-bold tracking-wider transition-colors relative">Edit Data</button>@endcan
+                                        @can('resetPassword', $usr)<button wire:click="prepareResetPassword({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white uppercase font-bold tracking-wider transition-colors">Reset Password</button>@endcan
+                                        @can('delete', $usr)<button wire:click="confirmDeleteUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-red-400 transition-colors hover:bg-red-950/40 hover:text-red-300">Delete User</button>@endcan
                                         <div class="border-t border-slate-700 my-0.5"></div>
                                         <button wire:click="selectUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-indigo-400 hover:bg-slate-700 hover:text-indigo-300 uppercase font-bold tracking-wider transition-colors">
                                             Full Manage
@@ -147,6 +150,35 @@
             </table>
         </div>
     </div>
+
+    <!-- Create User / Player Modal -->
+        <div x-cloak x-show="createModal !== null" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="createModal = null"></div>
+            <div class="relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-slate-800 bg-[#0f172a] shadow-2xl">
+                <div class="flex items-center justify-between border-b border-slate-800 bg-[#0b0f19] px-6 py-4"><h3 class="text-sm font-bold uppercase tracking-wider text-slate-200">Add <span x-text="createModal === 'player' ? 'Player' : 'User'"></span></h3><button type="button" @click="createModal = null" class="text-slate-400 hover:text-white">×</button></div>
+                <form @submit.prevent="await $wire.set('createMode', createModal); await $wire.createUser()" class="space-y-4 p-6">
+                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Username</label><input wire:model="createUsername" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createUsername')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Email</label><input wire:model="createEmail" type="email" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createEmail')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Display Name</label><input wire:model="createDisplayName" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"></div>
+                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Country Code</label><input wire:model="createCountryCode" maxlength="2" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm uppercase text-slate-100"></div>
+                    <div x-show="createModal === 'user'"><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Role</label><select wire:model="createRole" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"><option value="">Select role</option>@foreach($roles->where('name', '!=', 'PLAYER') as $role)@if($role->name !== 'SUPER_ADMIN' || auth()->user()?->hasRole('SUPER_ADMIN'))<option value="{{ $role->name }}">{{ $role->name }}</option>@endif @endforeach</select>@error('createRole')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Password</label><input wire:model="createPassword" type="password" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createPassword')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Confirm Password</label><input wire:model="createPasswordConfirmation" type="password" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"></div>
+                    <div class="flex justify-end gap-3 border-t border-slate-800 pt-4"><button type="button" @click="createModal = null" class="rounded-lg bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase text-slate-200">Cancel</button><button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-indigo-500">Create</button></div>
+                </form>
+            </div>
+        </div>
+
+    <!-- Delete User Modal -->
+    @if($showDeleteModal)
+        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showDeleteModal', false)"></div>
+            <div class="relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-red-900/60 bg-[#0f172a] shadow-2xl">
+                <div class="border-b border-slate-800 bg-[#0b0f19] px-6 py-4"><h3 class="text-sm font-bold uppercase tracking-wider text-red-400">Delete User?</h3></div>
+                <div class="space-y-5 p-6"><p class="text-sm leading-relaxed text-slate-400">This soft-deletes the account and removes it from normal user lists. Existing records and audit history are retained.</p><div class="flex justify-end gap-3"><button type="button" @click="open = false; $wire.set('showDeleteModal', false)" class="rounded-lg bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase text-slate-200">Cancel</button><button wire:click="deleteUser" class="rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-red-500">Delete User</button></div></div>
+            </div>
+        </div>
+    @endif
 
     <!-- Pagination -->
     <div class="mt-4">

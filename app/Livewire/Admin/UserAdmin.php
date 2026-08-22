@@ -6,6 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Modules\Identity\Actions\AssignRoleAction;
 use App\Modules\Identity\Actions\RevokeRoleAction;
+use App\Modules\Identity\Actions\RegisterUserAction;
 use App\Modules\Identity\Actions\SuspendUserAction;
 use App\Modules\Identity\Actions\UnsuspendUserAction;
 use App\Modules\Identity\Models\KycSubmission;
@@ -46,6 +47,8 @@ class UserAdmin extends AdminComponent
 
     public bool $showPasswordModal = false;
 
+    public bool $showDeleteModal = false;
+
     // Selection
     public ?int $selectedUserId = null;
 
@@ -73,6 +76,22 @@ class UserAdmin extends AdminComponent
     public string $newPassword = '';
 
     public string $newPasswordConfirmation = '';
+
+    public string $createMode = 'player';
+
+    public string $createUsername = '';
+
+    public string $createEmail = '';
+
+    public string $createDisplayName = '';
+
+    public string $createCountryCode = '';
+
+    public string $createPassword = '';
+
+    public string $createPasswordConfirmation = '';
+
+    public string $createRole = '';
 
     protected $paginationTheme = 'tailwind';
 
@@ -113,9 +132,45 @@ class UserAdmin extends AdminComponent
         $this->showDetailModal = true;
     }
 
+    public function createUser(RegisterUserAction $registerUser): void
+    {
+        abort_unless(Auth::user()?->can('create', User::class), 403);
+
+        $this->validate([
+            'createMode' => 'required|in:player,user',
+            'createUsername' => 'required|string|max:255|unique:users,username',
+            'createEmail' => 'required|email|max:255|unique:users,email',
+            'createDisplayName' => 'nullable|string|max:255',
+            'createCountryCode' => 'nullable|string|max:2',
+            'createPassword' => ['required', 'confirmed', Password::defaults()],
+            'createRole' => 'nullable|required_if:createMode,user|exists:roles,name',
+        ]);
+
+        if ($this->createMode === 'user' && $this->createRole === 'SUPER_ADMIN' && ! Auth::user()?->hasRole('SUPER_ADMIN')) {
+            abort(403);
+        }
+
+        $user = $registerUser->execute([
+            'username' => $this->createUsername,
+            'email' => $this->createEmail,
+            'display_name' => $this->createDisplayName ?: $this->createUsername,
+            'country_code' => strtoupper($this->createCountryCode),
+            'password' => $this->createPassword,
+        ]);
+
+        if ($this->createMode === 'user') {
+            $user->syncRoles([$this->createRole]);
+        }
+
+        session()->flash('success', ucfirst($this->createMode).' account created successfully.');
+        $this->dispatch('user-created');
+    }
+
     public function editUser(int $id): void
     {
         $user = User::with('profile')->findOrFail($id);
+        abort_unless(Auth::user()?->can('update', $user), 403);
+
         $this->editingUserId = $user->id;
         $this->editUsername = $user->username;
         $this->editEmail = $user->email;
@@ -126,6 +181,9 @@ class UserAdmin extends AdminComponent
 
     public function updateUser(): void
     {
+        $user = User::findOrFail($this->editingUserId);
+        abort_unless(Auth::user()?->can('update', $user), 403);
+
         $this->validate([
             'editUsername' => 'required|string|max:255|unique:users,username,'.$this->editingUserId,
             'editEmail' => 'required|email|max:255|unique:users,email,'.$this->editingUserId,
@@ -133,7 +191,6 @@ class UserAdmin extends AdminComponent
             'editCountryCode' => 'nullable|string|max:2',
         ]);
 
-        $user = User::findOrFail($this->editingUserId);
         $user->update([
             'username' => $this->editUsername,
             'email' => $this->editEmail,
@@ -158,6 +215,9 @@ class UserAdmin extends AdminComponent
 
     public function prepareResetPassword(int $id): void
     {
+        $user = User::findOrFail($id);
+        abort_unless(Auth::user()?->can('resetPassword', $user), 403);
+
         $this->passwordUserId = $id;
         $this->newPassword = '';
         $this->newPasswordConfirmation = '';
@@ -166,17 +226,52 @@ class UserAdmin extends AdminComponent
 
     public function resetPassword(): void
     {
+        $user = User::findOrFail($this->passwordUserId);
+        abort_unless(Auth::user()?->can('resetPassword', $user), 403);
+
         $this->validate([
             'newPassword' => ['required', 'confirmed', Password::defaults()],
         ]);
 
-        $user = User::findOrFail($this->passwordUserId);
         $user->update([
             'password' => Hash::make($this->newPassword),
         ]);
 
         session()->flash('success', 'User password reset successfully.');
         $this->showPasswordModal = false;
+    }
+
+    public function confirmDeleteUser(int $id): void
+    {
+        $user = User::findOrFail($id);
+        abort_unless(Auth::user()?->can('delete', $user), 403);
+
+        $this->selectedUserId = $id;
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteUser(): void
+    {
+        $user = User::findOrFail($this->selectedUserId);
+        $actor = Auth::user();
+        abort_unless($actor?->can('delete', $user), 403);
+
+        if ($user->is($actor)) {
+            session()->flash('error', 'You cannot delete your own account.');
+
+            return;
+        }
+
+        if ($user->hasRole('SUPER_ADMIN') && User::role('SUPER_ADMIN')->count() <= 1) {
+            session()->flash('error', 'The only SUPER_ADMIN account cannot be deleted.');
+
+            return;
+        }
+
+        $user->delete();
+        $this->showDeleteModal = false;
+        $this->selectedUserId = null;
+        session()->flash('success', 'User account deleted successfully.');
     }
 
     public function openSuspendModal(): void

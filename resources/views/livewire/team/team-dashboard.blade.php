@@ -56,7 +56,7 @@
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             @forelse($teamFinderTournaments as $finderTournament)
-                <a href="/tournaments/{{ $finderTournament->uuid }}/view" wire:navigate class="group rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 transition-colors hover:border-cyan-700/70 hover:bg-cyan-950/10">
+                <a href="/tournaments/{{ $finderTournament->uuid }}/view" wire:navigate wire:key="finder-{{ $finderTournament->uuid }}" class="group rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 transition-colors hover:border-cyan-700/70 hover:bg-cyan-950/10">
                     <div class="flex items-start justify-between gap-3">
                         <span class="rounded-md border border-cyan-900/60 bg-cyan-950/40 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-cyan-300">{{ $finderTournament->team_size }} players/team</span>
                         <i data-lucide="arrow-up-right" class="h-4 w-4 text-zinc-600 transition-colors group-hover:text-cyan-300"></i>
@@ -123,7 +123,7 @@
                 @if($myPendingInvites->count() > 0)
                     <div class="space-y-3">
                         @foreach($myPendingInvites as $invite)
-                            <div class="bg-zinc-950 border border-zinc-850 rounded-xl p-4 space-y-3">
+                            <div wire:key="invite-{{ $invite->uuid }}" class="bg-zinc-950 border border-zinc-850 rounded-xl p-4 space-y-3">
                                 <div>
                                     <span class="text-[10px] text-zinc-500 font-semibold block">INVITATION TO JOIN</span>
                                     <h3 class="text-sm font-bold text-zinc-200 mt-0.5">{{ $invite->team->name }}</h3>
@@ -195,7 +195,7 @@
 
                 <div class="divide-y divide-zinc-850">
                     @foreach($teamMembers as $member)
-                        <div class="py-4 flex items-center justify-between gap-4">
+                        <div wire:key="member-{{ $member->id }}" class="py-4 flex items-center justify-between gap-4">
                             <div class="flex items-center space-x-3">
                                 <div class="bg-zinc-950 p-2 rounded-xl border border-zinc-800 text-zinc-400">
                                     <i data-lucide="user" class="w-5 h-5"></i>
@@ -289,7 +289,7 @@
                                 <span class="block text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Pending Outbound Invites</span>
                                 <div class="space-y-2">
                                     @foreach($teamPendingInvites as $outboundInvite)
-                                        <div class="bg-zinc-950 border border-zinc-850 rounded-xl p-3 flex items-center justify-between gap-3 text-xs">
+                                        <div wire:key="outbound-{{ $outboundInvite->uuid }}" class="bg-zinc-950 border border-zinc-850 rounded-xl p-3 flex items-center justify-between gap-3 text-xs">
                                             <div class="truncate">
                                                 <span class="block font-bold text-zinc-300 truncate">{{ $outboundInvite->invitee->username }}</span>
                                                 <span class="text-[9px] text-zinc-500">Expires: {{ $outboundInvite->expires_at->format('M d, Y') }}</span>

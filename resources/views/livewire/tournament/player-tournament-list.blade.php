@@ -10,7 +10,7 @@
             </button>
             <div x-ref="gamesRail" class="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @forelse($popularGames as $game)
-                    <a href="/games/{{ $game->slug }}" wire:navigate class="group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
+                    <a href="/games/{{ $game->slug }}" wire:navigate wire:key="game-{{ $game->slug }}" class="group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
                         <div class="aspect-[4/3] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.35),transparent_45%),linear-gradient(135deg,#18181b,#09090b)]"></div>@endif</div>
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent"></div><div class="absolute inset-x-0 bottom-0 p-4"><h2 class="font-orbitron text-sm font-black uppercase text-white">{{ $game->localizedName() }}</h2></div>
                     </a>
@@ -27,7 +27,7 @@
     <section class="space-y-6">
         <div class="flex items-end justify-between gap-4"><div><p class="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Selected competitions</p><h2 class="mt-2 font-orbitron text-2xl font-black uppercase text-white">Featured Tournaments</h2></div><span class="hidden text-xs text-zinc-500 sm:block">Highlights from active competitions</span></div>
         @if($featuredTournaments->isNotEmpty())
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">@foreach($featuredTournaments as $tournament)<x-player.tournament-card :tournament="$tournament" action-label="View Tournament" class="min-w-0" />@endforeach</div>
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">@foreach($featuredTournaments as $tournament)<div wire:key="featured-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" action-label="View Tournament" class="min-w-0" /></div>@endforeach</div>
             @if($hasMoreFeatured)<div class="text-center"><button wire:click="loadMoreFeatured" wire:loading.attr="disabled" class="rounded-xl border border-violet-500/30 bg-violet-500/10 px-6 py-3 font-orbitron text-[10px] font-black uppercase tracking-widest text-violet-200 transition hover:bg-violet-500/20 disabled:opacity-50"><span wire:loading.remove wire:target="loadMoreFeatured">View More</span><span wire:loading wire:target="loadMoreFeatured">Loading...</span></button></div>@endif
         @else
             <div class="rounded-2xl border border-dashed border-zinc-800 p-10 text-center text-zinc-500">No featured tournaments are active right now.</div>
@@ -47,7 +47,7 @@
             <select wire:model.live="platformId" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All platforms</option>@foreach($platforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select>
         </div></div>
         @if($tournaments->count())
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">@foreach($tournaments as $tournament)<x-player.tournament-card :tournament="$tournament" :action-label="$activeTab === 'past' ? 'View Results' : 'View Tournament'" />@endforeach</div>
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">@foreach($tournaments as $tournament)<div wire:key="browse-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" :action-label="$activeTab === 'past' ? 'View Results' : 'View Tournament'" /></div>@endforeach</div>
             <div class="border-t border-zinc-900/60 pt-6">{{ $tournaments->links('vendor.livewire.custom-pagination') }}</div>
         @else
             <div class="rounded-2xl border border-dashed border-zinc-800 p-12 text-center"><i data-lucide="trophy" class="mx-auto h-9 w-9 text-zinc-700"></i><h3 class="mt-4 font-orbitron text-sm font-black uppercase text-zinc-300">No tournaments found</h3><p class="mt-2 text-sm text-zinc-600">Try changing the selected tab or filters.</p></div>

@@ -164,7 +164,7 @@
                                 <span>Reservation Confirmed</span>
                             </div>
                             @if($canCancelRegistration)
-                                <button @click="showCancelModal = true" class="w-full flex items-center justify-center space-x-2 bg-red-950/30 border border-red-800/50 hover:border-red-600/60 text-red-400 hover:text-red-300 font-bold py-3 px-6 rounded-xl transition-all duration-300 text-[10px] uppercase tracking-[0.2em]">
+                                <button type="button" @click="showCancelModal = true" class="w-full flex items-center justify-center space-x-2 bg-red-950/30 border border-red-800/50 hover:border-red-600/60 text-red-400 hover:text-red-300 font-bold py-3 px-6 rounded-xl transition-all duration-300 text-[10px] uppercase tracking-[0.2em]">
                                     <i data-lucide="x-circle" class="w-4 h-4"></i>
                                     <span>Cancel Registration</span>
                                 </button>
@@ -366,24 +366,24 @@
                         @endif
 
                         <!-- Key stats grid -->
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-zinc-800/60">
+                        <div class="grid grid-cols-1 gap-3 pt-4 border-t border-zinc-800/60 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                             @php
                                 $format = $tournament->template?->format ?? 'Single Elimination';
                             @endphp
-                            <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                            <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                 <div class="flex items-center space-x-2 text-cyan-400">
                                     <i data-lucide="target" class="w-4 h-4"></i>
                                     <span class="text-[10px] font-black uppercase tracking-widest">Format</span>
                                 </div>
-                                <span class="block text-base font-bold text-white uppercase font-orbitron">{{ $format }}</span>
+                                <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $format }}</span>
                             </div>
 
-                            <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                            <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                 <div class="flex items-center space-x-2 text-fuchsia-500">
                                     <i data-lucide="award" class="w-4 h-4"></i>
                                     <span class="text-[10px] font-black uppercase tracking-widest">1st Prize</span>
                                 </div>
-                                <span class="block text-base font-bold text-white uppercase font-orbitron">
+                                <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">
                                     @if($tournament->prize_1st)
                                         ${{ number_format((float)$tournament->prize_1st, 2) }}
                                     @elseif($tournament->prize_pool)
@@ -396,72 +396,72 @@
                             </div>
 
                             @if($tournament->prize_2nd)
-                                <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-zinc-400">
                                         <i data-lucide="medal" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">2nd Prize</span>
                                     </div>
-                                    <span class="block text-base font-bold text-white uppercase font-orbitron">${{ number_format((float)$tournament->prize_2nd, 2) }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float)$tournament->prize_2nd, 2) }}</span>
                                 </div>
                             @endif
 
                             @if($tournament->prize_3rd)
-                                <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-orange-400">
                                         <i data-lucide="trophy" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">3rd Prize</span>
                                     </div>
-                                    <span class="block text-base font-bold text-white uppercase font-orbitron">${{ number_format((float)$tournament->prize_3rd, 2) }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float)$tournament->prize_3rd, 2) }}</span>
                                 </div>
                             @endif
 
                             @if($tournament->team_size > 1)
-                                <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-violet-400">
                                         <i data-lucide="users" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Team Size</span>
                                     </div>
-                                    <span class="block text-base font-bold text-white uppercase font-orbitron">{{ $tournament->team_size }} Players</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $tournament->team_size }} Players</span>
                                 </div>
                             @endif
 
                             @if($tournament->platform)
-                                <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-emerald-400">
                                         <i data-lucide="monitor" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Platform</span>
                                     </div>
-                                    <span class="block text-base font-bold text-white uppercase font-orbitron">{{ $tournament->platform->name ?? 'N/A' }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $tournament->platform->name ?? 'N/A' }}</span>
                                 </div>
                             @endif
 
                             @if($tournament->winning_points)
-                                <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-amber-400">
                                         <i data-lucide="star" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Win Points</span>
                                     </div>
-                                    <span class="block text-base font-bold text-white uppercase font-orbitron">+{{ $tournament->winning_points }} pts</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">+{{ $tournament->winning_points }} pts</span>
                                 </div>
                             @endif
 
                             @if($tournament->waiting_time)
-                                <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-rose-400">
                                         <i data-lucide="clock" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Match Timeout</span>
                                     </div>
-                                    <span class="block text-base font-bold text-white uppercase font-orbitron">{{ $tournament->waiting_time }} min</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $tournament->waiting_time }} min</span>
                                 </div>
                             @endif
 
                             @if($tournament->frequency && $tournament->frequency !== 'one-time')
-                                <div class="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-indigo-400">
                                         <i data-lucide="repeat" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Frequency</span>
                                     </div>
-                                    <span class="block text-base font-bold text-white uppercase font-orbitron">{{ ucfirst($tournament->frequency) }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ ucfirst($tournament->frequency) }}</span>
                                 </div>
                             @endif
                         </div>
@@ -1055,7 +1055,7 @@
                         class="flex-1 py-3 rounded-xl border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-widest transition-all duration-300">
                     Keep Registration
                 </button>
-                <button wire:click="cancelRegistration" @click="showCancelModal = false"
+                <button type="button" wire:click="cancelRegistration" wire:loading.attr="disabled" wire:target="cancelRegistration" @click="showCancelModal = false"
                         class="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-[10px] font-black text-white uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(239,68,68,0.3)] transition-all duration-300">
                     Yes, Cancel & Refund
                 </button>

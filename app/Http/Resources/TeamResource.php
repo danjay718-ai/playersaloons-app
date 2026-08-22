@@ -26,16 +26,16 @@ class TeamResource extends JsonResource
             'slug' => $this->slug,
             'status' => $this->status,
             'logo_url' => $this->logo_path,
-            'captain' => $this->captain ? [
+            'captain' => $this->whenLoaded('captain', fn () => [
                 'uuid' => $this->captain->uuid,
                 'username' => $this->captain->username,
-            ] : null,
-            'members' => $this->members->map(fn ($member) => [
-                'uuid' => $member->user->uuid,
-                'username' => $member->user->username,
+            ]),
+            'members' => $this->whenLoaded('members', fn () => $this->members->map(fn ($member) => [
+                'uuid' => $member->relationLoaded('user') ? $member->user->uuid : null,
+                'username' => $member->relationLoaded('user') ? $member->user->username : null,
                 'role' => $member->role,
                 'status' => $member->status,
-            ]),
+            ])),
         ];
     }
 }

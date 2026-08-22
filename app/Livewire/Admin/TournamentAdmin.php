@@ -42,6 +42,9 @@ class TournamentAdmin extends AdminComponent
     public string $platformFilter = '';
 
     #[Url]
+    public string $competitionTypeFilter = '';
+
+    #[Url]
     public string $activeTab = 'all';
 
     /** Status group tab: 'active' (default, excludes cancelled/completed/refunded) | 'completed' | 'cancelled' | 'all' */
@@ -90,6 +93,11 @@ class TournamentAdmin extends AdminComponent
     }
 
     public function updatingPlatformFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingCompetitionTypeFilter(): void
     {
         $this->resetPage();
     }
@@ -321,39 +329,11 @@ class TournamentAdmin extends AdminComponent
             default => null, // 'all' — no status restriction
         };
 
-        if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
-        }
-
-        if ($this->statusFilter) {
-            $query->where('status', $this->statusFilter);
-        }
-
-        if ($this->gameFilter) {
-            $query->where('game_id', $this->gameFilter);
-        }
-
-        if ($this->platformFilter) {
-            $query->where('platform_id', $this->platformFilter);
-        }
-
-        if ($this->activeTab !== 'all') {
-            $query->where('frequency', $this->activeTab);
-        }
-
-        if ($this->startDateFilter) {
-            $query->whereDate('start_at', '>=', $this->startDateFilter);
-        }
-
-        if ($this->endDateFilter) {
-            $query->whereDate('start_at', '<=', $this->endDateFilter);
-        }
+        $this->applyFilters($query, includeStatus: true);
 
         // Counts per status group for tab badges
         $baseCount = Tournament::query();
-        if ($this->search) {
-            $baseCount->where('name', 'like', '%'.$this->search.'%');
-        }
+        $this->applyFilters($baseCount, includeStatus: true);
         $countActive = (clone $baseCount)->whereIn('status', $activeStatuses)->count();
         $countCompleted = (clone $baseCount)->where('status', TournamentStatus::COMPLETED->value)->count();
         $countCancelled = (clone $baseCount)->whereIn('status', [TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])->count();
@@ -379,5 +359,40 @@ class TournamentAdmin extends AdminComponent
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Tournament Management',
         ]);
+    }
+
+    private function applyFilters($query, bool $includeStatus): void
+    {
+        if ($this->search) {
+            $query->where('name', 'like', '%'.$this->search.'%');
+        }
+
+        if ($includeStatus && $this->statusFilter) {
+            $query->where('status', $this->statusFilter);
+        }
+
+        if ($this->gameFilter) {
+            $query->where('game_id', $this->gameFilter);
+        }
+
+        if ($this->platformFilter) {
+            $query->where('platform_id', $this->platformFilter);
+        }
+
+        if ($this->competitionTypeFilter) {
+            $query->where('competition_type', $this->competitionTypeFilter);
+        }
+
+        if ($this->activeTab !== 'all') {
+            $query->where('frequency', $this->activeTab);
+        }
+
+        if ($this->startDateFilter) {
+            $query->whereDate('start_at', '>=', $this->startDateFilter);
+        }
+
+        if ($this->endDateFilter) {
+            $query->whereDate('start_at', '<=', $this->endDateFilter);
+        }
     }
 }

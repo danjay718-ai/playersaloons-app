@@ -18,6 +18,10 @@ class RolesAndPermissionsSeeder extends Seeder
     private array $permissions = [
         // Users
         'users.view',
+        'users.create',
+        'users.update',
+        'users.delete',
+        'users.reset_password',
         'users.suspend',
         'users.unsuspend',
         'users.assign_role',
@@ -201,6 +205,10 @@ class RolesAndPermissionsSeeder extends Seeder
         'ADMIN' => [
             // Users
             'users.view',
+            'users.create',
+            'users.update',
+            'users.delete',
+            'users.reset_password',
             'users.suspend',
             'users.unsuspend',
             'users.assign_role',
