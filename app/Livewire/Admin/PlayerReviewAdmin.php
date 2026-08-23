@@ -16,7 +16,7 @@ class PlayerReviewAdmin extends AdminComponent
     public function boot(): void
     {
         parent::boot();
-        if (! Auth::user()?->hasAnyRole(['SUPER_ADMIN', 'ADMIN'])) {
+        if (! $this->actor()->hasAnyRole(['SUPER_ADMIN', 'ADMIN'])) {
             abort(403);
         }
     }

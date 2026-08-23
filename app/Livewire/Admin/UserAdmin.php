@@ -134,7 +134,7 @@ class UserAdmin extends AdminComponent
 
     public function createUser(RegisterUserAction $registerUser): void
     {
-        abort_unless(Auth::user()?->can('create', User::class), 403);
+        $this->authorize('create', User::class);
 
         $this->validate([
             'createMode' => 'required|in:player,user',
@@ -142,11 +142,15 @@ class UserAdmin extends AdminComponent
             'createEmail' => 'required|email|max:255|unique:users,email',
             'createDisplayName' => 'nullable|string|max:255',
             'createCountryCode' => 'nullable|string|max:2',
-            'createPassword' => ['required', 'confirmed', Password::defaults()],
+            'createPassword' => ['required', 'same:createPasswordConfirmation', Password::defaults()],
+            'createPasswordConfirmation' => 'required',
             'createRole' => 'nullable|required_if:createMode,user|exists:roles,name',
+        ], [
+            'createPassword.same' => 'The password and confirm password do not match.',
+            'createPasswordConfirmation.required' => 'The confirm password field is required.',
         ]);
 
-        if ($this->createMode === 'user' && $this->createRole === 'SUPER_ADMIN' && ! Auth::user()?->hasRole('SUPER_ADMIN')) {
+        if ($this->createMode === 'user' && $this->createRole === 'SUPER_ADMIN' && ! $this->actor()->hasRole('SUPER_ADMIN')) {
             abort(403);
         }
 
@@ -162,6 +166,16 @@ class UserAdmin extends AdminComponent
             $user->syncRoles([$this->createRole]);
         }
 
+        $this->reset([
+            'createUsername',
+            'createEmail',
+            'createDisplayName',
+            'createCountryCode',
+            'createPassword',
+            'createPasswordConfirmation',
+            'createRole',
+        ]);
+
         session()->flash('success', ucfirst($this->createMode).' account created successfully.');
         $this->dispatch('user-created');
     }
@@ -169,7 +183,7 @@ class UserAdmin extends AdminComponent
     public function editUser(int $id): void
     {
         $user = User::with('profile')->findOrFail($id);
-        abort_unless(Auth::user()?->can('update', $user), 403);
+        $this->authorize('update', $user);
 
         $this->editingUserId = $user->id;
         $this->editUsername = $user->username;
@@ -182,7 +196,7 @@ class UserAdmin extends AdminComponent
     public function updateUser(): void
     {
         $user = User::findOrFail($this->editingUserId);
-        abort_unless(Auth::user()?->can('update', $user), 403);
+        $this->authorize('update', $user);
 
         $this->validate([
             'editUsername' => 'required|string|max:255|unique:users,username,'.$this->editingUserId,
@@ -216,7 +230,7 @@ class UserAdmin extends AdminComponent
     public function prepareResetPassword(int $id): void
     {
         $user = User::findOrFail($id);
-        abort_unless(Auth::user()?->can('resetPassword', $user), 403);
+        $this->authorize('resetPassword', $user);
 
         $this->passwordUserId = $id;
         $this->newPassword = '';
@@ -227,16 +241,22 @@ class UserAdmin extends AdminComponent
     public function resetPassword(): void
     {
         $user = User::findOrFail($this->passwordUserId);
-        abort_unless(Auth::user()?->can('resetPassword', $user), 403);
+        $this->authorize('resetPassword', $user);
 
         $this->validate([
-            'newPassword' => ['required', 'confirmed', Password::defaults()],
+            'newPassword' => ['required', 'same:newPasswordConfirmation', Password::defaults()],
+            'newPasswordConfirmation' => 'required',
+        ], [
+            'newPassword.same' => 'The new password and confirm password do not match.',
+            'newPasswordConfirmation.required' => 'The confirm password field is required.',
         ]);
 
         $user->update([
             'password' => Hash::make($this->newPassword),
         ]);
 
+        $this->newPassword = '';
+        $this->newPasswordConfirmation = '';
         session()->flash('success', 'User password reset successfully.');
         $this->showPasswordModal = false;
     }
@@ -244,7 +264,7 @@ class UserAdmin extends AdminComponent
     public function confirmDeleteUser(int $id): void
     {
         $user = User::findOrFail($id);
-        abort_unless(Auth::user()?->can('delete', $user), 403);
+        $this->authorize('delete', $user);
 
         $this->selectedUserId = $id;
         $this->showDeleteModal = true;
@@ -253,8 +273,8 @@ class UserAdmin extends AdminComponent
     public function deleteUser(): void
     {
         $user = User::findOrFail($this->selectedUserId);
-        $actor = Auth::user();
-        abort_unless($actor?->can('delete', $user), 403);
+        $this->authorize('delete', $user);
+        $actor = $this->actor();
 
         if ($user->is($actor)) {
             session()->flash('error', 'You cannot delete your own account.');
@@ -291,11 +311,7 @@ class UserAdmin extends AdminComponent
         }
 
         $target = User::findOrFail($this->selectedUserId);
-        $actor = Auth::user();
-
-        if (! $actor) {
-            return;
-        }
+        $actor = $this->actor();
 
         if ($target->id === $actor->id) {
             session()->flash('error', 'Suspension failed: You cannot suspend your own account.');
@@ -319,11 +335,7 @@ class UserAdmin extends AdminComponent
         }
 
         $target = User::findOrFail($this->selectedUserId);
-        $actor = Auth::user();
-
-        if (! $actor) {
-            return;
-        }
+        $actor = $this->actor();
 
         try {
             $action->execute($target, $actor);
@@ -351,11 +363,7 @@ class UserAdmin extends AdminComponent
         }
 
         $target = User::findOrFail($this->selectedUserId);
-        $actor = Auth::user();
-
-        if (! $actor) {
-            return;
-        }
+        $actor = $this->actor();
 
         try {
             if ($this->roleAction === 'revoke' && $target->id === $actor->id && $this->selectedRole === 'SUPER_ADMIN') {

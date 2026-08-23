@@ -114,28 +114,28 @@ class AdminPanelTest extends TestCase
         $response->assertSee('Grid Signal Lost');
     }
 
-    public function test_admin_visiting_player_profile_redirects_to_admin_profile(): void
+    public function test_admin_cannot_access_player_profile(): void
     {
         $response = $this->actingAs($this->admin)->get('/profile');
-        $response->assertRedirect('/admin/profile');
+        $response->assertStatus(403);
     }
 
-    public function test_admin_visiting_player_dashboard_redirects_to_admin_dashboard(): void
+    public function test_admin_cannot_access_player_dashboard(): void
     {
         $response = $this->actingAs($this->admin)->get('/dashboard');
-        $response->assertRedirect('/admin');
+        $response->assertStatus(403);
     }
 
-    public function test_admin_visiting_player_wallet_redirects_to_admin_dashboard(): void
+    public function test_admin_cannot_access_player_wallet(): void
     {
         $response = $this->actingAs($this->admin)->get('/wallet');
-        $response->assertRedirect('/admin');
+        $response->assertStatus(403);
     }
 
-    public function test_admin_visiting_player_teams_redirects_to_admin_dashboard(): void
+    public function test_admin_cannot_access_player_teams(): void
     {
         $response = $this->actingAs($this->admin)->get('/teams');
-        $response->assertRedirect('/admin');
+        $response->assertStatus(403);
     }
 
     public function test_player_cannot_access_admin_profile(): void
@@ -444,5 +444,65 @@ class AdminPanelTest extends TestCase
             ->test(StaffActivityDashboard::class)
             ->set('staffFilter', 'admin')
             ->assertSee('admin');
+    }
+
+    public function test_user_admin_can_create_new_player_account(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(UserAdmin::class)
+            ->set('createMode', 'player')
+            ->set('createUsername', 'newtestplayer')
+            ->set('createEmail', 'newtestplayer@example.com')
+            ->set('createDisplayName', 'New Test Player')
+            ->set('createCountryCode', 'PH')
+            ->set('createPassword', 'Password123!')
+            ->set('createPasswordConfirmation', 'Password123!')
+            ->call('createUser');
+
+        $user = User::query()->where('email', 'newtestplayer@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertTrue($user->hasRole('PLAYER'));
+        $this->assertEquals('PH', $user->profile?->country_code);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Password123!', $user->password));
+    }
+
+    public function test_user_admin_can_reset_password_with_matching_confirmation(): void
+    {
+        $targetUser = $this->createUserWithRole('PLAYER', 'targetuser@example.com');
+
+        Livewire::actingAs($this->admin)
+            ->test(UserAdmin::class)
+            ->call('prepareResetPassword', $targetUser->id)
+            ->set('newPassword', 'NewSecret123!')
+            ->set('newPasswordConfirmation', 'NewSecret123!')
+            ->call('resetPassword')
+            ->assertHasNoErrors();
+
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('NewSecret123!', $targetUser->fresh()->password));
+    }
+
+    public function test_user_admin_reset_password_fails_with_mismatched_confirmation(): void
+    {
+        $targetUser = $this->createUserWithRole('PLAYER', 'mismatchuser@example.com');
+
+        Livewire::actingAs($this->admin)
+            ->test(UserAdmin::class)
+            ->call('prepareResetPassword', $targetUser->id)
+            ->set('newPassword', 'NewSecret123!')
+            ->set('newPasswordConfirmation', 'DifferentSecret123!')
+            ->call('resetPassword')
+            ->assertHasErrors(['newPassword']);
+    }
+
+    public function test_user_admin_can_delete_user(): void
+    {
+        $targetUser = $this->createUserWithRole('PLAYER', 'deleteme@example.com');
+
+        Livewire::actingAs($this->admin)
+            ->test(UserAdmin::class)
+            ->call('confirmDeleteUser', $targetUser->id)
+            ->call('deleteUser');
+
+        $this->assertSoftDeleted('users', ['id' => $targetUser->id]);
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Community;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Community\Actions\ChatService;
+use App\Modules\Community\Services\ChatService;
 use App\Modules\Community\Models\ChatConversation;
 use App\Modules\Community\Models\ChatMessage;
 use App\Modules\Community\Models\PlayerFollow;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Actions;
 
-use App\Modules\Community\Actions\ChatService;
+use App\Modules\Community\Services\ChatService;
 use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserGameAccount;

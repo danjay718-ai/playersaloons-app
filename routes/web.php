@@ -2,8 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\KycDocumentController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Community\ChatController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\NewsletterUnsubscribeController;
+use App\Http\Controllers\PromotionClickController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Livewire\AboutPage;
 use App\Livewire\Admin\AdminDashboard;
@@ -60,108 +65,94 @@ use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Livewire\Wallet\WalletDashboard;
-use App\Modules\Community\Models\Advertisement;
-use App\Modules\Identity\Models\User;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
-// Player-facing routes. Country eligibility is enforced at account/profile
-// selection time; requests never wait on a synchronous third-party Geo-IP call.
-Route::group([], function () {
+// ──────────────────────────────────────────────────────────────────────────────
+// Public routes — accessible without authentication
+// ──────────────────────────────────────────────────────────────────────────────
 
-    Route::get('/', LandingPage::class);
-    Route::get('/about', AboutPage::class)->name('about');
+Route::get('/', LandingPage::class);
+Route::get('/about', AboutPage::class)->name('about');
+Route::get('/tournaments', PublicTournamentList::class);
+Route::get('/games/{game:slug}', GameShow::class)->name('games.show');
+Route::get('/streams/{id}', StreamWatch::class)->name('streams.watch');
+Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
+Route::get('/blog', BlogIndex::class)->name('blog.index');
+Route::get('/blog/{slug}', BlogArticleView::class)->name('blog.show');
+Route::get('/news', NewsIndex::class)->name('news.index');
+Route::get('/news/{slug}', NewsArticleView::class)->name('news.show');
+Route::get('/policies', PolicyIndex::class)->name('policies.index');
+Route::get('/policies/{slug}', PolicyPageView::class)->name('policies.show');
+Route::get('/contact', ContactPage::class)->name('contact');
 
-    Route::get('/tournaments', PublicTournamentList::class);
-    Route::get('/games/{game:slug}', GameShow::class)->name('games.show');
-    Route::get('/streams/{id}', StreamWatch::class)->name('streams.watch');
-    Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
-    Route::get('/blog', BlogIndex::class)->name('blog.index');
-    Route::get('/blog/{slug}', BlogArticleView::class)->name('blog.show');
-    Route::get('/news', NewsIndex::class)->name('news.index');
-    Route::get('/news/{slug}', NewsArticleView::class)->name('news.show');
-    Route::get('/policies', PolicyIndex::class)->name('policies.index');
-    Route::get('/policies/{slug}', PolicyPageView::class)->name('policies.show');
-    Route::get('/contact', ContactPage::class)->name('contact');
+Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
+Route::post('/language', [LanguageController::class, 'update'])->name('language.update');
+Route::get('/promotions/{advertisement:uuid}/click', PromotionClickController::class)->name('promotions.click');
+Route::get('/newsletter/unsubscribe/{user:uuid}', NewsletterUnsubscribeController::class)
+    ->middleware('signed')
+    ->name('newsletter.unsubscribe');
 
-    Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
-    Route::post('/language', [LanguageController::class, 'update'])->name('language.update');
-    Route::get('/promotions/{advertisement:uuid}/click', function (Advertisement $advertisement) {
-        abort_unless(Advertisement::query()->currentlyVisible()->whereKey($advertisement->id)->exists() && $advertisement->target_url, 404);
-        $advertisement->increment('clicks');
+// ──────────────────────────────────────────────────────────────────────────────
+// Guest-only routes (redirected away if already authenticated)
+// ──────────────────────────────────────────────────────────────────────────────
 
-        return redirect()->away($advertisement->target_url);
-    })->name('promotions.click');
-    Route::get('/newsletter/unsubscribe/{user:uuid}', function (User $user) {
-        $user->update([
-            'newsletter_subscribed' => false,
-            'newsletter_subscribed_at' => null,
-        ]);
+Route::middleware('guest')->group(function () {
+    Route::get('/login', Login::class)->name('login');
+    Route::get('/register', Register::class)->name('register');
+    Route::get('/reset-password', PasswordReset::class)->name('password.request');
+    Route::get('/reset-password/{token}', PasswordReset::class)->name('password.reset');
+    Route::get('/two-factor-challenge', TwoFactorChallenge::class)->name('two-factor.challenge');
+});
 
-        return view('newsletter.unsubscribed', ['email' => $user->email]);
-    })->middleware('signed')->name('newsletter.unsubscribe');
+// ──────────────────────────────────────────────────────────────────────────────
+// Authenticated routes (any logged-in user)
+// ──────────────────────────────────────────────────────────────────────────────
 
-    // Guest only routes
-    Route::middleware('guest')->group(function () {
-        Route::get('/login', Login::class)->name('login');
-        Route::get('/register', Register::class)->name('register');
-        Route::get('/reset-password', PasswordReset::class)->name('password.request');
-        Route::get('/reset-password/{token}', PasswordReset::class)->name('password.reset');
-        Route::get('/two-factor-challenge', TwoFactorChallenge::class)->name('two-factor.challenge');
+Route::middleware('auth')->group(function () {
+    Route::get('/verify-email', EmailVerification::class)->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', EmailVerificationController::class)
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+
+    Route::post('/logout', LogoutController::class)->name('logout');
+
+    // ── Player-only routes ──────────────────────────────────────────────
+    // Requires verified email, no compliance blocks, and a player role.
+    Route::middleware(['verified', 'compliance.clear', 'role.player'])->group(function () {
+        Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
+        Route::get('/my-tournaments', MyTournamentsList::class)->name('my-tournaments');
+        Route::get('/tournaments/browse', PlayerTournamentList::class)->name('tournaments.browse');
+        if (config('features.player_wager.enabled')) {
+            Route::get('/head-to-head', HeadToHeadList::class)->name('head-to-head');
+        }
+        Route::get('/leaderboards', LeaderboardList::class)->name('leaderboards');
+        Route::get('/streams', StreamList::class)->name('streams');
+        Route::get('/chat', GlobalChat::class)->name('chat');
+        Route::get('/chat/api/conversations', [ChatController::class, 'conversations'])->name('chat.conversations');
+        Route::get('/chat/api/conversations/{uuid}/messages', [ChatController::class, 'messages'])->name('chat.messages');
+        Route::post('/chat/api/conversations/{uuid}/messages', [ChatController::class, 'send'])->name('chat.messages.send');
+        Route::post('/chat/api/direct', [ChatController::class, 'openDirect'])->name('chat.direct.open');
+        Route::post('/chat/api/teams/{uuid}', [ChatController::class, 'openTeam'])->name('chat.teams.open');
+        Route::post('/chat/api/teams/{uuid}/join', [ChatController::class, 'joinTeam'])->name('chat.teams.join');
+        Route::get('/chat/api/users', [ChatController::class, 'users'])->name('chat.users');
+        Route::get('/chat/api/players/{uuid}', [ChatController::class, 'playerProfile'])->name('chat.players.show');
+        Route::post('/chat/api/players/{uuid}/follow', [ChatController::class, 'followPlayer'])->name('chat.players.follow');
+        Route::get('/matches/{uuid}', MatchDetail::class);
+
+        Route::get('/wallet', WalletDashboard::class)->name('wallet');
+        Route::get('/profile', ProfileDashboard::class);
+        Route::get('/reviews', PlayerReviewPage::class)->name('reviews');
+        Route::get('/teams', TeamDashboard::class);
     });
+});
 
-    // Authenticated only routes
-    Route::middleware('auth')->group(function () {
-        Route::get('/verify-email', EmailVerification::class)->name('verification.notice');
-        Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-            $request->fulfill();
+// ──────────────────────────────────────────────────────────────────────────────
+// Admin Control Panel — requires authentication + an admin role.
+// The EnsureAdminRole middleware provides defense-in-depth; each Livewire
+// component also checks its own fine-grained role via AdminComponent::boot().
+// ──────────────────────────────────────────────────────────────────────────────
 
-            return redirect('/dashboard');
-        })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
-
-        Route::middleware(['verified', 'compliance.clear'])->group(function () {
-            Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
-            Route::get('/my-tournaments', MyTournamentsList::class)->name('my-tournaments');
-            Route::get('/tournaments/browse', PlayerTournamentList::class)->name('tournaments.browse');
-            if (config('features.player_wager.enabled')) {
-                Route::get('/head-to-head', HeadToHeadList::class)->name('head-to-head');
-            }
-            Route::get('/leaderboards', LeaderboardList::class)->name('leaderboards');
-            Route::get('/streams', StreamList::class)->name('streams');
-            Route::get('/chat', GlobalChat::class)->name('chat');
-            Route::get('/chat/api/conversations', [ChatController::class, 'conversations'])->name('chat.conversations');
-            Route::get('/chat/api/conversations/{uuid}/messages', [ChatController::class, 'messages'])->name('chat.messages');
-            Route::post('/chat/api/conversations/{uuid}/messages', [ChatController::class, 'send'])->name('chat.messages.send');
-            Route::post('/chat/api/direct', [ChatController::class, 'openDirect'])->name('chat.direct.open');
-            Route::post('/chat/api/teams/{uuid}', [ChatController::class, 'openTeam'])->name('chat.teams.open');
-            Route::post('/chat/api/teams/{uuid}/join', [ChatController::class, 'joinTeam'])->name('chat.teams.join');
-            Route::get('/chat/api/users', [ChatController::class, 'users'])->name('chat.users');
-            Route::get('/chat/api/players/{uuid}', [ChatController::class, 'playerProfile'])->name('chat.players.show');
-            Route::post('/chat/api/players/{uuid}/follow', [ChatController::class, 'followPlayer'])->name('chat.players.follow');
-            Route::get('/matches/{uuid}', MatchDetail::class);
-
-            Route::get('/wallet', WalletDashboard::class)->name('wallet');
-            Route::get('/profile', ProfileDashboard::class);
-            Route::get('/reviews', PlayerReviewPage::class)->name('reviews');
-            Route::get('/teams', TeamDashboard::class);
-        });
-
-        Route::post('/logout', function () {
-            Auth::logout();
-            request()->session()->invalidate();
-            request()->session()->regenerateToken();
-
-            return redirect('/');
-        })->name('logout');
-
-    }); // end auth middleware
-
-}); // end player-facing routes
-
-// Admin Control Panel (auth required, no geo-blocking)
-Route::middleware('auth')->prefix('admin')->group(function () {
+Route::middleware(['auth', 'role.admin'])->prefix('admin')->group(function () {
     Route::get('/', AdminDashboard::class);
     Route::get('/profile', AdminProfile::class);
     Route::get('/tournaments', TournamentAdmin::class)->name('admin.tournaments');
@@ -172,19 +163,7 @@ Route::middleware('auth')->prefix('admin')->group(function () {
     Route::get('/streams', StreamList::class)->name('admin.streams');
     Route::get('/streams/{id}', StreamWatch::class)->name('admin.streams.watch');
     Route::get('/kyc', KycAdmin::class);
-    Route::get('/kyc/document/{path}', function (string $path) {
-        $user = Auth::user();
-        if (! $user || ! $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'KYC_REVIEWER'])) {
-            abort(403, 'Unauthorized access to KYC document.');
-        }
-
-        $disk = Storage::disk('local');
-        if (! $disk->exists($path)) {
-            abort(404, 'KYC document not found.');
-        }
-
-        return $disk->response($path);
-    })->where('path', '.*')->name('admin.kyc.document');
+    Route::get('/kyc/document/{path}', KycDocumentController::class)->where('path', '.*')->name('admin.kyc.document');
     Route::get('/withdrawals', WithdrawalAdmin::class);
     Route::get('/users', UserAdmin::class);
     Route::get('/roles-permissions', RolePermissionAdmin::class)->name('admin.roles-permissions');

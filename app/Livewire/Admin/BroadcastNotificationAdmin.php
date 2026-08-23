@@ -134,7 +134,7 @@ class BroadcastNotificationAdmin extends AdminComponent
 
     public function isSuperAdmin(): bool
     {
-        return (bool) Auth::user()?->hasRole('SUPER_ADMIN');
+        return $this->actor()->hasRole('SUPER_ADMIN');
     }
 
     private function resetForm(): void

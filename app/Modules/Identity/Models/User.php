@@ -55,6 +55,18 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, StreamChannel> $streamChannels
  * @property-read Collection<int, ComplianceBlock> $complianceBlocks
  * @property-read Collection<int, Referral> $referrals
+ *
+ * @mixin \Spatie\Permission\Traits\HasRoles
+ * @mixin \Illuminate\Foundation\Auth\User
+ * @method bool hasRole(string|int|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection ...$roles, string|null $guard = null)
+ * @method bool hasAnyRole(string|int|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection ...$roles, string|null $guard = null)
+ * @method bool hasAllRoles(string|int|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection ...$roles, string|null $guard = null)
+ * @method bool hasPermissionTo(string|int|\Spatie\Permission\Contracts\Permission $permission, string|null $guard = null)
+ * @method bool hasDirectPermission(string|int|\Spatie\Permission\Contracts\Permission $permission)
+ * @method bool hasAnyPermission(string|int|array|\Spatie\Permission\Contracts\Permission|\Illuminate\Support\Collection ...$permissions)
+ * @method bool hasAllPermissions(string|int|array|\Spatie\Permission\Contracts\Permission|\Illuminate\Support\Collection ...$permissions)
+ * @method static \Illuminate\Database\Eloquent\Builder|User role(string|int|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection $roles, string $guard = null, bool $without = false)
+ * @method static \Illuminate\Database\Eloquent\Builder|User permission(string|int|array|\Spatie\Permission\Contracts\Permission|\Illuminate\Support\Collection $permissions, bool $without = false)
  */
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {

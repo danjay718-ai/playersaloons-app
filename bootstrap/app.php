@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureAdminRole;
 use App\Http\Middleware\EnsureNotComplianceBlocked;
+use App\Http\Middleware\EnsurePlayerRole;
 use App\Http\Middleware\SanitizeBroadcastSocketId;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\TranslateRenderedHtml;
@@ -29,6 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', TranslateRenderedHtml::class);
         $middleware->alias([
             'compliance.clear' => EnsureNotComplianceBlocked::class,
+            'role.admin' => EnsureAdminRole::class,
+            'role.player' => EnsurePlayerRole::class,
         ]);
         $middleware->validateCsrfTokens(except: [
             'stripe/webhook',

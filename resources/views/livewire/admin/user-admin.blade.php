@@ -163,7 +163,7 @@
                     <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Country Code</label><input wire:model="createCountryCode" maxlength="2" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm uppercase text-slate-100"></div>
                     <div x-show="createModal === 'user'"><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Role</label><select wire:model="createRole" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"><option value="">Select role</option>@foreach($roles->where('name', '!=', 'PLAYER') as $role)@if($role->name !== 'SUPER_ADMIN' || auth()->user()?->hasRole('SUPER_ADMIN'))<option value="{{ $role->name }}">{{ $role->name }}</option>@endif @endforeach</select>@error('createRole')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
                     <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Password</label><input wire:model="createPassword" type="password" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createPassword')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
-                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Confirm Password</label><input wire:model="createPasswordConfirmation" type="password" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"></div>
+                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Confirm Password</label><input wire:model="createPasswordConfirmation" type="password" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createPasswordConfirmation')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
                     <div class="flex justify-end gap-3 border-t border-slate-800 pt-4"><button type="button" @click="createModal = null" class="rounded-lg bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase text-slate-200">Cancel</button><button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-indigo-500">Create</button></div>
                 </form>
             </div>
@@ -253,6 +253,7 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Confirm New Password</label>
                         <input type="password" wire:model="newPasswordConfirmation" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        @error('newPasswordConfirmation') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">

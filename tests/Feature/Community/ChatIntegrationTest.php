@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Community;
 
-use App\Modules\Community\Actions\ChatService;
+use App\Modules\Community\Services\ChatService;
 use App\Modules\Community\Events\ChatMessageSent;
 use App\Modules\Community\Models\ChatConversation;
 use App\Modules\Community\Models\ChatMessage;

@@ -44,6 +44,52 @@ class UserFactory extends Factory
     }
 
     /**
+     * Configure the factory.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            try {
+                if ($user->roles()->count() === 0) {
+                    $role = \Spatie\Permission\Models\Role::query()->firstOrCreate([
+                        'name' => 'PLAYER',
+                        'guard_name' => 'web',
+                    ]);
+                    $user->assignRole($role);
+                }
+            } catch (\Throwable) {
+                // Ignore if roles table is not yet migrated/available in isolated environments
+            }
+        });
+    }
+
+    /**
+     * Indicate that the user has a specific role.
+     */
+    public function withRole(string $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role) {
+            try {
+                $r = \Spatie\Permission\Models\Role::query()->firstOrCreate([
+                    'name' => $role,
+                    'guard_name' => 'web',
+                ]);
+                $user->syncRoles([$r]);
+            } catch (\Throwable) {
+                // Ignore if roles table is not yet migrated/available
+            }
+        });
+    }
+
+    /**
+     * Indicate that the user is an admin.
+     */
+    public function admin(): static
+    {
+        return $this->withRole('ADMIN');
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static

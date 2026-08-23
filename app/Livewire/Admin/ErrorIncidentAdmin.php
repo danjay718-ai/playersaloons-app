@@ -46,7 +46,7 @@ class ErrorIncidentAdmin extends AdminComponent
     {
         parent::boot();
 
-        abort_unless(Auth::user()?->can('error_incidents.view'), 403);
+        abort_unless($this->actor()->can('error_incidents.view'), 403);
     }
 
     public function updated(string $property): void
@@ -78,7 +78,7 @@ class ErrorIncidentAdmin extends AdminComponent
 
     public function resolveIncident(): void
     {
-        abort_unless(Auth::user()?->can('error_incidents.manage'), 403);
+        abort_unless($this->actor()->can('error_incidents.manage'), 403);
 
         $this->validate([
             'selectedIncidentId' => ['required', 'integer', 'exists:error_incidents,id'],
@@ -97,7 +97,7 @@ class ErrorIncidentAdmin extends AdminComponent
 
     public function reopenIncident(): void
     {
-        abort_unless(Auth::user()?->can('error_incidents.manage'), 403);
+        abort_unless($this->actor()->can('error_incidents.manage'), 403);
 
         ErrorIncident::query()->findOrFail($this->selectedIncidentId)->update([
             'resolved_at' => null,

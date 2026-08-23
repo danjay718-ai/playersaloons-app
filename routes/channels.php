@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
-use App\Modules\Community\Actions\ChatService;
+use App\Modules\Community\Services\ChatService;
 use App\Modules\Community\Models\ChatConversation;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {

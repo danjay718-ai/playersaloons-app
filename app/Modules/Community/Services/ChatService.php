@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Community\Actions;
+namespace App\Modules\Community\Services;
 
 use App\Modules\Community\Events\ChatMessageSent;
 use App\Modules\Community\Models\ChatConversation;
