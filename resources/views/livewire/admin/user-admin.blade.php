@@ -1,4 +1,19 @@
-<div x-data="{ createModal: null }" @user-created.window="createModal = null">
+<div x-data="{ 
+    createModal: null,
+    editModal: { open: false, id: null, username: '' },
+    passwordModal: { open: false, id: null, username: '' },
+    deleteModal: { open: false, id: null, username: '' },
+    suspendModal: { open: false, id: null, username: '', reason: '' },
+    roleModal: { open: false, id: null, username: '', action: 'assign', role: '' },
+    transferModal: { open: false, id: null, username: '', confirm: '' }
+}"
+@user-created.window="createModal = null"
+@user-updated.window="editModal.open = false; $wire.set('showEditModal', false)"
+@password-reset.window="passwordModal.open = false; $wire.set('showPasswordModal', false); $wire.set('newPassword', ''); $wire.set('newPasswordConfirmation', '')"
+@user-deleted.window="deleteModal.open = false; $wire.set('showDeleteModal', false)"
+@user-suspended.window="suspendModal.open = false; $wire.set('showSuspendModal', false)"
+@user-role-updated.window="roleModal.open = false; $wire.set('showRoleModal', false)"
+@super-admin-transferred.window="transferModal.open = false; $wire.set('showTransferSuperAdminModal', false)">
     <!-- Tabs -->
     <div class="flex space-x-1 border-b border-slate-800 mb-6 relative">
         <div wire:loading wire:target="setTab" class="absolute top-0 right-0 p-3">
@@ -79,24 +94,36 @@
                         <th class="p-4">Display Name</th>
                         <th class="p-4">Country</th>
                         <th class="p-4">Assigned Roles</th>
-                        <th class="p-4">Account status</th>
+                        <th class="p-4">Status</th>
                         <th class="p-4 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-800/50">
+                <tbody class="divide-y divide-slate-800/60">
                     @forelse($users as $usr)
-                        <tr class="hover:bg-slate-900/40" wire:key="user-{{ $usr->id }}">
-                            <td class="p-4 font-semibold text-slate-200">
-                                <span class="flex items-center gap-2 text-slate-200 hover:text-indigo-400 cursor-pointer" wire:click="selectUser({{ $usr->id }})">
-                                    <span class="inline-block w-2 h-2 rounded-full flex-shrink-0 {{ $usr->is_online ? 'bg-emerald-400' : 'bg-slate-600' }}" title="{{ $usr->is_online ? 'Online' : 'Offline' }}"></span>
-                                    {{ $usr->username }}
-                                </span>
-                                <span class="block text-[10px] text-slate-500 font-normal mt-0.5">{{ $usr->email }}</span>
+                        <tr class="hover:bg-slate-800/30 transition-colors">
+                            <td class="p-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-300 relative">
+                                        {{ strtoupper(substr($usr->username, 0, 2)) }}
+                                        @if($usr->is_online)
+                                            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-900" title="Online"></span>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-200 flex items-center space-x-1.5">
+                                            <span>{{ $usr->username }}</span>
+                                            @if($usr->hasRole('SUPER_ADMIN'))
+                                                <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[8px] font-extrabold px-1 rounded uppercase tracking-wider">Super Admin</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-[10px] text-slate-500">{{ $usr->email }}</div>
+                                    </div>
+                                </div>
                             </td>
                             <td class="p-4 text-slate-300">
                                 {{ $usr->profile->display_name ?? 'N/A' }}
                             </td>
-                            <td class="p-4 text-slate-350">
+                            <td class="p-4 text-slate-400">
                                 {{ $usr->profile->country_code ?? 'N/A' }}
                             </td>
                             <td class="p-4">
@@ -124,17 +151,34 @@
                                 </span>
                             </td>
                             <td class="p-4 text-right">
-                                <div x-data="{ open: false }" class="relative inline-block text-left" @click.away="open = false" wire:ignore.self>
-                                    <button @click="open = !open" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-wider flex items-center space-x-1 ml-auto transition-colors">
+                                <div x-data="{ open: false }" class="relative inline-block text-left" @click.away="open = false">
+                                    <button @click="open = !open" type="button" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-wider flex items-center space-x-1 ml-auto transition-colors">
                                         <span>Actions</span>
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                     </button>
-                                    <div x-show="open" x-transition style="display: none;" class="absolute right-0 mt-2 w-40 bg-slate-800 rounded-lg shadow-xl z-50 border border-slate-700 py-1 overflow-hidden">
-                                        @can('update', $usr)<button wire:click="editUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white uppercase font-bold tracking-wider transition-colors relative">Edit Data</button>@endcan
-                                        @can('resetPassword', $usr)<button wire:click="prepareResetPassword({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white uppercase font-bold tracking-wider transition-colors">Reset Password</button>@endcan
-                                        @can('delete', $usr)<button wire:click="confirmDeleteUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-red-400 transition-colors hover:bg-red-950/40 hover:text-red-300">Delete User</button>@endcan
-                                        <div class="border-t border-slate-700 my-0.5"></div>
-                                        <button wire:click="selectUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-indigo-400 hover:bg-slate-700 hover:text-indigo-300 uppercase font-bold tracking-wider transition-colors">
+                                    <div x-show="open" x-transition style="display: none;" class="absolute right-0 mt-2 w-44 bg-[#0b0f19] rounded-lg shadow-2xl z-50 border border-slate-700 py-1 overflow-hidden">
+                                        @can('update', $usr)
+                                            <button type="button" @click="editModal = { open: true, id: {{ $usr->id }}, username: '{{ addslashes($usr->username) }}' }; $wire.editUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white uppercase font-bold tracking-wider transition-colors">
+                                                Edit Data
+                                            </button>
+                                        @endcan
+                                        @can('resetPassword', $usr)
+                                            <button type="button" @click="passwordModal = { open: true, id: {{ $usr->id }}, username: '{{ addslashes($usr->username) }}' }; $wire.prepareResetPassword({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white uppercase font-bold tracking-wider transition-colors">
+                                                Reset Password
+                                            </button>
+                                        @endcan
+                                        @can('delete', $usr)
+                                            <button type="button" @click="deleteModal = { open: true, id: {{ $usr->id }}, username: '{{ addslashes($usr->username) }}' }; $wire.confirmDeleteUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-red-400 transition-colors hover:bg-red-950/40 hover:text-red-300">
+                                                Delete User
+                                            </button>
+                                        @endcan
+                                        @if(auth()->user()?->hasRole('SUPER_ADMIN') && $usr->id !== auth()->id() && ! $usr->hasRole('SUPER_ADMIN'))
+                                            <button type="button" @click="transferModal = { open: true, id: {{ $usr->id }}, username: '{{ addslashes($usr->username) }}', confirm: '' }; $wire.openTransferSuperAdmin({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-amber-400 transition-colors hover:bg-amber-950/40 hover:text-amber-300">
+                                                Transfer Super Admin
+                                            </button>
+                                        @endif
+                                        <div class="border-t border-slate-800 my-0.5"></div>
+                                        <button type="button" wire:click="selectUser({{ $usr->id }}); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-indigo-400 hover:bg-slate-800 hover:text-indigo-300 uppercase font-bold tracking-wider transition-colors">
                                             Full Manage
                                         </button>
                                     </div>
@@ -152,33 +196,42 @@
     </div>
 
     <!-- Create User / Player Modal -->
-        <div x-cloak x-show="createModal !== null" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="createModal = null"></div>
-            <div class="relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-slate-800 bg-[#0f172a] shadow-2xl">
-                <div class="flex items-center justify-between border-b border-slate-800 bg-[#0b0f19] px-6 py-4"><h3 class="text-sm font-bold uppercase tracking-wider text-slate-200">Add <span x-text="createModal === 'player' ? 'Player' : 'User'"></span></h3><button type="button" @click="createModal = null" class="text-slate-400 hover:text-white">×</button></div>
-                <form @submit.prevent="await $wire.set('createMode', createModal); await $wire.createUser()" class="space-y-4 p-6">
-                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Username</label><input wire:model="createUsername" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createUsername')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
-                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Email</label><input wire:model="createEmail" type="email" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createEmail')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
-                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Display Name</label><input wire:model="createDisplayName" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"></div>
-                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Country Code</label><input wire:model="createCountryCode" maxlength="2" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm uppercase text-slate-100"></div>
-                    <div x-show="createModal === 'user'"><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Role</label><select wire:model="createRole" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"><option value="">Select role</option>@foreach($roles->where('name', '!=', 'PLAYER') as $role)@if($role->name !== 'SUPER_ADMIN' || auth()->user()?->hasRole('SUPER_ADMIN'))<option value="{{ $role->name }}">{{ $role->name }}</option>@endif @endforeach</select>@error('createRole')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
-                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Password</label><input wire:model="createPassword" type="password" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createPassword')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
-                    <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Confirm Password</label><input wire:model="createPasswordConfirmation" type="password" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createPasswordConfirmation')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
-                    <div class="flex justify-end gap-3 border-t border-slate-800 pt-4"><button type="button" @click="createModal = null" class="rounded-lg bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase text-slate-200">Cancel</button><button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-indigo-500">Create</button></div>
-                </form>
-            </div>
+    <div x-cloak x-show="createModal !== null" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="createModal = null"></div>
+        <div class="relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-slate-800 bg-[#0f172a] shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 bg-[#0b0f19] px-6 py-4"><h3 class="text-sm font-bold uppercase tracking-wider text-slate-200">Add <span x-text="createModal === 'player' ? 'Player' : 'User'"></span></h3><button type="button" @click="createModal = null" class="text-slate-400 hover:text-white">×</button></div>
+            <form @submit.prevent="await $wire.set('createMode', createModal); await $wire.createUser()" class="space-y-4 p-6">
+                <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Username</label><input wire:model="createUsername" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createUsername')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Email</label><input wire:model="createEmail" type="email" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createEmail')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Display Name</label><input wire:model="createDisplayName" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"></div>
+                <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Country Code</label><input wire:model="createCountryCode" maxlength="2" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm uppercase text-slate-100"></div>
+                <div x-show="createModal === 'user'"><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Role</label><select wire:model="createRole" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"><option value="">Select role</option>@foreach($roles->where('name', '!=', 'PLAYER') as $role)@if($role->name !== 'SUPER_ADMIN' || auth()->user()?->hasRole('SUPER_ADMIN'))<option value="{{ $role->name }}">{{ $role->name }}</option>@endif @endforeach</select>@error('createRole')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Password</label><input wire:model="createPassword" type="password" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createPassword')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                <div><label class="mb-1 block text-xs font-bold uppercase text-slate-400">Confirm Password</label><input wire:model="createPasswordConfirmation" type="password" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100">@error('createPasswordConfirmation')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                <div class="flex justify-end gap-3 border-t border-slate-800 pt-4"><button type="button" @click="createModal = null" class="rounded-lg bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase text-slate-200">Cancel</button><button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-indigo-500">Create</button></div>
+            </form>
         </div>
+    </div>
 
     <!-- Delete User Modal -->
-    @if($showDeleteModal)
-        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showDeleteModal', false)"></div>
-            <div class="relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-red-900/60 bg-[#0f172a] shadow-2xl">
-                <div class="border-b border-slate-800 bg-[#0b0f19] px-6 py-4"><h3 class="text-sm font-bold uppercase tracking-wider text-red-400">Delete User?</h3></div>
-                <div class="space-y-5 p-6"><p class="text-sm leading-relaxed text-slate-400">This soft-deletes the account and removes it from normal user lists. Existing records and audit history are retained.</p><div class="flex justify-end gap-3"><button type="button" @click="open = false; $wire.set('showDeleteModal', false)" class="rounded-lg bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase text-slate-200">Cancel</button><button wire:click="deleteUser" class="rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-red-500">Delete User</button></div></div>
+    <div x-cloak x-show="deleteModal.open || $wire.showDeleteModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="deleteModal.open = false; $wire.set('showDeleteModal', false)"></div>
+        <div class="relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-red-900/60 bg-[#0f172a] shadow-2xl">
+            <div class="border-b border-slate-800 bg-[#0b0f19] px-6 py-4 flex justify-between items-center">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-red-400">Delete User?</h3>
+                <button type="button" @click="deleteModal.open = false; $wire.set('showDeleteModal', false)" class="text-slate-400 hover:text-white">×</button>
+            </div>
+            <div class="space-y-5 p-6">
+                <p class="text-sm leading-relaxed text-slate-400">
+                    This soft-deletes the account and removes it from normal user lists. Existing records and audit history are retained.
+                </p>
+                <div class="flex justify-end gap-3">
+                    <button type="button" @click="deleteModal.open = false; $wire.set('showDeleteModal', false)" class="rounded-lg bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase text-slate-200">Cancel</button>
+                    <button wire:click="deleteUser" class="rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-red-500">Delete User</button>
+                </div>
             </div>
         </div>
-    @endif
+    </div>
 
     <!-- Pagination -->
     <div class="mt-4">
@@ -186,88 +239,87 @@
     </div>
 
     <!-- Edit User Data Modal -->
-    @if($showEditModal)
-        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showEditModal', false)"></div>
-            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
-                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Edit User Data</h3>
-                    <button type="button" @click="open = false; $wire.set('showEditModal', false)" class="text-slate-400 hover:text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
+    <div x-cloak x-show="editModal.open || $wire.showEditModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="editModal.open = false; $wire.set('showEditModal', false)"></div>
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+            <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Edit User Data</h3>
+                <button type="button" @click="editModal.open = false; $wire.set('showEditModal', false)" class="text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form wire:submit.prevent="updateUser" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
+                    <input type="text" wire:model="editUsername" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                    @error('editUsername') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Email</label>
+                    <input type="email" wire:model="editEmail" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                    @error('editEmail') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Display Name</label>
+                    <input type="text" wire:model="editDisplayName" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                    @error('editDisplayName') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Country Code (e.g. PH)</label>
+                    <input type="text" wire:model="editCountryCode" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" maxlength="2">
+                    @error('editCountryCode') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
-                <form wire:submit.prevent="updateUser" class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
-                        <input type="text" wire:model="editUsername" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        @error('editUsername') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Email</label>
-                        <input type="email" wire:model="editEmail" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        @error('editEmail') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Display Name</label>
-                        <input type="text" wire:model="editDisplayName" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        @error('editDisplayName') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Country Code (e.g. PH)</label>
-                        <input type="text" wire:model="editCountryCode" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" maxlength="2">
-                        @error('editCountryCode') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                        <button type="button" @click="open = false; $wire.set('showEditModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                            Save Changes
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" @click="editModal.open = false; $wire.set('showEditModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
         </div>
-    @endif
+    </div>
 
     <!-- Reset Password Modal -->
-    @if($showPasswordModal)
-        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showPasswordModal', false)"></div>
-            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
-                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+    <div x-cloak x-show="passwordModal.open || $wire.showPasswordModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="passwordModal.open = false; $wire.set('showPasswordModal', false)"></div>
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+            <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                <div>
                     <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Reset User Password</h3>
-                    <button type="button" @click="open = false; $wire.set('showPasswordModal', false)" class="text-slate-400 hover:text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
+                    <p class="text-[10px] text-slate-400 font-medium mt-0.5" x-text="passwordModal.username ? 'Reset password for ' + passwordModal.username : ''"></p>
+                </div>
+                <button type="button" @click="passwordModal.open = false; $wire.set('showPasswordModal', false)" class="text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form wire:submit.prevent="resetPassword" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">New Password</label>
+                    <input type="password" wire:model="newPassword" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                    @error('newPassword') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Confirm New Password</label>
+                    <input type="password" wire:model="newPasswordConfirmation" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                    @error('newPasswordConfirmation') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
-                <form wire:submit.prevent="resetPassword" class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">New Password</label>
-                        <input type="password" wire:model="newPassword" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        @error('newPassword') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Confirm New Password</label>
-                        <input type="password" wire:model="newPasswordConfirmation" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        @error('newPasswordConfirmation') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                        <button type="button" @click="open = false; $wire.set('showPasswordModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                            Reset Password
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" @click="passwordModal.open = false; $wire.set('showPasswordModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Reset Password
+                    </button>
+                </div>
+            </form>
         </div>
-    @endif
+    </div>
 
     <!-- Detail Modal -->
     @if($showDetailModal && $selectedUser)
@@ -456,76 +508,117 @@
     @endif
 
     <!-- Suspend Reason Modal -->
-    @if($showSuspendModal)
-        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showSuspendModal', false)"></div>
-            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
-                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider">Suspend User Account</h3>
-                    <button type="button" @click="open = false; $wire.set('showSuspendModal', false)" class="text-slate-400 hover:text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
+    <div x-cloak x-show="suspendModal.open || $wire.showSuspendModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="suspendModal.open = false; $wire.set('showSuspendModal', false)"></div>
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+            <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider">Suspend User Account</h3>
+                <button type="button" @click="suspendModal.open = false; $wire.set('showSuspendModal', false)" class="text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form wire:submit.prevent="suspend" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Reason for Suspension</label>
+                    <input type="text" wire:model="suspendReason" placeholder="e.g. Terms of Service violation - collusion"
+                           class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-red-500">
+                    @error('suspendReason') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
-                <form wire:submit.prevent="suspend" class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Reason for Suspension</label>
-                        <input type="text" wire:model="suspendReason" placeholder="e.g. Terms of Service violation - collusion"
-                               class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-red-500">
-                        @error('suspendReason') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                        <button type="button" @click="open = false; $wire.set('showSuspendModal', false)" 
-                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit" 
-                                class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                            Suspend User
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" @click="suspendModal.open = false; $wire.set('showSuspendModal', false)" 
+                            class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Suspend User
+                    </button>
+                </div>
+            </form>
         </div>
-    @endif
+    </div>
 
     <!-- Role Edit Modal -->
-    @if($showRoleModal)
-        <div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="open = false; $wire.set('showRoleModal', false)"></div>
-            <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
-                <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider capitalize">{{ $roleAction }} Role</h3>
-                    <button type="button" @click="open = false; $wire.set('showRoleModal', false)" class="text-slate-400 hover:text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
+    <div x-cloak x-show="roleModal.open || $wire.showRoleModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="roleModal.open = false; $wire.set('showRoleModal', false)"></div>
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+            <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider capitalize" x-text="(roleModal.action || '{{ $roleAction }}') + ' Role'"></h3>
+                <button type="button" @click="roleModal.open = false; $wire.set('showRoleModal', false)" class="text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form wire:submit.prevent="updateRole" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Select Role</label>
+                    <select wire:model="selectedRole" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-350 focus:outline-none focus:border-indigo-500">
+                        <option value="">Select Role</option>
+                        @foreach($roles as $role)
+                            @if($role->name !== 'SUPER_ADMIN' || auth()->user()?->hasRole('SUPER_ADMIN'))
+                                <option value="{{ $role->name }}">{{ $role->name }}</option>
+                            @endif
+                        @endforeach
+                    </select>
+                    @error('selectedRole') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
-                <form wire:submit.prevent="updateRole" class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Select Role</label>
-                        <select wire:model="selectedRole" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-350 focus:outline-none focus:border-indigo-500">
-                            <option value="">Select Role</option>
-                            @foreach($roles as $role)
-                                <option value="{{ $role->name }}">{{ $role->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('selectedRole') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
-                        <button type="button" @click="open = false; $wire.set('showRoleModal', false)" 
-                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit" 
-                                class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                            Confirm {{ ucfirst($roleAction) }}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" @click="roleModal.open = false; $wire.set('showRoleModal', false)" 
+                            class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Confirm Action
+                    </button>
+                </div>
+            </form>
         </div>
-    @endif
+    </div>
+
+    <!-- Transfer Super Admin Modal -->
+    <div x-cloak x-show="transferModal.open || $wire.showTransferSuperAdminModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="transferModal.open = false; $wire.set('showTransferSuperAdminModal', false)"></div>
+        <div class="bg-[#0f172a] border border-amber-500/30 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10">
+            <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
+                <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    Transfer Super Admin Ownership
+                </h3>
+                <button type="button" @click="transferModal.open = false; $wire.set('showTransferSuperAdminModal', false)" class="text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form wire:submit.prevent="executeTransferSuperAdmin" class="p-6 space-y-4">
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    You are about to transfer the <strong class="text-amber-400">SUPER_ADMIN</strong> role to <strong class="text-white" x-text="transferModal.username"></strong>.
+                    <span class="block mt-1 text-slate-400">There can only be one Super Admin in the system. Your account will automatically be set to regular <strong class="text-indigo-400">ADMIN</strong>.</span>
+                </p>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">
+                        Type <span class="text-amber-400 font-mono" x-text="transferModal.username"></span> to confirm:
+                    </label>
+                    <input type="text" wire:model="transferConfirmUsername" :placeholder="transferModal.username"
+                           class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500 font-mono">
+                    @error('transferConfirmUsername') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" @click="transferModal.open = false; $wire.set('showTransferSuperAdminModal', false)" 
+                            class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                        Transfer Ownership
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>

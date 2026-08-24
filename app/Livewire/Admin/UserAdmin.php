@@ -49,8 +49,20 @@ class UserAdmin extends AdminComponent
 
     public bool $showDeleteModal = false;
 
+    public bool $showTransferSuperAdminModal = false;
+
+    public ?int $transferTargetUserId = null;
+
+    public string $transferConfirmUsername = '';
+
     // Selection
     public ?int $selectedUserId = null;
+
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('users.view'), 403);
+    }
 
     // Forms
     public string $suspendReason = '';
@@ -225,6 +237,7 @@ class UserAdmin extends AdminComponent
 
         session()->flash('success', 'User data updated successfully.');
         $this->showEditModal = false;
+        $this->dispatch('user-updated');
     }
 
     public function prepareResetPassword(int $id): void
@@ -259,6 +272,7 @@ class UserAdmin extends AdminComponent
         $this->newPasswordConfirmation = '';
         session()->flash('success', 'User password reset successfully.');
         $this->showPasswordModal = false;
+        $this->dispatch('password-reset');
     }
 
     public function confirmDeleteUser(int $id): void
@@ -292,6 +306,7 @@ class UserAdmin extends AdminComponent
         $this->showDeleteModal = false;
         $this->selectedUserId = null;
         session()->flash('success', 'User account deleted successfully.');
+        $this->dispatch('user-deleted');
     }
 
     public function openSuspendModal(): void
@@ -323,6 +338,7 @@ class UserAdmin extends AdminComponent
             $action->execute($target, $actor, $this->suspendReason);
             session()->flash('success', 'User suspended successfully.');
             $this->showSuspendModal = false;
+            $this->dispatch('user-suspended');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to suspend the user.'));
         }
@@ -340,8 +356,45 @@ class UserAdmin extends AdminComponent
         try {
             $action->execute($target, $actor);
             session()->flash('success', 'User account unsuspended.');
+            $this->dispatch('user-unsuspended');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to restore the user.'));
+        }
+    }
+
+    public function openTransferSuperAdmin(int $userId): void
+    {
+        abort_unless($this->actor()->hasRole('SUPER_ADMIN'), 403, 'Only the current SUPER_ADMIN can transfer ownership.');
+        $this->transferTargetUserId = $userId;
+        $this->transferConfirmUsername = '';
+        $this->showTransferSuperAdminModal = true;
+    }
+
+    public function executeTransferSuperAdmin(TransferSuperAdminAction $action): void
+    {
+        abort_unless($this->actor()->hasRole('SUPER_ADMIN'), 403, 'Only the current SUPER_ADMIN can transfer ownership.');
+
+        if (! $this->transferTargetUserId) {
+            return;
+        }
+
+        $target = User::findOrFail($this->transferTargetUserId);
+
+        $this->validate([
+            'transferConfirmUsername' => ['required', 'string', 'in:'.$target->username],
+        ], [
+            'transferConfirmUsername.in' => 'Please type the exact username to confirm the transfer of Super Admin ownership.',
+        ]);
+
+        try {
+            $action->execute($target, $this->actor());
+            session()->flash('success', "Super Admin ownership successfully transferred to {$target->username}.");
+            $this->showTransferSuperAdminModal = false;
+            $this->transferTargetUserId = null;
+            $this->transferConfirmUsername = '';
+            $this->dispatch('super-admin-transferred');
+        } catch (\Exception $e) {
+            session()->flash('error', $this->safeError($e, 'Unable to transfer Super Admin role.'));
         }
     }
 
@@ -355,7 +408,9 @@ class UserAdmin extends AdminComponent
     public function updateRole(): void
     {
         $this->validate([
-            'selectedRole' => 'required|string',
+            'selectedRole' => 'required|string|not_in:SUPER_ADMIN',
+        ], [
+            'selectedRole.not_in' => 'The SUPER_ADMIN role cannot be assigned directly. Use Transfer Super Admin Ownership instead.',
         ]);
 
         if (! $this->selectedUserId) {
@@ -366,11 +421,8 @@ class UserAdmin extends AdminComponent
         $actor = $this->actor();
 
         try {
-            if ($this->roleAction === 'revoke' && $target->id === $actor->id && $this->selectedRole === 'SUPER_ADMIN') {
-                $superAdminCount = User::role('SUPER_ADMIN')->count();
-                if ($superAdminCount <= 1) {
-                    throw new \Exception('You cannot revoke your own SUPER_ADMIN role because you are the only one. Assign it to someone else first.');
-                }
+            if ($this->selectedRole === 'SUPER_ADMIN') {
+                throw new \Exception('The SUPER_ADMIN role cannot be assigned directly. Use Transfer Super Admin Ownership instead.');
             }
 
             if ($this->roleAction === 'assign') {
@@ -381,6 +433,7 @@ class UserAdmin extends AdminComponent
                 session()->flash('success', "Role '{$this->selectedRole}' revoked from user.");
             }
             $this->showRoleModal = false;
+            $this->dispatch('user-role-updated');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to update the user role.'));
         }
