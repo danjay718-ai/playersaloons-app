@@ -18,8 +18,10 @@
 
 <div
     class="space-y-6 min-w-0"
-    x-data="{ activeTab: 'profile', showKycDrawer: false }"
+    x-data="{ activeTab: 'profile', showKycDrawer: false, isEditingProfile: false, isEditingAccount: false }"
     @profile-kyc-submitted.window="showKycDrawer = false"
+    @profile-updated.window="isEditingProfile = false"
+    @account-updated.window="isEditingAccount = false"
 >
     <x-ui.toasts />
 
@@ -53,11 +55,6 @@
                             Active
                         </span>
                     </div>
-
-                    <button type="button" @click="activeTab = 'profile'" class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-cyan-100 hover:bg-cyan-500/25 font-orbitron">
-                        <i data-lucide="image-up" class="w-4 h-4"></i>
-                        Edit Profile
-                    </button>
                 </div>
 
                 <div class="mt-6 grid grid-cols-2 gap-3">
@@ -150,22 +147,70 @@
 
                 <div class="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
                     <div x-show="activeTab === 'profile'" x-cloak>
-                        <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
-                            <i data-lucide="badge" class="w-4 h-4 text-cyan-300"></i>
-                            <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Player Info</h3>
+                        <div class="mb-4 flex items-center justify-between border-b border-zinc-800 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="badge" class="w-4 h-4 text-cyan-300"></i>
+                                <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Player Info</h3>
+                            </div>
+                            <button 
+                                type="button" 
+                                @click="isEditingProfile = !isEditingProfile" 
+                                class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest font-orbitron transition-all"
+                                :class="isEditingProfile ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white' : 'border-cyan-400/30 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 shadow-[0_0_12px_rgba(34,211,238,0.1)]'"
+                            >
+                                <i :data-lucide="isEditingProfile ? 'x' : 'pencil'" class="w-3.5 h-3.5"></i>
+                                <span x-text="isEditingProfile ? 'Cancel' : 'Edit Profile'"></span>
+                            </button>
                         </div>
 
                         <form wire:submit="updateAvatar" class="mb-5 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
-                            <div class="mt-2 grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-                                <x-forms.image-crop-upload model="avatarFile" label="Profile Picture" :width="400" :height="400" :max-mb="2" />
-                                <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-cyan-100 hover:bg-cyan-500/25 disabled:opacity-60 font-orbitron">
-                                    <i data-lucide="image-up" class="w-4 h-4"></i>
-                                    Upload
+                            <x-forms.image-crop-upload model="avatarFile" label="Profile Picture" :width="400" :height="400" :max-mb="2">
+                                <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-3.5 py-2 text-[11px] font-black uppercase tracking-widest text-cyan-100 hover:bg-cyan-500/25 disabled:opacity-60 font-orbitron transition-colors shrink-0 whitespace-nowrap">
+                                    <i data-lucide="image-up" class="w-3.5 h-3.5"></i>
+                                    <span wire:loading.remove wire:target="avatarFile, updateAvatar">Upload</span>
+                                    <span wire:loading wire:target="avatarFile, updateAvatar">Uploading...</span>
                                 </button>
-                            </div>
+                            </x-forms.image-crop-upload>
                         </form>
 
-                        <form wire:submit="updateProfile" class="space-y-4">
+                        <!-- Read-Only View (Default) -->
+                        <div x-show="!isEditingProfile" class="space-y-4">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/70 p-4">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Full Legal Name</p>
+                                    <p class="mt-1 text-sm font-bold text-white">{{ $fullName ?: 'Not specified' }}</p>
+                                    <p class="mt-1 text-[10px] text-zinc-500">Private info used solely for KYC / ID verification.</p>
+                                </div>
+                                <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/70 p-4">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Display Name</p>
+                                    <p class="mt-1 text-sm font-bold text-white font-orbitron">{{ $displayName ?: $user->username }}</p>
+                                    <p class="mt-1 text-[10px] text-zinc-500">Visible publicly on tournament brackets and leaderboards.</p>
+                                </div>
+                                <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/70 p-4">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Country / Region</p>
+                                    <p class="mt-1 text-sm font-bold text-white">
+                                        {{ $countries[$countryCode] ?? ($countryCode ?: 'Not specified') }}
+                                        @if($countryCode)
+                                            <span class="text-xs text-zinc-500 font-mono">({{ $countryCode }})</span>
+                                        @endif
+                                    </p>
+                                </div>
+                                <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/70 p-4">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Timezone</p>
+                                    <p class="mt-1 text-sm font-bold text-white font-mono">{{ $timezone ?: 'UTC' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/70 p-4">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Bio</p>
+                                <p class="mt-2 text-xs leading-relaxed {{ $bio ? 'text-zinc-300' : 'text-zinc-500 italic' }}">
+                                    {{ $bio ?: 'No player bio provided yet. Click "Edit Profile" to add your introduction.' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Editable Form View -->
+                        <form x-show="isEditingProfile" wire:submit="updateProfile" class="space-y-4" x-cloak>
                             <div>
                                 <label for="fullName" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Full Legal Name</label>
                                 <input id="fullName" type="text" wire:model="fullName" autocomplete="name" minlength="2" maxlength="150" class="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none" placeholder="As shown on your ID">
@@ -204,10 +249,16 @@
                                 <textarea id="bio" wire:model="bio" rows="4" class="mt-1.5 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm font-semibold text-white focus:border-cyan-400 focus:outline-none" placeholder="Short player intro"></textarea>
                                 @error('bio') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
                             </div>
-                            <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-emerald-100 hover:bg-emerald-500/25 font-orbitron">
-                                <i data-lucide="save" class="w-4 h-4"></i>
-                                Save Info
-                            </button>
+                            <div class="flex items-center gap-3 pt-2">
+                                <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-emerald-100 hover:bg-emerald-500/25 font-orbitron transition-colors">
+                                    <i data-lucide="save" class="w-4 h-4"></i>
+                                    <span wire:loading.remove wire:target="updateProfile">Save Changes</span>
+                                    <span wire:loading wire:target="updateProfile">Saving...</span>
+                                </button>
+                                <button type="button" @click="isEditingProfile = false" class="rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-xs font-bold uppercase text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors">
+                                    Cancel
+                                </button>
+                            </div>
                         </form>
 
                         <div class="mt-8 border-t border-zinc-800 pt-6">
@@ -249,11 +300,41 @@
                     </div>
 
                     <div x-show="activeTab === 'account'" x-cloak>
-                        <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
-                            <i data-lucide="id-card" class="w-4 h-4 text-fuchsia-300"></i>
-                            <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Account</h3>
+                        <div class="mb-4 flex items-center justify-between border-b border-zinc-800 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="id-card" class="w-4 h-4 text-fuchsia-300"></i>
+                                <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Account Details</h3>
+                            </div>
+                            <button 
+                                type="button" 
+                                @click="isEditingAccount = !isEditingAccount" 
+                                class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest font-orbitron transition-all"
+                                :class="isEditingAccount ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white' : 'border-fuchsia-400/30 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/20 shadow-[0_0_12px_rgba(217,70,239,0.1)]'"
+                            >
+                                <i :data-lucide="isEditingAccount ? 'x' : 'pencil'" class="w-3.5 h-3.5"></i>
+                                <span x-text="isEditingAccount ? 'Cancel' : 'Edit Account'"></span>
+                            </button>
                         </div>
-                        <form wire:submit="updateAccount" class="space-y-4">
+
+                        <!-- Read-Only View -->
+                        <div x-show="!isEditingAccount" class="space-y-4">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/70 p-4">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Username</p>
+                                    <p class="mt-1 text-sm font-bold text-white font-mono">{{ '@' . $user->username }}</p>
+                                </div>
+                                <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/70 p-4">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Email Address</p>
+                                    <p class="mt-1 text-sm font-bold text-white">{{ $user->email }}</p>
+                                    <span class="inline-block mt-1 text-[10px] font-semibold {{ $emailVerified ? 'text-emerald-400' : 'text-red-400' }}">
+                                        {{ $emailVerified ? '✓ Verified' : '⚠ Unverified' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Editable Form View -->
+                        <form x-show="isEditingAccount" wire:submit="updateAccount" class="space-y-4" x-cloak>
                             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div>
                                     <label for="username" class="block text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Username</label>
@@ -266,10 +347,16 @@
                                     @error('email') <span class="text-[10px] font-bold text-red-300">{{ $message }}</span> @enderror
                                 </div>
                             </div>
-                            <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-fuchsia-100 hover:bg-fuchsia-500/25 font-orbitron">
-                                <i data-lucide="save" class="w-4 h-4"></i>
-                                Save Account
-                            </button>
+                            <div class="flex items-center gap-3 pt-2">
+                                <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center gap-2 rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/15 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-fuchsia-100 hover:bg-fuchsia-500/25 font-orbitron transition-colors">
+                                    <i data-lucide="save" class="w-4 h-4"></i>
+                                    <span wire:loading.remove wire:target="updateAccount">Save Account</span>
+                                    <span wire:loading wire:target="updateAccount">Saving...</span>
+                                </button>
+                                <button type="button" @click="isEditingAccount = false" class="rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-xs font-bold uppercase text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors">
+                                    Cancel
+                                </button>
+                            </div>
                         </form>
                     </div>
 

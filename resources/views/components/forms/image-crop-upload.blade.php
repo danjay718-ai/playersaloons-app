@@ -32,16 +32,21 @@
     ]))"
     class="space-y-2"
 >
-    <label for="{{ $inputId }}" class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ $label }}</label>
-    <input
-        id="{{ $inputId }}"
-        x-ref="input"
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        @disabled($disabled)
-        x-on:change="selectFile($event)"
-        class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-[10px] file:font-black file:uppercase file:text-white disabled:opacity-50"
-    >
+    @if($label)
+        <label for="{{ $inputId }}" class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ $label }}</label>
+    @endif
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <input
+            id="{{ $inputId }}"
+            x-ref="input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            @disabled($disabled)
+            x-on:change="selectFile($event)"
+            class="flex-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-[10px] file:font-black file:uppercase file:text-white disabled:opacity-50"
+        >
+        {{ $slot }}
+    </div>
     <input
         x-ref="uploadInput"
         type="file"

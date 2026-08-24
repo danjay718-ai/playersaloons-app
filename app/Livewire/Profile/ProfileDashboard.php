@@ -144,6 +144,7 @@ class ProfileDashboard extends Component
         session()->flash('message', $emailChanged
             ? 'Account updated. Please verify your new email address.'
             : 'Account updated successfully!');
+        $this->dispatch('account-updated');
     }
 
     public function updateAvatar(UploadAvatarAction $action): void
@@ -270,6 +271,7 @@ class ProfileDashboard extends Component
             ]);
 
             session()->flash('message', 'Profile updated successfully!');
+            $this->dispatch('profile-updated');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to update the profile.'));
         }
