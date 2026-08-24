@@ -67,52 +67,64 @@
                             'label' => 'Operations',
                             'items' => [
                                 ['label' => 'Dashboard', 'icon' => 'layout-dashboard', 'url' => '/admin'],
-                                ['label' => 'Tournaments', 'icon' => 'trophy', 'url' => '/admin/tournaments'],
-                                ['label' => 'Matches & Disputes', 'icon' => 'swords', 'url' => '/admin/matches'],
+                                ['label' => 'Tournaments', 'icon' => 'trophy', 'url' => '/admin/tournaments', 'permission' => 'tournaments.view'],
+                                ['label' => 'Matches & Disputes', 'icon' => 'swords', 'url' => '/admin/matches', 'permission' => 'matches.view'],
                                 ['label' => 'Streams', 'icon' => 'tv', 'url' => '/admin/streams'],
-                                ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc'],
-                                ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals'],
-                                ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users'],
-                                ['label' => 'Roles & Permissions', 'icon' => 'key', 'url' => '/admin/roles-permissions'],
-                                ['label' => 'Compliance', 'icon' => 'shield-alert', 'url' => '/admin/compliance'],
+                                ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc', 'permission' => 'kyc.view'],
+                                ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals', 'permission' => 'withdrawals.view'],
+                                ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users', 'permission' => 'users.view'],
+                                ['label' => 'Roles & Permissions', 'icon' => 'key', 'url' => '/admin/roles-permissions', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
+                                ['label' => 'Compliance', 'icon' => 'shield-alert', 'url' => '/admin/compliance', 'permission' => 'users.suspend'],
                             ],
                         ],
                         [
                             'label' => 'CMS',
                             'items' => [
-                                ['label' => 'Blog & News', 'icon' => 'newspaper', 'url' => '/admin/cms/content'],
-                                ['label' => 'Landing Page', 'icon' => 'layout-template', 'url' => '/admin/cms/landing'],
-                                ['label' => 'Games', 'icon' => 'gamepad-2', 'url' => '/admin/cms/games'],
-                                ['label' => 'Platforms', 'icon' => 'monitor-smartphone', 'url' => '/admin/cms/platforms'],
-                                ['label' => 'Navigation', 'icon' => 'menu', 'url' => '/admin/cms/navigation'],
-                                ['label' => 'About Us', 'icon' => 'info', 'url' => '/admin/cms/about'],
-                                ['label' => 'Policies', 'icon' => 'scroll-text', 'url' => '/admin/policies'],
-                                ['label' => 'Translations', 'icon' => 'languages', 'url' => '/admin/translations'],
+                                ['label' => 'Blog & News', 'icon' => 'newspaper', 'url' => '/admin/cms/content', 'permission' => 'cms.view'],
+                                ['label' => 'Landing Page', 'icon' => 'layout-template', 'url' => '/admin/cms/landing', 'permission' => 'cms.manage'],
+                                ['label' => 'Games', 'icon' => 'gamepad-2', 'url' => '/admin/cms/games', 'permission' => 'games.view'],
+                                ['label' => 'Platforms', 'icon' => 'monitor-smartphone', 'url' => '/admin/cms/platforms', 'permission' => 'cms.manage'],
+                                ['label' => 'Navigation', 'icon' => 'menu', 'url' => '/admin/cms/navigation', 'permission' => 'cms.manage'],
+                                ['label' => 'About Us', 'icon' => 'info', 'url' => '/admin/cms/about', 'permission' => 'cms.manage'],
+                                ['label' => 'Policies', 'icon' => 'scroll-text', 'url' => '/admin/policies', 'permission' => 'cms.view'],
+                                ['label' => 'Translations', 'icon' => 'languages', 'url' => '/admin/translations', 'roles' => ['SUPER_ADMIN', 'ADMIN', 'MODERATOR']],
                             ],
                         ],
                         [
                             'label' => 'System',
                             'items' => [
-                                ['label' => 'Audit Logs', 'icon' => 'file-text', 'url' => '/admin/audit-logs'],
-                                ['label' => 'Error Logs', 'icon' => 'bug', 'url' => '/admin/error-logs', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
-                                ['label' => 'Notifications', 'icon' => 'megaphone', 'url' => '/admin/notifications'],
-                                ['label' => 'Contact Inquiries', 'icon' => 'inbox', 'url' => '/admin/contact-inquiries'],
-                                ['label' => 'Newsletters', 'icon' => 'mail', 'url' => '/admin/newsletters'],
-                                ['label' => 'Advertisements', 'icon' => 'badge-percent', 'url' => '/admin/advertisements'],
-                                ['label' => 'Player Reviews', 'icon' => 'star', 'url' => '/admin/player-reviews'],
-                                ['label' => 'Geo-Blocking', 'icon' => 'globe', 'url' => '/admin/geo-blocking'],
-                                ['label' => 'System Settings', 'icon' => 'settings', 'url' => '/admin/system-settings'],
+                                ['label' => 'Audit Logs', 'icon' => 'file-text', 'url' => '/admin/audit-logs', 'permission' => 'audit_logs.view'],
+                                ['label' => 'Error Logs', 'icon' => 'bug', 'url' => '/admin/error-logs', 'permission' => 'error_incidents.view'],
+                                ['label' => 'Staff Activity', 'icon' => 'activity', 'url' => '/admin/staff-activity', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
+                                ['label' => 'Notifications', 'icon' => 'megaphone', 'url' => '/admin/notifications', 'permission' => 'broadcast_messages.manage'],
+                                ['label' => 'Contact Inquiries', 'icon' => 'inbox', 'url' => '/admin/contact-inquiries', 'permission' => 'contact_inquiries.manage'],
+                                ['label' => 'Newsletters', 'icon' => 'mail', 'url' => '/admin/newsletters', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
+                                ['label' => 'Advertisements', 'icon' => 'badge-percent', 'url' => '/admin/advertisements', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
+                                ['label' => 'Player Reviews', 'icon' => 'star', 'url' => '/admin/player-reviews', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
+                                ['label' => 'Geo-Blocking', 'icon' => 'globe', 'url' => '/admin/geo-blocking', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
+                                ['label' => 'System Settings', 'icon' => 'settings', 'url' => '/admin/system-settings', 'permission' => 'system_settings.view'],
                             ],
                         ],
                     ];
                 @endphp
 
                 @foreach($adminNavSections as $section)
+                    @php
+                        $visibleItems = array_filter($section['items'], function ($item) {
+                            if (isset($item['roles']) && ! auth()->user()?->hasAnyRole($item['roles'])) {
+                                return false;
+                            }
+                            if (isset($item['permission']) && ! auth()->user()?->can($item['permission'])) {
+                                return false;
+                            }
+                            return true;
+                        });
+                    @endphp
+                    @continue(empty($visibleItems))
                     <div class="{{ $loop->first ? '' : 'pt-4' }}">
                         <p class="px-4 pb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600">{{ $section['label'] }}</p>
                         <div class="space-y-1.5">
-                            @foreach($section['items'] as $item)
-                                @continue(isset($item['roles']) && ! auth()->user()?->hasAnyRole($item['roles']))
+                            @foreach($visibleItems as $item)
                                 @php
                                     $itemPath = parse_url($item['url'], PHP_URL_PATH) ?: $item['url'];
                                     $isActive = request()->is(ltrim($itemPath, '/')) || (request()->is('admin') && $itemPath === '/admin');
@@ -252,11 +264,22 @@
             
             <nav class="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
                 @foreach($adminNavSections as $section)
+                    @php
+                        $visibleItems = array_filter($section['items'], function ($item) {
+                            if (isset($item['roles']) && ! auth()->user()?->hasAnyRole($item['roles'])) {
+                                return false;
+                            }
+                            if (isset($item['permission']) && ! auth()->user()?->can($item['permission'])) {
+                                return false;
+                            }
+                            return true;
+                        });
+                    @endphp
+                    @continue(empty($visibleItems))
                     <div>
                         <p class="px-4 pb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600">{{ $section['label'] }}</p>
                         <div class="space-y-1.5">
-                            @foreach($section['items'] as $item)
-                                @continue(isset($item['roles']) && ! auth()->user()?->hasAnyRole($item['roles']))
+                            @foreach($visibleItems as $item)
                                 @php
                                     $itemPath = parse_url($item['url'], PHP_URL_PATH) ?: $item['url'];
                                     $isActive = request()->is(ltrim($itemPath, '/')) || (request()->is('admin') && $itemPath === '/admin');
