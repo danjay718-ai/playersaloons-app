@@ -50,8 +50,8 @@
             <!-- Reset Stage -->
             <form wire:submit.prevent="resetPassword" class="mt-8 space-y-6">
                 @csrf
-                <div class="space-y-4">
-                    <div>
+                <div class="space-y-4" x-data="{ showPassword: false, showConfirmPassword: false }">
+                    <div class="p-3 bg-zinc-950/80 border border-zinc-800 rounded-lg">
                         <span class="text-xs text-zinc-500 font-medium">Resetting password for:</span>
                         <span class="text-xs font-bold text-violet-400 block mt-0.5">{{ $email }}</span>
                     </div>
@@ -60,12 +60,16 @@
                     <div>
                         <label for="password" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">New Password</label>
                         <div class="mt-1.5 relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500 pointer-events-none">
                                 <i data-lucide="lock" class="w-4 h-4"></i>
                             </span>
-                            <input wire:model="password" id="password" name="password" type="password" required 
-                                class="block w-full pl-9 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all duration-200"
+                            <input wire:model="password" id="password" name="password" :type="showPassword ? 'text' : 'password'" required 
+                                class="block w-full pl-9 pr-10 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all duration-200"
                                 placeholder="••••••••">
+                            <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 focus:outline-none transition-colors" tabindex="-1" :title="showPassword ? 'Hide password' : 'Show password'">
+                                <svg x-show="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <svg x-show="showPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                            </button>
                         </div>
                         @error('password') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
                     </div>
@@ -74,12 +78,16 @@
                     <div>
                         <label for="password_confirmation" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">Confirm New Password</label>
                         <div class="mt-1.5 relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500 pointer-events-none">
                                 <i data-lucide="lock" class="w-4 h-4"></i>
                             </span>
-                            <input wire:model="password_confirmation" id="password_confirmation" name="password_confirmation" type="password" required 
-                                class="block w-full pl-9 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all duration-200"
+                            <input wire:model="password_confirmation" id="password_confirmation" name="password_confirmation" :type="showConfirmPassword ? 'text' : 'password'" required 
+                                class="block w-full pl-9 pr-10 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all duration-200"
                                 placeholder="••••••••">
+                            <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 focus:outline-none transition-colors" tabindex="-1" :title="showConfirmPassword ? 'Hide password' : 'Show password'">
+                                <svg x-show="!showConfirmPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <svg x-show="showConfirmPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                            </button>
                         </div>
                     </div>
                 </div>

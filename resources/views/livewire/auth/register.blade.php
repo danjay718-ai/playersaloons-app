@@ -11,6 +11,8 @@
             passwordConfirmation: @entangle('password_confirmation'),
             acceptedPolicies: @entangle('accepted_policies'),
             ageConfirmed: @entangle('age_confirmed'),
+            showPassword: false,
+            showPasswordConfirmation: false,
             get passwordChecks() {
                 return {
                     length: this.password.length >= 8,
@@ -145,12 +147,16 @@
                     <div>
                         <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Password</label>
                         <div class="mt-1.5 relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 pointer-events-none">
                                 <i data-lucide="lock" class="h-4 w-4"></i>
                             </span>
-                            <input x-model="password" id="password" name="password" type="password" autocomplete="new-password" required minlength="8" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}"
-                                class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-600 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            <input x-model="password" id="password" name="password" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" required minlength="8" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}"
+                                class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-10 text-sm text-zinc-200 placeholder-zinc-600 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
                                 placeholder="8+ characters">
+                            <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 focus:outline-none transition-colors" tabindex="-1" :title="showPassword ? 'Hide password' : 'Show password'">
+                                <svg x-show="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <svg x-show="showPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                            </button>
                         </div>
                         <div class="mt-2 flex gap-1" aria-hidden="true">
                             <template x-for="step in 4" :key="step">
@@ -164,12 +170,16 @@
                     <div>
                         <label for="password_confirmation" class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Confirm Password</label>
                         <div class="mt-1.5 relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 pointer-events-none">
                                 <i data-lucide="lock-keyhole" class="h-4 w-4"></i>
                             </span>
-                            <input x-model="passwordConfirmation" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required minlength="8"
-                                class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-600 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            <input x-model="passwordConfirmation" id="password_confirmation" name="password_confirmation" :type="showPasswordConfirmation ? 'text' : 'password'" autocomplete="new-password" required minlength="8"
+                                class="block w-full rounded-lg border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-10 text-sm text-zinc-200 placeholder-zinc-600 transition focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
                                 placeholder="Repeat password">
+                            <button type="button" @click="showPasswordConfirmation = !showPasswordConfirmation" class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 focus:outline-none transition-colors" tabindex="-1" :title="showPasswordConfirmation ? 'Hide password' : 'Show password'">
+                                <svg x-show="!showPasswordConfirmation" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <svg x-show="showPasswordConfirmation" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                            </button>
                         </div>
                         <p x-show="passwordConfirmation" class="mt-1 text-xs font-semibold" :class="password === passwordConfirmation ? 'text-emerald-300' : 'text-red-300'" x-text="password === passwordConfirmation ? 'Passwords match' : 'Passwords do not match'" aria-live="polite"></p>
                         @error('password_confirmation') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror

@@ -34,7 +34,7 @@
                 </div>
 
                 <!-- Password -->
-                <div>
+                <div x-data="{ show: false }">
                     <div class="flex items-center justify-between">
                         <label for="password" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">Password</label>
                         <a href="/reset-password" wire:navigate class="text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors">
@@ -42,12 +42,16 @@
                         </a>
                     </div>
                     <div class="mt-1.5 relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500 pointer-events-none">
                             <i data-lucide="lock" class="w-4 h-4"></i>
                         </span>
-                        <input wire:model="password" id="password" name="password" type="password" autocomplete="current-password" minlength="1" required
-                            class="block w-full pl-9 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all duration-200"
+                        <input wire:model="password" id="password" name="password" :type="show ? 'text' : 'password'" autocomplete="current-password" minlength="1" required
+                            class="block w-full pl-9 pr-10 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all duration-200"
                             placeholder="••••••••">
+                        <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 focus:outline-none transition-colors" tabindex="-1" :title="show ? 'Hide password' : 'Show password'">
+                            <svg x-show="!show" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            <svg x-show="show" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                        </button>
                     </div>
                 </div>
 
