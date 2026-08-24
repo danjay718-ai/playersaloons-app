@@ -78,8 +78,12 @@ class RolePermissionAdmin extends AdminComponent
         $this->showCreateModal = true;
     }
 
-    public function createRole(): void
+    public function createRole(?string $name = null): void
     {
+        if ($name !== null) {
+            $this->newRoleName = $name;
+        }
+
         $this->validate([
             'newRoleName' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[A-Z0-9_]+$/i', 'unique:roles,name'],
         ], [
@@ -99,6 +103,7 @@ class RolePermissionAdmin extends AdminComponent
         $this->showCreateModal = false;
 
         session()->flash('success', "Role '{$formattedName}' created successfully.");
+        $this->dispatch('role-created');
     }
 
     public function openEditRole(int $roleId): void
@@ -116,10 +121,16 @@ class RolePermissionAdmin extends AdminComponent
         $this->showEditModal = true;
     }
 
-    public function updateRoleName(): void
+    public function updateRoleName(?int $id = null, ?string $name = null): void
     {
-        if (! $this->editingRoleId) {
+        $targetId = $id ?? $this->editingRoleId;
+        if (! $targetId) {
             return;
+        }
+        $this->editingRoleId = $targetId;
+
+        if ($name !== null) {
+            $this->editRoleName = $name;
         }
 
         $role = Role::findOrFail($this->editingRoleId);
@@ -148,6 +159,7 @@ class RolePermissionAdmin extends AdminComponent
         $this->editRoleName = '';
 
         session()->flash('success', "Role '{$oldName}' was renamed to '{$newName}'.");
+        $this->dispatch('role-updated');
     }
 
     public function openDeleteRole(int $roleId): void
@@ -171,11 +183,13 @@ class RolePermissionAdmin extends AdminComponent
         $this->showDeleteModal = true;
     }
 
-    public function confirmDeleteRole(): void
+    public function confirmDeleteRole(?int $id = null): void
     {
-        if (! $this->deletingRoleId) {
+        $targetId = $id ?? $this->deletingRoleId;
+        if (! $targetId) {
             return;
         }
+        $this->deletingRoleId = $targetId;
 
         $role = Role::findOrFail($this->deletingRoleId);
 
@@ -186,9 +200,8 @@ class RolePermissionAdmin extends AdminComponent
             return;
         }
 
-        $userCount = $role->users()->count();
-        if ($userCount > 0) {
-            session()->flash('error', "Cannot delete role '{$role->name}' because it is currently assigned to {$userCount} user(s). Reassign them first.");
+        if ($role->users()->exists()) {
+            session()->flash('error', "Cannot delete role '{$role->name}' because it is currently assigned to one or more user(s). Reassign them first.");
             $this->showDeleteModal = false;
 
             return;
@@ -204,6 +217,7 @@ class RolePermissionAdmin extends AdminComponent
         $this->activeRoleId = $firstRole?->id;
 
         session()->flash('success', "Role '{$roleName}' was permanently deleted.");
+        $this->dispatch('role-deleted');
     }
 
     public function togglePermission($permissionName)
