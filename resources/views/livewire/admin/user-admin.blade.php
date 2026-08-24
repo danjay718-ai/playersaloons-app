@@ -39,14 +39,21 @@
         this.transferModal.open = false;
     }
 }"
-@user-created.window="createModal.open = false"
-@user-updated.window="editModal.open = false"
-@password-reset.window="passwordModal.open = false"
-@user-deleted.window="deleteModal.open = false"
-@user-suspended.window="suspendModal.open = false"
-@user-role-updated.window="roleModal.open = false"
-@super-admin-transferred.window="transferModal.open = false"
-@keydown.escape.window="closeAll()">
+x-on:open-create.window="openCreate($event.detail?.mode)"
+x-on:open-edit.window="openEdit($event.detail.id, $event.detail.username, $event.detail.email, $event.detail.displayName, $event.detail.countryCode)"
+x-on:open-password.window="openPassword($event.detail.id, $event.detail.username)"
+x-on:open-delete.window="openDelete($event.detail.id, $event.detail.username)"
+x-on:open-suspend.window="openSuspend($event.detail.id, $event.detail.username)"
+x-on:open-role.window="openRole($event.detail.id, $event.detail.username, $event.detail.action)"
+x-on:open-transfer.window="openTransfer($event.detail.id, $event.detail.username)"
+x-on:user-created.window="createModal.open = false"
+x-on:user-updated.window="editModal.open = false"
+x-on:password-reset.window="passwordModal.open = false"
+x-on:user-deleted.window="deleteModal.open = false"
+x-on:user-suspended.window="suspendModal.open = false"
+x-on:user-role-updated.window="roleModal.open = false"
+x-on:super-admin-transferred.window="transferModal.open = false"
+x-on:keydown.escape.window="closeAll()">
     <!-- Tabs -->
     <div class="flex space-x-1 border-b border-slate-800 mb-6 relative">
         <div wire:loading wire:target="setTab" class="absolute top-0 right-0 p-3">
@@ -213,24 +220,24 @@
                                          style="display: none;" 
                                          class="absolute right-0 {{ $isNearBottom ? 'bottom-full mb-2 origin-bottom-right' : 'top-full mt-2 origin-top-right' }} w-48 bg-[#0b0f19] rounded-lg shadow-2xl z-50 border border-slate-700 py-1 overflow-hidden">
                                         @can('update', $usr)
-                                            <button type="button" @click.stop="openEdit({{ $usr->id }}, '{{ addslashes($usr->username) }}', '{{ addslashes($usr->email) }}', '{{ addslashes($usr->profile->display_name ?? '') }}', '{{ addslashes($usr->profile->country_code ?? '') }}'); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white uppercase font-bold tracking-wider transition-colors">
+                                            <button type="button" @click.stop="$dispatch('open-edit', { id: {{ $usr->id }}, username: @js($usr->username), email: @js($usr->email), displayName: @js($usr->profile->display_name ?? ''), countryCode: @js($usr->profile->country_code ?? '') }); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white uppercase font-bold tracking-wider transition-colors">
                                                 Edit Data
                                             </button>
                                         @endcan
                                         @can('resetPassword', $usr)
-                                            <button type="button" @click.stop="openPassword({{ $usr->id }}, '{{ addslashes($usr->username) }}'); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white uppercase font-bold tracking-wider transition-colors">
+                                            <button type="button" @click.stop="$dispatch('open-password', { id: {{ $usr->id }}, username: @js($usr->username) }); open = false" class="block w-full text-left px-4 py-2.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white uppercase font-bold tracking-wider transition-colors">
                                                 Reset Password
                                             </button>
                                         @endcan
                                         @can('delete', $usr)
                                             @if(! $usr->hasRole('SUPER_ADMIN') && $usr->id !== auth()->id())
-                                                <button type="button" @click.stop="openDelete({{ $usr->id }}, '{{ addslashes($usr->username) }}'); open = false" class="block w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-red-400 transition-colors hover:bg-red-950/40 hover:text-red-300">
+                                                <button type="button" @click.stop="$dispatch('open-delete', { id: {{ $usr->id }}, username: @js($usr->username) }); open = false" class="block w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-red-400 transition-colors hover:bg-red-950/40 hover:text-red-300">
                                                     Delete User
                                                 </button>
                                             @endif
                                         @endcan
                                         @if(auth()->user()?->hasRole('SUPER_ADMIN') && $usr->id !== auth()->id() && ! $usr->hasRole('SUPER_ADMIN'))
-                                            <button type="button" @click.stop="openTransfer({{ $usr->id }}, '{{ addslashes($usr->username) }}'); open = false" class="block w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-amber-400 transition-colors hover:bg-amber-950/40 hover:text-amber-300">
+                                            <button type="button" @click.stop="$dispatch('open-transfer', { id: {{ $usr->id }}, username: @js($usr->username) }); open = false" class="block w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-amber-400 transition-colors hover:bg-amber-950/40 hover:text-amber-300">
                                                 Transfer Super Admin
                                             </button>
                                         @endif
@@ -497,7 +504,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- Profile Card -->
                         <div class="bg-slate-900 border border-slate-850 p-4 rounded-xl space-y-3">
-                            <span class="text-[10px] text-slate-500 font-bold uppercase block tracking-wider">Profile Details</span>
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] text-slate-500 font-bold uppercase block tracking-wider">Profile Details</span>
+                                @can('update', $selectedUser)
+                                    <button type="button" @click="$dispatch('open-edit', { id: {{ $selectedUser->id }}, username: @js($selectedUser->username), email: @js($selectedUser->email), displayName: @js($selectedUser->profile->display_name ?? ''), countryCode: @js($selectedUser->profile->country_code ?? '') })" class="text-[9px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2 py-0.5 rounded transition-colors">
+                                        Edit Data
+                                    </button>
+                                @endcan
+                            </div>
                             <div class="space-y-2">
                                 <div>
                                     <span class="text-slate-550 block">Username</span>
@@ -530,8 +544,8 @@
                                 <span class="text-[10px] text-slate-500 font-bold uppercase block tracking-wider">Access Roles</span>
                                 @if(auth()->user()->hasRole('SUPER_ADMIN'))
                                     <div class="flex space-x-1.5">
-                                        <button @click="openRole({{ $selectedUser->id }}, '{{ addslashes($selectedUser->username) }}', 'assign')" class="text-[9px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2 py-0.5 rounded transition-colors">Assign</button>
-                                        <button @click="openRole({{ $selectedUser->id }}, '{{ addslashes($selectedUser->username) }}', 'revoke')" class="text-[9px] bg-red-950 border border-red-900 text-red-400 font-bold px-2 py-0.5 rounded transition-colors">Revoke</button>
+                                        <button type="button" @click="$dispatch('open-role', { id: {{ $selectedUser->id }}, username: @js($selectedUser->username), action: 'assign' })" class="text-[9px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2 py-0.5 rounded transition-colors">Assign</button>
+                                        <button type="button" @click="$dispatch('open-role', { id: {{ $selectedUser->id }}, username: @js($selectedUser->username), action: 'revoke' })" class="text-[9px] bg-red-950 border border-red-900 text-red-400 font-bold px-2 py-0.5 rounded transition-colors">Revoke</button>
                                     </div>
                                 @endif
                             </div>
@@ -646,7 +660,7 @@
                 <div class="px-6 py-4 border-t border-slate-800 bg-[#0b0f19] flex justify-between items-center">
                     <div>
                         @if($selectedUser->status === \App\Shared\Enums\UserStatus::ACTIVE)
-                            <button @click="openSuspend({{ $selectedUser->id }}, '{{ addslashes($selectedUser->username) }}')" class="bg-red-950 hover:bg-red-900 border border-red-900/50 text-red-400 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
+                            <button type="button" @click="$dispatch('open-suspend', { id: {{ $selectedUser->id }}, username: @js($selectedUser->username) })" class="bg-red-950 hover:bg-red-900 border border-red-900/50 text-red-400 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                                 Suspend Account
                             </button>
                         @elseif($selectedUser->status === \App\Shared\Enums\UserStatus::SUSPENDED)
