@@ -69,7 +69,7 @@
                                 ['label' => 'Dashboard', 'icon' => 'layout-dashboard', 'url' => '/admin'],
                                 ['label' => 'Tournaments', 'icon' => 'trophy', 'url' => '/admin/tournaments', 'permission' => 'tournaments.view'],
                                 ['label' => 'Matches & Disputes', 'icon' => 'swords', 'url' => '/admin/matches', 'permission' => 'matches.view'],
-                                ['label' => 'Streams', 'icon' => 'tv', 'url' => '/admin/streams'],
+                                ['label' => 'Streams', 'icon' => 'tv', 'url' => '/admin/streams', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
                                 ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc', 'permission' => 'kyc.view'],
                                 ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals', 'permission' => 'withdrawals.view'],
                                 ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users', 'permission' => 'users.view'],
@@ -321,27 +321,22 @@
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        document.addEventListener('livewire:navigated', () => {
-            if (typeof lucide !== 'undefined') {
+        function refreshAdminIcons() {
+            if (typeof lucide === 'undefined') return;
+            if (window.__adminLucideRefreshQueued) return;
+            window.__adminLucideRefreshQueued = true;
+            window.requestAnimationFrame(() => {
+                window.__adminLucideRefreshQueued = false;
                 lucide.createIcons();
-            }
-        });
+            });
+        }
+
+        document.addEventListener('livewire:navigated', refreshAdminIcons);
         document.addEventListener('livewire:init', () => {
-            Livewire.hook('morph.updated', ({ el, component }) => {
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-            });
-            Livewire.hook('message.processed', (message, component) => {
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-            });
+            Livewire.hook('message.processed', refreshAdminIcons);
         });
         document.addEventListener('DOMContentLoaded', () => {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+            refreshAdminIcons();
             
             const toggle = document.getElementById('mobile-menu-toggle');
             const close = document.getElementById('mobile-menu-close');

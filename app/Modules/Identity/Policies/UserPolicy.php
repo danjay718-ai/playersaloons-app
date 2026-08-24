@@ -13,6 +13,10 @@ class UserPolicy
      */
     public function before(User $user, string $ability): ?bool
     {
+        if ($ability === 'delete') {
+            return null;
+        }
+
         if ($user->hasRole('SUPER_ADMIN') || $user->hasRole('ADMIN')) {
             return true;
         }
@@ -40,6 +44,14 @@ class UserPolicy
 
     public function delete(User $user, User $target): bool
     {
+        if ($target->hasRole('SUPER_ADMIN')) {
+            return false;
+        }
+
+        if ($target->id === $user->id) {
+            return false;
+        }
+
         return $user->hasPermissionTo('users.delete');
     }
 
