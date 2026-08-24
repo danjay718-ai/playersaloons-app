@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Modules\Compliance\Services\CountryEligibilityService;
 use App\Modules\Identity\Actions\AssignRoleAction;
-use App\Modules\Identity\Actions\RevokeRoleAction;
 use App\Modules\Identity\Actions\RegisterUserAction;
+use App\Modules\Identity\Actions\RevokeRoleAction;
 use App\Modules\Identity\Actions\SuspendUserAction;
+use App\Modules\Identity\Actions\TransferSuperAdminAction;
 use App\Modules\Identity\Actions\UnsuspendUserAction;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
@@ -16,6 +18,7 @@ use App\Modules\Tournament\Models\TournamentRegistration;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
@@ -144,20 +147,55 @@ class UserAdmin extends AdminComponent
         $this->showDetailModal = true;
     }
 
-    public function createUser(RegisterUserAction $registerUser): void
+    public function resetCreateForm(string $mode = 'player'): void
     {
+        $this->resetValidation();
+        $this->createMode = $mode;
+        $this->createUsername = '';
+        $this->createEmail = '';
+        $this->createDisplayName = '';
+        $this->createCountryCode = '';
+        $this->createPassword = '';
+        $this->createPasswordConfirmation = '';
+        $this->createRole = '';
+    }
+
+    public function createUser(
+        RegisterUserAction $registerUser,
+        ?string $mode = null,
+        ?string $username = null,
+        ?string $email = null,
+        ?string $displayName = null,
+        ?string $countryCode = null,
+        ?string $role = null,
+        ?string $password = null,
+        ?string $passwordConfirmation = null
+    ): void {
         $this->authorize('create', User::class);
+
+        if ($mode !== null) $this->createMode = $mode;
+        if ($username !== null) $this->createUsername = $username;
+        if ($email !== null) $this->createEmail = $email;
+        if ($displayName !== null) $this->createDisplayName = $displayName;
+        if ($countryCode !== null) $this->createCountryCode = $countryCode;
+        if ($role !== null) $this->createRole = $role;
+        if ($password !== null) $this->createPassword = $password;
+        if ($passwordConfirmation !== null) $this->createPasswordConfirmation = $passwordConfirmation;
+
+        $eligibleCountryCodes = array_keys(app(CountryEligibilityService::class)->selectableCountries());
 
         $this->validate([
             'createMode' => 'required|in:player,user',
             'createUsername' => 'required|string|max:255|unique:users,username',
             'createEmail' => 'required|email|max:255|unique:users,email',
             'createDisplayName' => 'nullable|string|max:255',
-            'createCountryCode' => 'nullable|string|max:2',
+            'createCountryCode' => ['required', 'string', 'size:2', Rule::in($eligibleCountryCodes)],
             'createPassword' => ['required', 'same:createPasswordConfirmation', Password::defaults()],
             'createPasswordConfirmation' => 'required',
             'createRole' => 'nullable|required_if:createMode,user|exists:roles,name',
         ], [
+            'createCountryCode.required' => 'Please select an eligible country from the dropdown.',
+            'createCountryCode.in' => 'The selected country is not eligible or is blocked.',
             'createPassword.same' => 'The password and confirm password do not match.',
             'createPasswordConfirmation.required' => 'The confirm password field is required.',
         ]);
@@ -174,9 +212,11 @@ class UserAdmin extends AdminComponent
             'password' => $this->createPassword,
         ]);
 
-        if ($this->createMode === 'user') {
+        if ($this->createMode === 'user' && $this->createRole) {
             $user->syncRoles([$this->createRole]);
         }
+
+        $createdMode = $this->createMode;
 
         $this->reset([
             'createUsername',
@@ -188,8 +228,30 @@ class UserAdmin extends AdminComponent
             'createRole',
         ]);
 
-        session()->flash('success', ucfirst($this->createMode).' account created successfully.');
+        session()->flash('success', ucfirst($createdMode).' account created successfully.');
         $this->dispatch('user-created');
+    }
+
+    public function initEdit(int $id, string $username = '', string $email = '', string $displayName = '', string $countryCode = ''): void
+    {
+        $this->resetValidation();
+        $this->editingUserId = $id;
+
+        if ($username === '' || $email === '') {
+            $user = User::with('profile')->find($id);
+            if ($user) {
+                $this->editUsername = $user->username;
+                $this->editEmail = $user->email;
+                $this->editDisplayName = $user->profile->display_name ?? '';
+                $this->editCountryCode = $user->profile->country_code ?? '';
+            }
+        } else {
+            $this->editUsername = $username;
+            $this->editEmail = $email;
+            $this->editDisplayName = $displayName;
+            $this->editCountryCode = $countryCode;
+        }
+        $this->showEditModal = true;
     }
 
     public function editUser(int $id): void
@@ -197,24 +259,45 @@ class UserAdmin extends AdminComponent
         $user = User::with('profile')->findOrFail($id);
         $this->authorize('update', $user);
 
-        $this->editingUserId = $user->id;
-        $this->editUsername = $user->username;
-        $this->editEmail = $user->email;
-        $this->editDisplayName = $user->profile->display_name ?? '';
-        $this->editCountryCode = $user->profile->country_code ?? '';
-        $this->showEditModal = true;
+        $this->initEdit(
+            $user->id,
+            $user->username,
+            $user->email,
+            $user->profile->display_name ?? '',
+            $user->profile->country_code ?? ''
+        );
     }
 
-    public function updateUser(): void
-    {
+    public function updateUser(
+        ?int $id = null,
+        ?string $username = null,
+        ?string $email = null,
+        ?string $displayName = null,
+        ?string $countryCode = null
+    ): void {
+        $targetId = $id ?? $this->editingUserId;
+        if (! $targetId) {
+            return;
+        }
+        $this->editingUserId = $targetId;
+
+        if ($username !== null) $this->editUsername = $username;
+        if ($email !== null) $this->editEmail = $email;
+        if ($displayName !== null) $this->editDisplayName = $displayName;
+        if ($countryCode !== null) $this->editCountryCode = $countryCode;
+
         $user = User::findOrFail($this->editingUserId);
         $this->authorize('update', $user);
+
+        $eligibleCountryCodes = array_keys(app(CountryEligibilityService::class)->selectableCountries());
 
         $this->validate([
             'editUsername' => 'required|string|max:255|unique:users,username,'.$this->editingUserId,
             'editEmail' => 'required|email|max:255|unique:users,email,'.$this->editingUserId,
             'editDisplayName' => 'nullable|string|max:255',
-            'editCountryCode' => 'nullable|string|max:2',
+            'editCountryCode' => ['nullable', 'string', 'size:2', Rule::in($eligibleCountryCodes)],
+        ], [
+            'editCountryCode.in' => 'The selected country is not eligible or is blocked.',
         ]);
 
         $user->update([
@@ -225,13 +308,13 @@ class UserAdmin extends AdminComponent
         if ($user->profile) {
             $user->profile->update([
                 'display_name' => $this->editDisplayName,
-                'country_code' => $this->editCountryCode,
+                'country_code' => strtoupper((string) $this->editCountryCode),
             ]);
         } else {
             $user->profile()->create([
                 'uuid' => (string) Str::uuid(),
                 'display_name' => $this->editDisplayName,
-                'country_code' => $this->editCountryCode,
+                'country_code' => strtoupper((string) $this->editCountryCode),
             ]);
         }
 
@@ -240,19 +323,39 @@ class UserAdmin extends AdminComponent
         $this->dispatch('user-updated');
     }
 
-    public function prepareResetPassword(int $id): void
+    public function initResetPassword(int $id): void
     {
-        $user = User::findOrFail($id);
-        $this->authorize('resetPassword', $user);
-
+        $this->resetValidation();
         $this->passwordUserId = $id;
         $this->newPassword = '';
         $this->newPasswordConfirmation = '';
         $this->showPasswordModal = true;
     }
 
-    public function resetPassword(): void
+    public function prepareResetPassword(int $id): void
     {
+        $user = User::findOrFail($id);
+        $this->authorize('resetPassword', $user);
+
+        $this->initResetPassword($id);
+    }
+
+    public function resetPassword(
+        ?int $id = null,
+        ?string $password = null,
+        ?string $confirmation = null
+    ): void {
+        $targetId = $id ?? $this->passwordUserId;
+        if (! $targetId) {
+            session()->flash('error', 'No user selected for password reset.');
+
+            return;
+        }
+        $this->passwordUserId = $targetId;
+
+        if ($password !== null) $this->newPassword = $password;
+        if ($confirmation !== null) $this->newPasswordConfirmation = $confirmation;
+
         $user = User::findOrFail($this->passwordUserId);
         $this->authorize('resetPassword', $user);
 
@@ -270,9 +373,16 @@ class UserAdmin extends AdminComponent
 
         $this->newPassword = '';
         $this->newPasswordConfirmation = '';
-        session()->flash('success', 'User password reset successfully.');
         $this->showPasswordModal = false;
+        session()->flash('success', "Password for user '{$user->username}' was reset successfully.");
         $this->dispatch('password-reset');
+    }
+
+    public function setDeleteId(int $id): void
+    {
+        $this->resetValidation();
+        $this->selectedUserId = $id;
+        $this->showDeleteModal = true;
     }
 
     public function confirmDeleteUser(int $id): void
@@ -280,12 +390,17 @@ class UserAdmin extends AdminComponent
         $user = User::findOrFail($id);
         $this->authorize('delete', $user);
 
-        $this->selectedUserId = $id;
-        $this->showDeleteModal = true;
+        $this->setDeleteId($id);
     }
 
-    public function deleteUser(): void
+    public function deleteUser(?int $id = null): void
     {
+        $targetId = $id ?? $this->selectedUserId;
+        if (! $targetId) {
+            return;
+        }
+        $this->selectedUserId = $targetId;
+
         $user = User::findOrFail($this->selectedUserId);
         $this->authorize('delete', $user);
         $actor = $this->actor();
@@ -309,21 +424,35 @@ class UserAdmin extends AdminComponent
         $this->dispatch('user-deleted');
     }
 
+    public function setSuspendId(int $id): void
+    {
+        $this->resetValidation();
+        $this->selectedUserId = $id;
+        $this->suspendReason = '';
+        $this->showSuspendModal = true;
+    }
+
     public function openSuspendModal(): void
     {
         $this->suspendReason = '';
         $this->showSuspendModal = true;
     }
 
-    public function suspend(SuspendUserAction $action): void
+    public function suspend(SuspendUserAction $action, ?int $id = null, ?string $reason = null): void
     {
+        $targetId = $id ?? $this->selectedUserId;
+        if (! $targetId) {
+            return;
+        }
+        $this->selectedUserId = $targetId;
+
+        if ($reason !== null) {
+            $this->suspendReason = $reason;
+        }
+
         $this->validate([
             'suspendReason' => 'required|string|min:5|max:255',
         ]);
-
-        if (! $this->selectedUserId) {
-            return;
-        }
 
         $target = User::findOrFail($this->selectedUserId);
         $actor = $this->actor();
@@ -344,11 +473,13 @@ class UserAdmin extends AdminComponent
         }
     }
 
-    public function unsuspend(UnsuspendUserAction $action): void
+    public function unsuspend(UnsuspendUserAction $action, ?int $id = null): void
     {
-        if (! $this->selectedUserId) {
+        $targetId = $id ?? $this->selectedUserId;
+        if (! $targetId) {
             return;
         }
+        $this->selectedUserId = $targetId;
 
         $target = User::findOrFail($this->selectedUserId);
         $actor = $this->actor();
@@ -362,20 +493,35 @@ class UserAdmin extends AdminComponent
         }
     }
 
-    public function openTransferSuperAdmin(int $userId): void
+    public function initTransferModal(int $userId): void
     {
+        $this->resetValidation();
         abort_unless($this->actor()->hasRole('SUPER_ADMIN'), 403, 'Only the current SUPER_ADMIN can transfer ownership.');
         $this->transferTargetUserId = $userId;
         $this->transferConfirmUsername = '';
         $this->showTransferSuperAdminModal = true;
     }
 
-    public function executeTransferSuperAdmin(TransferSuperAdminAction $action): void
+    public function openTransferSuperAdmin(int $userId): void
     {
+        $this->initTransferModal($userId);
+    }
+
+    public function executeTransferSuperAdmin(
+        TransferSuperAdminAction $action,
+        ?int $id = null,
+        ?string $confirmUsername = null
+    ): void {
         abort_unless($this->actor()->hasRole('SUPER_ADMIN'), 403, 'Only the current SUPER_ADMIN can transfer ownership.');
 
-        if (! $this->transferTargetUserId) {
+        $targetId = $id ?? $this->transferTargetUserId;
+        if (! $targetId) {
             return;
+        }
+        $this->transferTargetUserId = $targetId;
+
+        if ($confirmUsername !== null) {
+            $this->transferConfirmUsername = $confirmUsername;
         }
 
         $target = User::findOrFail($this->transferTargetUserId);
@@ -398,6 +544,15 @@ class UserAdmin extends AdminComponent
         }
     }
 
+    public function initRoleModal(int $userId, string $action): void
+    {
+        $this->resetValidation();
+        $this->selectedUserId = $userId;
+        $this->roleAction = $action;
+        $this->selectedRole = '';
+        $this->showRoleModal = true;
+    }
+
     public function openRoleModal(string $roleAction): void
     {
         $this->roleAction = $roleAction;
@@ -405,17 +560,22 @@ class UserAdmin extends AdminComponent
         $this->showRoleModal = true;
     }
 
-    public function updateRole(): void
+    public function updateRole(?int $id = null, ?string $role = null, ?string $action = null): void
     {
+        $targetId = $id ?? $this->selectedUserId;
+        if (! $targetId) {
+            return;
+        }
+        $this->selectedUserId = $targetId;
+
+        if ($role !== null) $this->selectedRole = $role;
+        if ($action !== null) $this->roleAction = $action;
+
         $this->validate([
             'selectedRole' => 'required|string|not_in:SUPER_ADMIN',
         ], [
             'selectedRole.not_in' => 'The SUPER_ADMIN role cannot be assigned directly. Use Transfer Super Admin Ownership instead.',
         ]);
-
-        if (! $this->selectedUserId) {
-            return;
-        }
 
         $target = User::findOrFail($this->selectedUserId);
         $actor = $this->actor();
@@ -439,7 +599,7 @@ class UserAdmin extends AdminComponent
         }
     }
 
-    public function render(UserPresenceService $presence)
+    public function render(UserPresenceService $presence, CountryEligibilityService $countries)
     {
         // One sorted-set read serves filtering and every row indicator. This
         // avoids Redis KEYS (blocking at scale) and per-row presence calls.
@@ -497,6 +657,7 @@ class UserAdmin extends AdminComponent
             fn (User $user) => $user->setAttribute('is_online', in_array($user->id, $onlineIds, true)),
         );
         $roles = Role::all();
+        $eligibleCountries = $countries->selectableCountries();
 
         $selectedUser = null;
         $userKyc = null;
@@ -522,6 +683,7 @@ class UserAdmin extends AdminComponent
         return view('livewire.admin.user-admin', [
             'users' => $users,
             'roles' => $roles,
+            'eligibleCountries' => $eligibleCountries,
             'selectedUser' => $selectedUser,
             'userKyc' => $userKyc,
             'walletHistory' => $walletHistory,
@@ -533,3 +695,4 @@ class UserAdmin extends AdminComponent
         ]);
     }
 }
+
