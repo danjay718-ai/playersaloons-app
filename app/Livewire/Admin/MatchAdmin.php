@@ -28,6 +28,12 @@ class MatchAdmin extends AdminComponent
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('matches.view'), 403);
+    }
+
     // Filters
     public string $search = '';
 

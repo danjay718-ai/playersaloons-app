@@ -24,6 +24,12 @@ class TournamentForm extends AdminComponent
 {
     use WithFileUploads;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('tournaments.create') || $this->actor()->can('tournaments.manage'), 403);
+    }
+
     public bool $isEditMode = false;
 
     public bool $isLocked = false;

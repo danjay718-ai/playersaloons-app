@@ -14,6 +14,12 @@ final class TranslationAdmin extends AdminComponent
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('cms.manage') || $this->actor()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR']), 403);
+    }
+
     public string $search = '';
 
     public string $localeFilter = 'all';

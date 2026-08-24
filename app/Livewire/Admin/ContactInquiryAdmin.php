@@ -12,6 +12,12 @@ class ContactInquiryAdmin extends AdminComponent
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('contact_inquiries.manage'), 403);
+    }
+
     public string $search = '';
 
     public string $status = 'new';

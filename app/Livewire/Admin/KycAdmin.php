@@ -17,6 +17,12 @@ class KycAdmin extends AdminComponent
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('kyc.view'), 403);
+    }
+
     public string $search = '';
 
     public string $statusFilter = 'submitted'; // Default to submitted (pending review)

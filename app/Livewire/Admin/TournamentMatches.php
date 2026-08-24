@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Admin;
 
 use App\Modules\Tournament\Models\Tournament;
@@ -12,6 +14,12 @@ use Livewire\Attributes\Layout;
 class TournamentMatches extends AdminComponent
 {
     use WithPagination;
+
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('tournaments.view'), 403);
+    }
 
     public $tournamentId;
     public $statusFilter = '';

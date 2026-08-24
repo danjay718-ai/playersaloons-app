@@ -13,6 +13,12 @@ class BroadcastNotificationAdmin extends AdminComponent
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('broadcast_messages.manage'), 403);
+    }
+
     protected $paginationTheme = 'tailwind';
 
     // Form fields

@@ -18,6 +18,12 @@ class WithdrawalAdmin extends AdminComponent
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('withdrawals.view'), 403);
+    }
+
     public string $search = '';
 
     public string $statusFilter = 'pending'; // Default to pending reviews

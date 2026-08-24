@@ -29,6 +29,12 @@ class TournamentAdmin extends AdminComponent
 {
     use WithFileUploads, WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('tournaments.view'), 403);
+    }
+
     #[Url]
     public string $search = '';
 

@@ -23,6 +23,12 @@ class CmsAdmin extends AdminComponent
 {
     use WithFileUploads, WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('cms.view') || $this->actor()->can('cms.manage') || $this->actor()->can('games.view'), 403);
+    }
+
     public string $tab = 'games'; // games | pages | platforms | landing | navigation | about
 
     public function mount(?string $section = null): void

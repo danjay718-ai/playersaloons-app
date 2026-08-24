@@ -18,6 +18,12 @@ class CmsContentAdmin extends AdminComponent
     use WithFileUploads;
     use WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('cms.view') || $this->actor()->can('cms.manage'), 403);
+    }
+
     public ?int $selectedPageId = null;
 
     public bool $isPageEdit = false;

@@ -11,6 +11,12 @@ class AuditLogAdmin extends AdminComponent
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('audit_logs.view'), 403);
+    }
+
     public string $actorSearch = '';
 
     public string $actionFilter = '';

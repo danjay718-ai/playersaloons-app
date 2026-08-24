@@ -16,6 +16,12 @@ class ComplianceAdmin extends AdminComponent
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('users.suspend') || $this->actor()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR']), 403);
+    }
+
     public string $search = '';
 
     public string $statusFilter = 'active';
