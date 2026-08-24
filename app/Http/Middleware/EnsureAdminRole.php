@@ -10,28 +10,16 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureAdminRole
 {
-    /**
-     * Admin panel roles accepted at the route level.
-     *
-     * Individual Livewire components may apply tighter per-screen checks.
-     *
-     * @var list<string>
-     */
-    private const ADMIN_ROLES = [
-        'SUPER_ADMIN',
-        'ADMIN',
-        'MODERATOR',
-        'TOURNAMENT_ORGANIZER',
-        'SUPPORT_AGENT',
-        'FINANCE_OPERATOR',
-        'KYC_REVIEWER',
-    ];
-
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
-        if (! $user || ! $user->hasAnyRole(self::ADMIN_ROLES)) {
+        if (! $user) {
+            abort(403, 'Unauthorized access to the admin panel.');
+        }
+
+        $hasStaffRole = $user->roles->whereNotIn('name', ['PLAYER', 'TEAM_CAPTAIN'])->isNotEmpty();
+        if (! $hasStaffRole && ! $user->hasRole('SUPER_ADMIN')) {
             abort(403, 'Unauthorized access to the admin panel.');
         }
 

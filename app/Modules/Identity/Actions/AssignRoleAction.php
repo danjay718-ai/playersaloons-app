@@ -21,6 +21,10 @@ class AssignRoleAction
             throw new AuthorizationException('Only SUPER_ADMIN may assign roles.');
         }
 
+        if (strtoupper($role) === 'SUPER_ADMIN') {
+            throw new \InvalidArgumentException('The SUPER_ADMIN role cannot be assigned directly. Use Transfer Super Admin Ownership instead.');
+        }
+
         DB::transaction(function () use ($target, $role, $actor): void {
             $target->assignRole($role);
 

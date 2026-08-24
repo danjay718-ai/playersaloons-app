@@ -28,15 +28,12 @@ abstract class AdminComponent extends Component
     {
         /** @var User|null $user */
         $user = Auth::user();
-        if (! $user || ! $user->hasAnyRole([
-            'SUPER_ADMIN',
-            'ADMIN',
-            'MODERATOR',
-            'TOURNAMENT_ORGANIZER',
-            'SUPPORT_AGENT',
-            'FINANCE_OPERATOR',
-            'KYC_REVIEWER',
-        ])) {
+        if (! $user) {
+            abort(403, 'Unauthorized access to the admin panel.');
+        }
+
+        $hasStaffRole = $user->roles->whereNotIn('name', ['PLAYER', 'TEAM_CAPTAIN'])->isNotEmpty();
+        if (! $hasStaffRole && ! $user->hasRole('SUPER_ADMIN')) {
             abort(403, 'Unauthorized access to the admin panel.');
         }
     }

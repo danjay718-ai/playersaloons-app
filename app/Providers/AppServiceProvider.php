@@ -51,6 +51,13 @@ class AppServiceProvider extends ServiceProvider
             ->mixedCase()
             ->numbers());
 
+        // Super Admin automatically bypasses all permission and policy checks
+        Gate::before(function ($user, string $ability) {
+            if ($user && is_object($user) && method_exists($user, 'hasRole') && $user->hasRole('SUPER_ADMIN')) {
+                return true;
+            }
+        });
+
         Gate::define('viewPulse', function ($user = null) {
             if ($user && is_object($user) && method_exists($user, 'hasAnyRole')) {
                 return (bool) call_user_func([$user, 'hasAnyRole'], ['SUPER_ADMIN', 'ADMIN']);
