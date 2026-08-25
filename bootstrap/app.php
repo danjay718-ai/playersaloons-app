@@ -34,6 +34,23 @@ return Application::configure(basePath: dirname(__DIR__))
             'role.admin' => EnsureAdminRole::class,
             'role.player' => EnsurePlayerRole::class,
         ]);
+        $middleware->redirectGuestsTo('/login');
+        $middleware->redirectUsersTo(function (Request $request): string {
+            $user = $request->user();
+            if ($user && $user->hasAnyRole([
+                'SUPER_ADMIN',
+                'ADMIN',
+                'MODERATOR',
+                'FINANCE_OPERATOR',
+                'KYC_REVIEWER',
+                'SUPPORT_AGENT',
+                'TOURNAMENT_ORGANIZER',
+            ])) {
+                return '/admin';
+            }
+
+            return '/dashboard';
+        });
         $middleware->validateCsrfTokens(except: [
             'stripe/webhook',
         ]);

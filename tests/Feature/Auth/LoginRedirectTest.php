@@ -107,6 +107,43 @@ class LoginRedirectTest extends TestCase
             ->assertRedirect('/admin');
     }
 
+    public function test_admin_visiting_player_routes_via_http_is_redirected_to_admin(): void
+    {
+        $admin = $this->createUser('ADMIN', 'admin_http@test.com');
+
+        $response = $this->actingAs($admin)->get('/dashboard');
+        $response->assertRedirect('/admin');
+    }
+
+    public function test_authenticated_admin_visiting_login_page_is_redirected_to_admin(): void
+    {
+        $admin = $this->createUser('ADMIN', 'admin_guest@test.com');
+
+        $response = $this->actingAs($admin)->get('/login');
+        $response->assertRedirect('/admin');
+    }
+
+    public function test_authenticated_player_visiting_login_page_is_redirected_to_dashboard(): void
+    {
+        $player = $this->createUser('PLAYER', 'player_guest@test.com');
+
+        $response = $this->actingAs($player)->get('/login');
+        $response->assertRedirect('/dashboard');
+    }
+
+    public function test_admin_login_ignores_stale_player_intended_url(): void
+    {
+        $this->createUser('ADMIN', 'admin_stale@test.com');
+
+        session()->put('url.intended', url('/dashboard'));
+
+        Livewire::test(Login::class)
+            ->set('identity', 'admin_stale@test.com')
+            ->set('password', 'Password@1234!')
+            ->call('login')
+            ->assertRedirect('/admin');
+    }
+
     public function test_player_can_still_access_player_dashboard(): void
     {
         $player = $this->createUser('PLAYER', 'player2@test.com');

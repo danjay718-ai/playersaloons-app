@@ -48,9 +48,18 @@ class TwoFactorChallenge extends Component
         Auth::login($user, $remember);
         session()->forget('two_factor_login');
         session()->regenerate();
-        $user->update(['last_login_at' => now()]);
+        if ($user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER'])) {
+            $intended = session('url.intended');
+            if ($intended && str_contains((string) $intended, '/admin')) {
+                return redirect()->intended('/admin');
+            }
 
-        return redirect()->intended($user->hasRole('PLAYER') ? '/dashboard' : '/admin');
+            session()->forget('url.intended');
+
+            return redirect('/admin');
+        }
+
+        return redirect()->intended('/dashboard');
     }
 
     private function consumeRecoveryCode(User $user, string $code): bool

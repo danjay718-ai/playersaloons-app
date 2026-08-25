@@ -66,7 +66,14 @@ class Login extends Component
             $adminRoles = ['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER'];
 
             if ($user && $user->hasAnyRole($adminRoles)) {
-                return redirect()->intended('/admin');
+                $intended = session('url.intended');
+                if ($intended && str_contains((string) $intended, '/admin')) {
+                    return redirect()->intended('/admin');
+                }
+
+                session()->forget('url.intended');
+
+                return redirect('/admin');
             }
 
             return redirect()->intended('/dashboard');

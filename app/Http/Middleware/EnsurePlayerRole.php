@@ -20,11 +20,34 @@ class EnsurePlayerRole
         'TEAM_CAPTAIN',
     ];
 
+    /**
+     * Staff/Admin roles that should be gracefully redirected to the admin panel.
+     *
+     * @var list<string>
+     */
+    private const ADMIN_ROLES = [
+        'SUPER_ADMIN',
+        'ADMIN',
+        'MODERATOR',
+        'FINANCE_OPERATOR',
+        'KYC_REVIEWER',
+        'SUPPORT_AGENT',
+        'TOURNAMENT_ORGANIZER',
+    ];
+
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
-        if (! $user || ! $user->hasAnyRole(self::PLAYER_ROLES)) {
+        if (! $user) {
+            return redirect()->guest('/login');
+        }
+
+        if (! $user->hasAnyRole(self::PLAYER_ROLES)) {
+            if ($user->hasAnyRole(self::ADMIN_ROLES)) {
+                return redirect('/admin');
+            }
+
             abort(403, 'This area is for players only.');
         }
 
