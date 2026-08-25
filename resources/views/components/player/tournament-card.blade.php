@@ -50,7 +50,7 @@
 
     <div class="flex grow flex-col justify-between space-y-4 p-5">
         <div class="space-y-3">
-            <h3 class="line-clamp-2 font-orbitron text-lg font-black leading-tight tracking-wide text-white transition-colors duration-300 group-hover:text-cyan-400">
+            <h3 title="{{ $tournament->name }}" class="line-clamp-1 font-orbitron text-lg font-black leading-tight tracking-wide text-white transition-colors duration-300 group-hover:text-cyan-400">
                 {{ $tournament->name }}
             </h3>
             <div class="flex items-center justify-between gap-4 text-[10px] font-bold uppercase tracking-wider text-zinc-400">

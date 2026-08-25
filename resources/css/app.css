@@ -401,7 +401,7 @@ body {
     }
 
     .player-tournament-card {
-        @apply relative flex flex-col justify-between overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-900/40 shadow-lg backdrop-blur-md transition-all duration-500 hover:-translate-y-2 hover:border-violet-500/50 hover:shadow-[0_20px_40px_-15px_rgba(124,77,255,0.25)];
+        @apply relative flex h-[380px] flex-col justify-between overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-900/40 shadow-lg backdrop-blur-md transition-all duration-500 hover:-translate-y-2 hover:border-violet-500/50 hover:shadow-[0_20px_40px_-15px_rgba(124,77,255,0.25)];
     }
 
     .player-badge {
