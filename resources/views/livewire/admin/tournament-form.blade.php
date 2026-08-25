@@ -3,6 +3,8 @@
         step: 1,
         totalSteps: 5,
         busy: false,
+        showOneTimeConfirmation: false,
+        isEditMode: @js($isEditMode),
         validationTick: 0,
         editorValidity: { description: false, rules: false },
         isStepValid(stepNumber) {
@@ -48,11 +50,20 @@
                 this.recheckValidity();
             }
         },
-        async save() {
+        async save(publishOneTime = null) {
+            if (!this.isEditMode && publishOneTime === null && this.$refs.frequency?.value === 'one-time') {
+                this.showOneTimeConfirmation = true;
+                return;
+            }
+
             window.dispatchEvent(new CustomEvent('sync-tournament-editors'));
             await new Promise(r => setTimeout(r, 75));
             this.busy = true;
-            try { await $wire.saveTournament(); } finally { this.busy = false; }
+            try {
+                if (publishOneTime === true) await $wire.chooseOneTimePublish();
+                if (publishOneTime === false) await $wire.chooseOneTimeDraft();
+                await $wire.saveTournament();
+            } finally { this.busy = false; }
         }
     }"
     x-init="recheckValidity()"
@@ -97,10 +108,24 @@
             <div class="mb-6"><h2 class="text-lg font-black text-white">Tournament Details</h2><p class="mt-1 text-sm text-slate-500">Choose the game, platform, and schedule frequency players will see.</p></div>
             <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
                 <div class="xl:col-span-2"><label class="field-label">Tournament Name *</label><input wire:model="name" type="text" required maxlength="255" placeholder="e.g. Summer Championship" class="form-field">@error('name') <p class="field-error">{{ $message }}</p> @enderror</div>
-                <div><label class="field-label">Type *</label><select wire:model.live="competition_type" required @disabled($isLocked) class="form-field"><option value="tournament">Tournament</option><option value="head_to_head">Head-to-Head</option></select>@error('competition_type') <p class="field-error">{{ $message }}</p> @enderror</div>
+                <fieldset @disabled($isLocked) class="space-y-2">
+                    <legend class="field-label">Game Type *</legend>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" wire:model.live="competition_type" value="tournament" class="peer sr-only">
+                            <span class="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 transition peer-checked:border-indigo-400/60 peer-checked:bg-indigo-500/15 peer-checked:text-indigo-200 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C8.41 18.5 8 19.12 8 20h8c0-.88-.41-1.5-1.03-1.79-.5-.23-.97-.66-.97-1.21v-2.34"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>Tournament</span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" wire:model.live="competition_type" value="head_to_head" class="peer sr-only">
+                            <span class="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400 transition peer-checked:border-fuchsia-400/60 peer-checked:bg-fuchsia-500/15 peer-checked:text-fuchsia-200 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="m14.5 17.5-11-11V3h3.5l11 11"/><path d="m13 19 6-6"/><path d="m16 16 3 3"/><path d="m19 21 2-2"/><path d="M14.5 6.5 21 13"/><path d="M18 3h3v3l-11 11"/><path d="m5 14-2 2"/><path d="m3 21 3-3"/></svg>Head-to-Head</span>
+                        </label>
+                    </div>
+                    @error('competition_type') <p class="field-error">{{ $message }}</p> @enderror
+                </fieldset>
                 <div><label class="field-label">Game *</label><select wire:model.live="game_id" required data-invalid-zero="true" @disabled($isLocked) class="form-field"><option value="0">Select a game</option>@foreach($games as $game)<option value="{{ $game->id }}">{{ $game->translations->first()?->name ?? $game->slug }}</option>@endforeach</select>@error('game_id') <p class="field-error">{{ $message }}</p> @enderror</div>
                 <div><label class="field-label">Platform *</label><select wire:model="platform_id" required @disabled($isLocked) class="form-field"><option value="">Select a platform</option>@foreach($platforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select>@error('platform_id') <p class="field-error">{{ $message }}</p> @enderror</div>
-                <div><label class="field-label">Frequency *</label><select wire:model="frequency" required @disabled($isLocked) class="form-field"><option value="one-time">One Time</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>@error('frequency') <p class="field-error">{{ $message }}</p> @enderror</div>
+                <div><label class="field-label">Frequency *</label><select x-ref="frequency" wire:model.live="frequency" required @disabled($isLocked) class="form-field"><option value="" disabled>Select frequency</option><option value="one-time">One Time</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>@error('frequency') <p class="field-error">{{ $message }}</p> @enderror</div>
+                <div><label class="field-label">Entry Fee *</label><input wire:model="entry_fee" required @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('entry_fee')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div class="lg:col-span-2"><x-forms.image-crop-upload model="banner" label="Tournament Banner (Optional)" :width="960" :height="540" :max-mb="2" /></div>
                 <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"><input wire:model="is_featured" type="checkbox" class="mt-0.5 rounded border-slate-700 bg-slate-900 text-amber-500"><span><span class="block text-xs font-black uppercase text-amber-300">Featured Tournament</span><span class="mt-1 block text-xs leading-relaxed text-slate-500">Display this in the Featured section of the game page.</span></span></label>
             </div>
@@ -153,18 +178,20 @@
 
         <section data-step="3" x-show="step === 3" x-cloak class="p-5 md:p-8">
             <div class="mb-6"><h2 class="text-lg font-black text-white">Players & Match Settings</h2><p class="mt-1 text-sm text-slate-500">Configure team size, experience, match timing, and tournament streams.</p></div>
-            <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <div><label class="field-label">Team Size *</label><input wire:model="team_size" required @disabled($isLocked) type="number" min="1" class="form-field"><p class="field-help">Use 1 for solo play.</p>@error('team_size')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div><label class="field-label">Play XP *</label><input wire:model="play_xp" required type="number" min="0" max="1000000" class="form-field"><p class="field-help">For players who actually compete.</p>@error('play_xp')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div><label class="field-label">Winner Bonus XP *</label><input wire:model="winner_bonus_xp" required type="number" min="0" max="1000000" class="form-field"><p class="field-help">Added to the champion's Play XP.</p>@error('winner_bonus_xp')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div><label class="field-label">Result Submission Time *</label><input wire:model="waiting_result_time" required type="number" min="1" class="form-field"><p class="field-help">Minutes allowed to confirm a result.</p>@error('waiting_result_time')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div class="xl:col-span-2"><label class="field-label">Get Ready Time *</label><div class="grid grid-cols-[1fr_auto] gap-2"><input wire:model="match_ready_value" required type="number" min="1" max="365" class="form-field"><select wire:model="match_ready_unit" required class="form-field"><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></div><p class="field-help">Used before every match in every round.</p></div>
-                <div class="xl:col-span-2"><label class="field-label">Extra Wait Time *</label><div class="grid grid-cols-[1fr_auto] gap-2"><input wire:model="match_extra_wait_value" required type="number" min="1" max="365" class="form-field"><select wire:model="match_extra_wait_unit" required class="form-field"><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></div><p class="field-help">Final allowance after an opponent is reported absent.</p></div>
-                <div class="md:col-span-2 xl:col-span-4 flex items-start gap-3 rounded-xl border border-emerald-800/40 bg-emerald-950/15 p-4"><i data-lucide="shield-check" class="mt-0.5 h-4 w-4 text-emerald-400"></i><span><span class="block text-xs font-black uppercase text-emerald-200">Automatic Player Protection</span><span class="mt-1 block text-xs text-slate-500">The system first uses Extra Registration Time. If the minimum is still not reached, it cancels the tournament and refunds paid entries automatically.</span></span></div>
-                <div class="md:col-span-2 xl:col-span-4 mt-2 border-t border-slate-800 pt-5"><h3 class="font-bold text-white">Live Stream Links</h3><p class="mt-1 text-xs text-slate-500">Optional tournament broadcasts shown inside PlayerSaloons.</p></div>
-                <div><label class="field-label">YouTube</label><input wire:model="youtube_stream_url" type="url" placeholder="https://youtube.com/..." class="form-field">@error('youtube_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div><label class="field-label">Twitch</label><input wire:model="twitch_stream_url" type="url" placeholder="https://twitch.tv/..." class="form-field">@error('twitch_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div><label class="field-label">Facebook</label><input wire:model="facebook_stream_url" type="url" placeholder="https://facebook.com/..." class="form-field">@error('facebook_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12">
+                <div class="xl:col-span-4"><label class="field-label">Team Size *</label><input wire:model="team_size" required @disabled($isLocked || $competition_type === 'head_to_head') type="number" min="0" class="form-field"><p class="field-help">Use 0 or 1 for solo play.</p>@error('team_size')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="xl:col-span-4"><label class="field-label">Minimum Players *</label><input wire:model="min_participants" required @disabled($isLocked || $competition_type === 'head_to_head') type="number" min="2" class="form-field">@error('min_participants')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="xl:col-span-4"><label class="field-label">Maximum Players *</label><input wire:model="max_participants" required @disabled($isLocked || $competition_type === 'head_to_head') type="number" min="2" class="form-field">@error('max_participants')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="xl:col-span-4"><label class="field-label">Get Ready Time *</label><div class="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-2"><input wire:model="match_ready_value" required type="number" min="1" max="365" class="form-field"><select wire:model="match_ready_unit" required class="form-field"><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></div><p class="field-help">Before every match.</p></div>
+                <div class="xl:col-span-4"><label class="field-label">Extra Wait Time *</label><div class="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-2"><input wire:model="match_extra_wait_value" required type="number" min="1" max="365" class="form-field"><select wire:model="match_extra_wait_unit" required class="form-field"><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></div><p class="field-help">Final absent-opponent allowance.</p></div>
+                <div class="xl:col-span-4"><label class="field-label">Result Submission Time *</label><input wire:model="waiting_result_time" required type="number" min="1" class="form-field"><p class="field-help">Minutes to confirm.</p>@error('waiting_result_time')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="xl:col-span-4"><label class="field-label">Play XP *</label><input wire:model="play_xp" required type="number" min="0" max="1000000" class="form-field"><p class="field-help">For players who actually compete.</p>@error('play_xp')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="xl:col-span-4"><label class="field-label">Winner Bonus XP *</label><input wire:model="winner_bonus_xp" required type="number" min="0" max="1000000" class="form-field"><p class="field-help">Added to the champion's Play XP.</p>@error('winner_bonus_xp')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="md:col-span-2 xl:col-span-12 flex items-start gap-3 rounded-xl border border-emerald-800/40 bg-emerald-950/15 p-4"><i data-lucide="shield-check" class="mt-0.5 h-4 w-4 text-emerald-400"></i><span><span class="block text-xs font-black uppercase text-emerald-200">Automatic Player Protection</span><span class="mt-1 block text-xs text-slate-500">The system first uses Extra Registration Time. If the minimum is still not reached, it cancels the tournament and refunds paid entries automatically.</span></span></div>
+                <div class="md:col-span-2 xl:col-span-12 mt-2 border-t border-slate-800 pt-5"><h3 class="font-bold text-white">Live Stream Links</h3><p class="mt-1 text-xs text-slate-500">Optional tournament broadcasts shown inside PlayerSaloons.</p></div>
+                <div class="xl:col-span-4"><label class="field-label">YouTube</label><input wire:model="youtube_stream_url" type="url" placeholder="https://youtube.com/..." class="form-field">@error('youtube_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="xl:col-span-4"><label class="field-label">Twitch</label><input wire:model="twitch_stream_url" type="url" placeholder="https://twitch.tv/..." class="form-field">@error('twitch_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div class="xl:col-span-4"><label class="field-label">Facebook</label><input wire:model="facebook_stream_url" type="url" placeholder="https://facebook.com/..." class="form-field">@error('facebook_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
             </div>
         </section>
 
@@ -181,15 +208,12 @@
         </section>
 
         <section data-step="5" x-show="step === 5" x-cloak class="p-5 md:p-8">
-            <div class="mb-6"><h2 class="text-lg font-black text-white">Fees, Capacity & Prizes</h2><p class="mt-1 text-sm text-slate-500">Place prizes share one prize pool and can never exceed it.</p></div>
+            <div class="mb-6"><h2 class="text-lg font-black text-white">Prizes</h2><p class="mt-1 text-sm text-slate-500">Place prizes share one prize pool and can never exceed it.</p></div>
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <div><label class="field-label">Entry Fee *</label><input wire:model="entry_fee" required @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('entry_fee')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div><label class="field-label">Prize Pool *</label><input wire:model.live.debounce.250ms="prize_pool" required @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_pool')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div><label class="field-label">Minimum Players *</label><input wire:model="min_participants" required @disabled($isLocked || $competition_type === 'head_to_head') type="number" min="2" class="form-field">@error('min_participants')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div><label class="field-label">Maximum Players *</label><input wire:model="max_participants" required @disabled($isLocked || $competition_type === 'head_to_head') type="number" min="2" class="form-field">@error('max_participants')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div><label class="field-label text-amber-300">1st Place</label><input wire:model.live.debounce.250ms="prize_1st" @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_1st')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div><label class="field-label">2nd Place</label><input wire:model.live.debounce.250ms="prize_2nd" @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_2nd')<p class="field-error">{{ $message }}</p>@enderror</div>
-                <div><label class="field-label text-orange-300">3rd Place</label><input wire:model.live.debounce.250ms="prize_3rd" @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_3rd')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label">2nd Place (Optional)</label><input wire:model.live.debounce.250ms="prize_2nd" @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_2nd')<p class="field-error">{{ $message }}</p>@enderror</div>
+                <div><label class="field-label text-orange-300">3rd Place (Optional)</label><input wire:model.live.debounce.250ms="prize_3rd" @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_3rd')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4"><p class="text-xs font-bold uppercase text-slate-500">Prize Allocation</p><p class="mt-2 text-xl font-black" :class="((Number($wire.prize_1st)||0)+(Number($wire.prize_2nd)||0)+(Number($wire.prize_3rd)||0)) <= (Number($wire.prize_pool)||0) ? 'text-emerald-400' : 'text-red-400'" x-text="`${((Number($wire.prize_1st)||0)+(Number($wire.prize_2nd)||0)+(Number($wire.prize_3rd)||0)).toFixed(2)} / ${(Number($wire.prize_pool)||0).toFixed(2)}`"></p></div>
             </div>
         </section>
@@ -200,6 +224,19 @@
             <button x-show="step === totalSteps" type="submit" :disabled="!canContinue" class="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-black text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"><span x-show="!busy">{{ $isEditMode ? 'Save Changes' : 'Create Tournament' }}</span><span x-show="busy">Saving…</span></button>
         </footer>
     </form>
+
+    <div x-cloak x-show="showOneTimeConfirmation" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4" @keydown.escape.window="showOneTimeConfirmation = false">
+        <div @click.outside="showOneTimeConfirmation = false" role="dialog" aria-modal="true" aria-labelledby="one-time-confirmation-title" class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><circle cx="12" cy="15" r="3"/><path d="M12 13.5V15l1 1"/></svg></div>
+            <h2 id="one-time-confirmation-title" class="mt-4 text-lg font-black text-white">One-time tournament</h2>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">This option applies only to one-time tournaments. Choose whether to keep it as a draft for review or publish it now so players can see and join it.</p>
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                <button type="button" @click="showOneTimeConfirmation = false; save(false)" class="rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-sm font-black text-slate-100 hover:bg-slate-700">Save as Draft</button>
+                <button type="button" @click="showOneTimeConfirmation = false; save(true)" class="rounded-lg bg-emerald-600 px-4 py-3 text-sm font-black text-white hover:bg-emerald-500">Publish Now</button>
+            </div>
+            <button type="button" @click="showOneTimeConfirmation = false" class="mt-4 w-full text-sm font-bold text-slate-400 hover:text-white">Cancel</button>
+        </div>
+    </div>
 
     <style>
         [x-cloak] { display: none !important; }

@@ -11,6 +11,7 @@ use App\Modules\Stream\Actions\SyncTournamentStreamChannelsAction;
 use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Tournament\Actions\CreateRecurringCompetitionAction;
 use App\Modules\Tournament\Actions\CreateTournamentAction;
+use App\Modules\Tournament\Actions\PublishTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
@@ -77,13 +78,15 @@ class TournamentForm extends AdminComponent
 
     public ?int $platform_id = null;
 
-    public string $frequency = 'daily';
+    public string $frequency = '';
 
     public string $timezone = 'UTC';
 
     public bool $is_auto_cancel_underfilled = true;
 
     public bool $is_featured = false;
+
+    public bool $publishOneTimeOnCreate = false;
 
     public ?int $waiting_time = null;
 
@@ -97,7 +100,7 @@ class TournamentForm extends AdminComponent
 
     public ?int $waiting_result_time = null;
 
-    public int $team_size = 1;
+    public int $team_size = 0;
 
     public ?string $prize_1st = '0.00';
 
@@ -178,10 +181,9 @@ class TournamentForm extends AdminComponent
             $this->twitch_stream_url = $streamChannels->get('twitch')?->source_url;
             $this->facebook_stream_url = $streamChannels->get('facebook')?->source_url;
         } else {
-            /** @var Game|null $firstGame */
-            $firstGame = Game::first();
-            $this->game_id = $firstGame !== null ? $firstGame->id : 0;
-            $this->frequency = 'one-time';
+            // New tournaments must explicitly choose a game and frequency.
+            $this->game_id = 0;
+            $this->frequency = '';
             $now = CarbonImmutable::now($this->timezone)->startOfMinute();
             $this->registration_open_at = $now->format('Y-m-d\TH:i');
             $this->tournament_end_at = $now->addDay()->format('Y-m-d\TH:i');
@@ -224,13 +226,16 @@ class TournamentForm extends AdminComponent
                 'competition_type' => 'required|in:tournament,head_to_head',
                 'platform_id' => 'required|exists:platforms,id',
                 'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
+                'entry_fee' => 'required|numeric|min:0',
             ],
             2 => [
                 'description' => 'nullable|string',
                 'rules' => 'nullable|string',
             ],
             3 => [
-                'team_size' => 'required|integer|min:1',
+                'team_size' => 'required|integer|min:0',
+                'min_participants' => 'required|integer|min:2',
+                'max_participants' => 'required|integer|min:2|gte:min_participants',
                 'play_xp' => 'required|integer|min:0|max:1000000',
                 'winner_bonus_xp' => 'required|integer|min:0|max:1000000',
                 'match_ready_value' => 'required|integer|min:1|max:365',
@@ -252,10 +257,7 @@ class TournamentForm extends AdminComponent
                 'extra_registration_unit' => 'required|in:minutes,hours,days',
             ],
             5 => [
-                'entry_fee' => 'required|numeric|min:0',
                 'prize_pool' => 'required|numeric|min:0',
-                'min_participants' => 'required|integer|min:2',
-                'max_participants' => 'required|integer|min:2|gte:min_participants',
             ],
             default => [],
         };
@@ -267,9 +269,20 @@ class TournamentForm extends AdminComponent
         return true;
     }
 
+    public function chooseOneTimeDraft(): void
+    {
+        $this->publishOneTimeOnCreate = false;
+    }
+
+    public function chooseOneTimePublish(): void
+    {
+        $this->publishOneTimeOnCreate = true;
+    }
+
     public function saveTournament(
         CreateTournamentAction $createAction,
         CreateRecurringCompetitionAction $createRecurring,
+        PublishTournamentAction $publishTournament,
         SyncTournamentStreamChannelsAction $syncStreams,
     ): void {
         // Enforce H2H invariants server-side; browser-disabled fields are not a
@@ -294,7 +307,7 @@ class TournamentForm extends AdminComponent
             'is_auto_cancel_underfilled' => 'boolean',
             'waiting_time' => 'nullable|integer|min:0',
             'waiting_result_time' => 'required|integer|min:1',
-            'team_size' => 'required|integer|min:1',
+            'team_size' => 'required|integer|min:0',
             'registration_duration_value' => 'required|integer|min:1|max:365',
             'registration_duration_unit' => 'required|in:minutes,hours,days',
             'extra_registration_value' => 'required|integer|min:0|max:365',
@@ -312,7 +325,7 @@ class TournamentForm extends AdminComponent
             'youtube_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('youtube')],
             'twitch_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('twitch')],
             'facebook_stream_url' => ['nullable', 'url:https', 'max:255', $this->streamUrlRule('facebook')],
-            'banner' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:width=960,height=540',
+            'banner' => 'nullable|image|mimes:jpg,jpeg,png,webp',
             'is_featured' => 'boolean',
         ]);
 
@@ -430,11 +443,18 @@ class TournamentForm extends AdminComponent
             $tournament = $this->frequency === 'one-time'
                 ? $createAction->execute($data, $creator)
                 : $createRecurring->execute($data, $creator);
+
+            if ($this->frequency === 'one-time' && $this->publishOneTimeOnCreate) {
+                $tournament = $publishTournament->execute($tournament);
+            }
+
             $syncStreams->execute($tournament, $this->streamUrls(), $creator);
             session()->flash(
                 'success',
                 $this->frequency === 'one-time'
-                    ? 'Competition created successfully.'
+                    ? ($this->publishOneTimeOnCreate
+                        ? 'Tournament published successfully.'
+                        : 'Tournament saved as a draft.')
                     : 'Recurring competition schedule created successfully.',
             );
         }
