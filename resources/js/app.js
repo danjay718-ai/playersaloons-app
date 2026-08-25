@@ -55,11 +55,6 @@ window.imageCropUpload = function (config) {
                 this.rejectFile('Use a JPG, PNG, or WebP image.');
                 return;
             }
-            if (file.size > this.sourceMaxBytes) {
-                this.rejectFile(`The source image must not exceed ${Math.round(this.sourceMaxBytes / 1024 / 1024)} MB.`);
-                return;
-            }
-
             this.releaseObjectUrl();
             this.objectUrl = URL.createObjectURL(file);
             const image = new Image();
@@ -72,17 +67,12 @@ window.imageCropUpload = function (config) {
                 return;
             }
 
-            if (image.naturalWidth < this.width || image.naturalHeight < this.height) {
-                this.rejectFile(`Image is too small. Minimum size is ${this.width} × ${this.height}px.`);
-                return;
-            }
-
             this.image = image;
             this.originalFile = file;
             this.sourceWidth = image.naturalWidth;
             this.sourceHeight = image.naturalHeight;
 
-            if (this.sourceWidth === this.width && this.sourceHeight === this.height && file.size <= this.maxBytes) {
+            if (this.sourceWidth === this.width && this.sourceHeight === this.height) {
                 this.uploadFile(file);
                 return;
             }
@@ -134,12 +124,6 @@ window.imageCropUpload = function (config) {
                     this.clientError = 'The cropped image could not be created.';
                     return;
                 }
-                if (blob.size > this.maxBytes) {
-                    this.processing = false;
-                    this.clientError = `The cropped image still exceeds ${Math.round(this.maxBytes / 1024 / 1024)} MB. Please choose a less detailed source image.`;
-                    return;
-                }
-
                 const baseName = (this.originalFile?.name || 'image').replace(/\.[^.]+$/, '');
                 const croppedFile = new File([blob], `${baseName}-${this.width}x${this.height}.webp`, {
                     type: 'image/webp',
@@ -568,8 +552,12 @@ document.addEventListener('livewire:navigated', () => {
 });
 
 document.addEventListener('livewire:init', () => {
-    Livewire.hook('message.processed', (message, component) => {
-        refreshLucideIcons();
+    // Livewire v3 replaces/morphs DOM after actions. Recreate icons only after
+    // that commit finishes so newly-rendered buttons and toast icons are kept.
+    Livewire.hook('commit', ({ succeed }) => {
+        succeed(() => {
+            refreshLucideIcons();
+        });
     });
 });
 

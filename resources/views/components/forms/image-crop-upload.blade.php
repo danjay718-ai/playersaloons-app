@@ -27,8 +27,6 @@
         'model' => $model,
         'width' => (int) $width,
         'height' => (int) $height,
-        'maxBytes' => (int) $maxMb * 1024 * 1024,
-        'sourceMaxBytes' => (int) $sourceMaxMb * 1024 * 1024,
     ]))"
     class="space-y-2"
 >
@@ -60,7 +58,7 @@
     >
 
     <div class="flex items-start justify-between gap-3 text-[10px] leading-4 text-slate-500">
-        <p>{{ $help ?: "Required output: {$width} × {$height}px ({$ratioLabel}), max {$maxMb} MB. Source images up to {$sourceMaxMb} MB." }}</p>
+        <p>{{ $help ?: "Your image will be cropped and scaled to {$width} × {$height}px ({$ratioLabel})." }}</p>
         <span x-show="uploading" x-cloak class="shrink-0 font-bold text-indigo-300" x-text="`${progress}%`"></span>
     </div>
 
