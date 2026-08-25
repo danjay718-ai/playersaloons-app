@@ -541,6 +541,10 @@ window.chatConsole = function (config) {
     };
 };
 
+// Register this before DOMContentLoaded. Chrome may make a previously engaged
+// visitor installable very early in the page lifecycle.
+attachPublicPwaInstallEvents();
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide icons on first load
     refreshLucideIcons();
@@ -917,6 +921,29 @@ function refreshLucideIcons() {
     });
 }
 
+function attachPublicPwaInstallEvents() {
+    if (window.__playerSaloonsPwaListenerAttached) return;
+
+    window.__playerSaloonsPwaListenerAttached = true;
+
+    window.addEventListener('beforeinstallprompt', event => {
+        event.preventDefault();
+        window.__playerSaloonsPwaPrompt = event;
+        window.__playerSaloonsPwaJustInstalled = false;
+        window.__playerSaloonsPwaSyncInstallButtons?.();
+    });
+
+    window.addEventListener('appinstalled', () => {
+        window.__playerSaloonsPwaPrompt = null;
+        window.__playerSaloonsPwaJustInstalled = true;
+        window.__playerSaloonsPwaSyncInstallButtons?.();
+    });
+
+    window.addEventListener('resize', () => {
+        window.__playerSaloonsPwaSyncInstallButtons?.();
+    });
+}
+
 function initPublicPwaInstall() {
     if ('serviceWorker' in navigator && !window.__playerSaloonsServiceWorkerRegistered) {
         window.__playerSaloonsServiceWorkerRegistered = true;
@@ -971,9 +998,6 @@ function initPublicPwaInstall() {
         });
     }
 
-    const installBtns = document.querySelectorAll('.pwa-install-btn');
-    if (!installBtns.length) return;
-
     const isStandalone = () => {
         return window.navigator.standalone === true
             || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
@@ -983,31 +1007,54 @@ function initPublicPwaInstall() {
         return window.matchMedia && window.matchMedia('(min-width: 768px)').matches;
     };
 
+    const getInstallButtons = () => document.querySelectorAll('.pwa-install-btn');
+
     const hideButton = button => {
         button.classList.add('hidden');
         button.classList.remove('inline-flex');
-        button.disabled = true;
     };
 
-    const showButton = button => {
+    const setButtonState = (button, state) => {
+        const labels = {
+            ready: 'Install',
+            installed: 'Installed',
+            manual: 'Install App',
+        };
+        const ariaLabels = {
+            ready: 'Install PlayerSaloons app',
+            installed: 'PlayerSaloons is installed. Show reinstall instructions',
+            manual: 'Show PlayerSaloons install options',
+        };
+
+        button.dataset.pwaState = state;
+        button.disabled = false;
+        button.setAttribute('aria-label', ariaLabels[state]);
+        button.setAttribute('title', ariaLabels[state]);
+        button.setAttribute('aria-busy', String(window.__playerSaloonsPwaPrompting === true));
+        button.querySelector('[data-pwa-install-label]')?.replaceChildren(labels[state]);
+        button.querySelectorAll('[data-pwa-install-icon]').forEach(icon => {
+            icon.classList.toggle('hidden', icon.dataset.pwaInstallIcon !== state);
+        });
+    };
+
+    const showButton = (button, state) => {
         button.classList.remove('hidden');
         button.classList.add('inline-flex');
-        button.disabled = !window.__playerSaloonsPwaPrompt;
+        setButtonState(button, state);
     };
 
     const syncInstallButtons = () => {
-        if (isStandalone()) {
-            installBtns.forEach(hideButton);
-            return;
-        }
-
         const desktop = isDesktop();
-        installBtns.forEach(button => {
+        const state = isStandalone() || window.__playerSaloonsPwaJustInstalled
+            ? 'installed'
+            : (window.__playerSaloonsPwaPrompt ? 'ready' : 'manual');
+
+        getInstallButtons().forEach(button => {
             const isDesktopButton = button.hasAttribute('data-pwa-install-desktop');
             const isMobileButton = button.hasAttribute('data-pwa-install-mobile');
 
             if ((desktop && isDesktopButton) || (!desktop && isMobileButton)) {
-                showButton(button);
+                showButton(button, state);
                 return;
             }
 
@@ -1015,34 +1062,76 @@ function initPublicPwaInstall() {
         });
     };
 
-    if (!window.__playerSaloonsPwaListenerAttached) {
-        window.__playerSaloonsPwaListenerAttached = true;
+    // The global browser events must operate on the newest Livewire-rendered
+    // navigation, rather than the button nodes that existed on first load.
+    window.__playerSaloonsPwaSyncInstallButtons = syncInstallButtons;
+    attachPublicPwaInstallEvents();
 
-        window.addEventListener('beforeinstallprompt', event => {
-            event.preventDefault();
-            window.__playerSaloonsPwaPrompt = event;
-            syncInstallButtons();
-        });
+    const showInstallNotice = message => {
+        let notice = document.getElementById('pwa-install-notice');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'pwa-install-notice';
+            notice.className = 'fixed inset-x-4 bottom-5 z-[100] mx-auto max-w-md rounded-2xl border border-cyan-300/30 bg-zinc-950/95 px-4 py-3 text-center text-xs font-semibold leading-relaxed text-zinc-100 shadow-[0_0_32px_rgba(34,211,238,0.25)] backdrop-blur-xl sm:bottom-8';
+            notice.setAttribute('role', 'status');
+            notice.setAttribute('aria-live', 'polite');
+            document.body.append(notice);
+        }
 
-        window.addEventListener('appinstalled', () => {
-            window.__playerSaloonsPwaPrompt = null;
-            installBtns.forEach(hideButton);
-        });
+        notice.textContent = message;
+        window.clearTimeout(window.__playerSaloonsPwaNoticeTimer);
+        window.__playerSaloonsPwaNoticeTimer = window.setTimeout(() => notice.remove(), 7000);
+    };
 
-        window.addEventListener('resize', syncInstallButtons);
-    }
+    const installHelpMessage = () => {
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    installBtns.forEach(button => {
+        if (isStandalone() || window.__playerSaloonsPwaJustInstalled) {
+            return 'PlayerSaloons is already installed. To reinstall it, remove the existing app from your device first, then return here and install again.';
+        }
+
+        if (isIos) {
+            return 'To install on iPhone or iPad, tap Share, then Add to Home Screen. If it is already installed, open PlayerSaloons from your Home Screen.';
+        }
+
+        return 'Use your browser menu and choose Install app. If PlayerSaloons is already installed, open it from your desktop or app launcher.';
+    };
+
+    getInstallButtons().forEach(button => {
         if (button._pwaInstallInitialised) return;
         button._pwaInstallInitialised = true;
 
         button.addEventListener('click', async () => {
-            if (!window.__playerSaloonsPwaPrompt) return;
+            if (window.__playerSaloonsPwaPrompting) return;
 
-            window.__playerSaloonsPwaPrompt.prompt();
-            await window.__playerSaloonsPwaPrompt.userChoice;
-            window.__playerSaloonsPwaPrompt = null;
-            installBtns.forEach(hideButton);
+            const promptEvent = window.__playerSaloonsPwaPrompt;
+            if (!promptEvent || isStandalone() || window.__playerSaloonsPwaJustInstalled) {
+                showInstallNotice(installHelpMessage());
+                return;
+            }
+
+            window.__playerSaloonsPwaPrompting = true;
+            syncInstallButtons();
+
+            try {
+                promptEvent.prompt();
+                const choice = await promptEvent.userChoice;
+                window.__playerSaloonsPwaPrompt = null;
+
+                if (choice.outcome === 'accepted') {
+                    window.__playerSaloonsPwaJustInstalled = true;
+                } else {
+                    showInstallNotice('Install was dismissed. You can try again later from your browser menu.');
+                }
+            } catch (error) {
+                console.warn('PWA install prompt failed:', error);
+                window.__playerSaloonsPwaPrompt = null;
+                showInstallNotice(installHelpMessage());
+            } finally {
+                window.__playerSaloonsPwaPrompting = false;
+                syncInstallButtons();
+            }
         });
     });
 

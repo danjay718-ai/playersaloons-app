@@ -103,6 +103,7 @@ class WalletDashboard extends Component
             'wallet' => $wallet,
             'ledgerEntries' => $ledgerEntries,
             'depositBreakdown' => $feeCalculator->calculate(is_numeric($this->depositAmount) ? (float) $this->depositAmount : 0),
+            'emailVerified' => $user->hasVerifiedEmail(),
         ])->layout('components.layouts.dashboard', [
             'title' => 'Financial Terminal | PlayerSaloons',
             'dashboard_title' => 'FINANCIAL TERMINAL',

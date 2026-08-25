@@ -22,6 +22,6 @@ class AboutPage extends Component
             'title' => $title,
             'subtitle' => $subtitle,
             'body' => $body,
-        ])->layout('components.layouts.app', ['title' => 'About Us - PlayerSaloons']);
+        ])->layout('components.layouts.landing', ['title' => 'About Us - PlayerSaloons']);
     }
 }

@@ -1,6 +1,13 @@
 <div class="space-y-6 min-w-0" x-data="{ walletAction: 'deposit' }">
     <x-ui.toasts />
 
+    @unless($emailVerified)
+        <section class="flex flex-col gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-start gap-3"><i data-lucide="mail-warning" class="mt-0.5 h-5 w-5 shrink-0 text-amber-300"></i><p class="text-xs leading-relaxed text-amber-100">Verify your email to unlock withdrawals and email notifications. Deposits and the rest of your player account remain available.</p></div>
+            <a href="/profile" wire:navigate class="shrink-0 rounded-lg border border-amber-400/30 bg-zinc-950/50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-200 hover:bg-amber-500/15">Verify in profile</a>
+        </section>
+    @endunless
+
     <section class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
         <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div class="min-w-0">
@@ -118,6 +125,7 @@
                     </div>
                 </div>
 
+                @if($emailVerified)
                 <form wire:submit.prevent="withdraw" class="mt-6 space-y-4">
                     @csrf
                     <div>
@@ -144,6 +152,9 @@
                         Request Withdrawal
                     </button>
                 </form>
+                @else
+                    <div class="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-100">Email verification is required before you can request a withdrawal. Send and complete the verification link from your Profile.</div>
+                @endif
             </div>
 
             <div class="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-5 shadow-xl md:p-6">

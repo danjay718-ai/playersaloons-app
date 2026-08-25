@@ -43,6 +43,7 @@ use App\Livewire\Auth\Register;
 use App\Livewire\Auth\TwoFactorChallenge;
 use App\Livewire\CMS\BlogArticleView;
 use App\Livewire\CMS\BlogIndex;
+use App\Livewire\CMS\ContentHub;
 use App\Livewire\CMS\NewsArticleView;
 use App\Livewire\CMS\NewsIndex;
 use App\Livewire\Community\ContactPage;
@@ -81,6 +82,7 @@ Route::get('/blog', BlogIndex::class)->name('blog.index');
 Route::get('/blog/{slug}', BlogArticleView::class)->name('blog.show');
 Route::get('/news', NewsIndex::class)->name('news.index');
 Route::get('/news/{slug}', NewsArticleView::class)->name('news.show');
+Route::get('/updates', ContentHub::class)->name('updates.index');
 Route::get('/policies', PolicyIndex::class)->name('policies.index');
 Route::get('/policies/{slug}', PolicyPageView::class)->name('policies.show');
 Route::get('/contact', ContactPage::class)->name('contact');
@@ -117,8 +119,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', LogoutController::class)->name('logout');
 
     // ── Player-only routes ──────────────────────────────────────────────
-    // Requires verified email, no compliance blocks, and a player role.
-    Route::middleware(['verified', 'compliance.clear', 'role.player'])->group(function () {
+    // Verification is enforced for withdrawals and email notifications, not general access.
+    Route::middleware(['compliance.clear', 'role.player'])->group(function () {
         Route::get('/dashboard', PlayerDashboard::class)->name('dashboard');
         Route::get('/my-tournaments', MyTournamentsList::class)->name('my-tournaments');
         Route::get('/tournaments/browse', PlayerTournamentList::class)->name('tournaments.browse');

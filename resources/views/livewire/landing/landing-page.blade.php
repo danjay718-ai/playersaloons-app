@@ -118,11 +118,6 @@
                 </a>
             </div>
 
-            {{-- Scroll hint --}}
-            <div class="landing-fade-in landing-fade-delay-4 mt-12 flex flex-col items-center gap-2 opacity-40 sm:mt-20">
-                <span class="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400">Scroll</span>
-                <div class="landing-scroll-arrow h-6 w-px bg-gradient-to-b from-zinc-400 to-transparent"></div>
-            </div>
         </div>
 
         {{-- Bottom gradient blend --}}

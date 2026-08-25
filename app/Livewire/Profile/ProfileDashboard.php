@@ -12,7 +12,6 @@ use App\Modules\Identity\Actions\EnableTwoFactorAction;
 use App\Modules\Identity\Actions\SubmitKycAction;
 use App\Modules\Identity\Actions\UpdateProfileAction;
 use App\Modules\Identity\Actions\UploadAvatarAction;
-use App\Modules\Identity\Events\EmailVerified;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\TotpService;
@@ -117,6 +116,10 @@ class ProfileDashboard extends Component
             $this->inAppNotifications = (bool) $pref->in_app_enabled;
             $this->realtimeNotifications = (bool) $pref->realtime_enabled;
         }
+
+        if (! $user->hasVerifiedEmail()) {
+            $this->emailNotifications = false;
+        }
     }
 
     public function updateAccount(): void
@@ -140,6 +143,14 @@ class ProfileDashboard extends Component
             'email_verified_at' => $emailChanged ? null : $user->email_verified_at,
         ]);
         $user->save();
+
+        if ($emailChanged) {
+            $this->emailNotifications = false;
+            NotificationPreference::query()
+                ->where('user_id', $user->id)
+                ->update(['email_enabled' => false]);
+            $user->sendEmailVerificationNotification();
+        }
 
         session()->flash('message', $emailChanged
             ? 'Account updated. Please verify your new email address.'
@@ -193,7 +204,7 @@ class ProfileDashboard extends Component
         session()->flash('message', 'Password changed successfully!');
     }
 
-    public function verifyEmail(): void
+    public function resendEmailVerification(): void
     {
         /** @var User|null $user */
         $user = Auth::user();
@@ -201,10 +212,8 @@ class ProfileDashboard extends Component
             return;
         }
 
-        $user->forceFill(['email_verified_at' => now()])->save();
-        EmailVerified::dispatch((int) $user->getKey());
-
-        session()->flash('message', 'Email verified successfully!');
+        $user->sendEmailVerificationNotification();
+        session()->flash('message', 'Verification email sent. Check your inbox to complete verification.');
     }
 
     public function beginTwoFactorSetup(TotpService $totp): void
@@ -313,7 +322,7 @@ class ProfileDashboard extends Component
             NotificationPreference::query()->updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'email_enabled' => $this->emailNotifications,
+                    'email_enabled' => $user->hasVerifiedEmail() && $this->emailNotifications,
                     'in_app_enabled' => $this->inAppNotifications,
                     'realtime_enabled' => $this->realtimeNotifications,
                 ]
@@ -329,6 +338,14 @@ class ProfileDashboard extends Component
     public function updateNotificationPreference(string $preference, bool $enabled): void
     {
         if (! in_array($preference, ['emailNotifications', 'inAppNotifications', 'realtimeNotifications'], true)) {
+            return;
+        }
+
+        $user = Auth::user();
+        if ($preference === 'emailNotifications' && ! $user?->hasVerifiedEmail()) {
+            $this->emailNotifications = false;
+            session()->flash('error', 'Verify your email before enabling email notifications.');
+
             return;
         }
 

@@ -36,7 +36,9 @@
         {{-- Desktop centre nav (md+) ─────────── --}}
         <nav class="hidden md:flex items-center gap-8">
             @foreach($publicNavigationItems as $item)
-                @php($isActive = $item->match_pattern ? request()->is($item->match_pattern) : url()->current() === url($item->url))
+                @php($isActive = $item->match_pattern
+                    ? collect(explode('|', $item->match_pattern))->contains(fn ($pattern) => request()->is(trim($pattern)))
+                    : url()->current() === url($item->url))
                 <a href="{{ $item->url }}"
                     @if($item->opens_new_tab) target="_blank" rel="noopener" @endif
                     class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]
@@ -99,14 +101,17 @@
 
             {{-- PWA Install — desktop only --}}
             <button type="button"
-                class="pwa-install-btn hidden md:inline-flex shrink-0 items-center justify-center gap-2
-                       rounded-full border border-fuchsia-500/50 bg-fuchsia-600/20 px-4 py-2
-                       text-[10px] font-black uppercase tracking-widest text-fuchsia-300
-                       shadow-[0_0_15px_rgba(192,38,211,0.2)] backdrop-blur transition-all
-                       hover:bg-fuchsia-600/40 disabled:cursor-not-allowed disabled:opacity-50"
-                data-pwa-install-desktop aria-label="{{ __('Install PlayerSaloons app') }}" disabled>
-                <i data-lucide="download" class="h-3.5 w-3.5"></i>
-                <span>{{ __('Install') }}</span>
+                class="pwa-install-btn hidden md:inline-flex shrink-0 items-center justify-center gap-2 rounded-full
+                       border border-cyan-400/70 bg-zinc-950/90 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest
+                       text-cyan-100 shadow-[inset_0_0_16px_rgba(34,211,238,0.12),0_0_16px_rgba(34,211,238,0.2)]
+                       backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-950/80
+                       hover:text-white hover:shadow-[inset_0_0_18px_rgba(34,211,238,0.2),0_0_25px_rgba(34,211,238,0.38)] focus-visible:outline-none focus-visible:ring-2
+                       focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+                data-pwa-install-desktop aria-label="{{ __('Show PlayerSaloons install options') }}">
+                <i data-lucide="download" data-pwa-install-icon="ready" class="h-3.5 w-3.5 text-cyan-300"></i>
+                <i data-lucide="badge-check" data-pwa-install-icon="installed" class="hidden h-3.5 w-3.5 text-emerald-300"></i>
+                <i data-lucide="circle-help" data-pwa-install-icon="manual" class="hidden h-3.5 w-3.5 text-cyan-300"></i>
+                <span data-pwa-install-label>{{ __('Install App') }}</span>
             </button>
 
             <x-localization.language-switcher variant="public" class="hidden sm:block" />
@@ -132,7 +137,9 @@
 
             {{-- Nav items --}}
             @foreach($publicNavigationItems as $item)
-                @php($isActive = $item->match_pattern ? request()->is($item->match_pattern) : url()->current() === url($item->url))
+                @php($isActive = $item->match_pattern
+                    ? collect(explode('|', $item->match_pattern))->contains(fn ($pattern) => request()->is(trim($pattern)))
+                    : url()->current() === url($item->url))
                 <a href="{{ $item->url }}"
                     @if($item->opens_new_tab) target="_blank" rel="noopener" @endif
                     class="flex items-center justify-between rounded-xl border border-zinc-800/60
@@ -170,13 +177,18 @@
 
             {{-- PWA Install — mobile only --}}
             <button type="button"
-                class="pwa-install-btn hidden w-full items-center justify-center gap-2 rounded-xl
-                       border border-fuchsia-500/50 bg-fuchsia-600/20 px-4 py-3.5 text-[10px]
-                       font-black uppercase tracking-widest text-fuchsia-300 transition-all
-                       hover:bg-fuchsia-600/40 disabled:cursor-not-allowed disabled:opacity-50"
-                data-pwa-install-mobile aria-label="{{ __('Install PlayerSaloons app') }}" disabled>
-                <i data-lucide="download" class="h-4 w-4"></i>
-                <span>{{ __('Install App') }}</span>
+                class="pwa-install-btn hidden w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/70 bg-zinc-950/90
+                       px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-cyan-100
+                       shadow-[inset_0_0_20px_rgba(34,211,238,0.12),0_0_18px_rgba(34,211,238,0.2)] backdrop-blur
+                       transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-950/80 hover:text-white
+                       hover:shadow-[inset_0_0_24px_rgba(34,211,238,0.2),0_0_28px_rgba(34,211,238,0.4)]
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2
+                       focus-visible:ring-offset-zinc-950"
+                data-pwa-install-mobile aria-label="{{ __('Show PlayerSaloons install options') }}">
+                <i data-lucide="download" data-pwa-install-icon="ready" class="h-4 w-4 text-cyan-300"></i>
+                <i data-lucide="badge-check" data-pwa-install-icon="installed" class="hidden h-4 w-4 text-emerald-300"></i>
+                <i data-lucide="circle-help" data-pwa-install-icon="manual" class="hidden h-4 w-4 text-cyan-300"></i>
+                <span data-pwa-install-label>{{ __('Install App') }}</span>
             </button>
 
             <x-localization.language-switcher variant="public" align="left" class="w-full" />

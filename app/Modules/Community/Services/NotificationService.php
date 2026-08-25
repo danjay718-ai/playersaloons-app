@@ -61,7 +61,7 @@ class NotificationService
             ]));
         }
 
-        if ($preferences->email_enabled) {
+        if ($preferences->email_enabled && $user->hasVerifiedEmail()) {
             Mail::to($user->email)->queue(new SystemNotificationMail($title, $message, $actionUrl));
         }
 

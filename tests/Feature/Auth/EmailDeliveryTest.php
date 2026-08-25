@@ -25,7 +25,7 @@ class EmailDeliveryTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
     }
 
-    public function test_registration_sends_verification_email_and_blocks_dashboard_until_verified(): void
+    public function test_registration_sends_verification_email_and_allows_dashboard_before_verification(): void
     {
         Notification::fake();
 
@@ -39,7 +39,7 @@ class EmailDeliveryTest extends TestCase
             ->set('accepted_policies', true)
             ->set('age_confirmed', true)
             ->call('register')
-            ->assertRedirect('/verify-email');
+            ->assertRedirect('/dashboard');
 
         $user = User::query()->where('email', 'verify@example.com')->firstOrFail();
 
@@ -48,7 +48,7 @@ class EmailDeliveryTest extends TestCase
 
         $this->actingAs($user)
             ->get('/dashboard')
-            ->assertRedirect('/verify-email');
+            ->assertOk();
     }
 
     public function test_forgot_password_sends_reset_link_email(): void

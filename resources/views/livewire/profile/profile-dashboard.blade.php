@@ -98,9 +98,9 @@
                                 {{ $emailVerified ? 'VERIFIED' : 'NEEDS VERIFY' }}
                             </span>
                             @unless($emailVerified)
-                                <button type="button" wire:click="verifyEmail" class="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-cyan-200 hover:bg-cyan-500/20 font-orbitron">
-                                    <i data-lucide="mail-check" class="w-3.5 h-3.5"></i>
-                                    Verify
+                                <button type="button" wire:click="resendEmailVerification" wire:loading.attr="disabled" wire:target="resendEmailVerification" class="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-60 font-orbitron">
+                                    <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+                                    Send link
                                 </button>
                             @endunless
                         </div>
@@ -397,7 +397,7 @@
                         </div>
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                             @foreach([
-                                ['model' => 'emailNotifications', 'enabled' => $emailNotifications, 'title' => 'Email', 'text' => 'Match, wallet, and tournament alerts.'],
+                                ['model' => 'emailNotifications', 'enabled' => $emailNotifications, 'title' => 'Email', 'text' => $emailVerified ? 'Match, wallet, and tournament alerts.' : 'Verify your email to enable alerts.'],
                                 ['model' => 'inAppNotifications', 'enabled' => $inAppNotifications, 'title' => 'In-App', 'text' => 'Notification bell updates.'],
                                 ['model' => 'realtimeNotifications', 'enabled' => $realtimeNotifications, 'title' => 'Realtime', 'text' => 'Live match and broadcast pings.'],
                             ] as $toggle)
@@ -407,8 +407,8 @@
                                         <span class="mt-1 block text-[11px] font-semibold text-zinc-500">{{ $toggle['text'] }}</span>
                                     </span>
                                     <span class="relative inline-flex cursor-pointer items-center">
-                                        <input type="checkbox" @checked($toggle['enabled']) wire:change="updateNotificationPreference('{{ $toggle['model'] }}', $event.target.checked)" class="peer sr-only">
-                                        <span class="h-6 w-11 rounded-full border border-zinc-700 bg-zinc-900 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-zinc-500 after:transition-all peer-checked:border-cyan-400/50 peer-checked:bg-cyan-500/30 peer-checked:after:translate-x-5 peer-checked:after:bg-cyan-200"></span>
+                                        <input type="checkbox" @checked($toggle['enabled']) @disabled($toggle['model'] === 'emailNotifications' && ! $emailVerified) wire:change="updateNotificationPreference('{{ $toggle['model'] }}', $event.target.checked)" class="peer sr-only">
+                                        <span class="h-6 w-11 rounded-full border border-zinc-700 bg-zinc-900 after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-zinc-500 after:transition-all peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-checked:border-cyan-400/50 peer-checked:bg-cyan-500/30 peer-checked:after:translate-x-5 peer-checked:after:bg-cyan-200"></span>
                                     </span>
                                 </label>
                             @endforeach

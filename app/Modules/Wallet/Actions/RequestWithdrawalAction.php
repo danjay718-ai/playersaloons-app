@@ -25,6 +25,10 @@ class RequestWithdrawalAction
      */
     public function execute(User $user, $amount): Withdrawal
     {
+        if (! $user->hasVerifiedEmail()) {
+            throw new LogicException('Verify your email before requesting a withdrawal.');
+        }
+
         $amountFloat = (float) $amount;
         if ($amountFloat <= 0) {
             throw new InvalidArgumentException('Withdrawal amount must be greater than zero.');

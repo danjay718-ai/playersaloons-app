@@ -324,6 +324,14 @@
 
             <!-- Main Scrollable Pane -->
             <main class="flex-grow p-4 sm:p-6 md:p-8 flex flex-col relative player-main-content">
+                @auth
+                    @if(! auth()->user()->hasVerifiedEmail())
+                        <aside class="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="flex items-start gap-3"><i data-lucide="mail-warning" class="mt-0.5 h-5 w-5 shrink-0 text-amber-300"></i><p class="text-xs leading-relaxed text-amber-100">Your email is not verified. You can keep playing, but withdrawals and email notifications stay unavailable until you verify it.</p></div>
+                            <a href="/profile" wire:navigate class="shrink-0 rounded-lg border border-amber-400/30 bg-zinc-950/50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-200 hover:bg-amber-500/15">Verify email</a>
+                        </aside>
+                    @endif
+                @endauth
                 @php($activePromotion = \App\Modules\Community\Models\Advertisement::query()->currentlyVisible()->latest()->first())
                 @if($activePromotion)
                     <aside x-data="{ visible: true }" x-show="visible" class="mb-5 overflow-hidden rounded-2xl border border-fuchsia-500/25 bg-gradient-to-r from-fuchsia-950/80 to-indigo-950/80 shadow-lg">

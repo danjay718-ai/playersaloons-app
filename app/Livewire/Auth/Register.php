@@ -82,7 +82,7 @@ class Register extends Component
         Auth::login($user);
         $user->sendEmailVerificationNotification();
 
-        return redirect()->to('/verify-email');
+        return redirect()->to('/dashboard');
     }
 
     public function render()
