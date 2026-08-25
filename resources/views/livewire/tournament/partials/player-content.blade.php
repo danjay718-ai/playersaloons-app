@@ -148,7 +148,7 @@
                             $currentMatchLabel = match($currentMatchStatus) {
                                 'waiting_for_confirmation' => 'Confirm Match Result',
                                 'disputed' => 'Review Match Dispute',
-                                'ready' => 'Open Match Room',
+                                'ready' => 'Open Match Room & Check In',
                                 default => 'Open Match Room & Report Result',
                             };
                         @endphp

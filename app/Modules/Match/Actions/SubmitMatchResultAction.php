@@ -13,6 +13,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use LogicException;
 
 class SubmitMatchResultAction
 {
@@ -28,24 +29,34 @@ class SubmitMatchResultAction
         ?string $notes = null,
         ?UploadedFile $proofFile = null
     ): MatchResultSubmission {
-        return DB::transaction(function () use ($match, $submittedByUserId, $winnerRegistrationId, $notes, $proofFile): MatchResultSubmission {
-            if (! $match->playerARegistration?->includesUser($submittedByUserId) && ! $match->playerBRegistration?->includesUser($submittedByUserId)) {
+        $submission = DB::transaction(function () use ($match, $submittedByUserId, $winnerRegistrationId, $notes, $proofFile): MatchResultSubmission {
+            /** @var GameMatch $lockedMatch */
+            $lockedMatch = GameMatch::query()
+                ->with(['playerARegistration', 'playerBRegistration'])
+                ->lockForUpdate()
+                ->findOrFail($match->getKey());
+
+            if ($lockedMatch->status !== MatchStatus::IN_PROGRESS) {
+                throw new LogicException('Results can be submitted once the match is in progress.');
+            }
+
+            if (! $lockedMatch->playerARegistration?->includesUser($submittedByUserId) && ! $lockedMatch->playerBRegistration?->includesUser($submittedByUserId)) {
                 throw new InvalidArgumentException('Only match participants can submit a result.');
             }
-            if ($winnerRegistrationId !== $match->player_a_registration_id && $winnerRegistrationId !== $match->player_b_registration_id) {
+            if ($winnerRegistrationId !== $lockedMatch->player_a_registration_id && $winnerRegistrationId !== $lockedMatch->player_b_registration_id) {
                 throw new InvalidArgumentException('Winner must be one of the match participants.');
             }
 
             // Transition to WAITING_FOR_CONFIRMATION
-            $this->stateMachine->transition($match, MatchStatus::WAITING_FOR_CONFIRMATION);
+            $this->stateMachine->transition($lockedMatch, MatchStatus::WAITING_FOR_CONFIRMATION);
 
             $proofPath = null;
             if ($proofFile && $proofFile->isValid()) {
-                $proofPath = $proofFile->store("matches/{$match->id}/submissions", 'public');
+                $proofPath = $proofFile->store("matches/{$lockedMatch->id}/submissions", 'public');
             }
 
             $submission = MatchResultSubmission::query()->create([
-                'match_id' => $match->id,
+                'match_id' => $lockedMatch->id,
                 'submitted_by' => $submittedByUserId,
                 'winner_registration_id' => $winnerRegistrationId,
                 'notes' => $notes,
@@ -53,11 +64,11 @@ class SubmitMatchResultAction
                 'submitted_at' => Carbon::now(),
             ]);
 
-            $match->result_submitted_at = Carbon::now();
-            $match->save();
+            $lockedMatch->result_submitted_at = Carbon::now();
+            $lockedMatch->save();
 
             MatchResultSubmitted::dispatch(
-                $match->id,
+                $lockedMatch->id,
                 $submission->id,
                 $submittedByUserId,
                 $winnerRegistrationId
@@ -65,5 +76,11 @@ class SubmitMatchResultAction
 
             return $submission;
         });
+
+        // Preserve the expected in-memory state for callers that continue to
+        // use the match instance immediately after submitting a result.
+        $match->refresh();
+
+        return $submission;
     }
 }

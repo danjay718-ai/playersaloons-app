@@ -9,6 +9,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\ForfeitMatchAction;
 use App\Modules\Match\Actions\StartMatchAction;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ final class MatchReadinessService
 {
     public function __construct(
         private readonly StartMatchAction $startMatch,
+        private readonly StartTournamentAction $startTournament,
         private readonly ForfeitMatchAction $forfeitMatch,
         private readonly NotificationService $notifications,
     ) {}
@@ -38,6 +40,10 @@ final class MatchReadinessService
             'player_a_ready_at' => $match->playerARegistration?->ready_mode === 'auto' ? $now : null,
             'player_b_ready_at' => $match->playerBRegistration?->ready_mode === 'auto' ? $now : null,
         ])->save();
+
+        if ($this->startDueTournament($match)) {
+            return;
+        }
 
         if ($this->bothReady($match) && $match->tournament->status === TournamentStatus::ONGOING) {
             $this->startMatch->execute($match);
@@ -63,6 +69,10 @@ final class MatchReadinessService
                 throw new \LogicException('You are not a player in this match.');
             }
             $locked->save();
+
+            if ($this->startDueTournament($locked)) {
+                return;
+            }
 
             if ($this->bothReady($locked) && $locked->tournament->status === TournamentStatus::ONGOING) {
                 $this->startMatch->execute($locked);
@@ -103,6 +113,10 @@ final class MatchReadinessService
                 'playerBRegistration.user.notificationPreference', 'playerBRegistration.rosterMembers.user.notificationPreference',
             ])->findOrFail($match->getKey());
             if ($locked->status !== MatchStatus::READY) {
+                return;
+            }
+
+            if ($this->startDueTournament($locked)) {
                 return;
             }
 
@@ -201,5 +215,26 @@ final class MatchReadinessService
         }
 
         return null;
+    }
+
+    /**
+     * Start a due tournament as a player-facing fallback when the scheduler is
+     * unavailable. The TournamentStarted listener starts any fully-ready match.
+     */
+    private function startDueTournament(GameMatch $match): bool
+    {
+        $tournament = $match->tournament;
+
+        if (
+            $tournament->status !== TournamentStatus::BRACKET_GENERATED
+            || $tournament->start_at === null
+            || $tournament->start_at->isFuture()
+        ) {
+            return false;
+        }
+
+        $this->startTournament->execute($tournament);
+
+        return true;
     }
 }

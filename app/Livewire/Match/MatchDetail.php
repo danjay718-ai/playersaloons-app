@@ -17,8 +17,11 @@ use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Services\MatchReadinessService;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
+use LogicException;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -180,6 +183,12 @@ class MatchDetail extends Component
             return;
         }
 
+        if ($match->status !== MatchStatus::IN_PROGRESS) {
+            session()->flash('error', 'This match is still in the ready-up phase. Results can be submitted once the match is in progress.');
+
+            return;
+        }
+
         $this->validate([
             'winnerRegistrationId' => ['required', 'integer', 'in:'.$match->player_a_registration_id.','.$match->player_b_registration_id],
             'notes' => ['nullable', 'string', 'max:500'],
@@ -196,6 +205,8 @@ class MatchDetail extends Component
             );
             session()->flash('message', 'Result submitted successfully!');
             $this->reset(['winnerRegistrationId', 'notes', 'submissionProof']);
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to submit the match result.'));
         }

@@ -207,7 +207,7 @@
                     @endif
                 </div>
 
-                @if(in_array($statusVal, ['ready', 'in_progress']))
+                @if($statusVal === 'in_progress')
                     <form wire:submit.prevent="submitResult" class="space-y-4">
                         <!-- Select Winner -->
                         <div>
@@ -345,21 +345,27 @@
                             @error('evidenceFile') <span class="text-[10px] text-red-500 block">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="flex items-center space-x-4">
-                            <button type="button" wire:click="confirmResult"
-                                class="flex-grow flex justify-center py-2.5 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 transition-all duration-200">
-                                Confirm Result
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <button type="button" wire:click="confirmResult" wire:confirm="Confirm the result claimed by your opponent? This immediately finalizes the match."
+                                wire:loading.attr="disabled" wire:target="confirmResult"
+                                class="flex justify-center py-2.5 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span wire:loading.remove wire:target="confirmResult">Confirm Result</span><span wire:loading wire:target="confirmResult">Confirming…</span>
                             </button>
-                            <button type="button" wire:click="openDispute"
-                                class="bg-red-950/20 border border-red-900/60 hover:border-red-750 text-red-400 hover:text-red-300 font-bold text-sm py-2.5 px-4 rounded-lg transition-colors duration-200">
-                                Open Dispute
+                            <button type="button" wire:click="openDispute" wire:loading.attr="disabled" wire:target="openDispute"
+                                class="border border-red-700/70 bg-red-950/40 font-bold text-sm py-2.5 px-4 rounded-lg text-red-200 transition-colors hover:border-red-500 hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-60">
+                                <span wire:loading.remove wire:target="openDispute">Open Dispute</span><span wire:loading wire:target="openDispute">Opening dispute…</span>
                             </button>
                         </div>
                     </div>
                 @else
                     <div class="bg-zinc-950/40 border border-zinc-800 rounded-xl p-6 text-center text-zinc-500">
                         <i data-lucide="lock" class="w-6 h-6 mx-auto text-zinc-650 mb-2"></i>
-                        <p class="text-xs font-semibold">Results can only be submitted while the match status is READY or IN PROGRESS.</p>
+                        @if($statusVal === 'ready' && $isParticipant)
+                            <p class="text-xs font-semibold text-zinc-300">Both sides must click “I’m Here” above before the match starts.</p>
+                            <p class="mt-1 text-[11px]">Result submission appears automatically once both players are ready.</p>
+                        @else
+                            <p class="text-xs font-semibold">Results can be submitted once the match is in progress.</p>
+                        @endif
                     </div>
                 @endif
             </div>
