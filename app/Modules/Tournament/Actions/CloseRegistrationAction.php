@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Actions;
 
-use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Events\TournamentRegistrationClosed;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Services\PrizeCalculationService;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
-use App\Shared\Enums\PaymentStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
@@ -16,7 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 class CloseRegistrationAction
 {
-    public function __construct(private readonly TournamentStateMachine $stateMachine) {}
+    public function __construct(
+        private readonly TournamentStateMachine $stateMachine,
+        private readonly PrizeCalculationService $prizeCalculationService,
+    ) {}
 
     /**
      * Close registration for a tournament (REGISTRATION_OPEN → REGISTRATION_CLOSED).
@@ -28,6 +30,10 @@ class CloseRegistrationAction
         return DB::transaction(function () use ($tournament): Tournament {
             $this->stateMachine->transition($tournament, TournamentStatus::REGISTRATION_CLOSED);
 
+            // Calculate before setting the lock marker so the service uses the
+            // confirmed attendance projection, not the previous stored amount.
+            $finalPrizePool = $this->prizeCalculationService->calculate($tournament)['prize_pool'];
+
             $lockedAt = now();
             $tournament->registrations()
                 ->where('status', RegistrationStatus::CONFIRMED)
@@ -35,26 +41,8 @@ class CloseRegistrationAction
                 ->update(['locked_at' => $lockedAt, 'updated_at' => $lockedAt]);
             $tournament->forceFill(['registration_locked_at' => $lockedAt])->save();
 
-            // Calculate final prize pool
-            $paidCount = $tournament->registrations()
-                ->where('status', RegistrationStatus::CONFIRMED)
-                ->where('payment_status', PaymentStatus::PAID)
-                ->count();
-
-            $entryFee = (float) ($tournament->entry_fee ?? '0.00');
-            $totalFees = $paidCount * $entryFee;
-
-            $rakeSetting = SystemSetting::query()
-                ->where('key', 'platform.rake_percentage')
-                ->value('value');
-
-            $rakePercentage = $rakeSetting !== null ? (float) $rakeSetting : 10.0;
-            $calculatedPrizePool = $totalFees * (1.0 - ($rakePercentage / 100.0));
-
-            // Use the maximum of the manually set prize pool and the dynamically calculated one
-            $currentPrizePool = (float) ($tournament->prize_pool ?? 0.00);
-            $finalPrizePool = max($currentPrizePool, $calculatedPrizePool);
-
+            // Lock the attendance-adjusted amount while retaining the advertised
+            // pool for auditability and future tournament templates.
             $tournament->prize_pool = number_format($finalPrizePool, 2, '.', '');
             $tournament->save();
 

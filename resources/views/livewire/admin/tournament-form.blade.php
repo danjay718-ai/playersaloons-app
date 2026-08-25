@@ -209,6 +209,7 @@
 
         <section data-step="5" x-show="step === 5" x-cloak class="p-5 md:p-8">
             <div class="mb-6"><h2 class="text-lg font-black text-white">Prizes</h2><p class="mt-1 text-sm text-slate-500">Place prizes share one prize pool and can never exceed it.</p></div>
+            <div class="mb-5 flex gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-100/80"><i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0 text-amber-300"></i><p><strong class="text-amber-200">Prize payout notice:</strong> at the minimum player count, prizes pay at 50% of the advertised amount and scale up to 100% when the tournament is full. The current platform commission is also deducted from every winner payout. Change the commission in <strong class="text-amber-200">System Settings</strong>, or ask a Super Admin.</p></div>
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
                 <div><label class="field-label">Prize Pool *</label><input wire:model.live.debounce.250ms="prize_pool" required @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_pool')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div><label class="field-label text-amber-300">1st Place</label><input wire:model.live.debounce.250ms="prize_1st" @disabled($isLocked) type="number" min="0" step="0.01" class="form-field">@error('prize_1st')<p class="field-error">{{ $message }}</p>@enderror</div>

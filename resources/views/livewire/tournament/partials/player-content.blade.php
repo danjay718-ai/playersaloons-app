@@ -108,10 +108,10 @@
                 
                 <div class="flex flex-wrap items-center gap-y-4 gap-x-10">
                     <div class="space-y-1">
-                        <span class="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Prize Pool</span>
+                        <span class="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Current Prize Pool</span>
                         <div class="flex items-center space-x-2">
                             <i data-lucide="crown" class="w-5 h-5 text-fuchsia-500"></i>
-                            <span class="text-2xl font-black text-fuchsia-500 font-orbitron leading-none">${{ number_format((float)$tournament->prize_pool, 2) }}</span>
+                            <span class="text-2xl font-black text-fuchsia-500 font-orbitron leading-none">${{ number_format((float)$prizeCalculation['prize_pool'], 2) }}</span>
                         </div>
                     </div>
                     <div class="h-10 w-[1px] bg-zinc-800/60 hidden sm:block"></div>
@@ -131,6 +131,7 @@
                         </div>
                     </div>
                 </div>
+                <p class="-mt-3 text-xs text-zinc-500">Based on {{ $prizeCalculation['confirmed_count'] }} confirmed of {{ $tournament->max_participants }} players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.</p>
             </div>
 
             <!-- Main Action Area -->
@@ -384,10 +385,8 @@
                                     <span class="text-[10px] font-black uppercase tracking-widest">1st Prize</span>
                                 </div>
                                 <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">
-                                    @if($tournament->prize_1st)
-                                        ${{ number_format((float)$tournament->prize_1st, 2) }}
-                                    @elseif($tournament->prize_pool)
-                                        ~${{ number_format((float)$tournament->prize_pool * 0.6, 2) }}
+                                    @if(isset($prizeCalculation['distributions'][1]))
+                                        ${{ number_format((float)$prizeCalculation['distributions'][1], 2) }}
                                         <span class="text-[9px] text-zinc-600 tracking-normal font-sans">(est.)</span>
                                     @else
                                         TBD
@@ -395,23 +394,23 @@
                                 </span>
                             </div>
 
-                            @if($tournament->prize_2nd)
+                            @if(isset($prizeCalculation['distributions'][2]))
                                 <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-zinc-400">
                                         <i data-lucide="medal" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">2nd Prize</span>
                                     </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float)$tournament->prize_2nd, 2) }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float)$prizeCalculation['distributions'][2], 2) }}</span>
                                 </div>
                             @endif
 
-                            @if($tournament->prize_3rd)
+                            @if(isset($prizeCalculation['distributions'][3]))
                                 <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-orange-400">
                                         <i data-lucide="trophy" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">3rd Prize</span>
                                     </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float)$tournament->prize_3rd, 2) }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float)$prizeCalculation['distributions'][3], 2) }}</span>
                                 </div>
                             @endif
 

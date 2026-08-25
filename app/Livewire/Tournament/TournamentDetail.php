@@ -16,6 +16,7 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentTeam;
 use App\Modules\Tournament\Models\TournamentTeamSearchEntry;
+use App\Modules\Tournament\Services\PrizeCalculationService;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
@@ -205,7 +206,7 @@ class TournamentDetail extends Component
         }
     }
 
-    public function render(StreamEmbedService $streamService)
+    public function render(StreamEmbedService $streamService, PrizeCalculationService $prizeCalculationService)
     {
         $tournament = $this->getTournamentQuery()
             ->where('uuid', $this->uuid)
@@ -222,6 +223,7 @@ class TournamentDetail extends Component
             ->firstOrFail();
 
         $user = Auth::user();
+        $prizeCalculation = $prizeCalculationService->calculate($tournament);
         $isRegistered = false;
         $userRegistration = null;
 
@@ -342,6 +344,7 @@ class TournamentDetail extends Component
 
         return view('livewire.tournament.tournament-detail', [
             'tournament' => $tournament,
+            'prizeCalculation' => $prizeCalculation,
             'isRegistered' => $isRegistered,
             'userRegistration' => $userRegistration,
             'rounds' => $rounds,

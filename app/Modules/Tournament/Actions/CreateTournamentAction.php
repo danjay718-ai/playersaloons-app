@@ -47,6 +47,7 @@ class CreateTournamentAction
                 'min_participants' => $data['min_participants'],
                 'entry_fee' => $data['entry_fee'] ?? '0.00',
                 'prize_pool' => $data['prize_pool'] ?? '0.00',
+                'advertised_prize_pool' => $data['prize_pool'] ?? '0.00',
                 'registration_open_at' => $data['registration_open_at'] ?? null,
                 'registration_close_at' => $data['registration_close_at'] ?? null,
                 'checkin_open_at' => $data['checkin_open_at'] ?? null,

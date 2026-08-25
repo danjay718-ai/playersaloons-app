@@ -30,6 +30,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property TournamentStatus $status
  * @property float|string $entry_fee
  * @property float|string $prize_pool
+ * @property float|string|null $advertised_prize_pool
  * @property int $max_participants
  * @property int $min_participants
  * @property Carbon|null $registration_open_at
@@ -73,6 +74,7 @@ class Tournament extends Model implements HasMedia
         'status',
         'entry_fee',
         'prize_pool',
+        'advertised_prize_pool',
         'max_participants',
         'min_participants',
         'registration_open_at',
@@ -121,6 +123,7 @@ class Tournament extends Model implements HasMedia
             'competition_type' => CompetitionType::class,
             'entry_fee' => 'decimal:2',
             'prize_pool' => 'decimal:2',
+            'advertised_prize_pool' => 'decimal:2',
             'max_participants' => 'integer',
             'min_participants' => 'integer',
             'registration_open_at' => 'datetime',

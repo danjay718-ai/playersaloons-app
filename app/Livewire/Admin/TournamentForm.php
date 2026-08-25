@@ -151,7 +151,7 @@ class TournamentForm extends AdminComponent
             $this->max_participants = (int) $tournament->max_participants;
             $this->min_participants = (int) $tournament->min_participants;
             $this->entry_fee = (string) $tournament->entry_fee;
-            $this->prize_pool = (string) $tournament->prize_pool;
+            $this->prize_pool = (string) ($tournament->advertised_prize_pool ?? $tournament->prize_pool);
             $this->timezone = $tournament->timezone ?: ($tournament->template?->timezone ?? (string) config('app.tournament_timezone', 'UTC'));
             $this->registration_open_at = $this->formatScheduleDate($tournament->registration_open_at);
             $this->start_at = $this->formatScheduleDate($tournament->start_at);
@@ -365,6 +365,7 @@ class TournamentForm extends AdminComponent
             'min_participants' => $this->min_participants,
             'entry_fee' => $this->entry_fee,
             'prize_pool' => $this->prize_pool,
+            'advertised_prize_pool' => $this->prize_pool,
             'registration_open_at' => $registrationStartsAt,
             'registration_close_at' => $registrationClosesAt,
             // Legacy timestamps remain populated while the state machine is

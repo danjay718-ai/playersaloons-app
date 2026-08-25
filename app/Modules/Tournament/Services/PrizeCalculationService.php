@@ -17,14 +17,19 @@ class PrizeCalculationService
      *
      * @return array{
      *     total_entry_fees: float,
+     *     confirmed_count: int,
      *     rake_amount: float,
      *     prize_pool: float,
+     *     attendance_multiplier: float,
      *     distributions: array<int, float>,
      *     rounding_remainder: float,
      * }
      */
     public function calculate(Tournament $tournament): array
     {
+        $confirmedCount = $tournament->registrations()
+            ->where('status', RegistrationStatus::CONFIRMED)
+            ->count();
         $paidCount = $tournament->registrations()
             ->where('status', RegistrationStatus::CONFIRMED)
             ->where('payment_status', PaymentStatus::PAID)
@@ -42,9 +47,21 @@ class PrizeCalculationService
         $rakeAmount = round($totalEntryFees * ($rakePercentage / 100.0), 2);
         $calculatedPrizePool = round($totalEntryFees - $rakeAmount, 2);
 
-        // Keep the higher of the manual tournament prize pool and the calculated one
-        $currentPrizePool = (float) ($tournament->prize_pool ?? 0.00);
-        $prizePool = max($currentPrizePool, $calculatedPrizePool);
+        $attendanceMultiplier = $this->attendanceMultiplier($tournament, $confirmedCount);
+        $advertisedPrizePool = (float) ($tournament->advertised_prize_pool ?? $tournament->prize_pool ?? 0.00);
+        $attendanceAdjustedPrizePool = round($advertisedPrizePool * $attendanceMultiplier, 2);
+
+        // Once registration closes, prize_pool is the locked final amount. Until
+        // then, show the live projection based on confirmed participants.
+        $prizePool = $tournament->registration_locked_at !== null
+            ? (float) $tournament->prize_pool
+            : max($attendanceAdjustedPrizePool, $calculatedPrizePool);
+
+        $manualPrizes = array_filter([
+            1 => $tournament->prize_1st,
+            2 => $tournament->prize_2nd,
+            3 => $tournament->prize_3rd,
+        ], static fn ($amount): bool => $amount !== null && (float) $amount > 0.0);
 
         // Get template prizes
         $prizes = $tournament->template
@@ -54,7 +71,13 @@ class PrizeCalculationService
         $distributions = [];
         $totalAllocated = 0.0;
 
-        if ($prizes->isEmpty()) {
+        if ($manualPrizes !== []) {
+            foreach ($manualPrizes as $rank => $amount) {
+                $distributionAmount = round((float) $amount * $attendanceMultiplier, 2);
+                $distributions[$rank] = $distributionAmount;
+                $totalAllocated += $distributionAmount;
+            }
+        } elseif ($prizes->isEmpty()) {
             // Default to 100% to Rank 1
             $distributions[1] = $prizePool;
             $totalAllocated = $prizePool;
@@ -65,7 +88,7 @@ class PrizeCalculationService
                 if ($prize->percentage !== null) {
                     $amount = round($prizePool * ((float) $prize->percentage / 100.0), 2);
                 } elseif ($prize->amount !== null) {
-                    $amount = (float) $prize->amount;
+                    $amount = round((float) $prize->amount * $attendanceMultiplier, 2);
                 } else {
                     $amount = 0.00;
                 }
@@ -78,10 +101,29 @@ class PrizeCalculationService
 
         return [
             'total_entry_fees' => $totalEntryFees,
+            'confirmed_count' => $confirmedCount,
             'rake_amount' => $rakeAmount,
             'prize_pool' => $prizePool,
+            'attendance_multiplier' => $attendanceMultiplier,
             'distributions' => $distributions,
             'rounding_remainder' => $remainder,
         ];
+    }
+
+    public function attendanceMultiplier(Tournament $tournament, int $confirmedCount): float
+    {
+        $minimum = max(1, (int) $tournament->min_participants);
+        $maximum = max($minimum, (int) $tournament->max_participants);
+        $participants = min($maximum, max(0, $confirmedCount));
+
+        if ($maximum === $minimum) {
+            return $participants >= $minimum ? 1.0 : 0.5;
+        }
+
+        if ($participants <= $minimum) {
+            return 0.5;
+        }
+
+        return round(0.5 + (0.5 * (($participants - $minimum) / ($maximum - $minimum))), 6);
     }
 }

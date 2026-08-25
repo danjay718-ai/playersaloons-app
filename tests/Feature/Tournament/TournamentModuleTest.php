@@ -27,6 +27,7 @@ use App\Modules\Tournament\Actions\UpdateTournamentTemplateAction;
 use App\Modules\Tournament\Models\Bracket;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTemplate;
+use App\Modules\Tournament\Services\PrizeCalculationService;
 use App\Modules\Tournament\Services\TournamentLifecycleReconciler;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
@@ -481,16 +482,63 @@ class TournamentModuleTest extends TestCase
         $tournament = $completeAction->execute($tournament);
 
         // Prizes distributed:
-        // Rank 1 (Player 1) gets 70% of 36.00 = 25.20.
-        // Rank 2 (Player 2) gets 30% of 36.00 = 10.80.
-        // Rounded remainder: 36.00 - 25.20 - 10.80 = 0.00.
-        $this->assertEquals(25.20, $p1->wallet->fresh()->cached_balance);
-        $this->assertEquals(10.80, $p2->wallet->fresh()->cached_balance);
+        // Rank 1 (Player 1) earns $25.20, less a 10% platform commission = $22.68.
+        // Rank 2 (Player 2) earns $10.80, less a 10% platform commission = $9.72.
+        $this->assertEquals(22.68, $p1->wallet->fresh()->cached_balance);
+        $this->assertEquals(9.72, $p2->wallet->fresh()->cached_balance);
+        $this->assertDatabaseHas('ledger_entries', [
+            'wallet_id' => $p1->wallet->id,
+            'type' => LedgerType::PLATFORM_COMMISSION->value,
+            'amount' => '-2.52',
+        ]);
+        $this->assertDatabaseHas('ledger_entries', [
+            'wallet_id' => $p2->wallet->id,
+            'type' => LedgerType::PLATFORM_COMMISSION->value,
+            'amount' => '-1.08',
+        ]);
 
         // Platform wallet check:
         // Platform starting balance was 0.00.
-        // Rake (4.00) + Remainder (0.00) = 4.00.
+        // Rake (4.00) + player platform commissions (3.60) + Remainder (0.00) = 7.60.
         $platformUser = User::query()->where('email', 'platform@playersaloons.com')->first();
-        $this->assertEquals(4.00, $platformUser->wallet->fresh()->cached_balance);
+        $this->assertEquals(7.60, $platformUser->wallet->fresh()->cached_balance);
+    }
+
+    public function test_prizes_scale_from_half_at_minimum_attendance_to_full_at_capacity(): void
+    {
+        $tournament = Tournament::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'game_id' => $this->game->id,
+            'name' => 'Scaled Prize Cup',
+            'slug' => 'scaled-prize-cup',
+            'status' => TournamentStatus::REGISTRATION_OPEN,
+            'entry_fee' => '0.00',
+            'prize_pool' => '20.00',
+            'advertised_prize_pool' => '20.00',
+            'prize_1st' => '10.00',
+            'prize_2nd' => '4.40',
+            'max_participants' => 16,
+            'min_participants' => 4,
+            'start_at' => now()->addDay(),
+            'created_by' => $this->adminUser->id,
+        ]);
+
+        foreach (range(1, 4) as $number) {
+            $player = $this->createPlayer("scaled{$number}@example.com", "scaled{$number}", 0);
+            $tournament->registrations()->create([
+                'uuid' => Str::uuid()->toString(),
+                'user_id' => $player->id,
+                'status' => RegistrationStatus::CONFIRMED,
+                'payment_status' => PaymentStatus::FREE,
+                'registered_at' => now(),
+            ]);
+        }
+
+        $calculation = app(PrizeCalculationService::class)->calculate($tournament);
+
+        $this->assertSame(0.5, $calculation['attendance_multiplier']);
+        $this->assertSame(10.0, $calculation['prize_pool']);
+        $this->assertSame(5.0, $calculation['distributions'][1]);
+        $this->assertSame(2.2, $calculation['distributions'][2]);
     }
 }
