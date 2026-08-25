@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
+use App\Http\Middleware\EnsureNotComplianceBlocked;
 use App\Modules\Identity\Policies\KycPolicy;
 use App\Modules\Identity\Policies\UserPolicy;
 use App\Modules\Match\Models\GameMatch;
@@ -26,6 +27,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,6 +44,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Livewire requests use a shared update endpoint. Persist this route
+        // middleware so an account blocked during an active session cannot
+        // keep submitting player actions through that endpoint.
+        Livewire::addPersistentMiddleware(EnsureNotComplianceBlocked::class);
+
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });

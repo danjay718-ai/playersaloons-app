@@ -118,6 +118,12 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', LogoutController::class)->name('logout');
 
+    Route::get('/account-restricted', function (\Illuminate\Http\Request $request) {
+        $block = $request->user()?->complianceBlocks()->active()->latest('created_at')->firstOrFail();
+
+        return view('account-restricted', compact('block'));
+    })->name('account.restricted');
+
     // ── Player-only routes ──────────────────────────────────────────────
     // Verification is enforced for withdrawals and email notifications, not general access.
     Route::middleware(['compliance.clear', 'role.player'])->group(function () {

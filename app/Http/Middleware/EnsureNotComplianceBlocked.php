@@ -6,7 +6,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureNotComplianceBlocked
@@ -16,14 +15,11 @@ class EnsureNotComplianceBlocked
         $user = $request->user();
 
         if ($user && ! $user->hasAnyRole(['ADMIN', 'SUPER_ADMIN'])) {
-            $isBlocked = Cache::remember(
-                "user:{$user->getKey()}:compliance_blocked",
-                300, // 5 minutes
-                fn () => $user->complianceBlocks()->active()->exists()
-            );
-
-            if ($isBlocked) {
-                abort(403, 'Account access is restricted by compliance review. Contact support for assistance.');
+            // This must be checked live. A compliance block is a security
+            // action and must take effect for an already-active session on
+            // its very next request, not after a cache TTL expires.
+            if ($user->complianceBlocks()->active()->exists()) {
+                return redirect()->route('account.restricted');
             }
         }
 
