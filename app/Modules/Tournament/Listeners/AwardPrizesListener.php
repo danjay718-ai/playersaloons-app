@@ -6,6 +6,7 @@ namespace App\Modules\Tournament\Listeners;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
@@ -48,6 +49,13 @@ class AwardPrizesListener
 
         DB::transaction(function () use ($tournament): void {
             $calculations = $this->prizeCalculationService->calculate($tournament);
+            $commissionPercentage = (float) (
+                SystemSetting::query()->where('key', 'platform.commission_percentage')->value('value')
+                ?? SystemSetting::query()->where('key', 'h2h.commission_percentage')->value('value')
+                ?? 10.00
+            );
+            $commissionPercentageLabel = number_format($commissionPercentage, 2, '.', '');
+            $tournamentCommissionAmount = 0.0;
 
             // Determine players per rank
             /** @var array<int, User> $rankPlayers */
@@ -159,6 +167,19 @@ class AwardPrizesListener
                     "Tournament prize for Rank {$rank} in '{$tournament->name}'"
                 );
 
+                $commissionAmount = round((float) $amount * ($commissionPercentage / 100), 2);
+                if ($commissionAmount > 0.0) {
+                    $tournamentCommissionAmount += $commissionAmount;
+                    $this->walletService->debit(
+                        $wallet,
+                        $commissionAmount,
+                        LedgerType::PLATFORM_COMMISSION,
+                        PrizeDistribution::class,
+                        (string) $distribution->getKey(),
+                        "Platform commission ({$commissionPercentageLabel}%) for Rank {$rank} in '{$tournament->name}'"
+                    );
+                }
+
                 PrizeAwarded::dispatch(
                     (int) $wallet->getKey(),
                     (int) $tournament->getKey(),
@@ -169,7 +190,10 @@ class AwardPrizesListener
             }
 
             // Credit platform wallet with rake and rounding remainder
-            $platformCredit = round($calculations['rake_amount'] + $calculations['rounding_remainder'], 2);
+            $platformCredit = round(
+                $calculations['rake_amount'] + $calculations['rounding_remainder'] + $tournamentCommissionAmount,
+                2
+            );
             if ($platformCredit > 0.0) {
                 /** @var User|null $systemUser */
                 $systemUser = User::query()->where('email', 'platform@playersaloons.com')->first();
@@ -180,7 +204,7 @@ class AwardPrizesListener
                         LedgerType::ADJUSTMENT,
                         Tournament::class,
                         (string) $tournament->getKey(),
-                        "Rake and rounding remainder for tournament: {$tournament->name}"
+                        "Rake, platform commission, and rounding remainder for tournament: {$tournament->name}"
                     );
                 }
             }

@@ -6,6 +6,7 @@ namespace App\Modules\Match\Actions;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\HeadToHeadMatch;
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Services\WalletService;
 use App\Shared\Enums\LedgerType;
@@ -35,7 +36,11 @@ class ResolveHeadToHeadStakeAction
         }
 
         $totalPool = (float) $match->stake_amount * 2;
-        $commissionPercent = (float) (\App\Modules\Operations\Models\SystemSetting::query()->where('key', 'h2h.commission_percentage')->value('value') ?? 10.00);
+        $commissionPercent = (float) (
+            SystemSetting::query()->where('key', 'platform.commission_percentage')->value('value')
+            ?? SystemSetting::query()->where('key', 'h2h.commission_percentage')->value('value')
+            ?? 10.00
+        );
         $commissionAmount = $totalPool * ($commissionPercent / 100);
         $netPayout = $totalPool - $commissionAmount;
 

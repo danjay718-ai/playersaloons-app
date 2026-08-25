@@ -64,4 +64,16 @@ class DepositFeeTest extends TestCase
 
         $this->assertDatabaseHas('system_settings', ['key' => 'tournament.waiting_result_time_default', 'value' => '45', 'updated_by' => $admin->id]);
     }
+
+    public function test_admin_can_update_platform_commission_for_all_winner_payouts(): void
+    {
+        $admin = User::query()->create(['uuid' => Str::uuid(), 'email' => 'commission-admin@example.com', 'username' => 'commission-admin', 'password' => 'password', 'status' => UserStatus::ACTIVE, 'email_verified_at' => now()]);
+        $admin->assignRole('ADMIN');
+
+        Livewire::actingAs($admin)->test(SystemSettingsAdmin::class)
+            ->set('platformCommissionPercentage', '12.50')
+            ->call('savePlatformCommissionSettings')->assertHasNoErrors()->assertSee('Platform commission settings updated.');
+
+        $this->assertDatabaseHas('system_settings', ['key' => 'platform.commission_percentage', 'value' => '12.50', 'updated_by' => $admin->id]);
+    }
 }

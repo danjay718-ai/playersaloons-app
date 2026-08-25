@@ -11,6 +11,7 @@ enum LedgerType: string
     case H2H_PAYOUT = 'H2H_PAYOUT';
     case REFUND = 'REFUND';
     case PRIZE = 'PRIZE';
+    case PLATFORM_COMMISSION = 'PLATFORM_COMMISSION';
     case ADJUSTMENT = 'ADJUSTMENT';
     case REFERRAL_BONUS = 'REFERRAL_BONUS';
 }
