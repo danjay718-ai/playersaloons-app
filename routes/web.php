@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\GameTournamentDefaultController;
 use App\Http\Controllers\Admin\KycDocumentController;
+use App\Http\Controllers\Admin\V2TournamentOccurrenceController;
+use App\Http\Controllers\Admin\V2TournamentTemplateController;
+use App\Http\Controllers\Admin\V2TournamentTemplateSlotsController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Community\ChatController;
@@ -66,6 +70,7 @@ use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Livewire\Wallet\WalletDashboard;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -118,7 +123,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', LogoutController::class)->name('logout');
 
-    Route::get('/account-restricted', function (\Illuminate\Http\Request $request) {
+    Route::get('/account-restricted', function (Request $request) {
         $block = $request->user()?->complianceBlocks()->active()->latest('created_at')->firstOrFail();
 
         return view('account-restricted', compact('block'));
@@ -165,6 +170,16 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->group(function () {
     Route::get('/profile', AdminProfile::class);
     Route::get('/tournaments', TournamentAdmin::class)->name('admin.tournaments');
     Route::get('/tournaments/create', TournamentForm::class)->name('admin.tournaments.create');
+    Route::get('/tournaments/v2/create', [V2TournamentTemplateController::class, 'create'])->name('admin.tournaments.v2.create');
+    Route::post('/tournaments/v2', [V2TournamentTemplateController::class, 'store'])->name('admin.tournaments.v2.store');
+    Route::get('/tournaments/v2/templates/{template}/slots', [V2TournamentTemplateSlotsController::class, 'show'])->name('admin.tournaments.v2.templates.slots');
+    Route::get('/tournaments/v2/templates/{template}/slots/create', [V2TournamentTemplateSlotsController::class, 'create'])->name('admin.tournaments.v2.templates.slots.create');
+    Route::post('/tournaments/v2/templates/{template}/slots', [V2TournamentTemplateSlotsController::class, 'store'])->name('admin.tournaments.v2.templates.slots.store');
+    Route::get('/tournaments/v2/occurrences/{tournament}/edit', [V2TournamentOccurrenceController::class, 'edit'])->name('admin.tournaments.v2.occurrences.edit');
+    Route::get('/tournaments/v2/occurrences/{tournament}', [V2TournamentOccurrenceController::class, 'show'])->name('admin.tournaments.v2.occurrences.show');
+    Route::put('/tournaments/v2/occurrences/{tournament}', [V2TournamentOccurrenceController::class, 'update'])->name('admin.tournaments.v2.occurrences.update');
+    Route::get('/games/{game}/tournament-defaults', [GameTournamentDefaultController::class, 'edit'])->name('admin.games.tournament-defaults.edit');
+    Route::put('/games/{game}/tournament-defaults', [GameTournamentDefaultController::class, 'update'])->name('admin.games.tournament-defaults.update');
     Route::get('/tournaments/{id}/edit', TournamentForm::class)->name('admin.tournaments.edit');
     Route::get('/tournaments/{id}/matches', TournamentMatches::class)->name('admin.tournaments.matches');
     Route::get('/matches', MatchAdmin::class);

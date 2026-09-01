@@ -26,8 +26,12 @@
 
     <section class="space-y-6">
         <div class="flex items-end justify-between gap-4"><div><p class="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Selected competitions</p><h2 class="mt-2 font-orbitron text-2xl font-black uppercase text-white">Featured Tournaments</h2></div><span class="hidden text-xs text-zinc-500 sm:block">Highlights from active competitions</span></div>
-        @if($featuredTournaments->isNotEmpty())
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">@foreach($featuredTournaments as $tournament)<div wire:key="featured-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" action-label="View Tournament" class="min-w-0" /></div>@endforeach</div>
+        @if(($featuredGroups && $featuredGroups->count()) || $featuredTournaments->isNotEmpty())
+            @if($featuredGroups)
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($featuredGroups as $template)<div wire:key="featured-template-{{ $template->uuid }}"><x-player.v2-tournament-parent-card :template="$template" /></div>@endforeach</div>
+            @else
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($featuredTournaments as $tournament)<div wire:key="featured-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" action-label="View Tournament" class="min-w-0" /></div>@endforeach</div>
+            @endif
             @if($hasMoreFeatured)<div class="text-center"><button wire:click="loadMoreFeatured" wire:loading.attr="disabled" class="rounded-xl border border-violet-500/30 bg-violet-500/10 px-6 py-3 font-orbitron text-[10px] font-black uppercase tracking-widest text-violet-200 transition hover:bg-violet-500/20 disabled:opacity-50"><span wire:loading.remove wire:target="loadMoreFeatured">View More</span><span wire:loading wire:target="loadMoreFeatured">Loading...</span></button></div>@endif
         @else
             <div class="rounded-2xl border border-dashed border-zinc-800 p-10 text-center text-zinc-500">No featured tournaments are active right now.</div>
@@ -46,9 +50,14 @@
             <select wire:model.live="competitionType" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">Tournament & H2H</option><option value="tournament">Tournament</option><option value="head_to_head">Head-to-Head</option></select>
             <select wire:model.live="platformId" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All platforms</option>@foreach($platforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select>
         </div></div>
-        @if($tournaments->count())
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">@foreach($tournaments as $tournament)<div wire:key="browse-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" :action-label="$activeTab === 'past' ? 'View Results' : 'View Tournament'" /></div>@endforeach</div>
-            <div class="border-t border-zinc-900/60 pt-6">{{ $tournaments->links('vendor.livewire.custom-pagination') }}</div>
+        @if($tournamentGroups ? $tournamentGroups->count() : $tournaments->count())
+            @if($tournamentGroups)
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($tournamentGroups as $template)<div wire:key="browse-template-{{ $template->uuid }}"><x-player.v2-tournament-parent-card :template="$template" :tab="$activeTab" /></div>@endforeach</div>
+                <div class="border-t border-zinc-900/60 pt-6">{{ $tournamentGroups->links('vendor.livewire.custom-pagination') }}</div>
+            @else
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($tournaments as $tournament)<div wire:key="browse-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" :action-label="$activeTab === 'past' ? 'View Results' : 'View Tournament'" /></div>@endforeach</div>
+                <div class="border-t border-zinc-900/60 pt-6">{{ $tournaments->links('vendor.livewire.custom-pagination') }}</div>
+            @endif
         @else
             <div class="rounded-2xl border border-dashed border-zinc-800 p-12 text-center"><i data-lucide="trophy" class="mx-auto h-9 w-9 text-zinc-700"></i><h3 class="mt-4 font-orbitron text-sm font-black uppercase text-zinc-300">No tournaments found</h3><p class="mt-2 text-sm text-zinc-600">Try changing the selected tab or filters.</p></div>
         @endif

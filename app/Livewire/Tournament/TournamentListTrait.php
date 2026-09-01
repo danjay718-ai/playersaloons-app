@@ -89,6 +89,7 @@ trait TournamentListTrait
                 $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
             }])
             ->whereIn('status', $this->statusesForTab($this->activeTab));
+        $this->applyWorkflowFlag($query);
 
         if ($this->search) {
             $query->where('name', 'like', '%'.$this->search.'%');
@@ -132,7 +133,9 @@ trait TournamentListTrait
 
         return Game::query()
             ->with('translations')
-            ->withCount(['tournaments as active_tournaments_count' => fn ($query) => $query->whereIn('status', $activeStatuses)])
+            ->withCount(['tournaments as active_tournaments_count' => fn ($query) => $query
+                ->whereIn('status', $activeStatuses)
+                ->when(! config('features.tournament_v2.enabled'), fn ($tournaments) => $tournaments->where('workflow_version', 1))])
             ->where('is_active', true)
             ->when($this->gameSearch !== '', function ($query): void {
                 $term = '%'.$this->gameSearch.'%';
@@ -148,22 +151,26 @@ trait TournamentListTrait
 
     protected function getFeaturedTournaments()
     {
-        return Tournament::query()
+        $query = Tournament::query()
             ->with(['game.translations', 'platform'])
             ->withCount(['registrations' => fn ($query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])])
             ->where('is_featured', true)
             ->whereIn('status', array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing')))
             ->orderBy('start_at')
-            ->limit($this->featuredLimit)
-            ->get();
+            ->limit($this->featuredLimit);
+        $this->applyWorkflowFlag($query);
+
+        return $query->get();
     }
 
     protected function featuredTournamentCount(): int
     {
-        return Tournament::query()
+        $query = Tournament::query()
             ->where('is_featured', true)
-            ->whereIn('status', array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing')))
-            ->count();
+            ->whereIn('status', array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing')));
+        $this->applyWorkflowFlag($query);
+
+        return $query->count();
     }
 
     protected function getPlatforms()
@@ -185,5 +192,12 @@ trait TournamentListTrait
             'past' => [TournamentStatus::COMPLETED->value],
             default => [TournamentStatus::REGISTRATION_OPEN->value],
         };
+    }
+
+    private function applyWorkflowFlag($query): void
+    {
+        if (! config('features.tournament_v2.enabled')) {
+            $query->where('workflow_version', 1);
+        }
     }
 }
