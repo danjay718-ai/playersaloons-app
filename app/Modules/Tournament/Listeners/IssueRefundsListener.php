@@ -57,7 +57,7 @@ class IssueRefundsListener
                 ->with('user.wallet')
                 ->get();
 
-            $entryFee = (float) ($tournament->entry_fee ?? '0.00');
+            $entryFee = (string) ($tournament->entry_fee ?? '0.00');
 
             foreach ($registrations as $registration) {
                 $user = $registration->user;
@@ -65,6 +65,10 @@ class IssueRefundsListener
                     continue;
                 }
 
+                $idempotencyKey = "tournament-registration-refund:{$registration->id}";
+                if (Refund::query()->where('idempotency_key', $idempotencyKey)->exists()) {
+                    continue;
+                }
                 $refundRef = Str::uuid()->toString();
 
                 // Create Refund record
@@ -73,9 +77,11 @@ class IssueRefundsListener
                     'uuid' => Str::uuid()->toString(),
                     'wallet_id' => $user->wallet->getKey(),
                     'tournament_id' => $tournament->getKey(),
+                    'registration_id' => $registration->getKey(),
                     'amount' => $entryFee,
                     'status' => 'completed',
                     'refund_reference_uuid' => $refundRef,
+                    'idempotency_key' => $idempotencyKey,
                     'created_at' => now(),
                 ]);
 
@@ -86,7 +92,8 @@ class IssueRefundsListener
                     LedgerType::REFUND,
                     Refund::class,
                     (string) $refund->getKey(),
-                    "Refund: tournament '{$tournament->name}' was cancelled"
+                    "Refund: tournament '{$tournament->name}' was cancelled",
+                    $idempotencyKey,
                 );
 
                 // Update registration payment status

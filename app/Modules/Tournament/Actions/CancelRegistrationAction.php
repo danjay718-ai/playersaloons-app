@@ -64,7 +64,8 @@ class CancelRegistrationAction
                         LedgerType::REFUND,
                         TournamentRegistration::class,
                         (string) $registration->getKey(),
-                        "Entry fee refund for tournament: {$tournament->name}"
+                        "Entry fee refund for tournament: {$tournament->name}",
+                        "tournament-registration-refund:{$registration->id}",
                     );
                 }
             }

@@ -87,6 +87,10 @@
                             class="bg-slate-950 border border-slate-850 rounded-lg px-4 py-2.5 text-xs font-semibold text-slate-500 w-full cursor-not-allowed"
                             title="Email address cannot be changed."
                         >
+                        <div class="flex items-center justify-between gap-3 pt-1">
+                            <span class="text-[10px] font-bold uppercase {{ $user->hasVerifiedEmail() ? 'text-emerald-400' : 'text-amber-400' }}">{{ $user->hasVerifiedEmail() ? 'Email verified' : 'Email not verified' }}</span>
+                            @unless($user->hasVerifiedEmail())<button type="button" wire:click="resendEmailVerification" class="text-[10px] font-bold text-indigo-400 hover:text-indigo-300">Resend verification</button>@endunless
+                        </div>
                     </div>
                 </div>
 

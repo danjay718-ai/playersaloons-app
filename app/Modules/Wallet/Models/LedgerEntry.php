@@ -25,6 +25,7 @@ class LedgerEntry extends Model
         'wallet_id',
         'reference_type',
         'reference_id',
+        'idempotency_key',
         'type',
         'amount',
         'running_balance',

@@ -302,6 +302,18 @@ class MatchModuleTest extends TestCase
         $dispute->refresh();
         $this->assertEquals(DisputeStatus::UNDER_REVIEW, $dispute->status);
 
+        try {
+            app(SubmitEvidenceAction::class)->execute(
+                $dispute,
+                $this->playerB->id,
+                UploadedFile::fake()->create('second-proof.jpg', 100, 'image/jpeg'),
+            );
+            self::fail('A participant must not be able to submit dispute evidence twice.');
+        } catch (\LogicException $exception) {
+            self::assertSame('You have already submitted evidence for this dispute.', $exception->getMessage());
+        }
+        self::assertSame(1, $dispute->evidence()->count());
+
         // Admin resolves dispute in favor of Player B (dynamically determined to handle shuffle)
         $resolution = ($match->player_a_registration_id === $this->regB->id)
             ? DisputeResolution::PLAYER_A

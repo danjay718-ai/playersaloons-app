@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Url;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
@@ -30,6 +31,24 @@ class CmsAdmin extends AdminComponent
     }
 
     public string $tab = 'games'; // games | pages | platforms | landing | navigation | about
+
+    #[Url(as: 'game_q')]
+    public string $gameSearch = '';
+
+    #[Url(as: 'game_records')]
+    public string $gameRecordTab = 'active';
+
+    #[Url(as: 'game_status')]
+    public string $gameCatalogFilter = '';
+
+    #[Url(as: 'game_platform')]
+    public string $gamePlatformFilter = '';
+
+    #[Url(as: 'game_template')]
+    public string $gameTemplateFilter = '';
+
+    #[Url(as: 'game_artwork')]
+    public string $gameArtworkFilter = '';
 
     public function mount(?string $section = null): void
     {
@@ -192,6 +211,51 @@ class CmsAdmin extends AdminComponent
         if ($tabName === 'about') {
             $this->loadAboutSettings();
         }
+    }
+
+    public function setGameRecordTab(string $tab): void
+    {
+        if (! in_array($tab, ['active', 'archived'], true)) {
+            return;
+        }
+
+        $this->gameRecordTab = $tab;
+        $this->resetPage('games_page');
+    }
+
+    public function clearGameFilters(): void
+    {
+        $this->gameSearch = '';
+        $this->gameCatalogFilter = '';
+        $this->gamePlatformFilter = '';
+        $this->gameTemplateFilter = '';
+        $this->gameArtworkFilter = '';
+        $this->resetPage('games_page');
+    }
+
+    public function updatingGameSearch(): void
+    {
+        $this->resetPage('games_page');
+    }
+
+    public function updatingGameCatalogFilter(): void
+    {
+        $this->resetPage('games_page');
+    }
+
+    public function updatingGamePlatformFilter(): void
+    {
+        $this->resetPage('games_page');
+    }
+
+    public function updatingGameTemplateFilter(): void
+    {
+        $this->resetPage('games_page');
+    }
+
+    public function updatingGameArtworkFilter(): void
+    {
+        $this->resetPage('games_page');
     }
 
     private function loadAboutSettings(): void
@@ -806,11 +870,31 @@ class CmsAdmin extends AdminComponent
             ],
             'about' => [],
             default => [
-                'games' => Game::withTrashed()
+                'games' => Game::query()
+                    ->when($this->gameRecordTab === 'archived', fn ($query) => $query->onlyTrashed(), fn ($query) => $query->withoutTrashed())
                     ->with([
                         'translations:id,game_id,locale,name,description',
                         'platforms:id,name',
+                        'tournamentDefaults:id,game_id,default_platform_id,tournament_banner_path',
                     ])
+                    ->when($this->gameSearch !== '', function ($query): void {
+                        $term = '%'.$this->gameSearch.'%';
+                        $query->where(function ($games) use ($term): void {
+                            $games->where('slug', 'like', $term)
+                                ->orWhereHas('translations', fn ($translations) => $translations
+                                    ->where('name', 'like', $term)
+                                    ->orWhere('description', 'like', $term))
+                                ->orWhereHas('platforms', fn ($platforms) => $platforms->where('name', 'like', $term));
+                        });
+                    })
+                    ->when($this->gameCatalogFilter !== '', fn ($query) => $query->where('is_active', $this->gameCatalogFilter === 'enabled'))
+                    ->when($this->gamePlatformFilter !== '', fn ($query) => $query->whereHas('platforms', fn ($platforms) => $platforms->whereKey($this->gamePlatformFilter)))
+                    ->when($this->gameTemplateFilter === 'configured', fn ($query) => $query->has('tournamentDefaults'))
+                    ->when($this->gameTemplateFilter === 'missing', fn ($query) => $query->doesntHave('tournamentDefaults'))
+                    ->when($this->gameArtworkFilter === 'complete', fn ($query) => $query->whereNotNull('card_image_path')->whereNotNull('banner_path'))
+                    ->when($this->gameArtworkFilter === 'missing_card', fn ($query) => $query->whereNull('card_image_path'))
+                    ->when($this->gameArtworkFilter === 'missing_banner', fn ($query) => $query->whereNull('banner_path'))
+                    ->orderBy('slug')
                     ->paginate(10, ['id', 'uuid', 'slug', 'banner_path', 'card_image_path', 'is_active', 'deleted_at'], 'games_page'),
                 'gamePlatforms' => Platform::query()->orderBy('name')->get(['id', 'name']),
             ],

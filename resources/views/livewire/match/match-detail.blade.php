@@ -197,7 +197,7 @@
 
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-850 pb-3">
                     <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase">SUBMIT RESULTS</h2>
-                    @if($isParticipant && in_array($statusVal, ['in_progress', 'waiting_for_confirmation', 'result_submitted']))
+                    @if((int) $match->tournament->workflow_version !== 2 && $isParticipant && in_array($statusVal, ['in_progress', 'waiting_for_confirmation', 'result_submitted']))
                         <button type="button" wire:click="voteForRematch" wire:loading.attr="disabled" wire:target="voteForRematch" @disabled($hasVotedForRematch)
                             title="Both players must agree before a replacement match is created."
                             class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200 transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60">
@@ -207,11 +207,22 @@
                     @endif
                 </div>
 
-                @if($statusVal === 'in_progress')
+                @if(((int) $match->tournament->workflow_version === 2 && in_array($statusVal, ['in_progress', 'waiting_for_confirmation']) && !$isSubmitter) || ((int) $match->tournament->workflow_version !== 2 && $statusVal === 'in_progress'))
                     <form wire:submit.prevent="submitResult" class="space-y-4">
                         <!-- Select Winner -->
                         <div>
-                            <span class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Declare Winner</span>
+                            <span class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">{{ (int) $match->tournament->workflow_version === 2 ? 'Your Result' : 'Declare Winner' }}</span>
+                            @if((int) $match->tournament->workflow_version === 2)
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                    @foreach(['win' => 'Win', 'loss' => 'Loss', 'draw' => 'Draw'] as $value => $label)
+                                        <label class="flex cursor-pointer items-center gap-3 rounded-xl border {{ $resultOutcome === $value ? 'border-violet-500' : 'border-zinc-800' }} bg-zinc-950 p-3.5 hover:border-zinc-700">
+                                            <input wire:model="resultOutcome" type="radio" value="{{ $value }}" class="h-4 w-4 text-violet-600">
+                                            <span class="text-sm font-semibold text-zinc-200">{{ $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                @error('resultOutcome') <span class="mt-1 block text-xs text-red-500">{{ $message }}</span> @enderror
+                            @else
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <!-- Player A -->
                                 @if($match->player_a_registration_id)
@@ -234,6 +245,7 @@
                                 @endif
                             </div>
                             @error('winnerRegistrationId') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
+                            @endif
                         </div>
 
                         <!-- Notes -->
@@ -262,7 +274,7 @@
 
                         <!-- Submit Button -->
                         <div class="flex flex-col space-y-4 pt-2 border-t border-zinc-800/50" x-data="{
-                            endTime: new Date('{{ ($match->started_at ?? now())->addMinutes($match->tournament->waiting_result_time)->toIso8601String() }}').getTime(),
+                            endTime: new Date('{{ ((int) $match->tournament->workflow_version === 2 ? $activeAttempt?->result_deadline_at : ($match->started_at ?? now())->addMinutes($match->tournament->waiting_result_time))?->toIso8601String() ?? '' }}').getTime(),
                             timeLeft: 0,
                             init() {
                                 this.updateTimer();
@@ -279,9 +291,11 @@
                                 return `${m}m ${s}s`;
                             }
                         }">
-                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center mb-2">
-                                SUBMISSION DEADLINE: <span class="text-amber-400" x-text="formatTime(timeLeft)"></span>
-                            </div>
+                            @if((int) $match->tournament->workflow_version === 2 && !$activeAttempt?->result_deadline_at)
+                                <div class="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-zinc-500">The five-minute response timer starts after the first submission.</div>
+                            @else
+                                <div class="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-zinc-500">SUBMISSION DEADLINE: <span class="text-amber-400" x-text="formatTime(timeLeft)"></span></div>
+                            @endif
 
                             <button type="submit" 
                                 class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 shadow-md shadow-violet-900/20 uppercase tracking-widest font-orbitron">
@@ -310,7 +324,7 @@
                             </div>
                         </div>
                     </form>
-                @elseif($statusVal === 'waiting_for_confirmation' && !$isSubmitter)
+                @elseif((int) $match->tournament->workflow_version !== 2 && $statusVal === 'waiting_for_confirmation' && !$isSubmitter)
                     <div class="space-y-4" x-data="{
                         endTime: new Date('{{ $match->result_submitted_at?->addMinutes($match->tournament->waiting_result_time)->toIso8601String() ?? now()->toIso8601String() }}').getTime(),
                         timeLeft: 0,
@@ -384,11 +398,12 @@
                                 <span>Active Dispute Logged</span>
                             </div>
                             <p class="text-xs text-red-400/80 leading-relaxed">
-                                A dispute has been opened for this match. Please submit screenshot evidence (PNG, JPG, or WEBP, max 2MB) immediately for admins to review and declare the correct bracket winner.
+                                A dispute has been opened for this match. Each participant may submit one screenshot evidence file (PNG, JPG, or WEBP, max 2MB) for admins to review and declare the correct bracket winner.
                             </p>
                         </div>
 
-                        <!-- Evidence Form -->
+                        @if($isParticipant && !$hasSubmittedDisputeEvidence)
+                        <!-- Evidence Form: one immutable submission per participant -->
                         <form wire:submit.prevent="submitEvidence" class="space-y-4">
                             <div>
                                 <label for="evidenceFile" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Upload Evidence File</label>
@@ -412,6 +427,15 @@
                                 Submit Evidence File
                             </button>
                         </form>
+                        @elseif($isParticipant)
+                            <div class="rounded-xl border border-emerald-800/50 bg-emerald-950/20 p-4 text-center text-xs font-semibold text-emerald-300">
+                                Your evidence has been submitted and is now locked for admin review.
+                            </div>
+                        @else
+                            <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 text-center text-xs text-zinc-400">
+                                Evidence submissions are available only to the two match participants.
+                            </div>
+                        @endif
                     </div>
             </div>
             @endif

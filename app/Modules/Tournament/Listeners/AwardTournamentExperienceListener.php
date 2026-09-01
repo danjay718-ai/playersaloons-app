@@ -24,6 +24,10 @@ final class AwardTournamentExperienceListener
             return;
         }
 
+        if ((int) $tournament->workflow_version === 2) {
+            return;
+        }
+
         $playedRegistrationIds = $tournament->brackets
             ->flatMap->rounds
             ->flatMap->matches

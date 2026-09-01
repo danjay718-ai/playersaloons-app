@@ -7,12 +7,11 @@ namespace Tests\Feature\Identity;
 use App\Livewire\Profile\ProfileDashboard;
 use App\Modules\Compliance\Models\BlockedCountry;
 use App\Modules\Compliance\Services\CountryEligibilityService;
-use App\Modules\Identity\Events\EmailVerified;
 use App\Modules\Identity\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -138,16 +137,16 @@ class ProfileDashboardTest extends TestCase
         $this->assertNull($this->user->email_verified_at);
     }
 
-    public function test_player_can_verify_email_from_profile(): void
+    public function test_player_can_request_email_verification_from_profile(): void
     {
-        Event::fake([EmailVerified::class]);
+        Notification::fake();
 
         Livewire::actingAs($this->user)
             ->test(ProfileDashboard::class)
-            ->call('verifyEmail');
+            ->call('resendEmailVerification')
+            ->assertSee('Verification email sent. Check your inbox to complete verification.');
 
-        $this->assertNotNull($this->user->fresh()->email_verified_at);
-        Event::assertDispatched(EmailVerified::class);
+        $this->assertNull($this->user->fresh()->email_verified_at);
     }
 
     public function test_player_can_change_password(): void

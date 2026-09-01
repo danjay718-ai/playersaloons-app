@@ -29,6 +29,7 @@ final class TournamentLifecycleReconciler
         private readonly StartTournamentAction $startTournament,
         private readonly CancelTournamentAction $cancelTournament,
         private readonly AutoPrepareTournamentParticipantsAction $autoPrepareParticipants,
+        private readonly V2TournamentLifecycle $v2Lifecycle,
     ) {}
 
     /**
@@ -43,6 +44,10 @@ final class TournamentLifecycleReconciler
         return DB::transaction(function () use ($tournamentId): Tournament {
             /** @var Tournament $tournament */
             $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournamentId);
+
+            if ((int) $tournament->workflow_version === 2) {
+                return $this->v2Lifecycle->reconcile($tournament);
+            }
 
             for ($transitionCount = 0; $transitionCount < 8; $transitionCount++) {
                 $transitioned = match ($tournament->status) {

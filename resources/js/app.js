@@ -29,6 +29,7 @@ window.ensurePlayerSaloonsEcho = function () {
 window.imageCropUpload = function (config) {
     return {
         ...config,
+        mode: config.mode || 'livewire',
         cropOpen: false,
         processing: false,
         uploading: false,
@@ -43,6 +44,8 @@ window.imageCropUpload = function (config) {
         image: null,
         originalFile: null,
         objectUrl: null,
+        previewUrl: config.previewUrl || '',
+        previewObjectUrl: null,
         pendingFileName: '',
 
         async selectFile(event) {
@@ -139,6 +142,27 @@ window.imageCropUpload = function (config) {
             this.clientError = '';
             this.pendingFileName = file.name;
 
+            if (this.mode === 'form') {
+                const input = this.$refs.formInput;
+                if (!input) {
+                    this.clientError = 'The cropped image could not be attached to this form.';
+                    return;
+                }
+
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                input.files = transfer.files;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                this.setPreview(file);
+                this.fileName = file.name;
+                if (this.$refs.input) this.$refs.input.value = '';
+                this.image = null;
+                this.originalFile = null;
+                this.releaseObjectUrl();
+
+                return;
+            }
+
             const transfer = new DataTransfer();
             transfer.items.add(file);
             this.$refs.uploadInput.files = transfer.files;
@@ -183,8 +207,54 @@ window.imageCropUpload = function (config) {
             this.objectUrl = null;
         },
 
+        setPreview(file) {
+            if (this.previewObjectUrl) URL.revokeObjectURL(this.previewObjectUrl);
+            this.previewObjectUrl = URL.createObjectURL(file);
+            this.previewUrl = this.previewObjectUrl;
+        },
+
+        releasePreviewUrl() {
+            if (!this.previewObjectUrl) return;
+            URL.revokeObjectURL(this.previewObjectUrl);
+            this.previewObjectUrl = null;
+        },
+
         destroy() {
             this.releaseObjectUrl();
+            this.releasePreviewUrl();
+        },
+    };
+};
+
+window.systemClock = function (config) {
+    const serverEpoch = Date.parse(config.now);
+    const browserEpoch = Date.now();
+
+    return {
+        timezone: config.timezone,
+        currentEpoch: Number.isNaN(serverEpoch) ? browserEpoch : serverEpoch,
+        timer: null,
+        init() {
+            this.tick();
+            this.timer = window.setInterval(() => this.tick(), 1000);
+        },
+        tick() {
+            this.currentEpoch = (Number.isNaN(serverEpoch) ? browserEpoch : serverEpoch) + (Date.now() - browserEpoch);
+        },
+        get time() {
+            return new Intl.DateTimeFormat(undefined, {
+                timeZone: this.timezone,
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+            }).format(new Date(this.currentEpoch));
+        },
+        get date() {
+            return new Intl.DateTimeFormat(undefined, {
+                timeZone: this.timezone,
+                month: 'short', day: '2-digit', year: 'numeric',
+            }).format(new Date(this.currentEpoch));
+        },
+        destroy() {
+            if (this.timer) window.clearInterval(this.timer);
         },
     };
 };

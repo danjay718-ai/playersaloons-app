@@ -9,9 +9,12 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTemplatePrize;
 use App\Shared\Enums\PaymentStatus;
 use App\Shared\Enums\RegistrationStatus;
+use App\Shared\Support\DecimalMoney;
 
 class PrizeCalculationService
 {
+    public function __construct(private readonly V2PrizePolicy $v2Policy) {}
+
     /**
      * Calculate prize distributions and platform rake.
      *
@@ -34,6 +37,27 @@ class PrizeCalculationService
             ->where('status', RegistrationStatus::CONFIRMED)
             ->where('payment_status', PaymentStatus::PAID)
             ->count();
+
+        if ((int) $tournament->workflow_version === 2) {
+            $calculation = $this->v2Policy->calculate($tournament, $confirmedCount);
+            $finalized = $tournament->financial_finalized_at !== null;
+            $first = $finalized ? (string) $tournament->finalized_first_prize : (string) $calculation['first'];
+            $second = $finalized ? (string) $tournament->finalized_second_prize : (string) $calculation['second'];
+            $gross = $finalized ? (string) $tournament->finalized_gross_pool : (string) $calculation['gross'];
+            $commission = $finalized ? (string) $tournament->finalized_commission_amount : (string) $calculation['commission'];
+
+            return [
+                'total_entry_fees' => $gross,
+                'confirmed_count' => $confirmedCount,
+                'rake_amount' => $commission,
+                'prize_pool' => DecimalMoney::format(
+                    DecimalMoney::toMinor($first) + DecimalMoney::toMinor($second),
+                ),
+                'attendance_multiplier' => 1,
+                'distributions' => array_filter([1 => $first, 2 => $second], fn ($amount) => DecimalMoney::toMinor($amount) > 0),
+                'rounding_remainder' => '0.00',
+            ];
+        }
 
         $entryFee = (float) ($tournament->entry_fee ?? '0.00');
         $totalEntryFees = $paidCount * $entryFee;

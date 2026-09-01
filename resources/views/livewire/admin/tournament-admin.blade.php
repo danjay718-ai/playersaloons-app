@@ -10,11 +10,19 @@
                    class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full">
         </div>
 
-        <a href="{{ route('admin.tournaments.create') }}" wire:navigate
-                class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 py-2.5 rounded-lg flex items-center shadow-[0_4px_12px_rgba(79,70,229,0.2)] transition-colors w-full sm:w-auto justify-center">
-            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-            <span>Create Tournament</span>
-        </a>
+        <div class="flex w-full flex-wrap gap-2 sm:w-auto">
+        @if(config('features.tournament_v2.enabled'))
+            <a href="{{ route('admin.tournaments.v2.create') }}" class="flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500"><i data-lucide="calendar-plus" class="mr-2 h-4 w-4"></i>Create Tournament Schedule</a>
+            <span class="flex items-center rounded-lg border border-amber-800/60 bg-amber-950/30 px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">V1 retained for existing records</span>
+        @else
+            <a href="{{ route('admin.tournaments.create') }}" wire:navigate
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 py-2.5 rounded-lg flex items-center shadow-[0_4px_12px_rgba(79,70,229,0.2)] transition-colors w-full sm:w-auto justify-center">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                <span>Create Tournament (V1)</span>
+            </a>
+            <span class="flex items-center rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">V2 schedule UI is disabled by feature flag</span>
+        @endif
+        </div>
     </div>
 
     <!-- Status Tab Cards -->
@@ -154,7 +162,16 @@
         </div>
     @endif
 
-    <!-- Tournaments Table -->
+    @if($v2Templates)
+        <div class="mb-6 overflow-hidden rounded-xl border border-indigo-900/50 bg-[#0f172a] shadow-sm">
+            <div class="flex flex-col gap-2 border-b border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 class="text-sm font-bold text-white">Tournament List</h2><p class="mt-1 text-xs text-slate-500">One row per tournament schedule. Open slots to manage individual occurrences.</p></div><span class="rounded border border-indigo-800/60 bg-indigo-950/50 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-indigo-300">Grouped view</span></div>
+            <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="border-b border-slate-800 text-[10px] font-bold uppercase text-slate-400"><th class="p-4">Schedule</th><th class="p-4">Game</th><th class="p-4">Frequency</th><th class="p-4">Slots</th><th class="p-4">Timezone</th><th class="p-4 text-right">Actions</th></tr></thead><tbody class="divide-y divide-slate-800/50">@forelse($v2Templates as $template)<tr class="hover:bg-slate-900/40" wire:key="v2-template-{{ $template->id }}"><td class="p-4"><span class="font-semibold text-slate-200">{{ $template->name }}</span><span class="mt-1 block text-[10px] text-slate-500">{{ $template->uuid }}</span></td><td class="p-4 text-slate-300">{{ $template->game?->translations->first()?->name ?? $template->game?->slug }}</td><td class="p-4 text-slate-300">{{ $template->recurrence_frequency?->value ?? 'one-time' }}</td><td class="p-4 text-slate-300">{{ $template->slots_count }}</td><td class="p-4 text-slate-400">{{ $template->timezone }}</td><td class="p-4 text-right"><a href="{{ route('admin.tournaments.v2.templates.slots', $template) }}" class="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white hover:bg-indigo-500"><i data-lucide="list-tree" class="mr-1.5 h-3.5 w-3.5"></i>View slots</a></td></tr>@empty<tr><td colspan="6" class="p-8 text-center text-slate-500">No V2 tournament schedules match the filters.</td></tr>@endforelse</tbody></table></div>
+            @if($v2Templates->hasPages())<div class="border-t border-slate-800 px-4 py-3">{{ $v2Templates->links('vendor.livewire.custom-pagination') }}</div>@endif
+        </div>
+    @endif
+
+    @if(!config('features.tournament_v2.enabled'))
+    <!-- Legacy V1 tournaments remain available only while the V2 feature is disabled. -->
     <div class="bg-[#0f172a] border border-slate-800 rounded-xl shadow-sm mb-6">
         <div class="overflow-x-auto min-h-[350px]">
             <table class="w-full text-left border-collapse text-xs">
@@ -242,6 +259,7 @@
                                         </a>
                                         
                                         <!-- State Transition Quick Actions -->
+                                        @if((int) $tournament->workflow_version !== 2)
                                         @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT)
                                             <button @click="open = false" wire:click="applyTransitionById({{ $tournament->id }}, 'publish')" class="w-full flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group text-left">
                                                 <i data-lucide="send" class="w-3.5 h-3.5 mr-2 text-indigo-500"></i>
@@ -296,6 +314,7 @@
                                                 Process Refunds
                                             </button>
                                         @endif
+                                        @endif
                                     </div>
                                     
                                     <div class="py-1">
@@ -312,10 +331,10 @@
                                                 \App\Shared\Enums\TournamentStatus::CANCELLED,
                                                 \App\Shared\Enums\TournamentStatus::REFUNDED,
                                                 \App\Shared\Enums\TournamentStatus::COMPLETED,
-                                            ]);
+                                            ]) && !((int) $tournament->workflow_version === 2 && $tournament->start_at?->lessThanOrEqualTo(now()));
                                         @endphp
                                         @if($canEdit)
-                                            <a href="{{ route('admin.tournaments.edit', $tournament->id) }}" wire:navigate class="flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group">
+                                            <a href="{{ (int) $tournament->workflow_version === 2 ? route('admin.tournaments.v2.occurrences.edit', $tournament) : route('admin.tournaments.edit', $tournament->id) }}" @if((int) $tournament->workflow_version !== 2) wire:navigate @endif class="flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white group">
                                                 <i data-lucide="edit" class="w-3.5 h-3.5 mr-2 text-slate-500 group-hover:text-indigo-400"></i>
                                                 {{ $tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT ? 'Edit Configuration' : 'Update Details' }}
                                             </a>
@@ -367,6 +386,7 @@
             {{ $tournaments->links('vendor.livewire.custom-pagination') }}
         </div>
     </div>
+    @endif
 
     <!-- Detail Modal -->
     <div x-show="showDetail" 

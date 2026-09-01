@@ -7,6 +7,7 @@ namespace App\Livewire\Admin;
 use App\Modules\Identity\Actions\UpdateProfileAction;
 use App\Modules\Identity\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class AdminProfile extends AdminComponent
 {
@@ -64,6 +65,23 @@ class AdminProfile extends AdminComponent
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to update the admin profile.'));
         }
+    }
+
+    public function resendEmailVerification(): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if ($user === null || $user->hasVerifiedEmail()) {
+            return;
+        }
+        if (! Cache::add("admin-email-verification:{$user->id}", true, now()->addMinute())) {
+            session()->flash('error', 'Please wait before requesting another verification email.');
+
+            return;
+        }
+
+        $user->sendEmailVerificationNotification();
+        session()->flash('message', 'A new email verification link has been sent.');
     }
 
     public function render()

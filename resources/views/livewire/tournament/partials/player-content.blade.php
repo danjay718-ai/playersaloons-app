@@ -22,6 +22,7 @@
          acknowledgedElimination: false,
          showEliminationModal: false,
          showCancelModal: false,
+         showUnderfilledNotice: false,
          bracketView: 'bracket',
          loadedSections: @js(array_keys($loadedSections ?? [])),
          loadingSection: null,
@@ -47,6 +48,11 @@
              activeTab = 'overview';
          }
          if (canViewRestricted) selectTab(activeTab);
+         const underfilledNoticeKey = 'v2_underfilled_notice_{{ $tournament->uuid }}_{{ optional($tournament->start_at)->timestamp }}';
+         if (@js($shouldShowUnderfilledNotice) && !localStorage.getItem(underfilledNoticeKey)) {
+             showUnderfilledNotice = true;
+             localStorage.setItem(underfilledNoticeKey, 'shown');
+         }
          $watch('activeTab', value => { 
              localStorage.setItem('tournament_tab_{{ $tournament->id }}', value);
              if (value === 'bracket' && hasLost && !acknowledgedElimination) {
@@ -71,7 +77,11 @@
             <div>
                 <h3 class="text-xs font-black text-amber-400 uppercase tracking-widest">Auto-Cancel Active</h3>
                 <p class="text-[11px] font-medium text-amber-200/70 mt-0.5 leading-relaxed">
-                    If this tournament does not reach the minimum required participants ({{ $tournament->min_participants }}) by the start time, it will be automatically cancelled and all entry fees will be refunded.
+                    @if((int) $tournament->workflow_version === 2)
+                        The first round starts at the scheduled time once at least two teams have joined. With fewer than two, registration remains open until this occurrence ends; it is then cancelled and refunded.
+                    @else
+                        If this tournament does not reach the minimum required participants ({{ $tournament->min_participants }}) by the start time, it will be automatically cancelled and all entry fees will be refunded.
+                    @endif
                 </p>
             </div>
         </div>
@@ -131,7 +141,11 @@
                         </div>
                     </div>
                 </div>
-                <p class="-mt-3 text-xs text-zinc-500">Based on {{ $prizeCalculation['confirmed_count'] }} confirmed of {{ $tournament->max_participants }} players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.</p>
+                @if((int) $tournament->workflow_version === 2)
+                    <p class="-mt-3 text-xs text-zinc-500">Estimated only until entries lock. Full tournaments use a 10% platform commission; underfilled tournaments use 15%. The actual pool is paid entries × entry fee.</p>
+                @else
+                    <p class="-mt-3 text-xs text-zinc-500">Based on {{ $prizeCalculation['confirmed_count'] }} confirmed of {{ $tournament->max_participants }} players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.</p>
+                @endif
             </div>
 
             <!-- Main Action Area -->
@@ -158,6 +172,12 @@
                             <span>{{ $currentMatchLabel }}</span>
                         </a>
                         <p class="text-center text-[10px] font-bold uppercase tracking-wider text-cyan-400">Round {{ $currentMatch->round?->round_number ?? '—' }} · {{ str_replace('_', ' ', $currentMatchStatus) }}</p>
+                    @elseif((int) $tournament->workflow_version === 2 && $isRegistered)
+                        <div class="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-8 py-5 text-center text-xs font-black uppercase tracking-[0.2em] text-emerald-400"><span>Reservation Confirmed</span></div>
+                        <button type="button" @click="showCancelModal = true" class="w-full rounded-xl border border-red-800/50 bg-red-950/30 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-red-400">{{ $canCancelRegistration ? 'Request Cancellation' : 'Cancellation Details' }}</button>
+                        @if($pendingCancellationRequest && in_array((int) Auth::id(), array_map('intval', $pendingCancellationRequest->eligible_voter_ids ?? []), true) && !$pendingCancellationRequest->votes->contains('voter_id', Auth::id()))
+                            <div class="rounded-xl border border-amber-700/40 bg-amber-950/20 p-4 text-left"><p class="text-xs font-bold text-amber-200">{{ $pendingCancellationRequest->requester?->username }} requested to cancel.</p><div class="mt-3 grid grid-cols-2 gap-2"><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, true)" class="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase text-white">Approve</button><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, false)" class="rounded-lg border border-zinc-700 px-3 py-2 text-[10px] font-black uppercase text-zinc-300">Reject</button></div></div>
+                        @endif
                     @elseif($tournament->status->value === 'REGISTRATION_OPEN')
                         @if($isRegistered)
                             <div class="w-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl py-5 px-8 text-center text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center space-x-3 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
@@ -169,6 +189,16 @@
                                     <i data-lucide="x-circle" class="w-4 h-4"></i>
                                     <span>Cancel Registration</span>
                                 </button>
+                            @endif
+                            @if($pendingCancellationRequest && in_array((int) Auth::id(), array_map('intval', $pendingCancellationRequest->eligible_voter_ids ?? []), true) && !$pendingCancellationRequest->votes->contains('voter_id', Auth::id()))
+                                <div class="rounded-xl border border-amber-700/40 bg-amber-950/20 p-4 text-left">
+                                    <p class="text-xs font-bold text-amber-200">{{ $pendingCancellationRequest->requester?->username }} requested to cancel their entry.</p>
+                                    <p class="mt-1 text-[10px] text-zinc-400">{{ $pendingCancellationRequest->required_approvals }} approval(s) are required. Votes are final.</p>
+                                    <div class="mt-3 grid grid-cols-2 gap-2">
+                                        <button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, true)" class="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase text-white">Approve</button>
+                                        <button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, false)" class="rounded-lg border border-zinc-700 px-3 py-2 text-[10px] font-black uppercase text-zinc-300">Reject</button>
+                                    </div>
+                                </div>
                             @endif
                         @else
                             @if(Auth::user()->hasRole('PLAYER'))
@@ -241,7 +271,11 @@
         $timerColor = 'cyan';
 
         $statusVal = $tournament->status->value ?? $tournament->status;
-        if ($statusVal === 'REGISTRATION_OPEN' && $tournament->registration_close_at) {
+        if ((int) $tournament->workflow_version === 2 && $statusVal === 'REGISTRATION_OPEN' && $tournament->start_at) {
+            $timerLabel = 'First matches begin in';
+            $timerTarget = $tournament->start_at;
+            $timerColor = 'violet';
+        } elseif ($statusVal === 'REGISTRATION_OPEN' && $tournament->registration_close_at) {
             $timerLabel = $tournament->extra_registration_started_at ? 'Extra Registration closes in' : 'Registration closes in';
             $timerTarget = $tournament->registration_close_at;
             $timerColor = 'emerald';
@@ -385,22 +419,26 @@
                                     <span class="text-[10px] font-black uppercase tracking-widest">1st Prize</span>
                                 </div>
                                 <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">
-                                    @if(isset($prizeCalculation['distributions'][1]))
-                                        ${{ number_format((float)$prizeCalculation['distributions'][1], 2) }}
-                                        <span class="text-[9px] text-zinc-600 tracking-normal font-sans">(est.)</span>
-                                    @else
-                                        TBD
+                                    @php
+                                        $firstPrize = $displayPrizeCalculation['first'] ?? $prizeCalculation['distributions'][1] ?? '0.00';
+                                    @endphp
+                                    ${{ number_format((float) $firstPrize, 2) }}
+                                    @if($isV2Registration)
+                                        <span class="text-[9px] text-zinc-600 tracking-normal font-sans">(full est.)</span>
                                     @endif
                                 </span>
                             </div>
 
-                            @if(isset($prizeCalculation['distributions'][2]))
+                            @php
+                                $secondPrize = $displayPrizeCalculation['second'] ?? $prizeCalculation['distributions'][2] ?? '0.00';
+                            @endphp
+                            @if((float) $secondPrize > 0)
                                 <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                     <div class="flex items-center space-x-2 text-zinc-400">
                                         <i data-lucide="medal" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">2nd Prize</span>
                                     </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float)$prizeCalculation['distributions'][2], 2) }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float) $secondPrize, 2) }}</span>
                                 </div>
                             @endif
 
@@ -464,6 +502,15 @@
                                 </div>
                             @endif
                         </div>
+
+                        @if($isV2Registration)
+                            <div class="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-800/50 bg-cyan-950/20 p-4 text-xs leading-relaxed text-cyan-100/75">
+                                <i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0 text-cyan-400"></i>
+                                <p>
+                                    This is the estimated payout if all {{ $tournament->max_participants }} teams join. Final prizes use the actual entry pool when the tournament starts. If it starts under capacity with at least two teams, the bracket uses automatic BYEs, the platform commission is 15%, and 85% of the pool is awarded to First Place.
+                                </p>
+                            </div>
+                        @endif
                     </div>
                 </section>
 
@@ -510,8 +557,8 @@
                         
                         @foreach([
                             ['icon' => 'calendar', 'color' => 'text-cyan-400 border-cyan-800/50', 'label' => 'Registration Opens', 'time' => $tournament->registration_open_at],
-                            ['icon' => 'calendar-x', 'color' => 'text-rose-400 border-rose-800/50', 'label' => 'Registration Ends', 'time' => $tournament->registration_close_at],
-                            ['icon' => 'shield-check', 'color' => 'text-fuchsia-400 border-fuchsia-800/50', 'label' => 'Entries Lock', 'time' => $tournament->registration_close_at],
+                            ['icon' => 'calendar-x', 'color' => 'text-rose-400 border-rose-800/50', 'label' => 'Registration Ends', 'time' => (int) $tournament->workflow_version === 2 ? $tournament->start_at : $tournament->registration_close_at],
+                            ['icon' => 'shield-check', 'color' => 'text-fuchsia-400 border-fuchsia-800/50', 'label' => 'Entries Lock', 'time' => (int) $tournament->workflow_version === 2 ? $tournament->start_at : $tournament->registration_close_at],
                             ['icon' => 'zap', 'color' => 'text-emerald-400 border-emerald-800/50', 'label' => 'First Matches', 'time' => $tournament->start_at],
                             ['icon' => 'flag', 'color' => 'text-amber-400 border-amber-800/50', 'label' => 'Estimated End', 'time' => $tournament->end_at],
                         ] as $item)
@@ -542,12 +589,12 @@
                     <h2 class="text-xl font-black font-orbitron tracking-widest text-white">QUICK INFO</h2>
                     <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 space-y-4">
                         <div class="flex items-center justify-between text-sm">
-                            <span class="text-zinc-600 font-medium">Min Players</span>
+                            <span class="text-zinc-600 font-medium">Minimum Participants</span>
                             <span class="text-zinc-300 font-bold">{{ $tournament->min_participants }}</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
-                            <span class="text-zinc-600 font-medium">Max Players</span>
-                            <span class="text-zinc-300 font-bold">{{ $tournament->max_participants }}</span>
+                            <span class="text-zinc-600 font-medium">{{ (int) $tournament->workflow_version === 2 ? 'Maximum Teams' : 'Max Players' }}</span>
+                                <span class="text-zinc-300 font-bold">{{ $tournament->max_participants }} {{ (int) $tournament->workflow_version === 2 ? 'teams' : 'players' }}</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
                             <span class="text-zinc-600 font-medium">Registered</span>
@@ -564,6 +611,10 @@
                                 <span class="text-zinc-600 font-medium">Result Timeout</span>
                                 <span class="text-zinc-300 font-bold">{{ $tournament->waiting_result_time }} min</span>
                             </div>
+                        @endif
+                        @if((int) $tournament->workflow_version === 2)
+                            <div class="flex items-center justify-between text-sm"><span class="text-zinc-600 font-medium">Round Duration</span><span class="text-zinc-300 font-bold">{{ $tournament->round_duration_seconds ? \Carbon\CarbonInterval::seconds($tournament->round_duration_seconds)->cascade()->forHumans(['short' => true]) : 'No timer' }}</span></div>
+                            <div class="flex items-center justify-between text-sm"><span class="text-zinc-600 font-medium">Participation XP</span><span class="text-zinc-300 font-bold">10 XP after elimination</span></div>
                         @endif
                     </div>
                 </section>
@@ -1020,6 +1071,27 @@
 
     </div><!-- end tabs content -->
 
+    <!-- V2 Underfilled Tournament Notice -->
+    <div x-show="showUnderfilledNotice"
+         x-cloak
+         class="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/85 p-4 backdrop-blur-md"
+         @keydown.escape.window="showUnderfilledNotice = false">
+        <div class="w-full max-w-md space-y-6 rounded-3xl border border-amber-500/30 bg-zinc-900 p-8 shadow-[0_0_50px_rgba(245,158,11,0.16)]">
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400">
+                <i data-lucide="git-branch" class="h-8 w-8"></i>
+            </div>
+            <div class="space-y-2 text-center">
+                <h3 class="text-xl font-black uppercase tracking-widest text-white font-orbitron">Tournament Started Under Capacity</h3>
+                <p class="text-sm leading-relaxed text-zinc-400">
+                    {{ $prizeCalculation['confirmed_count'] }} of {{ $tournament->max_participants }} teams joined. Automatic BYEs have been applied where needed. The final payout uses a 15% platform commission; First Place receives the remaining 85% of the collected entry pool.
+                </p>
+            </div>
+            <button type="button" @click="showUnderfilledNotice = false" class="w-full rounded-xl bg-amber-500 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-950 transition hover:bg-amber-400">
+                Understood
+            </button>
+        </div>
+    </div>
+
     <!-- Cancel Registration Modal -->
     <div x-show="showCancelModal"
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md"
@@ -1043,7 +1115,11 @@
                 <h3 class="text-2xl font-black font-orbitron tracking-widest text-white uppercase">Cancel Registration?</h3>
                 <p class="text-zinc-400 text-sm font-medium leading-relaxed">
                     Are you sure you want to cancel your registration for <strong class="text-white">{{ $tournament->name }}</strong>?
-                    @if($tournament->entry_fee > 0)
+                    @if((int) $tournament->workflow_version === 2 && $canCancelRegistration)
+                        Other eligible joined players must approve this request. If approved before the tournament starts, your entry fee will be refunded.
+                    @elseif((int) $tournament->workflow_version === 2)
+                        Cancellation requests close 30 minutes before the tournament starts. Your registration can no longer be cancelled for this occurrence.
+                    @elseif($tournament->entry_fee > 0)
                         Your entry fee of <strong class="text-cyan-400">${{ number_format((float)$tournament->entry_fee, 2) }}</strong> will be refunded to your wallet.
                     @endif
                 </p>
@@ -1054,10 +1130,12 @@
                         class="flex-1 py-3 rounded-xl border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-widest transition-all duration-300">
                     Keep Registration
                 </button>
-                <button type="button" wire:click="cancelRegistration" wire:loading.attr="disabled" wire:target="cancelRegistration" @click="showCancelModal = false"
-                        class="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-[10px] font-black text-white uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(239,68,68,0.3)] transition-all duration-300">
-                    Yes, Cancel & Refund
-                </button>
+                @if((int) $tournament->workflow_version !== 2 || $canCancelRegistration)
+                    <button type="button" wire:click="cancelRegistration" wire:loading.attr="disabled" wire:target="cancelRegistration" @click="showCancelModal = false"
+                            class="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-[10px] font-black text-white uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(239,68,68,0.3)] transition-all duration-300">
+                        {{ (int) $tournament->workflow_version === 2 ? 'Request Cancellation' : 'Yes, Cancel & Refund' }}
+                    </button>
+                @endif
             </div>
         </div>
     </div>

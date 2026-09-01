@@ -47,6 +47,10 @@ class AwardPrizesListener
             return;
         }
 
+        if ((int) $tournament->workflow_version === 2) {
+            return;
+        }
+
         DB::transaction(function () use ($tournament): void {
             $calculations = $this->prizeCalculationService->calculate($tournament);
             $commissionPercentage = (float) (

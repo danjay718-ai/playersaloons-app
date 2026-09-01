@@ -147,11 +147,16 @@
             </nav>
 
             <!-- Sidebar Footer -->
+            @php
+                $adminClockTimezone = app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value();
+                $adminClockNow = now($adminClockTimezone)->toIso8601String();
+            @endphp
             <div class="p-4 border-t border-slate-800 bg-[#0b0f19]/50 space-y-2">
-                <a href="/dashboard" wire:navigate class="flex items-center px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">
-                    <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-2"></i>
-                    <span>{{ __('Player Terminal') }}</span>
-                </a>
+                <div x-data="systemClock(@js(['now' => $adminClockNow, 'timezone' => $adminClockTimezone]))" x-init="init()" class="rounded-lg border border-slate-800/70 bg-slate-900/40 px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-indigo-300"><i data-lucide="clock-3" class="h-3.5 w-3.5"></i>Tournament System Time</div>
+                    <p class="mt-1 font-mono text-sm font-bold text-slate-100" x-text="time"></p>
+                    <p class="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500"><span x-text="date"></span> · {{ $adminClockTimezone }}</p>
+                </div>
                 <div class="flex items-center justify-between px-4 py-2 bg-slate-900/40 rounded-lg border border-slate-800/50">
                     <div class="truncate">
                         <p class="text-[11px] font-bold text-slate-350 truncate">{{ auth()->user()->username }}</p>
@@ -302,10 +307,11 @@
             </nav>
 
             <div class="p-4 border-t border-slate-800 bg-[#0b0f19]/50 space-y-2">
-                <a href="/dashboard" wire:navigate class="flex items-center px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors">
-                    <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-2"></i>
-                    <span>{{ __('Player Terminal') }}</span>
-                </a>
+                <div x-data="systemClock(@js(['now' => $adminClockNow, 'timezone' => $adminClockTimezone]))" x-init="init()" class="rounded-lg border border-slate-800/70 bg-slate-900/40 px-4 py-2.5">
+                    <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-indigo-300"><i data-lucide="clock-3" class="h-3.5 w-3.5"></i>Tournament System Time</div>
+                    <p class="mt-1 font-mono text-sm font-bold text-slate-100" x-text="time"></p>
+                    <p class="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500"><span x-text="date"></span> · {{ $adminClockTimezone }}</p>
+                </div>
                 <div class="flex items-center justify-between px-4 py-2 bg-slate-900/40 rounded-lg border border-slate-800/50 text-xs">
                     <div class="truncate">
                         <p class="font-bold text-slate-350 truncate">{{ auth()->user()->username }}</p>

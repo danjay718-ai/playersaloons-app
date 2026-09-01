@@ -32,13 +32,19 @@ class GenerateBracketAction
      */
     public function execute(Tournament $tournament): Bracket
     {
-        return DB::transaction(function () use ($tournament): Bracket {
+        $bracket = DB::transaction(function () use ($tournament): Bracket {
+            $locked = Tournament::query()->lockForUpdate()->findOrFail($tournament->id);
+            $existing = $locked->brackets()->first();
+            if ($existing !== null) {
+                return $existing;
+            }
+
             // State machine validates min participants via guard
-            $this->stateMachine->transition($tournament, TournamentStatus::BRACKET_GENERATED);
+            $this->stateMachine->transition($locked, TournamentStatus::BRACKET_GENERATED);
 
             /** @var Collection<int, TournamentParticipant> $participants */
             $participants = TournamentParticipant::query()
-                ->where('tournament_id', $tournament->getKey())
+                ->where('tournament_id', $locked->getKey())
                 ->inRandomOrder()
                 ->get();
 
@@ -49,15 +55,19 @@ class GenerateBracketAction
             });
 
             // Delegate core bracket structure and matches creation to the service
-            $bracket = $this->bracketGenerationService->generate($tournament);
+            $bracket = $this->bracketGenerationService->generate($locked);
 
             TournamentBracketGenerated::dispatch(
-                (int) $tournament->getKey(),
+                (int) $locked->getKey(),
                 (int) $bracket->getKey(),
                 $participants->count()
             );
 
             return $bracket;
         });
+
+        $tournament->refresh();
+
+        return $bracket;
     }
 }

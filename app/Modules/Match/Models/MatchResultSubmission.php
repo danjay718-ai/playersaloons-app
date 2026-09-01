@@ -35,8 +35,11 @@ class MatchResultSubmission extends Model
      */
     protected $fillable = [
         'match_id',
+        'match_attempt_id',
         'submitted_by',
+        'registration_id',
         'winner_registration_id',
+        'outcome',
         'notes',
         'submitted_at',
         'proof_path',
@@ -76,6 +79,16 @@ class MatchResultSubmission extends Model
     public function match(): BelongsTo
     {
         return $this->belongsTo(GameMatch::class);
+    }
+
+    public function attempt(): BelongsTo
+    {
+        return $this->belongsTo(MatchAttempt::class, 'match_attempt_id');
+    }
+
+    public function registration(): BelongsTo
+    {
+        return $this->belongsTo(TournamentRegistration::class, 'registration_id');
     }
 
     /**

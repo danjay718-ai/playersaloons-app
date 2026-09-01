@@ -158,6 +158,10 @@ class TournamentAdmin extends AdminComponent
     public function setRecurringScheduleState(int $templateId, bool $active): void
     {
         $template = TournamentTemplate::query()->findOrFail($templateId);
+        $actor = Auth::user();
+        if ($actor === null || (! $actor->hasPermissionTo('tournaments.manage') && (int) $template->created_by !== (int) $actor->id)) {
+            abort(403);
+        }
         $template->update(['is_recurring' => $active]);
 
         activity()
@@ -211,6 +215,12 @@ class TournamentAdmin extends AdminComponent
         }
 
         $stateMachine = app(TournamentStateMachine::class);
+
+        if ((int) $tournament->workflow_version === 2) {
+            session()->flash('error', 'Tournament V2 lifecycle transitions are automatic. Use match/dispute operations for active play.');
+
+            return;
+        }
 
         try {
             match ($transitionName) {
@@ -337,8 +347,36 @@ class TournamentAdmin extends AdminComponent
 
         $this->applyFilters($query, includeStatus: true);
 
+        $v2Templates = null;
+        if (config('features.tournament_v2.enabled')) {
+            $v2Occurrences = Tournament::query()->where('workflow_version', 2);
+            match ($this->statusTab) {
+                'active' => $v2Occurrences->whereIn('status', $activeStatuses),
+                'completed' => $v2Occurrences->where('status', TournamentStatus::COMPLETED->value),
+                'cancelled' => $v2Occurrences->whereIn('status', [TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value]),
+                default => null,
+            };
+            $this->applyFilters($v2Occurrences, includeStatus: true);
+
+            // V2 occurrences are immutable operational records. Grouping is
+            // presentation-only so the admin index is not one row per slot.
+            $v2Templates = TournamentTemplate::query()
+                ->with('game.translations')
+                ->withCount(['scheduleSlots as slots_count'])
+                ->where('workflow_version', 2)
+                ->whereHas('scheduleSlots.occurrences', fn ($occurrences) => $this->applyV2OccurrenceSubquery($occurrences, $v2Occurrences))
+                ->orderByDesc('updated_at')
+                ->paginate($this->perPage, ['*'], 'v2Page');
+
+            // Retain historical V1 records in their original row-based UI.
+            $query->where('workflow_version', 1);
+        }
+
         // Counts per status group for tab badges
         $baseCount = Tournament::query();
+        if (config('features.tournament_v2.enabled')) {
+            $baseCount->where('workflow_version', 2);
+        }
         $this->applyFilters($baseCount, includeStatus: true);
         $countActive = (clone $baseCount)->whereIn('status', $activeStatuses)->count();
         $countCompleted = (clone $baseCount)->where('status', TournamentStatus::COMPLETED->value)->count();
@@ -355,6 +393,7 @@ class TournamentAdmin extends AdminComponent
 
         return view('livewire.admin.tournament-admin', [
             'tournaments' => $tournaments,
+            'v2Templates' => $v2Templates,
             'games' => $games,
             'platforms' => $platforms,
             'selectedTournament' => $selectedTournament,
@@ -365,6 +404,11 @@ class TournamentAdmin extends AdminComponent
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Tournament Management',
         ]);
+    }
+
+    private function applyV2OccurrenceSubquery($occurrences, $source): void
+    {
+        $occurrences->whereIn('id', (clone $source)->select('id'));
     }
 
     private function applyFilters($query, bool $includeStatus): void

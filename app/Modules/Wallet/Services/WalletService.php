@@ -11,6 +11,7 @@ use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\WalletStatus;
+use App\Shared\Support\DecimalMoney;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -30,9 +31,10 @@ class WalletService
         LedgerType $type,
         string $referenceType,
         string $referenceId,
-        ?string $description = null
+        ?string $description = null,
+        ?string $idempotencyKey = null,
     ): LedgerEntry {
-        return DB::transaction(function () use ($wallet, $amount, $type, $referenceType, $referenceId, $description): LedgerEntry {
+        return DB::transaction(function () use ($wallet, $amount, $type, $referenceType, $referenceId, $description, $idempotencyKey): LedgerEntry {
             /** @var Wallet|null $lockedWallet */
             $lockedWallet = Wallet::query()->where('id', $wallet->getKey())->lockForUpdate()->first();
             if ($lockedWallet === null) {
@@ -40,19 +42,28 @@ class WalletService
             }
             $wallet = $lockedWallet;
 
+            if ($idempotencyKey !== null) {
+                $existing = LedgerEntry::query()->where('idempotency_key', $idempotencyKey)->first();
+                if ($existing !== null) {
+                    return $existing;
+                }
+            }
+
             if ($wallet->status === WalletStatus::FROZEN) {
                 throw new WalletFrozenException($wallet->getAttribute('uuid'));
             }
 
-            $amountDecimal = number_format(abs((float) $amount), 2, '.', '');
-            $currentBalance = $wallet->getAttribute('cached_balance') ?? '0.00';
-            $newBalance = number_format((float) $currentBalance + (float) $amountDecimal, 2, '.', '');
+            $amountMinor = abs(DecimalMoney::toMinor($amount));
+            $amountDecimal = DecimalMoney::format($amountMinor);
+            $currentBalance = (string) ($wallet->getAttribute('cached_balance') ?? '0.00');
+            $newBalance = DecimalMoney::format(DecimalMoney::toMinor($currentBalance) + $amountMinor);
 
             $ledgerEntry = LedgerEntry::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'wallet_id' => $wallet->getKey(),
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
+                'idempotency_key' => $idempotencyKey,
                 'type' => $type,
                 'amount' => $amountDecimal,
                 'running_balance' => $newBalance,
@@ -83,15 +94,23 @@ class WalletService
         LedgerType $type,
         string $referenceType,
         string $referenceId,
-        ?string $description = null
+        ?string $description = null,
+        ?string $idempotencyKey = null,
     ): LedgerEntry {
-        return DB::transaction(function () use ($wallet, $amount, $type, $referenceType, $referenceId, $description): LedgerEntry {
+        return DB::transaction(function () use ($wallet, $amount, $type, $referenceType, $referenceId, $description, $idempotencyKey): LedgerEntry {
             /** @var Wallet|null $lockedWallet */
             $lockedWallet = Wallet::query()->where('id', $wallet->getKey())->lockForUpdate()->first();
             if ($lockedWallet === null) {
                 throw new ModelNotFoundException;
             }
             $wallet = $lockedWallet;
+
+            if ($idempotencyKey !== null) {
+                $existing = LedgerEntry::query()->where('idempotency_key', $idempotencyKey)->first();
+                if ($existing !== null) {
+                    return $existing;
+                }
+            }
 
             if ($wallet->status === WalletStatus::FROZEN) {
                 throw new WalletFrozenException($wallet->getAttribute('uuid'));
@@ -101,23 +120,26 @@ class WalletService
                 throw new WalletSuspendedException($wallet->getAttribute('uuid'));
             }
 
-            $amountDecimal = number_format(abs((float) $amount), 2, '.', '');
-            $currentBalance = $wallet->getAttribute('cached_balance') ?? '0.00';
+            $amountMinor = abs(DecimalMoney::toMinor($amount));
+            $amountDecimal = DecimalMoney::format($amountMinor);
+            $currentBalance = (string) ($wallet->getAttribute('cached_balance') ?? '0.00');
+            $currentMinor = DecimalMoney::toMinor($currentBalance);
 
-            if ((float) $currentBalance < (float) $amountDecimal) {
+            if ($currentMinor < $amountMinor) {
                 throw new InsufficientBalanceException($wallet->getAttribute('uuid'), $amountDecimal, (string) $currentBalance);
             }
 
-            $newBalance = number_format((float) $currentBalance - (float) $amountDecimal, 2, '.', '');
+            $newBalance = DecimalMoney::format($currentMinor - $amountMinor);
 
             // Store debit amount as negative in ledger entries
-            $negativeAmount = number_format(-((float) $amountDecimal), 2, '.', '');
+            $negativeAmount = DecimalMoney::format(-$amountMinor);
 
             $ledgerEntry = LedgerEntry::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'wallet_id' => $wallet->getKey(),
                 'reference_type' => $referenceType,
                 'reference_id' => $referenceId,
+                'idempotency_key' => $idempotencyKey,
                 'type' => $type,
                 'amount' => $negativeAmount,
                 'running_balance' => $newBalance,
@@ -160,7 +182,7 @@ class WalletService
                 ->where('wallet_id', $wallet->getKey())
                 ->sum('amount');
 
-            $recalculated = number_format((float) $sum, 2, '.', '');
+            $recalculated = DecimalMoney::format(DecimalMoney::toMinor((string) $sum));
 
             $wallet->update([
                 'cached_balance' => $recalculated,

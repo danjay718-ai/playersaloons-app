@@ -24,6 +24,7 @@ use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\PaymentStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Support\DecimalMoney;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -113,13 +114,17 @@ class RegisterForTournamentAction
                 ->where('tournament_id', $locked->getKey())
                 ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])
                 ->count();
+            $registrationAttempt = TournamentRegistration::query()
+                ->where('tournament_id', $locked->getKey())
+                ->where('user_id', $user->getKey())
+                ->count() + 1;
 
             if ($activeCount >= ($locked->max_participants ?? 0)) {
                 throw new TournamentFullException($locked->name, $locked->max_participants ?? 0);
             }
 
-            $entryFee = (float) ($locked->entry_fee ?? '0.00');
-            $isFree = $entryFee <= 0;
+            $entryFee = (string) ($locked->entry_fee ?? '0.00');
+            $isFree = DecimalMoney::toMinor($entryFee) <= 0;
             $paymentStatus = $isFree ? PaymentStatus::FREE : PaymentStatus::PAID;
 
             // Collect entry fee via wallet if applicable
@@ -136,12 +141,16 @@ class RegisterForTournamentAction
                     LedgerType::ENTRY_FEE,
                     TournamentRegistration::class,
                     (string) $locked->getKey(),
-                    "Entry fee for tournament: {$locked->name}"
+                    "Entry fee for tournament: {$locked->name}",
+                    "tournament-entry:{$locked->id}:user:{$user->id}:attempt:{$registrationAttempt}",
                 );
             }
 
-            $registration = TournamentRegistration::query()->create([
-                'uuid' => Str::uuid()->toString(),
+            // The schema preserves one registration identity per tournament and
+            // player. A cancelled player re-enters by reactivating that audit
+            // row; each payment/refund cycle still has a distinct idempotency
+            // key via registrationAttempt.
+            $registrationValues = [
                 'tournament_id' => $locked->getKey(),
                 'user_id' => $user->getKey(),
                 'team_id' => $team?->getKey(),
@@ -152,7 +161,22 @@ class RegisterForTournamentAction
                 'payment_status' => $paymentStatus,
                 'registered_at' => now(),
                 'locked_at' => $locked->extra_registration_started_at !== null ? now() : null,
-            ]);
+            ];
+            $historicalRegistration = TournamentRegistration::query()
+                ->where('tournament_id', $locked->getKey())
+                ->where('user_id', $user->getKey())
+                ->lockForUpdate()
+                ->first();
+            if ($historicalRegistration !== null) {
+                $historicalRegistration->fill($registrationValues);
+                $historicalRegistration->save();
+                $registration = $historicalRegistration;
+            } else {
+                $registration = TournamentRegistration::query()->create([
+                    'uuid' => Str::uuid()->toString(),
+                    ...$registrationValues,
+                ]);
+            }
 
             if ($locked->platform_id !== null) {
                 UserGameAccount::query()->updateOrCreate([

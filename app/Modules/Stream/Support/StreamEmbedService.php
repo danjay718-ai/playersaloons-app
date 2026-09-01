@@ -51,6 +51,9 @@ class StreamEmbedService
         $streams = [];
 
         foreach ($streamChannels as $streamChannel) {
+            if (! $streamChannel->is_live) {
+                continue;
+            }
             $stream = $this->streamForChannel($streamChannel);
 
             if ($stream !== null) {

@@ -17,9 +17,11 @@ use App\Modules\Wallet\Actions\SuspendWalletAction;
 use App\Modules\Wallet\Actions\UnfreezeWalletAction;
 use App\Modules\Wallet\Actions\UnsuspendWalletAction;
 use App\Modules\Wallet\Events\WalletCredited;
+use App\Modules\Wallet\Events\WithdrawalApproved;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Exceptions\WalletFrozenException;
 use App\Modules\Wallet\Exceptions\WalletSuspendedException;
+use App\Modules\Wallet\Listeners\CreateLedgerEntryListener;
 use App\Modules\Wallet\Models\Deposit;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
@@ -59,6 +61,7 @@ class WalletServiceTest extends TestCase
             'username' => $username,
             'email' => "{$username}@example.com",
             'password' => 'secret-pwd',
+            'email_verified_at' => now(),
             'status' => UserStatus::ACTIVE,
         ]);
         $user->save();
@@ -436,10 +439,10 @@ class WalletServiceTest extends TestCase
     {
         Event::fake([WalletCredited::class]);
 
-        $user  = $this->createUser();
+        $user = $this->createUser();
         $wallet = $this->createWallet($user, '0.00');
 
-        $first  = app(ProcessDepositAction::class)->execute($wallet, '50.00', 'stripe', 'ch_idem');
+        $first = app(ProcessDepositAction::class)->execute($wallet, '50.00', 'stripe', 'ch_idem');
         $second = app(ProcessDepositAction::class)->execute($wallet, '50.00', 'stripe', 'ch_idem');
 
         $this->assertSame($first->getKey(), $second->getKey());
@@ -481,7 +484,7 @@ class WalletServiceTest extends TestCase
     {
         // Wallet debit is handled by CreateLedgerEntryListener on WithdrawalApproved (async).
         // ProcessWithdrawalAction only advances status to PROCESSED and stamps processed_at.
-        Event::fake([\App\Modules\Wallet\Events\WithdrawalApproved::class]);
+        Event::fake([WithdrawalApproved::class]);
 
         $user = $this->createUser();
         $wallet = $this->createWallet($user, '200.00');
@@ -532,8 +535,8 @@ class WalletServiceTest extends TestCase
         app(ApproveWithdrawalAction::class)->execute($withdrawal, $operator);
 
         // Simulate the queued listener synchronously
-        $listener = app(\App\Modules\Wallet\Listeners\CreateLedgerEntryListener::class);
-        $listener->handle(new \App\Modules\Wallet\Events\WithdrawalApproved(
+        $listener = app(CreateLedgerEntryListener::class);
+        $listener->handle(new WithdrawalApproved(
             (int) $withdrawal->getKey(),
             (int) $wallet->getKey(),
             (int) $operator->getKey(),
@@ -568,13 +571,13 @@ class WalletServiceTest extends TestCase
         app(ReviewWithdrawalAction::class)->execute($withdrawal, $operator);
         app(ApproveWithdrawalAction::class)->execute($withdrawal, $operator);
 
-        $event = new \App\Modules\Wallet\Events\WithdrawalApproved(
+        $event = new WithdrawalApproved(
             (int) $withdrawal->getKey(),
             (int) $wallet->getKey(),
             (int) $operator->getKey(),
         );
 
-        $listener = app(\App\Modules\Wallet\Listeners\CreateLedgerEntryListener::class);
+        $listener = app(CreateLedgerEntryListener::class);
         $listener->handle($event);
 
         // Simulate retry — status is now APPROVED still but debit already done.
@@ -611,7 +614,7 @@ class WalletServiceTest extends TestCase
 
     public function test_wallet_cached_balance_matches_ledger_sum(): void
     {
-        $user   = $this->createUser();
+        $user = $this->createUser();
         $wallet = $this->createWallet($user, '0.00');
 
         $this->walletService->credit($wallet, '500.00', LedgerType::DEPOSIT, 'dep', '1');

@@ -47,7 +47,9 @@ class TournamentTemplate extends Model
      */
     protected $fillable = [
         'uuid',
+        'workflow_version',
         'game_id',
+        'created_by',
         'competition_type',
         'name',
         'format',
@@ -75,6 +77,7 @@ class TournamentTemplate extends Model
     {
         return [
             'max_participants' => 'integer',
+            'workflow_version' => 'integer',
             'min_participants' => 'integer',
             'entry_fee' => 'decimal:2',
             'checkin_minutes' => 'integer',
@@ -107,5 +110,10 @@ class TournamentTemplate extends Model
     public function prizes(): HasMany
     {
         return $this->hasMany(TournamentTemplatePrize::class, 'template_id');
+    }
+
+    public function scheduleSlots(): HasMany
+    {
+        return $this->hasMany(TournamentScheduleSlot::class)->orderBy('sort_order');
     }
 }

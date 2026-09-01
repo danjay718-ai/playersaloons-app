@@ -12,7 +12,7 @@ final class MatchResultSubmitted extends DomainEvent
         public readonly int $matchId,
         public readonly int $submissionId,
         public readonly int $submittedByUserId,
-        public readonly int $winnerRegistrationId,
+        public readonly ?int $winnerRegistrationId,
     ) {
         parent::__construct();
     }

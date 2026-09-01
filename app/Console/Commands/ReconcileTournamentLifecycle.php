@@ -53,22 +53,35 @@ final class ReconcileTournamentLifecycle extends Command
         return Tournament::query()->where(function (Builder $query): void {
             $query
                 ->where(fn (Builder $due) => $due
-                    ->where('status', TournamentStatus::PUBLISHED)
-                    ->where('registration_open_at', '<=', now()))
-                ->orWhere(fn (Builder $due) => $due
-                    ->where('status', TournamentStatus::REGISTRATION_OPEN)
-                    ->where('registration_close_at', '<=', now()))
-                ->orWhere(fn (Builder $due) => $due
-                    ->where('status', TournamentStatus::REGISTRATION_CLOSED)
-                    ->where('checkin_open_at', '<=', now()))
-                ->orWhere(fn (Builder $due) => $due
-                    ->where('status', TournamentStatus::CHECKIN_OPEN)
-                    ->where('checkin_close_at', '<=', now()))
-                ->orWhere(fn (Builder $due) => $due
-                    ->where('status', TournamentStatus::CHECKIN_CLOSED))
-                ->orWhere(fn (Builder $due) => $due
-                    ->where('status', TournamentStatus::BRACKET_GENERATED)
-                    ->where('start_at', '<=', now()));
+                    ->where('workflow_version', 2)
+                    ->whereIn('status', [
+                        TournamentStatus::REGISTRATION_OPEN,
+                        TournamentStatus::BRACKET_GENERATED,
+                    ])
+                    ->where(function (Builder $clock): void {
+                        $clock->where('start_at', '<=', now())
+                            ->orWhere('join_closes_at', '<=', now());
+                    }))
+                ->orWhere(fn (Builder $legacy) => $legacy
+                    ->where('workflow_version', 1)
+                    ->where(fn (Builder $legacyDue) => $legacyDue
+                        ->where(fn (Builder $due) => $due
+                            ->where('status', TournamentStatus::PUBLISHED)
+                            ->where('registration_open_at', '<=', now()))
+                        ->orWhere(fn (Builder $due) => $due
+                            ->where('status', TournamentStatus::REGISTRATION_OPEN)
+                            ->where('registration_close_at', '<=', now()))
+                        ->orWhere(fn (Builder $due) => $due
+                            ->where('status', TournamentStatus::REGISTRATION_CLOSED)
+                            ->where('checkin_open_at', '<=', now()))
+                        ->orWhere(fn (Builder $due) => $due
+                            ->where('status', TournamentStatus::CHECKIN_OPEN)
+                            ->where('checkin_close_at', '<=', now()))
+                        ->orWhere(fn (Builder $due) => $due
+                            ->where('status', TournamentStatus::CHECKIN_CLOSED))
+                        ->orWhere(fn (Builder $due) => $due
+                            ->where('status', TournamentStatus::BRACKET_GENERATED)
+                            ->where('start_at', '<=', now()))));
         });
     }
 }

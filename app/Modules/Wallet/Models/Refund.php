@@ -36,9 +36,11 @@ class Refund extends Model
         'uuid',
         'wallet_id',
         'tournament_id',
+        'registration_id',
         'amount',
         'status',
         'refund_reference_uuid',
+        'idempotency_key',
         'created_at',
     ];
 

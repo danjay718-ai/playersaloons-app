@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -74,6 +75,11 @@ class Game extends Model
     public function tournaments(): HasMany
     {
         return $this->hasMany(Tournament::class);
+    }
+
+    public function tournamentDefaults(): HasOne
+    {
+        return $this->hasOne(GameTournamentDefault::class);
     }
 
     public function platforms(): BelongsToMany

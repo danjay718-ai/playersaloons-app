@@ -12,11 +12,16 @@ use App\Modules\Team\Models\Team;
 use App\Modules\Tournament\Actions\CancelRegistrationAction;
 use App\Modules\Tournament\Actions\FindTournamentTeamAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
+use App\Modules\Tournament\Actions\RegisterForV2TournamentAction;
+use App\Modules\Tournament\Actions\RequestV2CancellationAction;
+use App\Modules\Tournament\Actions\VoteOnV2CancellationAction;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Models\TournamentCancellationRequest;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentTeam;
 use App\Modules\Tournament\Models\TournamentTeamSearchEntry;
 use App\Modules\Tournament\Services\PrizeCalculationService;
+use App\Modules\Tournament\Services\V2PrizePolicy;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
@@ -93,7 +98,7 @@ class TournamentDetail extends Component
         }
     }
 
-    public function register(RegisterForTournamentAction $action, FindTournamentTeamAction $findTeam)
+    public function register(RegisterForTournamentAction $action, RegisterForV2TournamentAction $v2Action, FindTournamentTeamAction $findTeam)
     {
         if (! Auth::check()) {
             return redirect()->to('/login');
@@ -106,6 +111,7 @@ class TournamentDetail extends Component
         }
 
         $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
+        abort_if((int) $tournament->workflow_version === 2 && ! config('features.tournament_v2.enabled'), 404);
         $user = Auth::user();
 
         $this->validate([
@@ -134,20 +140,25 @@ class TournamentDetail extends Component
                 }
             }
 
-            $action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam);
+            if ((int) $tournament->workflow_version === 2) {
+                $v2Action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam);
+            } else {
+                $action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam);
+            }
             session()->flash('message', ($tournament->team_size ?? 1) > 1 ? 'Tournament team registered successfully!' : 'Successfully joined the tournament!');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to register for this tournament.'));
         }
     }
 
-    public function cancelRegistration(CancelRegistrationAction $action)
+    public function cancelRegistration(CancelRegistrationAction $action, RequestV2CancellationAction $v2Action)
     {
         if (! Auth::check()) {
             return redirect()->to('/login');
         }
 
         $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
+        abort_if((int) $tournament->workflow_version === 2 && ! config('features.tournament_v2.enabled'), 404);
         $user = Auth::user();
 
         $registration = TournamentRegistration::query()
@@ -163,10 +174,34 @@ class TournamentDetail extends Component
         }
 
         try {
-            $action->execute($registration, $user);
-            session()->flash('message', 'Registration cancelled successfully. Any entry fee has been refunded to your wallet.');
+            if ((int) $tournament->workflow_version === 2) {
+                $request = $v2Action->execute($registration, $user);
+                session()->flash('message', $request->status === 'approved'
+                    ? 'Registration cancelled and refunded.'
+                    : "Cancellation request created. {$request->required_approvals} approval(s) are required before tournament start.");
+            } else {
+                $action->execute($registration, $user);
+                session()->flash('message', 'Registration cancelled successfully. Any entry fee has been refunded to your wallet.');
+            }
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to cancel the tournament registration.'));
+        }
+    }
+
+    public function voteOnCancellation(int $requestId, bool $approved, VoteOnV2CancellationAction $action): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        try {
+            $request = TournamentCancellationRequest::query()
+                ->where('tournament_id', Tournament::query()->where('uuid', $this->uuid)->value('id'))
+                ->findOrFail($requestId);
+            $action->execute($request, Auth::user(), $approved);
+            session()->flash('message', 'Your cancellation vote has been recorded and cannot be changed.');
+        } catch (\Exception $e) {
+            session()->flash('error', $this->safeError($e, 'Unable to record the cancellation vote.'));
         }
     }
 
@@ -206,8 +241,11 @@ class TournamentDetail extends Component
         }
     }
 
-    public function render(StreamEmbedService $streamService, PrizeCalculationService $prizeCalculationService)
-    {
+    public function render(
+        StreamEmbedService $streamService,
+        PrizeCalculationService $prizeCalculationService,
+        V2PrizePolicy $v2PrizePolicy,
+    ) {
         $tournament = $this->getTournamentQuery()
             ->where('uuid', $this->uuid)
             ->with([
@@ -221,9 +259,20 @@ class TournamentDetail extends Component
                 RegistrationStatus::REFUNDED->value,
             ])])
             ->firstOrFail();
+        abort_if((int) $tournament->workflow_version === 2 && ! config('features.tournament_v2.enabled'), 404);
 
         $user = Auth::user();
         $prizeCalculation = $prizeCalculationService->calculate($tournament);
+        $isV2Registration = (int) $tournament->workflow_version === 2
+            && $tournament->status === TournamentStatus::REGISTRATION_OPEN
+            && ($tournament->start_at?->isFuture() ?? false)
+            && $tournament->financial_finalized_at === null;
+        // Before a V2 tournament starts, show organizers' full-capacity
+        // projection rather than a misleading $0/TBD live pool. The payout
+        // is recalculated from actual confirmed entries when it starts.
+        $displayPrizeCalculation = $isV2Registration
+            ? $v2PrizePolicy->calculate($tournament, (int) $tournament->max_participants)
+            : null;
         $isRegistered = false;
         $userRegistration = null;
 
@@ -240,6 +289,15 @@ class TournamentDetail extends Component
                 $isRegistered = true;
             }
         }
+
+        // This is a player-facing occurrence notice. Admins and visitors must
+        // never receive it, and a player must actually hold an active entry.
+        $shouldShowUnderfilledNotice = $isRegistered
+            && $user?->hasRole('PLAYER')
+            && (int) $tournament->workflow_version === 2
+            && $tournament->status === TournamentStatus::ONGOING
+            && $prizeCalculation['confirmed_count'] >= 2
+            && $prizeCalculation['confirmed_count'] < (int) $tournament->max_participants;
 
         $canViewRestricted = $user?->can('viewRestrictedDetails', $tournament) ?? false;
 
@@ -322,11 +380,14 @@ class TournamentDetail extends Component
             : collect();
 
         // Check if tournament can still be cancelled (registration still open)
-        $canCancelRegistration = $isRegistered && $userRegistration?->locked_at === null
-            && $tournament->extra_registration_started_at === null && in_array($tournament->status, [
-                TournamentStatus::REGISTRATION_OPEN,
-                TournamentStatus::PUBLISHED,
-            ], true);
+        $canCancelRegistration = (int) $tournament->workflow_version === 2
+            ? $isRegistered && $tournament->start_at?->copy()->subMinutes(30)->isFuture()
+                && ! $tournament->cancellationRequests()->where('status', 'pending')->exists()
+            : $isRegistered && $userRegistration?->locked_at === null
+                && $tournament->extra_registration_started_at === null && in_array($tournament->status, [
+                    TournamentStatus::REGISTRATION_OPEN,
+                    TournamentStatus::PUBLISHED,
+                ], true);
 
         $gameIdSettings = (array) (($tournament->game->game_id_settings ?? [])[(string) $tournament->platform_id]
             ?? ($tournament->game->game_id_settings['default'] ?? []));
@@ -341,10 +402,19 @@ class TournamentDetail extends Component
             ->where('status', 'searching')
             ->exists() : false;
         $userSquad = $user ? Team::query()->where('captain_user_id', $user->id)->where('status', 'active')->first(['id', 'name']) : null;
+        $pendingCancellationRequest = $user && (int) $tournament->workflow_version === 2
+            ? $tournament->cancellationRequests()
+                ->with(['requester:id,username', 'votes:id,request_id,voter_id,approved'])
+                ->where('status', 'pending')
+                ->first()
+            : null;
 
         return view('livewire.tournament.tournament-detail', [
             'tournament' => $tournament,
             'prizeCalculation' => $prizeCalculation,
+            'displayPrizeCalculation' => $displayPrizeCalculation,
+            'isV2Registration' => $isV2Registration,
+            'shouldShowUnderfilledNotice' => $shouldShowUnderfilledNotice,
             'isRegistered' => $isRegistered,
             'userRegistration' => $userRegistration,
             'rounds' => $rounds,
@@ -362,6 +432,7 @@ class TournamentDetail extends Component
             'userTournamentTeam' => $userTournamentTeam,
             'isSearchingForTeam' => $isSearchingForTeam,
             'userSquad' => $userSquad,
+            'pendingCancellationRequest' => $pendingCancellationRequest,
         ])->layout($this->layout, ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
     }
 }

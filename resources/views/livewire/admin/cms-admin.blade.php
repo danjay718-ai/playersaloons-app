@@ -10,10 +10,26 @@
     <!-- Games Tab Content -->
     @if($tab === 'games')
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div><h2 class="text-lg font-black text-white">Game Management</h2><p class="mt-1 text-xs text-slate-500">Create games, assign platforms, manage artwork, or safely archive catalog entries.</p></div>
+            <div><h2 class="text-lg font-black text-white">Game Management</h2><p class="mt-1 text-xs text-slate-500">Create games, assign platforms, manage artwork, tournament templates, or safely archive catalog entries.</p></div>
             <button type="button" x-on:click="openCreateGame()" class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500">
                 <i data-lucide="plus" class="h-4 w-4"></i><span>Add New Game</span>
             </button>
+        </div>
+        <div class="mb-5 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                <div class="flex rounded-lg border border-slate-800 bg-slate-950 p-1">
+                    <button type="button" wire:click="setGameRecordTab('active')" class="rounded-md px-4 py-2 text-xs font-bold transition {{ $gameRecordTab === 'active' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white' }}">Active Games</button>
+                    <button type="button" wire:click="setGameRecordTab('archived')" class="rounded-md px-4 py-2 text-xs font-bold transition {{ $gameRecordTab === 'archived' ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-white' }}">Archived Games</button>
+                </div>
+                <button type="button" wire:click="clearGameFilters" class="text-left text-xs font-bold text-slate-400 hover:text-white">Clear filters</button>
+            </div>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                <label class="xl:col-span-2"><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Search</span><div class="relative"><i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600"></i><input type="search" wire:model.live.debounce.350ms="gameSearch" placeholder="Name, slug, description, or platform" class="w-full rounded-lg border border-slate-800 bg-slate-950 py-2 pl-9 pr-3 text-xs text-slate-200 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"></div></label>
+                <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Catalog status</span><select wire:model.live="gameCatalogFilter" class="game-filter-field"><option value="">All statuses</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></label>
+                <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Platform</span><select wire:model.live="gamePlatformFilter" class="game-filter-field"><option value="">All platforms</option>@foreach($gamePlatforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select></label>
+                <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Tournament template</span><select wire:model.live="gameTemplateFilter" class="game-filter-field"><option value="">All templates</option><option value="configured">Configured</option><option value="missing">Not configured</option></select></label>
+                <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Artwork</span><select wire:model.live="gameArtworkFilter" class="game-filter-field"><option value="">All artwork</option><option value="complete">Card + banner present</option><option value="missing_card">Missing card image</option><option value="missing_banner">Missing banner</option></select></label>
+            </div>
         </div>
         <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6">
             <div class="overflow-x-auto">
@@ -52,6 +68,11 @@
                                 </td>
                                 <td class="p-4 text-slate-200 font-semibold">
                                     {{ $game->localizedName() }}
+                                    @if(config('features.tournament_v2.enabled'))
+                                        <span class="mt-1 block text-[9px] font-bold uppercase tracking-wider {{ $game->tournamentDefaults ? 'text-violet-300' : 'text-slate-600' }}">
+                                            {{ $game->tournamentDefaults ? 'Tournament template configured' : 'Tournament template not configured' }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="p-4"><div class="flex max-w-[180px] flex-wrap gap-1">@forelse($game->platforms as $platform)<span class="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[9px] text-slate-400">{{ $platform->name }}</span>@empty<span class="text-[10px] text-slate-600">All / unassigned</span>@endforelse</div></td>
                                 <td class="p-4 text-slate-400 max-w-[280px] truncate" title="{{ $game->localizedDescription() }}">
@@ -70,26 +91,35 @@
                                     </button>
                                     @endif
                                 </td>
-                                <td class="p-4 text-right space-x-1">
+                                <td class="p-4 text-right">
                                     @if($game->trashed())
-                                    <button wire:click="restoreGame({{ $game->id }})" class="rounded-lg border border-emerald-900/50 bg-emerald-950/40 p-1.5 text-emerald-400 hover:text-white" title="Restore Game"><i data-lucide="archive-restore" class="h-4 w-4"></i></button>
+                                    <div class="relative inline-block text-left" x-data="{ open: false }" x-on:click.outside="open = false">
+                                        <button type="button" x-on:click="open = !open" x-bind:aria-expanded="open" aria-label="Archived game actions" class="rounded-lg border border-slate-700 bg-slate-900 p-2 text-slate-400 hover:border-slate-600 hover:text-white"><i data-lucide="ellipsis-vertical" class="h-4 w-4"></i></button>
+                                        <div x-cloak x-show="open" x-transition.origin.top.right class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 py-1 text-left shadow-2xl shadow-black/40">
+                                            <button type="button" x-on:click="open = false" wire:click="restoreGame({{ $game->id }})" class="game-action-item"><i data-lucide="archive-restore" class="h-4 w-4 text-emerald-400"></i>Restore game</button>
+                                        </div>
+                                    </div>
                                     @else
-                                    <button type="button" x-on:click="openEditGame({{ Illuminate\Support\Js::from([
-                                        'id' => $game->id,
-                                        'locale' => 'en',
-                                        'slug' => $game->slug,
-                                        'isActive' => (bool) $game->is_active,
-                                        'bannerPath' => $game->bannerUrl() ?? '',
-                                        'cardImagePath' => $game->cardArtworkUrl() ?? '',
-                                        'platformIds' => $game->platforms->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
-                                        'translations' => $game->translations->mapWithKeys(fn ($translation) => [$translation->locale => [
-                                            'name' => $translation->name,
-                                            'description' => $translation->description ?? '',
-                                        ]])->all(),
-                                    ]) }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit Game">
-                                        <i data-lucide="edit" class="w-4 h-4"></i>
-                                    </button>
-                                    <button type="button" x-on:click="openGameArchive({{ $game->id }})" wire:loading.attr="disabled" wire:target="confirmDelete('game', {{ $game->id }})" class="rounded-lg border border-red-900/50 bg-red-950/40 p-1.5 text-red-400 hover:text-white disabled:opacity-40" title="Archive Game"><i data-lucide="archive" class="h-4 w-4"></i></button>
+                                    <div class="relative inline-block text-left" x-data="{ open: false }" x-on:click.outside="open = false">
+                                        <button type="button" x-on:click="open = !open" x-bind:aria-expanded="open" aria-label="Game actions" class="rounded-lg border border-slate-700 bg-slate-900 p-2 text-slate-400 hover:border-slate-600 hover:text-white"><i data-lucide="ellipsis-vertical" class="h-4 w-4"></i></button>
+                                        <div x-cloak x-show="open" x-transition.origin.top.right class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 py-1 text-left shadow-2xl shadow-black/40">
+                                            <button type="button" x-on:click="open = false; openEditGame({{ Illuminate\Support\Js::from([
+                                                'id' => $game->id,
+                                                'locale' => 'en',
+                                                'slug' => $game->slug,
+                                                'isActive' => (bool) $game->is_active,
+                                                'bannerPath' => $game->bannerUrl() ?? '',
+                                                'cardImagePath' => $game->cardArtworkUrl() ?? '',
+                                                'platformIds' => $game->platforms->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
+                                                'translations' => $game->translations->mapWithKeys(fn ($translation) => [$translation->locale => ['name' => $translation->name, 'description' => $translation->description ?? '']])->all(),
+                                            ]) }})" class="game-action-item"><i data-lucide="edit" class="h-4 w-4 text-indigo-400"></i>Edit game</button>
+                                            @if(config('features.tournament_v2.enabled') && auth()->user()?->can('tournaments.manage'))
+                                                <a href="{{ route('admin.games.tournament-defaults.edit', $game) }}" class="game-action-item"><i data-lucide="trophy" class="h-4 w-4 text-violet-300"></i>Tournament template</a>
+                                            @endif
+                                            <div class="my-1 border-t border-slate-800"></div>
+                                            <button type="button" x-on:click="open = false; openGameArchive({{ $game->id }})" wire:loading.attr="disabled" wire:target="confirmDelete('game', {{ $game->id }})" class="game-action-item text-red-300 hover:bg-red-950/40 hover:text-red-200"><i data-lucide="archive" class="h-4 w-4"></i>Archive game</button>
+                                        </div>
+                                    </div>
                                     @endif
                                 </td>
                             </tr>
@@ -743,3 +773,11 @@
         </div>
     @endif
 </div>
+
+<style>
+    [x-cloak] { display: none !important; }
+    .game-filter-field { width: 100%; border: 1px solid rgb(30 41 59); border-radius: .5rem; background: rgb(2 6 23); padding: .5rem .65rem; color: rgb(203 213 225); font-size: .75rem; outline: none; }
+    .game-filter-field:focus { border-color: rgb(99 102 241); }
+    .game-action-item { display: flex; width: 100%; align-items: center; gap: .65rem; padding: .55rem .75rem; color: rgb(203 213 225); font-size: .75rem; font-weight: 600; text-align: left; }
+    .game-action-item:hover { background: rgb(30 41 59); color: white; }
+</style>

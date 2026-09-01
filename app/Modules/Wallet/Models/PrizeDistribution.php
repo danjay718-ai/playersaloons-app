@@ -43,6 +43,7 @@ class PrizeDistribution extends Model
         'rank',
         'amount',
         'distribution_reference_uuid',
+        'idempotency_key',
         'status',
         'created_at',
     ];

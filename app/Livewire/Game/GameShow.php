@@ -8,6 +8,7 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Services\V2TournamentDiscoveryService;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
@@ -55,22 +56,29 @@ class GameShow extends Component
         }
     }
 
-    public function render()
+    public function render(V2TournamentDiscoveryService $discovery)
     {
         $platforms = $this->game->platforms()->where('platforms.is_active', true)->orderBy('platforms.name')->get();
         if ($platforms->isEmpty()) {
             $platforms = Platform::query()->where('is_active', true)->orderBy('name')->get();
         }
 
-        $featured = $this->baseTournamentQuery()
+        $usesV2Discovery = (bool) config('features.tournament_v2.enabled');
+        $featured = $usesV2Discovery ? collect() : $this->baseTournamentQuery()
             ->where('is_featured', true)
             ->whereIn('status', array_merge($this->statuses('upcoming'), $this->statuses('ongoing')))
             ->orderBy('start_at')
             ->limit(4)
             ->get();
 
-        $tournaments = $this->filteredTournamentQuery()
+        $tournaments = $usesV2Discovery ? null : $this->filteredTournamentQuery()
             ->paginate($this->activeTab === 'browse' ? 12 : 6);
+        $tournamentGroups = $usesV2Discovery
+            ? $discovery->paginate($this->tournamentStatus, $this->discoveryFilters(), $this->activeTab === 'browse' ? 12 : 6)
+            : null;
+        $featuredGroups = $usesV2Discovery
+            ? $discovery->paginate('upcoming', ['game_id' => (string) $this->game->id], 4, true)
+            : null;
 
         $streams = StreamChannel::query()
             ->with(['user.profile', 'tournament'])
@@ -87,7 +95,9 @@ class GameShow extends Component
 
         $view = view('livewire.game.game-show', [
             'featuredTournaments' => $featured,
+            'featuredGroups' => $featuredGroups,
             'tournaments' => $tournaments,
+            'tournamentGroups' => $tournamentGroups,
             'streams' => $streams,
             'platforms' => $platforms,
         ]);
@@ -95,6 +105,19 @@ class GameShow extends Component
         return Auth::check()
             ? $view->layout('components.layouts.dashboard', ['title' => $this->game->localizedName().' | PlayerSaloons', 'dashboard_title' => 'GAME HUB'])
             : $view->layout('components.layouts.app', ['title' => $this->game->localizedName().' | PlayerSaloons']);
+    }
+
+    /** @return array<string, string> */
+    private function discoveryFilters(): array
+    {
+        return [
+            'game_id' => (string) $this->game->id,
+            'search' => $this->search,
+            'start_date' => $this->startDate,
+            'platform_id' => $this->platformId,
+            'competition_type' => $this->competitionType,
+            'frequency' => $this->frequency,
+        ];
     }
 
     private function filteredTournamentQuery()

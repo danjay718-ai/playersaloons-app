@@ -7,4 +7,6 @@ enum DisputeResolution: string
     case PLAYER_A = 'player_a';
     case PLAYER_B = 'player_b';
     case REMATCH = 'rematch';
+    case DRAW = 'draw';
+    case NO_CHAMPION = 'no_champion';
 }

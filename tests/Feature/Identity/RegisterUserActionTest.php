@@ -143,7 +143,7 @@ class RegisterUserActionTest extends TestCase
             ->set('age_confirmed', true)
             ->set('newsletter_subscribed', true)
             ->call('register')
-            ->assertRedirect('/verify-email');
+            ->assertRedirect('/dashboard');
 
         $user = User::query()->where('email', 'consented@example.com')->firstOrFail();
 

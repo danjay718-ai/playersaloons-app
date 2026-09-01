@@ -33,6 +33,11 @@ class SubmitEvidenceAction
     public function execute(MatchDispute $dispute, int $uploadedByUserId, UploadedFile $file): MatchEvidence
     {
         return DB::transaction(function () use ($dispute, $uploadedByUserId, $file): MatchEvidence {
+            $dispute = MatchDispute::query()
+                ->with('match.playerARegistration', 'match.playerBRegistration')
+                ->lockForUpdate()
+                ->findOrFail($dispute->id);
+
             // Validate dispute status
             if ($dispute->status === DisputeStatus::RESOLVED) {
                 throw new LogicException('Cannot submit evidence to a resolved dispute.');
@@ -41,6 +46,16 @@ class SubmitEvidenceAction
             // Validate submitter is a participant
             if (! $dispute->match->playerARegistration?->includesUser($uploadedByUserId) && ! $dispute->match->playerBRegistration?->includesUser($uploadedByUserId)) {
                 throw new InvalidArgumentException('Only match participants can submit evidence.');
+            }
+
+            // One immutable evidence submission per participant per dispute.
+            // Locking the dispute row makes this safe against double-clicks and
+            // concurrent requests without rewriting historical evidence.
+            if (MatchEvidence::query()
+                ->where('dispute_id', $dispute->id)
+                ->where('uploaded_by', $uploadedByUserId)
+                ->exists()) {
+                throw new LogicException('You have already submitted evidence for this dispute.');
             }
 
             // Validate file upload

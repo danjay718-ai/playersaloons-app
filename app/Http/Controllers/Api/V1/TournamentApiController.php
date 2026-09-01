@@ -9,6 +9,7 @@ use App\Http\Resources\TournamentCollection;
 use App\Http\Resources\TournamentResource;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
+use App\Modules\Tournament\Actions\RegisterForV2TournamentAction;
 use App\Modules\Tournament\Exceptions\CheckinNotOpenException;
 use App\Modules\Tournament\Exceptions\TournamentAlreadyRegisteredException;
 use App\Modules\Tournament\Exceptions\TournamentFullException;
@@ -27,6 +28,9 @@ class TournamentApiController extends Controller
     public function index(Request $request): TournamentCollection
     {
         $query = Tournament::query()->with('game');
+        if (! config('features.tournament_v2.enabled')) {
+            $query->where('workflow_version', 1);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', strtoupper($request->input('status')));
@@ -49,7 +53,9 @@ class TournamentApiController extends Controller
      */
     public function show(string $uuid): TournamentResource
     {
-        $tournament = Tournament::query()->where('uuid', $uuid)->with('game')->firstOrFail();
+        $tournament = Tournament::query()->where('uuid', $uuid)->with('game')
+            ->when(! config('features.tournament_v2.enabled'), fn ($query) => $query->where('workflow_version', 1))
+            ->firstOrFail();
 
         return new TournamentResource($tournament);
     }
@@ -60,7 +66,8 @@ class TournamentApiController extends Controller
     public function register(
         string $uuid,
         Request $request,
-        RegisterForTournamentAction $action
+        RegisterForTournamentAction $action,
+        RegisterForV2TournamentAction $v2Action,
     ): JsonResponse {
         $tournament = Tournament::query()->where('uuid', $uuid)->firstOrFail();
         $user = $request->user();
@@ -70,7 +77,14 @@ class TournamentApiController extends Controller
         }
 
         try {
-            $registration = $action->execute($tournament, $user);
+            $registration = (int) $tournament->workflow_version === 2
+                ? $v2Action->execute(
+                    $tournament,
+                    $user,
+                    null,
+                    $request->validate(['game_id_value' => ['required', 'string', 'max:191']])['game_id_value'],
+                )
+                : $action->execute($tournament, $user);
 
             return response()->json([
                 'message' => 'Successfully registered for the tournament.',
@@ -79,7 +93,7 @@ class TournamentApiController extends Controller
                     'status' => $registration->status->value ?? $registration->status,
                 ],
             ], 201);
-        } catch (TournamentNotOpenForRegistrationException|TournamentAlreadyRegisteredException|TournamentFullException|InsufficientBalanceException|InvalidStateTransitionException|\RuntimeException $e) {
+        } catch (TournamentNotOpenForRegistrationException|TournamentAlreadyRegisteredException|TournamentFullException|InsufficientBalanceException|InvalidStateTransitionException|\RuntimeException|\LogicException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);
