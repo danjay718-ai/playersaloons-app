@@ -21,6 +21,10 @@ use DateTimeZone;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithFileUploads;
 
+/**
+ * @deprecated V1 editor retained only for historical V1 occurrences. New
+ * tournament schedules are created through the additive V2 Blade workflow.
+ */
 class TournamentForm extends AdminComponent
 {
     use WithFileUploads;
@@ -124,6 +128,12 @@ class TournamentForm extends AdminComponent
 
     public function mount(?int $id = null): void
     {
+        if ($id === null && config('features.tournament_v2.enabled')) {
+            $this->redirectRoute('admin.tournaments.v2.create', navigate: false);
+
+            return;
+        }
+
         $this->timezone = (string) config('app.tournament_timezone', 'UTC');
         $this->waiting_result_time = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
 
@@ -131,6 +141,15 @@ class TournamentForm extends AdminComponent
             $this->isEditMode = true;
             $this->tournamentId = $id;
             $tournament = Tournament::findOrFail($id);
+
+            // V2 occurrences are immutable snapshots managed through their schedule definition.
+            // This legacy V1 form must never reinterpret or overwrite V2 financial/lifecycle fields.
+            if ((int) $tournament->workflow_version === 2) {
+                session()->flash('error', 'Tournament V2 occurrences cannot be edited with the legacy form. Edit the V2 schedule before its occurrence starts.');
+                $this->redirect('/admin/tournaments', navigate: true);
+
+                return;
+            }
 
             // If not in DRAFT, it's a Limited Edit (Locked structural fields)
             if ($tournament->status !== TournamentStatus::DRAFT) {
@@ -406,6 +425,12 @@ class TournamentForm extends AdminComponent
 
         if ($this->isEditMode && $this->tournamentId) {
             $tournament = Tournament::findOrFail($this->tournamentId);
+
+            if ((int) $tournament->workflow_version === 2) {
+                session()->flash('error', 'V2 occurrence snapshots cannot be edited through the legacy workflow.');
+
+                return;
+            }
 
             // Re-verify strictly final statuses
             if (in_array($tournament->status, [TournamentStatus::COMPLETED, TournamentStatus::CANCELLED, TournamentStatus::REFUNDED])) {

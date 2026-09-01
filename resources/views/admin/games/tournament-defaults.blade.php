@@ -1,0 +1,38 @@
+<x-layouts.admin title="Game Tournament Template">
+    @php($template = $game->tournamentDefaults)
+    <div class="mx-auto max-w-4xl">
+        <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[.22em] text-violet-400">Game Management · Tournament V2</p>
+                <h1 class="mt-1 text-2xl font-black text-white">{{ $game->localizedName() }} template</h1>
+                <p class="mt-1 max-w-2xl text-sm text-slate-400">These are defaults for new tournament schedules. A schedule snapshots them, so existing tournament occurrences never change.</p>
+            </div>
+            <a href="{{ route('admin.cms', ['section' => 'games']) }}" class="template-secondary-button">Back to Game Management</a>
+        </header>
+
+        @if (session('success'))<div class="mb-5 rounded-xl border border-emerald-700/60 bg-emerald-950/30 p-4 text-sm text-emerald-200">{{ session('success') }}</div>@endif
+        @if ($errors->any())<div class="mb-5 rounded-xl border border-red-800/70 bg-red-950/30 p-4 text-sm text-red-200"><p class="font-bold">Please correct the highlighted fields.</p><ul class="mt-2 list-disc space-y-1 pl-5 text-xs text-red-300">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+
+        <form method="POST" action="{{ route('admin.games.tournament-defaults.update', $game) }}" enctype="multipart/form-data" class="space-y-5">
+            @csrf @method('PUT')
+            <section class="template-card">
+                <div class="template-heading"><div><h2>Default platform and artwork</h2><p>The tournament banner is a separate asset from the Game Card and Hero Cover.</p></div></div>
+                <div class="grid gap-5 md:grid-cols-2">
+                    <div><label class="template-label">Default platform <span class="text-red-400">*</span></label><select name="default_platform_id" class="template-field" required>@forelse ($game->platforms as $platform)<option value="{{ $platform->id }}" @selected(old('default_platform_id', $template?->default_platform_id) == $platform->id)>{{ $platform->name }}</option>@empty<option value="">No configured platform</option>@endforelse</select>@error('default_platform_id')<p class="template-error">{{ $message }}</p>@enderror</div>
+                    <div><x-forms.controller-image-crop-upload name="tournament_banner" label="Tournament banner" :width="960" :height="540" :current-url="$template?->tournament_banner_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($template->tournament_banner_path) : null" help="Leave blank to keep the current banner. New uploads are cropped before saving." /></div>
+                </div>
+            </section>
+
+            <section class="template-card space-y-5">
+                <div class="template-heading"><div><h2>Default description and rules</h2><p>These populate the Quill editors in Tournament V2 Create; admins can still override them per schedule.</p></div></div>
+                <x-forms.quill-editor name="description" label="Default tournament description" :value="old('description', $template?->description ?? '')" placeholder="Explain the tournament format and what players can expect." />
+                <x-forms.quill-editor name="rules" label="Default tournament rules" :value="old('rules', $template?->rules ?? '')" placeholder="Add rules that should apply to new tournaments for this game." height="h-64" />
+            </section>
+
+            <footer class="flex justify-end pb-8"><button class="template-primary-button">Save tournament template</button></footer>
+        </form>
+    </div>
+    <style>
+        .template-card{border:1px solid rgb(30 41 59);border-radius:1rem;background:rgba(15,23,42,.72);padding:1.25rem}.template-heading{margin-bottom:1.25rem}.template-heading h2{color:rgb(224 231 255);font-size:.8125rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.template-heading p{margin-top:.25rem;color:rgb(148 163 184);font-size:.75rem;line-height:1.45}.template-label,.v2-field-label{display:block;margin-bottom:.4rem;color:rgb(148 163 184);font-size:.6875rem;font-weight:700;letter-spacing:.025em;text-transform:uppercase}.template-field{width:100%;border:1px solid rgb(51 65 85);border-radius:.625rem;background:rgb(2 6 23);padding:.575rem .7rem;color:rgb(248 250 252);font-size:.8125rem;line-height:1.25rem;outline:none}.template-field:focus{border-color:rgb(99 102 241);box-shadow:0 0 0 3px rgba(99,102,241,.12)}.template-file-field{display:block;width:100%;border:1px solid rgb(51 65 85);border-radius:.625rem;background:rgb(2 6 23);padding:.4rem;color:rgb(203 213 225);font-size:.75rem}.template-help{margin-top:.3rem;color:rgb(100 116 139);font-size:.6875rem}.template-error,.v2-field-error{margin-top:.3rem;color:rgb(248 113 113);font-size:.6875rem}.template-primary-button,.template-secondary-button{display:inline-flex;align-items:center;justify-content:center;border-radius:.625rem;padding:.65rem 1rem;font-size:.75rem;font-weight:800}.template-primary-button{background:rgb(79 70 229);color:#fff}.template-primary-button:hover{background:rgb(99 102 241)}.template-secondary-button{border:1px solid rgba(99,102,241,.4);background:rgba(99,102,241,.12);color:rgb(199 210 254)}.template-secondary-button:hover{background:rgba(99,102,241,.22)}.ql-toolbar.ql-snow,.ql-container.ql-snow{border-color:rgb(30 41 59)!important}.ql-toolbar.ql-snow{background:rgb(2 6 23);border-radius:.75rem .75rem 0 0;flex-wrap:wrap}.ql-container.ql-snow{border-radius:0 0 .75rem .75rem}.ql-snow .ql-stroke{stroke:rgb(148 163 184)!important}.ql-snow .ql-fill{fill:rgb(148 163 184)!important}.ql-snow .ql-picker,.ql-snow .ql-picker-label{color:rgb(148 163 184)!important}.ql-snow .ql-picker-options,.ql-snow .ql-tooltip{background:rgb(15 23 42)!important;border-color:rgb(30 41 59)!important;color:rgb(226 232 240)!important}.ql-snow .ql-picker-item{color:rgb(148 163 184)!important}.ql-snow button:hover .ql-stroke,.ql-snow button.ql-active .ql-stroke{stroke:#fff!important}.ql-snow button:hover .ql-fill,.ql-snow button.ql-active .ql-fill{fill:#fff!important}.ql-editor-shell .ql-container{height:calc(100% - 42px);overflow:hidden}.ql-editor-shell .ql-editor{height:100%;min-height:0;overflow-y:auto;color:rgb(241 245 249);font-size:.875rem;line-height:1.6}.ql-editor.ql-blank::before{color:rgb(100 116 139)!important;font-style:italic}@media(min-width:768px){.template-card{padding:1.5rem}}
+    </style>
+</x-layouts.admin>

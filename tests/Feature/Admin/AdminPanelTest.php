@@ -34,6 +34,7 @@ use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -117,25 +118,25 @@ class AdminPanelTest extends TestCase
     public function test_admin_cannot_access_player_profile(): void
     {
         $response = $this->actingAs($this->admin)->get('/profile');
-        $response->assertStatus(403);
+        $response->assertRedirect('/admin');
     }
 
     public function test_admin_cannot_access_player_dashboard(): void
     {
         $response = $this->actingAs($this->admin)->get('/dashboard');
-        $response->assertStatus(403);
+        $response->assertRedirect('/admin');
     }
 
     public function test_admin_cannot_access_player_wallet(): void
     {
         $response = $this->actingAs($this->admin)->get('/wallet');
-        $response->assertStatus(403);
+        $response->assertRedirect('/admin');
     }
 
     public function test_admin_cannot_access_player_teams(): void
     {
         $response = $this->actingAs($this->admin)->get('/teams');
-        $response->assertStatus(403);
+        $response->assertRedirect('/admin');
     }
 
     public function test_player_cannot_access_admin_profile(): void
@@ -198,11 +199,41 @@ class AdminPanelTest extends TestCase
         }
     }
 
+    public function test_game_management_filters_active_and_archived_games(): void
+    {
+        $archived = Game::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'slug' => 'archived-racer',
+            'is_active' => false,
+        ]);
+        $archived->translations()->create([
+            'locale' => 'en',
+            'name' => 'Archived Racer',
+            'description' => 'Archived catalog entry',
+        ]);
+        $archived->delete();
+
+        Livewire::actingAs($this->admin)
+            ->test(CmsAdmin::class)
+            ->assertSee('Test Game')
+            ->assertDontSee('Archived Racer')
+            ->set('gameSearch', 'test-game')
+            ->assertSee('Test Game')
+            ->call('clearGameFilters')
+            ->call('setGameRecordTab', 'archived')
+            ->assertSee('Archived Racer')
+            ->assertDontSee('Test Game');
+    }
+
     /**
      * Test TournamentAdmin component functionality.
      */
     public function test_tournament_admin_can_create_tournament(): void
     {
+        // This assertion covers the retained Legacy V1 editor. Keep it deterministic
+        // when a developer enables Tournament V2 in their local environment.
+        config()->set('features.tournament_v2.enabled', false);
+
         $platform = Platform::query()->create(['name' => 'PC', 'slug' => 'pc']);
 
         Livewire::actingAs($this->admin)
@@ -463,7 +494,7 @@ class AdminPanelTest extends TestCase
         $this->assertNotNull($user);
         $this->assertTrue($user->hasRole('PLAYER'));
         $this->assertEquals('PH', $user->profile?->country_code);
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Password123!', $user->password));
+        $this->assertTrue(Hash::check('Password123!', $user->password));
     }
 
     public function test_user_admin_can_reset_password_with_matching_confirmation(): void
@@ -478,7 +509,7 @@ class AdminPanelTest extends TestCase
             ->call('resetPassword')
             ->assertHasNoErrors();
 
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('NewSecret123!', $targetUser->fresh()->password));
+        $this->assertTrue(Hash::check('NewSecret123!', $targetUser->fresh()->password));
     }
 
     public function test_user_admin_reset_password_fails_with_mismatched_confirmation(): void

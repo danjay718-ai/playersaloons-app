@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Operations\Models\SystemSetting;
+use DateTimeZone;
 use Illuminate\Support\Facades\Auth;
 
 class SystemSettingsAdmin extends AdminComponent
@@ -24,6 +25,8 @@ class SystemSettingsAdmin extends AdminComponent
     public string $platformCommissionPercentage = '10.00';
 
     public int $defaultWaitingResultTime = 30;
+
+    public string $tournamentTimezone = 'UTC';
 
     public bool $showLanguageSwitcherGuest = false;
 
@@ -59,6 +62,7 @@ class SystemSettingsAdmin extends AdminComponent
         );
 
         $this->defaultWaitingResultTime = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
+        $this->tournamentTimezone = (string) (SystemSetting::query()->where('key', 'tournament.timezone')->value('value') ?? config('app.tournament_timezone', 'UTC'));
 
         $langSettings = SystemSetting::query()->whereIn('key', ['language_switcher.show_guest', 'language_switcher.show_admin'])->pluck('value', 'key');
         $this->showLanguageSwitcherGuest = filter_var($langSettings['language_switcher.show_guest'] ?? false, FILTER_VALIDATE_BOOL);
@@ -71,10 +75,17 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function saveTournamentSettings(): void
     {
-        $this->validate(['defaultWaitingResultTime' => ['required', 'integer', 'min:1', 'max:1440']]);
+        $this->validate([
+            'defaultWaitingResultTime' => ['required', 'integer', 'min:1', 'max:1440'],
+            'tournamentTimezone' => ['required', 'timezone'],
+        ]);
         SystemSetting::query()->updateOrCreate(
             ['key' => 'tournament.waiting_result_time_default'],
             ['value' => (string) $this->defaultWaitingResultTime, 'updated_by' => Auth::id()]
+        );
+        SystemSetting::query()->updateOrCreate(
+            ['key' => 'tournament.timezone'],
+            ['value' => $this->tournamentTimezone, 'updated_by' => Auth::id()]
         );
         session()->flash('success', 'Tournament timing settings updated.');
     }
@@ -167,6 +178,8 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function render()
     {
-        return view('livewire.admin.system-settings-admin')->layout('components.layouts.admin', ['admin_title' => 'System Settings']);
+        return view('livewire.admin.system-settings-admin', [
+            'timezones' => DateTimeZone::listIdentifiers(),
+        ])->layout('components.layouts.admin', ['admin_title' => 'System Settings']);
     }
 }
