@@ -63,8 +63,7 @@ class ComplianceBlockTest extends TestCase
         app(ApplyComplianceBlockAction::class)->execute($this->player, $this->admin, 'platform_abuse', 'Confirmed platform abuse incident.');
 
         $this->actingAs($this->player)->get('/dashboard')
-            ->assertForbidden()
-            ->assertSee('Access is prohibited by policy rules');
+            ->assertRedirect(route('account.restricted'));
     }
 
     public function test_expired_block_does_not_prevent_access(): void

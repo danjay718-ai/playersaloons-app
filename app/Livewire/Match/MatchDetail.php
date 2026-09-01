@@ -11,20 +11,22 @@ use App\Modules\Match\Actions\ConfirmMatchResultAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
+use App\Modules\Match\Actions\SubmitV2MatchResultAction;
 use App\Modules\Match\Actions\VoteForRematchAction;
 use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Services\MatchReadinessService;
 use App\Shared\Enums\DisputeStatus;
+use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
-use LogicException;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use LogicException;
 
 class MatchDetail extends Component
 {
@@ -34,6 +36,8 @@ class MatchDetail extends Component
     public string $uuid;
 
     public ?int $winnerRegistrationId = null;
+
+    public string $resultOutcome = '';
 
     public string $notes = '';
 
@@ -104,9 +108,10 @@ class MatchDetail extends Component
     public function mount(string $uuid): void
     {
         $this->uuid = $uuid;
-        $match = GameMatch::query()->where('uuid', $uuid)->firstOrFail([
-            'lobby_code', 'lobby_password', 'server_region', 'lobby_instructions',
+        $match = GameMatch::query()->where('uuid', $uuid)->with('tournament:id,workflow_version')->firstOrFail([
+            'id', 'tournament_id', 'lobby_code', 'lobby_password', 'server_region', 'lobby_instructions',
         ]);
+        abort_if((int) $match->tournament->workflow_version === 2 && ! config('features.tournament_v2.enabled'), 404);
         $this->lobbyCode = (string) ($match->lobby_code ?? '');
         $this->lobbyPassword = (string) ($match->lobby_password ?? '');
         $this->serverRegion = (string) ($match->server_region ?? '');
@@ -168,7 +173,7 @@ class MatchDetail extends Component
         session()->flash('message', 'Match Room details saved.');
     }
 
-    public function submitResult(SubmitMatchResultAction $action)
+    public function submitResult(SubmitMatchResultAction $action, SubmitV2MatchResultAction $v2Action)
     {
         $match = GameMatch::query()
             ->where('uuid', $this->uuid)
@@ -179,6 +184,29 @@ class MatchDetail extends Component
         $user = Auth::user();
         if (! Auth::check() || ! $user->can('submitResult', $match)) {
             session()->flash('error', 'You are not authorized to submit results for this match.');
+
+            return;
+        }
+
+        if ((int) $match->tournament->workflow_version === 2) {
+            $this->validate([
+                'resultOutcome' => ['required', 'in:win,loss,draw'],
+                'notes' => ['nullable', 'string', 'max:500'],
+                'submissionProof' => ['nullable', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
+            ]);
+            try {
+                $v2Action->execute(
+                    $match,
+                    (int) Auth::id(),
+                    MatchOutcome::from($this->resultOutcome),
+                    $this->notes,
+                    $this->submissionProof,
+                );
+                session()->flash('message', 'Result submitted. Your opponent has five minutes from the first submission to respond.');
+                $this->reset(['resultOutcome', 'notes', 'submissionProof']);
+            } catch (\Exception $e) {
+                session()->flash('error', $this->safeError($e, 'Unable to submit the match result.'));
+            }
 
             return;
         }
@@ -317,6 +345,7 @@ class MatchDetail extends Component
                 'resultSubmissions' => fn ($query) => $query
                     ->with('user:id,username')
                     ->orderByDesc('submitted_at'),
+                'attempts.submissions',
                 'disputes' => function ($q) {
                     $q->with('evidence.uploadedBy:id,username');
                 },
@@ -325,7 +354,7 @@ class MatchDetail extends Component
             ->firstOrFail();
 
         // JIT Timeout Check
-        if ($match->isTimedOut()) {
+        if ((int) $match->tournament->workflow_version !== 2 && $match->isTimedOut()) {
             app(AutoForfeitAction::class)->execute($match);
             $match->refresh();
         }
@@ -338,9 +367,14 @@ class MatchDetail extends Component
         );
 
         $activeDispute = $match->disputes->first(fn ($dispute) => $dispute->status !== DisputeStatus::RESOLVED);
+        $hasSubmittedDisputeEvidence = $activeDispute !== null && $user !== null
+            && $activeDispute->evidence->contains('uploaded_by', $user->id);
 
         $latestSubmission = $match->resultSubmissions->first();
-        $isSubmitter = $user && $latestSubmission && $user->id === $latestSubmission->submitted_by;
+        $activeAttempt = $match->attempts->firstWhere('attempt_number', $match->active_attempt_number);
+        $isSubmitter = $user && ((int) $match->tournament->workflow_version === 2
+            ? $activeAttempt?->submissions->contains('submitted_by', $user->id)
+            : $latestSubmission && $user->id === $latestSubmission->submitted_by);
 
         $isAdmin = Auth::check() && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
         $layout = $isAdmin ? 'components.layouts.admin' : 'components.layouts.dashboard';
@@ -351,6 +385,8 @@ class MatchDetail extends Component
             'isSubmitter' => $isSubmitter,
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
+            'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,
+            'activeAttempt' => $activeAttempt,
         ])->layout($layout, ['title' => 'Match Room | PlayerSaloons', 'dashboard_title' => 'MATCH ROOM']);
     }
 }

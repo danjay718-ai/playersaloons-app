@@ -54,6 +54,7 @@ class GameMatch extends Model
         'player_b_registration_id',
         'winner_registration_id',
         'status',
+        'active_attempt_number',
         'scheduled_at',
         'ready_started_at',
         'ready_deadline_at',
@@ -69,6 +70,11 @@ class GameMatch extends Model
         'double_no_show_at',
         'started_at',
         'completed_at',
+        'stalled_deadline_at',
+        'round_deadline_at',
+        'final_resolution_eligible_at',
+        'final_resolution_notified_at',
+        'resolution_reason',
     ];
 
     /**
@@ -80,6 +86,7 @@ class GameMatch extends Model
     {
         return [
             'status' => MatchStatus::class,
+            'active_attempt_number' => 'integer',
             'scheduled_at' => 'datetime',
             'ready_started_at' => 'datetime',
             'ready_deadline_at' => 'datetime',
@@ -92,7 +99,16 @@ class GameMatch extends Model
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
             'result_submitted_at' => 'datetime',
+            'stalled_deadline_at' => 'datetime',
+            'round_deadline_at' => 'datetime',
+            'final_resolution_eligible_at' => 'datetime',
+            'final_resolution_notified_at' => 'datetime',
         ];
+    }
+
+    public function attempts(): HasMany
+    {
+        return $this->hasMany(MatchAttempt::class, 'match_id');
     }
 
     public function isTimedOut(): bool

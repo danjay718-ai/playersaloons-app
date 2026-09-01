@@ -9,7 +9,9 @@ use App\Http\Resources\MatchResource;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
+use App\Modules\Match\Actions\SubmitV2MatchResultAction;
 use App\Modules\Match\Models\GameMatch;
+use App\Shared\Enums\MatchOutcome;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +29,7 @@ class MatchApiController extends Controller
             ->where('uuid', $uuid)
             ->with(['tournament', 'round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration.user'])
             ->firstOrFail();
+        abort_if((int) $match->tournament->workflow_version === 2 && ! config('features.tournament_v2.enabled'), 404);
 
         return new MatchResource($match);
     }
@@ -37,7 +40,8 @@ class MatchApiController extends Controller
     public function submitResult(
         string $uuid,
         Request $request,
-        SubmitMatchResultAction $action
+        SubmitMatchResultAction $action,
+        SubmitV2MatchResultAction $v2Action,
     ): JsonResponse {
         $match = GameMatch::query()
             ->where('uuid', $uuid)
@@ -45,6 +49,28 @@ class MatchApiController extends Controller
             ->firstOrFail();
 
         Gate::authorize('submitResult', $match);
+
+        if ((int) $match->tournament->workflow_version === 2) {
+            try {
+                $data = $request->validate([
+                    'outcome' => ['required', 'in:win,loss,draw'],
+                    'notes' => ['nullable', 'string', 'max:500'],
+                ]);
+                $submission = $v2Action->execute(
+                    $match,
+                    (int) $request->user()->id,
+                    MatchOutcome::from($data['outcome']),
+                    $data['notes'] ?? null,
+                );
+
+                return response()->json([
+                    'message' => 'Result submitted successfully.',
+                    'submission' => ['id' => $submission->id, 'outcome' => $submission->outcome],
+                ]);
+            } catch (InvalidArgumentException|InvalidStateTransitionException|\LogicException $e) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+        }
 
         $winnerUserUuid = $request->input('winner_user_uuid');
         if (! $winnerUserUuid) {

@@ -28,6 +28,11 @@ class MatchResource extends JsonResource
             'scheduled_at' => $this->scheduled_at,
             'started_at' => $this->started_at,
             'completed_at' => $this->completed_at,
+            'result_deadline_at' => $this->when(
+                (int) ($this->tournament?->workflow_version ?? 1) === 2,
+                fn () => $this->attempts()->where('attempt_number', $this->active_attempt_number)->value('result_deadline_at'),
+            ),
+            'active_attempt_number' => (int) ($this->active_attempt_number ?? 1),
             'player_a' => $this->whenLoaded('playerARegistration', fn () => $this->playerARegistration?->user ? [
                 'uuid' => $this->playerARegistration->user->uuid,
                 'username' => $this->playerARegistration->user->username,

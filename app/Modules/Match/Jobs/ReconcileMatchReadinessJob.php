@@ -18,6 +18,7 @@ final class ReconcileMatchReadinessJob implements ShouldQueue
     {
         GameMatch::query()
             ->where('status', MatchStatus::READY)
+            ->whereHas('tournament', fn ($tournaments) => $tournaments->where('workflow_version', 1))
             ->where(function ($due): void {
                 $due->where('ready_deadline_at', '<=', now())
                     ->orWhere('extra_wait_deadline_at', '<=', now());
