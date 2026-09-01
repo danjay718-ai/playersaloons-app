@@ -59,6 +59,38 @@ class Tournament extends Model implements HasMedia
 {
     use InteractsWithMedia, SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::updating(function (Tournament $tournament): void {
+            if ((int) $tournament->workflow_version !== 2) {
+                return;
+            }
+
+            $presentation = ['banner_url', 'description', 'rules'];
+            $structural = [
+                'name', 'game_id', 'platform_id', 'competition_type', 'entry_fee', 'max_participants',
+                'min_participants', 'team_size', 'registration_open_at', 'registration_close_at',
+                'start_at', 'end_at', 'join_closes_at', 'timezone', 'frequency', 'waiting_result_time',
+                'round_duration_seconds', 'winning_points', 'winner_bonus_xp', 'full_first_bps',
+                'full_second_bps', 'full_platform_bps', 'underfilled_first_bps', 'underfilled_platform_bps',
+            ];
+            $dirtyConfiguration = array_intersect(array_keys($tournament->getDirty()), [...$presentation, ...$structural]);
+            if ($dirtyConfiguration === []) {
+                return;
+            }
+
+            $originalStart = $tournament->getRawOriginal('start_at');
+            if ($originalStart !== null && Carbon::parse($originalStart)->lessThanOrEqualTo(now())) {
+                throw new \LogicException('Tournament V2 configuration is locked after its Start Date and Time: '.implode(', ', $dirtyConfiguration).'.');
+            }
+
+            if (array_intersect($dirtyConfiguration, $structural) !== []
+                && $tournament->registrations()->exists()) {
+                throw new \LogicException('Only banner, description, and rules may be edited after the first player joins: '.implode(', ', array_intersect($dirtyConfiguration, $structural)).'.');
+            }
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -66,7 +98,10 @@ class Tournament extends Model implements HasMedia
      */
     protected $fillable = [
         'uuid',
+        'workflow_version',
         'template_id',
+        'schedule_slot_id',
+        'occurrence_period_key',
         'game_id',
         'competition_type',
         'name',
@@ -104,6 +139,22 @@ class Tournament extends Model implements HasMedia
         'play_xp',
         'winner_bonus_xp',
         'end_at',
+        'join_closes_at',
+        'round_duration_seconds',
+        'full_first_bps',
+        'full_second_bps',
+        'full_platform_bps',
+        'underfilled_first_bps',
+        'underfilled_platform_bps',
+        'financial_calculation_version',
+        'finalized_joined_entries',
+        'finalized_gross_pool',
+        'finalized_commission_amount',
+        'finalized_first_prize',
+        'finalized_second_prize',
+        'financial_finalized_at',
+        'payout_status',
+        'completion_reason',
         'registration_duration_minutes',
         'extra_registration_minutes',
         'extra_registration_started_at',
@@ -120,6 +171,7 @@ class Tournament extends Model implements HasMedia
     {
         return [
             'status' => TournamentStatus::class,
+            'workflow_version' => 'integer',
             'competition_type' => CompetitionType::class,
             'entry_fee' => 'decimal:2',
             'prize_pool' => 'decimal:2',
@@ -132,6 +184,20 @@ class Tournament extends Model implements HasMedia
             'checkin_close_at' => 'datetime',
             'start_at' => 'datetime',
             'end_at' => 'datetime',
+            'join_closes_at' => 'datetime',
+            'round_duration_seconds' => 'integer',
+            'full_first_bps' => 'integer',
+            'full_second_bps' => 'integer',
+            'full_platform_bps' => 'integer',
+            'underfilled_first_bps' => 'integer',
+            'underfilled_platform_bps' => 'integer',
+            'financial_calculation_version' => 'integer',
+            'finalized_joined_entries' => 'integer',
+            'finalized_gross_pool' => 'decimal:2',
+            'finalized_commission_amount' => 'decimal:2',
+            'finalized_first_prize' => 'decimal:2',
+            'finalized_second_prize' => 'decimal:2',
+            'financial_finalized_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'prize_1st' => 'decimal:2',
@@ -162,6 +228,16 @@ class Tournament extends Model implements HasMedia
     public function template(): BelongsTo
     {
         return $this->belongsTo(TournamentTemplate::class, 'template_id');
+    }
+
+    public function scheduleSlot(): BelongsTo
+    {
+        return $this->belongsTo(TournamentScheduleSlot::class, 'schedule_slot_id');
+    }
+
+    public function cancellationRequests(): HasMany
+    {
+        return $this->hasMany(TournamentCancellationRequest::class);
     }
 
     /**

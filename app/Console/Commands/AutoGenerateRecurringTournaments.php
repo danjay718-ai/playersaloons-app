@@ -6,6 +6,8 @@ namespace App\Console\Commands;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Actions\GenerateRecurringTournamentAction;
+use App\Modules\Tournament\Actions\MaterializeV2OccurrenceAction;
+use App\Modules\Tournament\Models\TournamentScheduleSlot;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -18,7 +20,7 @@ final class AutoGenerateRecurringTournaments extends Command
 
     protected $description = 'Generate due competition occurrences from active recurring templates.';
 
-    public function handle(GenerateRecurringTournamentAction $generate): int
+    public function handle(GenerateRecurringTournamentAction $generate, MaterializeV2OccurrenceAction $materialize): int
     {
         $creator = User::role('SUPER_ADMIN')->oldest('id')->first() ?? User::query()->oldest('id')->first();
 
@@ -34,8 +36,27 @@ final class AutoGenerateRecurringTournaments extends Command
         $candidateCutoff = now()->addMinutes(max(0, $maxLeadMinutes));
         $created = 0;
 
+        if (config('features.tournament_v2.enabled')) {
+            TournamentScheduleSlot::query()
+                ->where('is_active', true)
+                ->whereHas('template', fn ($templates) => $templates->where('workflow_version', 2)->where('is_recurring', true))
+                ->orderBy('id')
+                ->chunkById(100, function ($slots) use ($creator, $materialize, &$created): void {
+                    foreach ($slots as $slot) {
+                        try {
+                            $before = $slot->occurrences()->count();
+                            $materialize->execute($slot, $creator);
+                            $created += $slot->occurrences()->count() > $before ? 1 : 0;
+                        } catch (Throwable $exception) {
+                            Log::error('V2 occurrence generation failed.', ['schedule_slot_id' => $slot->id, 'exception' => $exception]);
+                        }
+                    }
+                });
+        }
+
         TournamentTemplate::query()
             ->where('is_recurring', true)
+            ->where('workflow_version', 1)
             ->whereNotNull('next_run_at')
             ->where('next_run_at', '<=', $candidateCutoff)
             ->orderBy('id')
