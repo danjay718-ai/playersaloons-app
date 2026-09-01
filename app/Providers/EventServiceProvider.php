@@ -18,7 +18,10 @@ use App\Modules\Match\Events\MatchRematchCreated;
 use App\Modules\Match\Events\MatchResultSubmitted;
 use App\Modules\Match\Events\MatchStarted;
 use App\Modules\Match\Listeners\AdvanceWinnerListener;
+use App\Modules\Match\Listeners\ArmV2RoundDeadlineListener;
+use App\Modules\Match\Listeners\ArmV2StalledMatchTimerListener;
 use App\Modules\Match\Listeners\BroadcastBracketUpdateListener;
+use App\Modules\Match\Listeners\NotifyAdminsOfDisputeListener;
 use App\Modules\Match\Listeners\NotifyParticipantsListener;
 use App\Modules\Match\Listeners\PrepareMatchRoomListener;
 use App\Modules\Operations\Services\ErrorIncidentReporter;
@@ -28,6 +31,9 @@ use App\Modules\Tournament\Events\TournamentStarted;
 use App\Modules\Tournament\Listeners\AutoStartMatchesListener;
 use App\Modules\Tournament\Listeners\AwardPrizesListener;
 use App\Modules\Tournament\Listeners\AwardTournamentExperienceListener;
+use App\Modules\Tournament\Listeners\AwardV2ChampionExperienceListener;
+use App\Modules\Tournament\Listeners\AwardV2EliminationExperienceListener;
+use App\Modules\Tournament\Listeners\AwardV2PrizesListener;
 use App\Modules\Tournament\Listeners\BroadcastTournamentLifecycleListener;
 use App\Modules\Tournament\Listeners\IssueRefundsListener;
 use App\Modules\Tournament\Listeners\TournamentNotificationListener;
@@ -101,10 +107,13 @@ class EventServiceProvider extends ServiceProvider
         TournamentStarted::class => [
             BroadcastTournamentLifecycleListener::class,
             AutoStartMatchesListener::class,
+            ArmV2StalledMatchTimerListener::class,
         ],
         TournamentCompleted::class => [
             AwardPrizesListener::class,
+            AwardV2PrizesListener::class,
             AwardTournamentExperienceListener::class,
+            AwardV2ChampionExperienceListener::class,
             BroadcastTournamentLifecycleListener::class,
         ],
         TournamentCancelled::class => [
@@ -117,6 +126,7 @@ class EventServiceProvider extends ServiceProvider
             NotifyParticipantsListener::class,
         ],
         MatchStarted::class => [
+            ArmV2RoundDeadlineListener::class,
             NotifyParticipantsListener::class,
         ],
         MatchResultSubmitted::class => [
@@ -124,6 +134,8 @@ class EventServiceProvider extends ServiceProvider
         ],
         MatchCompleted::class => [
             AdvanceWinnerListener::class,
+            AwardV2EliminationExperienceListener::class,
+            ArmV2StalledMatchTimerListener::class,
             BroadcastBracketUpdateListener::class,
             NotifyParticipantsListener::class,
         ],
@@ -134,6 +146,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         MatchDisputed::class => [
             NotifyParticipantsListener::class,
+            NotifyAdminsOfDisputeListener::class,
         ],
         MatchRematchCreated::class => [
             BroadcastBracketUpdateListener::class,

@@ -22,6 +22,8 @@ final class PlayerProgressionService
 {
     public const TOURNAMENT_COMPLETION_XP = 100;
 
+    public const V2_PARTICIPATION_XP = 10;
+
     public function __construct(private readonly NotificationService $notifications) {}
 
     public function progressionFor(User $user): PlayerProgression
@@ -57,7 +59,9 @@ final class PlayerProgressionService
                     $eligible->where('tournament_registrations.user_id', $user->getKey())
                         ->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->getKey()));
                 })
-                ->whereHas('tournament', fn ($tournaments) => $tournaments->where('status', TournamentStatus::COMPLETED->value))
+                ->whereHas('tournament', fn ($tournaments) => $tournaments
+                    ->where('workflow_version', 1)
+                    ->where('status', TournamentStatus::COMPLETED->value))
                 ->whereExists(function ($matches): void {
                     $matches->selectRaw('1')->from('matches')
                         ->where('matches.status', MatchStatus::COMPLETED->value)
@@ -110,6 +114,15 @@ final class PlayerProgressionService
         }
 
         $this->award($userId, $tournamentId, 'champion_bonus', $amount, false);
+    }
+
+    public function awardV2TournamentParticipation(int $userId, int $tournamentId): void
+    {
+        if (! $this->tablesReady()) {
+            return;
+        }
+
+        $this->award($userId, $tournamentId, 'participation', self::V2_PARTICIPATION_XP, true);
     }
 
     private function award(int $userId, int $tournamentId, string $reason, int $amount, bool $incrementCompleted): void
