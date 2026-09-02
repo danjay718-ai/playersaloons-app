@@ -101,10 +101,10 @@
             @endif
 
             {{-- CTAs --}}
-            <div class="landing-fade-in landing-fade-delay-3 flex w-full max-w-sm flex-col items-center justify-center gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:gap-4">
+            <div class="landing-fade-in landing-fade-delay-3 flex w-full max-w-sm flex-col items-center justify-center gap-4 pt-1 sm:w-auto sm:max-w-none sm:flex-row sm:gap-5 sm:pt-2">
                 @if($hero?->cta_label && $hero?->cta_url)
                     <a href="{{ $hero->cta_url }}"
-                        class="landing-cta-primary group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] text-white shadow-[0_0_40px_rgba(120,80,255,0.5)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(120,80,255,0.7)] hover:scale-[1.02] sm:w-64 sm:px-8 sm:text-xs sm:tracking-[0.2em]">
+                        class="landing-cta-primary group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] text-white shadow-[0_0_40px_rgba(120,80,255,0.5)] transition-all duration-300 hover:shadow-[0_0_60px_rgba(120,80,255,0.7)] hover:scale-[1.02] sm:w-60 sm:px-8 sm:text-xs sm:tracking-[0.2em] lg:w-64">
                         <span class="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-cyan-600 transition-all duration-300"></span>
                         <span class="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-cyan-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></span>
                         <i data-lucide="trophy" class="relative h-5 w-5"></i>
@@ -112,7 +112,7 @@
                     </a>
                 @endif
                 <a href="/register"
-                    class="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl border border-white/20 bg-white/5 px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:scale-[1.02] sm:w-64 sm:px-8 sm:text-xs sm:tracking-[0.2em]">
+                    class="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl border border-white/20 bg-white/5 px-6 py-4 text-[11px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:scale-[1.02] sm:w-60 sm:px-8 sm:text-xs sm:tracking-[0.2em] lg:w-64">
                     <i data-lucide="user-plus" class="h-5 w-5 transition-transform duration-300 group-hover:scale-110"></i>
                     <span>Create Account</span>
                 </a>
