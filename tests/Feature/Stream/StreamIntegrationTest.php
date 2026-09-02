@@ -42,6 +42,9 @@ class StreamIntegrationTest extends TestCase
     {
         parent::setUp();
 
+        // These admin save/validation cases cover the retained V1 editor.
+        // Keep them independent from a developer's V2 feature-flag setting.
+        config(['features.tournament_v2.enabled' => false]);
         config(['app.url' => 'https://app-testing.website']);
 
         $this->seed(RolesAndPermissionsSeeder::class);
@@ -141,6 +144,7 @@ class StreamIntegrationTest extends TestCase
             'youtube_stream_url' => 'https://youtu.be/dQw4w9WgXcQ',
             'twitch_stream_url' => 'https://www.twitch.tv/player_saloons',
         ]);
+        $tournament->streamChannels()->update(['is_live' => true]);
 
         $this->actingAs($this->player)
             ->get('/streams')
