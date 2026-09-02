@@ -116,6 +116,9 @@ class TournamentSecurityTest extends TestCase
     /** The default Upcoming tab only shows open-registration competitions. */
     public function test_tournament_listing_filters_by_status(): void
     {
+        // This assertion covers the retained V1 paginator, not V2 grouped discovery.
+        config(['features.tournament_v2.enabled' => false]);
+
         $this->makeTournament(TournamentStatus::REGISTRATION_OPEN);  // upcoming
         $this->makeTournament(TournamentStatus::ONGOING);            // ongoing tab
         $this->makeTournament(TournamentStatus::DRAFT);               // hidden

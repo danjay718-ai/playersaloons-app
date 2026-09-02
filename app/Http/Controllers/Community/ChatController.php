@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Community;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Community\Services\ChatService;
 use App\Modules\Community\Models\ChatConversation;
 use App\Modules\Community\Models\ChatMessage;
 use App\Modules\Community\Models\PlayerFollow;
+use App\Modules\Community\Services\ChatService;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadMatch;

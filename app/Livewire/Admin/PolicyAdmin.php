@@ -15,6 +15,7 @@ class PolicyAdmin extends AdminComponent
         parent::boot();
         abort_unless($this->actor()->can('cms.view') || $this->actor()->can('cms.manage'), 403);
     }
+
     public ?int $selectedPolicyId = null;
 
     public string $title = '';

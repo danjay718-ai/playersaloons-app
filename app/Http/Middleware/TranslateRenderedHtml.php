@@ -120,12 +120,12 @@ final class TranslateRenderedHtml
             '/(<(?:"[^"]*"|\'[^\']*\'|[^><])*>)|([^<]+)/u',
             function (array $matches): string {
                 // If it matched an HTML tag, return it untouched
-                if (!empty($matches[1])) {
+                if (! empty($matches[1])) {
                     return $matches[1];
                 }
 
                 $text = $matches[2];
-                
+
                 // If there are no alphabetic characters, no need to translate
                 if (! preg_match('/[[:alpha:]]/u', $text)) {
                     return $text;

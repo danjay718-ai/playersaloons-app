@@ -1,13 +1,13 @@
-<x-layouts.admin title="Create Tournament V2">
+<x-layouts.admin :title="($h2h ?? false) ? 'Create Platform H2H' : 'Create Tournament V2'">
     @php
         $gameOptions = $games->mapWithKeys(function ($game) {
-            $defaults = $game->tournamentDefaults;
+            $defaults = ($h2h ?? false) ? $game->headToHeadDefaults : $game->tournamentDefaults;
             return [(string) $game->id => [
                 'description' => $defaults?->description ?? '', 'rules' => $defaults?->rules ?? '',
                 'platform_id' => $defaults?->default_platform_id,
-                'banner_url' => $defaults?->tournament_banner_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($defaults->tournament_banner_path) : null,
+                'banner_url' => ($bannerPath = (($h2h ?? false) ? $defaults?->head_to_head_banner_path : $defaults?->tournament_banner_path)) ? \Illuminate\Support\Facades\Storage::disk('public')->url($bannerPath) : null,
                 'platforms' => $game->platforms->map(fn ($platform) => ['id' => $platform->id, 'name' => $platform->name])->values(),
-                'defaults_url' => route('admin.games.tournament-defaults.edit', $game),
+                'defaults_url' => ($h2h ?? false) ? route('admin.games.head-to-head-defaults.edit', $game) : route('admin.games.tournament-defaults.edit', $game),
             ]];
         });
         $minimumScheduleAt = now($timezone)->addMinute()->second(0);
@@ -22,27 +22,28 @@
         ]];
     @endphp
 
-    <div class="mx-auto max-w-6xl" x-data="v2TournamentForm(@js($gameOptions), @js(old('slots', $defaultSlots)), @js($minimumScheduleAt->format('Y-m-d\\TH:i')))">
+    <div class="mx-auto max-w-6xl" x-data="v2TournamentForm(@js($gameOptions), @js(old('slots', $defaultSlots)), @js($minimumScheduleAt->format('Y-m-d\\TH:i')))" @if($h2h ?? false) x-init="maxTeams = 2; maxTeamsChoice = '2'" @endif>
         <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div><p class="text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">Tournament V2</p><h1 class="mt-1 text-2xl font-black text-white">Create tournament schedule</h1><p class="mt-1 max-w-2xl text-sm text-slate-400">Configure reusable defaults and occurrence times. Every player joins a real tournament occurrence, not the template.</p></div>
+            <div><p class="text-[10px] font-black uppercase tracking-[0.24em] text-indigo-400">{{ ($h2h ?? false) ? 'Platform H2H' : 'Tournament V2' }}</p><h1 class="mt-1 text-2xl font-black text-white">Create {{ ($h2h ?? false) ? 'Head-to-Head schedule' : 'tournament schedule' }}</h1><p class="mt-1 max-w-2xl text-sm text-slate-400">{{ ($h2h ?? false) ? 'Create a platform-managed 1v1 schedule. Each slot creates one two-player match occurrence.' : 'Configure reusable defaults and occurrence times. Every player joins a real tournament occurrence, not the template.' }}</p></div>
             <a href="{{ route('admin.tournaments') }}" class="v2-secondary-button">Back to tournaments</a>
         </header>
 
         @if ($errors->any())<div class="mb-5 rounded-xl border border-red-800/70 bg-red-950/30 p-4 text-sm text-red-200"><p class="font-bold">Please correct the highlighted fields.</p><ul class="mt-2 list-disc space-y-1 pl-5 text-xs text-red-300">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
-        <form method="POST" action="{{ route('admin.tournaments.v2.store') }}" enctype="multipart/form-data" class="space-y-5">
+        <form method="POST" action="{{ ($h2h ?? false) ? route('admin.h2h.v2.store') : route('admin.tournaments.v2.store') }}" enctype="multipart/form-data" class="space-y-5">
             @csrf
+            <input type="hidden" name="competition_type" value="{{ ($h2h ?? false) ? 'head_to_head' : 'tournament' }}">
             <section class="v2-card">
                 <div class="v2-section-heading"><div><h2>Game and presentation</h2><p>Defaults are copied to each new occurrence, so later game-template changes do not rewrite history.</p></div></div>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div><label class="v2-field-label">Game <span class="text-red-400">*</span></label><select name="game_id" x-model="gameId" @change="loadGameDefaults" class="v2-field" required><option value="">Select a game</option>@foreach ($games as $game)<option value="{{ $game->id }}">{{ $game->localizedName() }}</option>@endforeach</select>@error('game_id')<p class="v2-field-error">{{ $message }}</p>@enderror</div>
                     <div><label class="v2-field-label">Platform <span class="text-red-400">*</span></label><select name="platform_id" x-model="platformId" class="v2-field" required><option value="">Select a platform</option><template x-for="platform in platforms" :key="platform.id"><option :value="platform.id" x-text="platform.name"></option></template></select>@error('platform_id')<p class="v2-field-error">{{ $message }}</p>@enderror</div>
                     <div class="flex items-end"><a x-show="gameId" :href="games[gameId]?.defaults_url" class="v2-secondary-button w-full">Edit game defaults</a></div>
-                <div class="md:col-span-2 lg:col-span-3"><label class="v2-field-label">Tournament name <span class="text-red-400">*</span></label><input name="name" value="{{ old('name') }}" maxlength="255" placeholder="e.g. Friday Night Championship" class="v2-field" required>@error('name')<p class="v2-field-error">{{ $message }}</p>@enderror</div>
+                <div class="md:col-span-2 lg:col-span-3"><label class="v2-field-label">{{ ($h2h ?? false) ? 'Head-to-Head name' : 'Tournament name' }} <span class="text-red-400">*</span></label><input name="name" value="{{ old('name') }}" maxlength="255" placeholder="{{ ($h2h ?? false) ? 'e.g. Evening 1v1' : 'e.g. Friday Night Championship' }}" class="v2-field" required>@error('name')<p class="v2-field-error">{{ $message }}</p>@enderror</div>
                 <label class="md:col-span-2 lg:col-span-3 flex cursor-pointer items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"><input name="is_featured" value="1" type="checkbox" @checked(old('is_featured')) class="mt-0.5 rounded border-slate-700 bg-slate-900 text-amber-500"><span><span class="block text-xs font-black uppercase text-amber-300">Featured Tournament</span><span class="mt-1 block text-xs leading-relaxed text-slate-500">Feature every occurrence created from this schedule.</span></span></label>
-                    <div class="md:col-span-2 lg:col-span-3"><x-forms.controller-image-crop-upload name="banner" label="Tournament banner" :width="960" :height="540" help="Separate from the game logo and game banner. A new cropped upload overrides the selected game's template banner." /></div>
+                    <div class="md:col-span-2 lg:col-span-3"><x-forms.controller-image-crop-upload name="banner" :label="($h2h ?? false) ? 'Head-to-Head banner' : 'Tournament banner'" :width="960" :height="540" help="Separate from the game logo and game banner. A new cropped upload overrides the selected game's template banner." /></div>
                     <div class="md:col-span-2 lg:col-span-3"><x-forms.quill-editor name="description" label="Description" :value="old('description', '')" placeholder="Explain the tournament format and what players can expect." /></div>
-                    <div class="md:col-span-2 lg:col-span-3"><x-forms.quill-editor name="rules" label="Tournament rules" :value="old('rules', '')" placeholder="Add rules specific to this tournament." /></div>
+                    <div class="md:col-span-2 lg:col-span-3"><x-forms.quill-editor name="rules" :label="($h2h ?? false) ? 'Head-to-Head rules' : 'Tournament rules'" :value="old('rules', '')" :placeholder="($h2h ?? false) ? 'Add rules specific to this 1v1 competition.' : 'Add rules specific to this tournament.'" /></div>
                 </div>
             </section>
 
@@ -50,7 +51,7 @@
                 <div class="v2-section-heading"><div><h2>Rules and prizes</h2><p>Minimum participants is fixed at 2, team size at 1 account, and participation XP at 10.</p></div></div>
                 <div class="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-100/85">Final prize uses actual paid entries. Full tournaments use a 10% platform commission. Underfilled tournaments use 15%; only First Place is paid. A full 4-team tournament pays First Place only.</div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <div><label class="v2-field-label">Maximum teams</label><input type="hidden" name="max_teams" :value="maxTeams"><select x-model="maxTeamsChoice" @change="selectMaxTeams" class="v2-field">@foreach ([4, 8, 16, 32, 64] as $size)<option value="{{ $size }}">{{ $size }}</option>@endforeach<option value="custom">Custom</option></select><input x-show="maxTeamsChoice === 'custom'" x-model.number="maxTeams" @input="normalizePrize" type="number" min="2" max="128" step="2" placeholder="Even number: 2–128" class="v2-field mt-2"><p x-show="maxTeamsChoice === 'custom'" class="v2-field-help">Only even numbers from 2 to 128 are allowed.</p></div>
+                    <div><label class="v2-field-label">{{ ($h2h ?? false) ? 'Player slots' : 'Maximum teams' }}</label><input type="hidden" name="max_teams" :value="maxTeams">@if($h2h ?? false)<input value="2 players (1v1)" disabled class="v2-field opacity-60">@else<select x-model="maxTeamsChoice" @change="selectMaxTeams" class="v2-field">@foreach ([4, 8, 16, 32, 64] as $size)<option value="{{ $size }}">{{ $size }}</option>@endforeach<option value="custom">Custom</option></select><input x-show="maxTeamsChoice === 'custom'" x-model.number="maxTeams" @input="normalizePrize" type="number" min="2" max="128" step="2" placeholder="Even number: 2–128" class="v2-field mt-2"><p x-show="maxTeamsChoice === 'custom'" class="v2-field-help">Only even numbers from 2 to 128 are allowed.</p>@endif</div>
                     <div><label class="v2-field-label">Entry fee <span class="text-red-400">*</span></label><input name="entry_fee" x-model="entryFee" inputmode="decimal" placeholder="0.00" class="v2-field" required>@error('entry_fee')<p class="v2-field-error">{{ $message }}</p>@enderror</div>
                     <div><label class="v2-field-label">Winning points (XP)</label><input name="winning_points" value="{{ old('winning_points', 15) }}" type="number" min="0" class="v2-field" required>@error('winning_points')<p class="v2-field-error">{{ $message }}</p>@enderror</div>
                     <input type="hidden" name="full_first_percent" :value="firstPercent"><input type="hidden" name="full_second_percent" :value="secondPercent">
@@ -81,7 +82,7 @@
                                 <p class="mt-1 text-[11px] text-slate-500">Leave a field blank to inherit the schedule default above. Prize values are always calculated from this slot's effective teams and entry fee.</p>
                                 <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                                     <div><label class="v2-field-label">Tournament name</label><input :name="`slots[${index}][name]`" placeholder="Use default" class="v2-field"></div>
-                                    <div><label class="v2-field-label">Maximum teams</label><input :name="`slots[${index}][max_teams]`" x-model.number="slot.overrideMaxTeams" type="number" min="2" max="128" step="2" :placeholder="`Default: ${maxTeams}`" class="v2-field"><p x-show="slot.overrideMaxTeams && (!Number.isInteger(Number(slot.overrideMaxTeams)) || Number(slot.overrideMaxTeams) % 2 !== 0)" class="v2-field-error">Use an even number from 2 to 128.</p></div>
+                                    @unless($h2h ?? false)<div><label class="v2-field-label">Maximum teams</label><input :name="`slots[${index}][max_teams]`" x-model.number="slot.overrideMaxTeams" type="number" min="2" max="128" step="2" :placeholder="`Default: ${maxTeams}`" class="v2-field"><p x-show="slot.overrideMaxTeams && (!Number.isInteger(Number(slot.overrideMaxTeams)) || Number(slot.overrideMaxTeams) % 2 !== 0)" class="v2-field-error">Use an even number from 2 to 128.</p></div>@endunless
                                     <div><label class="v2-field-label">Entry fee</label><input :name="`slots[${index}][entry_fee]`" x-model="slot.overrideEntryFee" inputmode="decimal" :placeholder="`Default: ${formatMoney(entryFeeNumber)}`" class="v2-field"></div>
                                     <div><label class="v2-field-label">First prize</label><input :value="formatMoney(slotFirstPrize(slot))" :disabled="slotEntryFee(slot) === 0" readonly class="v2-field"></div>
                                     <div><label class="v2-field-label">Second prize</label><input :value="formatMoney(slotSecondPrize(slot))" :disabled="slotEntryFee(slot) === 0" readonly class="v2-field"></div>
@@ -92,7 +93,7 @@
                     </template>
                 </div>
             </section>
-            <footer class="flex flex-col-reverse gap-3 pb-8 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs text-slate-500">New schedules start in <span class="font-semibold text-slate-300">Registration</span>; occurrences become <span class="font-semibold text-slate-300">Ongoing</span> at their start time.</p><button class="v2-primary-button">Create tournament schedule</button></footer>
+            <footer class="flex flex-col-reverse gap-3 pb-8 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs text-slate-500">New schedules start in <span class="font-semibold text-slate-300">Registration</span>; occurrences become <span class="font-semibold text-slate-300">Ongoing</span> at their start time.</p><button class="v2-primary-button">Create {{ ($h2h ?? false) ? 'H2H' : 'tournament' }} schedule</button></footer>
         </form>
     </div>
 

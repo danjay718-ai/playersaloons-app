@@ -81,6 +81,21 @@ class RoleBasedAccessControlTest extends TestCase
         Livewire::test(RolePermissionAdmin::class)->assertOk();
     }
 
+    public function test_roles_page_is_readable_but_its_crud_actions_still_require_roles_manage(): void
+    {
+        $moderator = User::factory()->create();
+        $moderator->assignRole('MODERATOR');
+        $moderator->givePermissionTo('roles.view');
+
+        $this->actingAs($moderator);
+
+        Livewire::test(RolePermissionAdmin::class)
+            ->assertOk()
+            ->assertDontSee('Add Role')
+            ->call('createRole', 'UNAUTHORIZED_ROLE')
+            ->assertForbidden();
+    }
+
     public function test_assign_role_action_rejects_direct_super_admin_assignment(): void
     {
         $superAdmin = User::factory()->create();

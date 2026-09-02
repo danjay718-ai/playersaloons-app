@@ -51,10 +51,10 @@ x-on:keydown.escape.window="closeAll()">
             
             <div class="flex items-center justify-between mb-2 px-1">
                 <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-500">Available Roles</h3>
-                <button type="button" @click="openCreate()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors">
+                @if($canManageRoles)<button type="button" @click="openCreate()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     <span>Add Role</span>
-                </button>
+                </button>@endif
             </div>
             
             @foreach($roles as $role)
@@ -77,7 +77,7 @@ x-on:keydown.escape.window="closeAll()">
                     </div>
 
                     <div class="flex items-center gap-1.5 shrink-0 ml-2" @click.stop>
-                        @if(!in_array($role->name, \App\Livewire\Admin\RolePermissionAdmin::PROTECTED_ROLES, true))
+                        @if($canManageRoles && !in_array($role->name, \App\Livewire\Admin\RolePermissionAdmin::PROTECTED_ROLES, true))
                             <button type="button" @click.stop="openEdit({{ $role->id }}, @js($role->name))" title="Rename Role" class="p-1 text-slate-500 hover:text-indigo-400 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
@@ -150,8 +150,8 @@ x-on:keydown.escape.window="closeAll()">
                                                 @php
                                                     $hasPerm = $activeRole->permissions->contains('name', $perm->name);
                                                 @endphp
-                                                <div wire:click="togglePermission('{{ $perm->name }}')" 
-                                                     class="group flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 cursor-pointer select-none 
+                                                <div @if($canManageRoles) wire:click="togglePermission('{{ $perm->name }}')" @endif
+                                                     class="group flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 select-none {{ $canManageRoles ? 'cursor-pointer' : 'cursor-not-allowed opacity-70' }}
                                                      {{ $hasPerm ? 'bg-indigo-600/10 border-indigo-500/30 shadow-[0_0_10px_rgba(79,70,229,0.05)] hover:bg-indigo-600/15' : 'bg-slate-900/50 border-slate-800 hover:border-slate-700 hover:bg-slate-800/80' }}">
                                                     
                                                     <div class="flex flex-col mr-3 truncate">

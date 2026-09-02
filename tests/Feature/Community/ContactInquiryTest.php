@@ -172,8 +172,10 @@ class ContactInquiryTest extends TestCase
     {
         $admin = $this->makeUser('ADMIN', 'inbox-admin@example.com');
 
+        $inquiries = collect();
+
         foreach (['new', 'new', 'in_review', 'resolved', 'archived'] as $index => $status) {
-            ContactInquiry::query()->create([
+            $inquiries->push(ContactInquiry::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'name' => 'Player '.$index,
                 'email' => $index === 0 ? 'reply@example.com' : 'player'.$index.'@example.com',
@@ -181,14 +183,14 @@ class ContactInquiryTest extends TestCase
                 'subject' => $index === 0 ? 'Deposit question' : 'Question '.$index,
                 'message' => 'Please help with this support request.',
                 'status' => $status,
-            ]);
+            ]));
         }
 
         Livewire::actingAs($admin)
             ->test(ContactInquiryAdmin::class)
             ->assertSeeInOrder(['New', '2', 'In review', '1', 'Resolved', '1', 'Archived', '1'])
             ->assertSee('Wallet or payment')
-            ->call('selectInquiry', 1)
+            ->call('selectInquiry', $inquiries->first()->id)
             ->assertSee('Reply by email')
             ->assertSeeHtml('href="mailto:reply@example.com?subject=Re%3A%20Deposit%20question"');
     }

@@ -72,6 +72,9 @@
                                         <span class="mt-1 block text-[9px] font-bold uppercase tracking-wider {{ $game->tournamentDefaults ? 'text-violet-300' : 'text-slate-600' }}">
                                             {{ $game->tournamentDefaults ? 'Tournament template configured' : 'Tournament template not configured' }}
                                         </span>
+                                        <span class="mt-1 block text-[9px] font-bold uppercase tracking-wider {{ $game->headToHeadDefaults ? 'text-fuchsia-300' : 'text-slate-600' }}">
+                                            {{ $game->headToHeadDefaults ? 'H2H template configured' : 'H2H template not configured' }}
+                                        </span>
                                     @endif
                                 </td>
                                 <td class="p-4"><div class="flex max-w-[180px] flex-wrap gap-1">@forelse($game->platforms as $platform)<span class="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-[9px] text-slate-400">{{ $platform->name }}</span>@empty<span class="text-[10px] text-slate-600">All / unassigned</span>@endforelse</div></td>
@@ -115,6 +118,7 @@
                                             ]) }})" class="game-action-item"><i data-lucide="edit" class="h-4 w-4 text-indigo-400"></i>Edit game</button>
                                             @if(config('features.tournament_v2.enabled') && auth()->user()?->can('tournaments.manage'))
                                                 <a href="{{ route('admin.games.tournament-defaults.edit', $game) }}" class="game-action-item"><i data-lucide="trophy" class="h-4 w-4 text-violet-300"></i>Tournament template</a>
+                                                <a href="{{ route('admin.games.head-to-head-defaults.edit', $game) }}" class="game-action-item"><i data-lucide="swords" class="h-4 w-4 text-fuchsia-300"></i>Head-to-Head template</a>
                                             @endif
                                             <div class="my-1 border-t border-slate-800"></div>
                                             <button type="button" x-on:click="open = false; openGameArchive({{ $game->id }})" wire:loading.attr="disabled" wire:target="confirmDelete('game', {{ $game->id }})" class="game-action-item text-red-300 hover:bg-red-950/40 hover:text-red-200"><i data-lucide="archive" class="h-4 w-4"></i>Archive game</button>

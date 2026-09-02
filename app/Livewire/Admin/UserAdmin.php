@@ -15,7 +15,6 @@ use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\UserPresenceService;
 use App\Modules\Tournament\Models\TournamentRegistration;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -173,14 +172,30 @@ class UserAdmin extends AdminComponent
     ): void {
         $this->authorize('create', User::class);
 
-        if ($mode !== null) $this->createMode = $mode;
-        if ($username !== null) $this->createUsername = $username;
-        if ($email !== null) $this->createEmail = $email;
-        if ($displayName !== null) $this->createDisplayName = $displayName;
-        if ($countryCode !== null) $this->createCountryCode = $countryCode;
-        if ($role !== null) $this->createRole = $role;
-        if ($password !== null) $this->createPassword = $password;
-        if ($passwordConfirmation !== null) $this->createPasswordConfirmation = $passwordConfirmation;
+        if ($mode !== null) {
+            $this->createMode = $mode;
+        }
+        if ($username !== null) {
+            $this->createUsername = $username;
+        }
+        if ($email !== null) {
+            $this->createEmail = $email;
+        }
+        if ($displayName !== null) {
+            $this->createDisplayName = $displayName;
+        }
+        if ($countryCode !== null) {
+            $this->createCountryCode = $countryCode;
+        }
+        if ($role !== null) {
+            $this->createRole = $role;
+        }
+        if ($password !== null) {
+            $this->createPassword = $password;
+        }
+        if ($passwordConfirmation !== null) {
+            $this->createPasswordConfirmation = $passwordConfirmation;
+        }
 
         $eligibleCountryCodes = array_keys(app(CountryEligibilityService::class)->selectableCountries());
 
@@ -281,10 +296,18 @@ class UserAdmin extends AdminComponent
         }
         $this->editingUserId = $targetId;
 
-        if ($username !== null) $this->editUsername = $username;
-        if ($email !== null) $this->editEmail = $email;
-        if ($displayName !== null) $this->editDisplayName = $displayName;
-        if ($countryCode !== null) $this->editCountryCode = $countryCode;
+        if ($username !== null) {
+            $this->editUsername = $username;
+        }
+        if ($email !== null) {
+            $this->editEmail = $email;
+        }
+        if ($displayName !== null) {
+            $this->editDisplayName = $displayName;
+        }
+        if ($countryCode !== null) {
+            $this->editCountryCode = $countryCode;
+        }
 
         $user = User::findOrFail($this->editingUserId);
         $this->authorize('update', $user);
@@ -353,8 +376,12 @@ class UserAdmin extends AdminComponent
         }
         $this->passwordUserId = $targetId;
 
-        if ($password !== null) $this->newPassword = $password;
-        if ($confirmation !== null) $this->newPasswordConfirmation = $confirmation;
+        if ($password !== null) {
+            $this->newPassword = $password;
+        }
+        if ($confirmation !== null) {
+            $this->newPasswordConfirmation = $confirmation;
+        }
 
         $user = User::findOrFail($this->passwordUserId);
         $this->authorize('resetPassword', $user);
@@ -568,8 +595,12 @@ class UserAdmin extends AdminComponent
         }
         $this->selectedUserId = $targetId;
 
-        if ($role !== null) $this->selectedRole = $role;
-        if ($action !== null) $this->roleAction = $action;
+        if ($role !== null) {
+            $this->selectedRole = $role;
+        }
+        if ($action !== null) {
+            $this->roleAction = $action;
+        }
 
         $this->validate([
             'selectedRole' => 'required|string|not_in:SUPER_ADMIN',
@@ -695,4 +726,3 @@ class UserAdmin extends AdminComponent
         ]);
     }
 }
-

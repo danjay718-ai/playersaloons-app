@@ -40,6 +40,10 @@ class GameShow extends Component
     #[Url]
     public string $competitionType = '';
 
+    /** Preserve the public shell when a signed-in player came from public discovery. */
+    #[Url(as: 'view')]
+    public string $viewMode = '';
+
     #[Url]
     public string $frequency = '';
 
@@ -64,20 +68,28 @@ class GameShow extends Component
         }
 
         $usesV2Discovery = (bool) config('features.tournament_v2.enabled');
-        $featured = $usesV2Discovery ? collect() : $this->baseTournamentQuery()
-            ->where('is_featured', true)
-            ->whereIn('status', array_merge($this->statuses('upcoming'), $this->statuses('ongoing')))
-            ->orderBy('start_at')
-            ->limit(4)
-            ->get();
-
-        $tournaments = $usesV2Discovery ? null : $this->filteredTournamentQuery()
-            ->paginate($this->activeTab === 'browse' ? 12 : 6);
-        $tournamentGroups = $usesV2Discovery
-            ? $discovery->paginate($this->tournamentStatus, $this->discoveryFilters(), $this->activeTab === 'browse' ? 12 : 6)
+        // Overview intentionally has no competition cards. Browse is the
+        // single discovery surface for either tournament or H2H context.
+        $featured = ! $usesV2Discovery && $this->activeTab === 'browse'
+            ? $this->baseTournamentQuery()
+                ->where('competition_type', $this->competitionType ?: 'tournament')
+                ->where('is_featured', true)
+                ->whereIn('status', array_merge($this->statuses('upcoming'), $this->statuses('ongoing')))
+                ->orderBy('start_at')
+                ->limit(4)
+                ->get()
+            : collect();
+        $tournaments = ! $usesV2Discovery && $this->activeTab === 'browse'
+            ? $this->filteredTournamentQuery()->paginate(12)
             : null;
-        $featuredGroups = $usesV2Discovery
-            ? $discovery->paginate('upcoming', ['game_id' => (string) $this->game->id], 4, true)
+        $tournamentGroups = $usesV2Discovery && $this->activeTab === 'browse'
+            ? $discovery->paginate($this->tournamentStatus, $this->discoveryFilters(), 12)
+            : null;
+        $featuredGroups = $usesV2Discovery && $this->activeTab === 'browse'
+            ? $discovery->paginate('upcoming', [
+                'game_id' => (string) $this->game->id,
+                'competition_type' => $this->competitionType ?: 'tournament',
+            ], 4, true)
             : null;
 
         $streams = StreamChannel::query()
@@ -88,6 +100,13 @@ class GameShow extends Component
             })
             ->where('is_public', true)
             ->whereNull('taken_down_at')
+            // Seeded trailers are catalog/demo content, not player or
+            // tournament streams. Never expose them in the Game Hub stream
+            // tab, regardless of whether a database was seeded for local use.
+            ->where(function ($query): void {
+                $query->whereNull('metadata')
+                    ->orWhereJsonDoesntContain('metadata->kind', 'sample_game_trailer');
+            })
             ->orderByDesc('is_live')
             ->orderByDesc('viewer_count')
             ->limit(12)
@@ -100,9 +119,10 @@ class GameShow extends Component
             'tournamentGroups' => $tournamentGroups,
             'streams' => $streams,
             'platforms' => $platforms,
+            'publicView' => $this->viewMode === 'guest',
         ]);
 
-        return Auth::check()
+        return Auth::check() && $this->viewMode !== 'guest'
             ? $view->layout('components.layouts.dashboard', ['title' => $this->game->localizedName().' | PlayerSaloons', 'dashboard_title' => 'GAME HUB'])
             : $view->layout('components.layouts.app', ['title' => $this->game->localizedName().' | PlayerSaloons']);
     }
@@ -115,7 +135,7 @@ class GameShow extends Component
             'search' => $this->search,
             'start_date' => $this->startDate,
             'platform_id' => $this->platformId,
-            'competition_type' => $this->competitionType,
+            'competition_type' => $this->competitionType ?: 'tournament',
             'frequency' => $this->frequency,
         ];
     }
@@ -127,7 +147,7 @@ class GameShow extends Component
             ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
             ->when($this->startDate !== '', fn ($query) => $query->whereDate('start_at', '>=', $this->startDate))
             ->when($this->platformId !== '', fn ($query) => $query->where('platform_id', $this->platformId))
-            ->when($this->competitionType !== '', fn ($query) => $query->where('competition_type', $this->competitionType))
+            ->where('competition_type', $this->competitionType ?: 'tournament')
             ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency))
             ->when($this->tournamentStatus === 'past', fn ($query) => $query->orderByDesc('completed_at'), fn ($query) => $query->orderBy('start_at'));
     }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Community;
 
-use App\Modules\Community\Services\ChatService;
 use App\Modules\Community\Events\ChatMessageSent;
 use App\Modules\Community\Models\ChatConversation;
 use App\Modules\Community\Models\ChatMessage;
 use App\Modules\Community\Models\PlayerFollow;
+use App\Modules\Community\Services\ChatService;
 use App\Modules\Identity\Models\User;
 use App\Modules\Team\Actions\CreateTeamAction;
 use App\Modules\Team\Models\TeamMember;

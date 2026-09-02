@@ -19,6 +19,7 @@ use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
+use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Url;
@@ -46,9 +47,6 @@ class TournamentAdmin extends AdminComponent
 
     #[Url]
     public string $platformFilter = '';
-
-    #[Url]
-    public string $competitionTypeFilter = '';
 
     #[Url]
     public string $activeTab = 'all';
@@ -99,11 +97,6 @@ class TournamentAdmin extends AdminComponent
     }
 
     public function updatingPlatformFilter(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingCompetitionTypeFilter(): void
     {
         $this->resetPage();
     }
@@ -349,7 +342,9 @@ class TournamentAdmin extends AdminComponent
 
         $v2Templates = null;
         if (config('features.tournament_v2.enabled')) {
-            $v2Occurrences = Tournament::query()->where('workflow_version', 2);
+            $v2Occurrences = Tournament::query()
+                ->where('workflow_version', 2)
+                ->where('competition_type', CompetitionType::TOURNAMENT);
             match ($this->statusTab) {
                 'active' => $v2Occurrences->whereIn('status', $activeStatuses),
                 'completed' => $v2Occurrences->where('status', TournamentStatus::COMPLETED->value),
@@ -361,9 +356,10 @@ class TournamentAdmin extends AdminComponent
             // V2 occurrences are immutable operational records. Grouping is
             // presentation-only so the admin index is not one row per slot.
             $v2Templates = TournamentTemplate::query()
-                ->with('game.translations')
+                ->with(['game.translations', 'scheduleSlots:id,tournament_template_id,schedule_start_at,schedule_end_at,day_of_week,day_of_month'])
                 ->withCount(['scheduleSlots as slots_count'])
                 ->where('workflow_version', 2)
+                ->where('competition_type', CompetitionType::TOURNAMENT)
                 ->whereHas('scheduleSlots.occurrences', fn ($occurrences) => $this->applyV2OccurrenceSubquery($occurrences, $v2Occurrences))
                 ->orderByDesc('updated_at')
                 ->paginate($this->perPage, ['*'], 'v2Page');
@@ -427,10 +423,6 @@ class TournamentAdmin extends AdminComponent
 
         if ($this->platformFilter) {
             $query->where('platform_id', $this->platformFilter);
-        }
-
-        if ($this->competitionTypeFilter) {
-            $query->where('competition_type', $this->competitionTypeFilter);
         }
 
         if ($this->activeTab !== 'all') {

@@ -184,10 +184,10 @@ class StreamChannel extends Model
     {
         $count = (int) $this->viewer_count;
         if ($count >= 1000000) {
-            return round($count / 1000000, 1) . 'M';
+            return round($count / 1000000, 1).'M';
         }
         if ($count >= 1000) {
-            return round($count / 1000, 1) . 'K';
+            return round($count / 1000, 1).'K';
         }
 
         return (string) $count;
@@ -200,10 +200,10 @@ class StreamChannel extends Model
     {
         $count = (int) $this->total_views;
         if ($count >= 1000000) {
-            return round($count / 1000000, 1) . 'M';
+            return round($count / 1000000, 1).'M';
         }
         if ($count >= 1000) {
-            return round($count / 1000, 1) . 'K';
+            return round($count / 1000, 1).'K';
         }
 
         return (string) $count;

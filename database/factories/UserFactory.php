@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * @extends Factory<User>
@@ -51,7 +52,7 @@ class UserFactory extends Factory
         return $this->afterCreating(function (User $user) {
             try {
                 if ($user->roles()->count() === 0) {
-                    $role = \Spatie\Permission\Models\Role::query()->firstOrCreate([
+                    $role = Role::query()->firstOrCreate([
                         'name' => 'PLAYER',
                         'guard_name' => 'web',
                     ]);
@@ -70,7 +71,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function (User $user) use ($role) {
             try {
-                $r = \Spatie\Permission\Models\Role::query()->firstOrCreate([
+                $r = Role::query()->firstOrCreate([
                     'name' => $role,
                     'guard_name' => 'web',
                 ]);

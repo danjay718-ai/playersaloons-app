@@ -47,7 +47,7 @@ class UploadAvatarAction
         $profile = $user->profile()->firstOrCreate(
             ['user_id' => $user->getKey()],
             [
-                'uuid'         => Str::uuid()->toString(),
+                'uuid' => Str::uuid()->toString(),
                 'display_name' => (string) $user->getAttribute('username'),
             ]
         );

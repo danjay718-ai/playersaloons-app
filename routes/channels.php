@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Broadcast;
-use App\Modules\Community\Services\ChatService;
 use App\Modules\Community\Models\ChatConversation;
+use App\Modules\Community\Services\ChatService;
+use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->getKey() === (int) $id;

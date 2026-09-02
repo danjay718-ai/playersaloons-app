@@ -16,13 +16,12 @@ class PlayerReviewAdmin extends AdminComponent
     public function boot(): void
     {
         parent::boot();
-        if (! $this->actor()->hasAnyRole(['SUPER_ADMIN', 'ADMIN'])) {
-            abort(403);
-        }
+        abort_unless($this->actor()->can('player_reviews.view'), 403);
     }
 
     public function moderate(int $id, string $decision): void
     {
+        abort_unless($this->actor()->can('player_reviews.manage'), 403);
         abort_unless(in_array($decision, ['approved', 'rejected'], true), 422);
         PlayerReview::query()->findOrFail($id)->update(['status' => $decision, 'moderated_by' => Auth::id(), 'moderated_at' => now(), 'moderation_notes' => $this->notes ?: null]);
         $this->notes = '';

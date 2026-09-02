@@ -99,7 +99,7 @@ final class TranslationCatalogService
     }
 
     /**
-     * @param array<string, string|null> $values
+     * @param  array<string, string|null>  $values
      */
     public function saveKey(string $key, array $values): void
     {

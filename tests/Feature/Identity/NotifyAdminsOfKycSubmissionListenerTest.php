@@ -29,11 +29,11 @@ class NotifyAdminsOfKycSubmissionListenerTest extends TestCase
     private function makeUser(string $email, string $username): User
     {
         return User::query()->create([
-            'uuid'              => Str::uuid()->toString(),
-            'email'             => $email,
-            'username'          => $username,
-            'password'          => bcrypt('password'),
-            'status'            => UserStatus::ACTIVE,
+            'uuid' => Str::uuid()->toString(),
+            'email' => $email,
+            'username' => $username,
+            'password' => bcrypt('password'),
+            'status' => UserStatus::ACTIVE,
             'email_verified_at' => now(),
         ]);
     }
@@ -50,15 +50,15 @@ class NotifyAdminsOfKycSubmissionListenerTest extends TestCase
         Event::fake([BroadcastNotification::class]);
 
         $player = $this->makeUser('player@example.com', 'player_one');
-        $admin  = $this->makeUser('admin@example.com', 'admin_one');
+        $admin = $this->makeUser('admin@example.com', 'admin_one');
         $admin->assignRole('ADMIN');
 
         $this->listener()->handle(new UserKycSubmitted($player->id, 1));
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $admin->id,
-            'type'    => 'kyc_submitted',
-            'title'   => 'New KYC Submission',
+            'type' => 'kyc_submitted',
+            'title' => 'New KYC Submission',
         ]);
     }
 
@@ -66,14 +66,14 @@ class NotifyAdminsOfKycSubmissionListenerTest extends TestCase
     {
         Event::fake([BroadcastNotification::class]);
 
-        $player      = $this->makeUser('player@example.com', 'player_one');
+        $player = $this->makeUser('player@example.com', 'player_one');
         $otherPlayer = $this->makeUser('player2@example.com', 'player_two');
 
         $this->listener()->handle(new UserKycSubmitted($player->id, 1));
 
         $this->assertDatabaseMissing('notifications', [
             'user_id' => $otherPlayer->id,
-            'type'    => 'kyc_submitted',
+            'type' => 'kyc_submitted',
         ]);
     }
 
@@ -81,8 +81,8 @@ class NotifyAdminsOfKycSubmissionListenerTest extends TestCase
     {
         Event::fake([BroadcastNotification::class]);
 
-        $player     = $this->makeUser('player@example.com', 'player_one');
-        $admin      = $this->makeUser('admin@example.com', 'admin_one');
+        $player = $this->makeUser('player@example.com', 'player_one');
+        $admin = $this->makeUser('admin@example.com', 'admin_one');
         $superAdmin = $this->makeUser('super@example.com', 'super_one');
         $admin->assignRole('ADMIN');
         $superAdmin->assignRole('SUPER_ADMIN');

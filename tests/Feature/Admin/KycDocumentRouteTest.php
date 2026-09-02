@@ -15,11 +15,11 @@ class KycDocumentRouteTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Ensure roles exist for test
         Role::firstOrCreate(['name' => 'PLAYER']);
         Role::firstOrCreate(['name' => 'ADMIN']);
-        
+
         Storage::fake('local');
     }
 

@@ -876,6 +876,7 @@ class CmsAdmin extends AdminComponent
                         'translations:id,game_id,locale,name,description',
                         'platforms:id,name',
                         'tournamentDefaults:id,game_id,default_platform_id,tournament_banner_path',
+                        'headToHeadDefaults:id,game_id,default_platform_id,head_to_head_banner_path',
                     ])
                     ->when($this->gameSearch !== '', function ($query): void {
                         $term = '%'.$this->gameSearch.'%';

@@ -16,12 +16,14 @@ class PublicTournamentList extends Component
         return view('livewire.tournament.player-tournament-list', [
             'tournaments' => $usesV2Discovery ? null : $this->getTournamentQuery()->paginate(12),
             'tournamentGroups' => $usesV2Discovery ? $discovery->paginate($this->activeTab, $this->discoveryFilters()) : null,
-            'featuredGroups' => $usesV2Discovery ? $discovery->paginate('upcoming', [], $this->featuredLimit, true) : null,
+            'featuredGroups' => $usesV2Discovery ? $discovery->paginate('upcoming', ['competition_type' => $this->competitionType ?: 'tournament'], $this->featuredLimit, true) : null,
             'games' => $this->getGames(),
             'popularGames' => $this->getPopularGames(),
             'featuredTournaments' => $usesV2Discovery ? collect() : $this->getFeaturedTournaments(),
             'hasMoreFeatured' => ! $usesV2Discovery && $this->featuredTournamentCount() > $this->featuredLimit,
             'platforms' => $this->getPlatforms(),
+            'listingType' => $this->competitionType === 'head_to_head' ? 'head_to_head' : 'tournament',
+            'allowCompetitionSwitch' => true,
         ])->layout('components.layouts.app', ['title' => 'Tournaments | PlayerSaloons']);
     }
 
@@ -32,7 +34,9 @@ class PublicTournamentList extends Component
             'search' => $this->search,
             'game_id' => $this->gameId,
             'frequency' => $this->frequency,
-            'competition_type' => $this->competitionType,
+            // Guest discovery defaults to tournaments. H2H is an explicit
+            // dropdown choice, so the two product lists never blend together.
+            'competition_type' => $this->competitionType ?: 'tournament',
             'platform_id' => $this->platformId,
             'team_format' => $this->teamFormat,
         ];

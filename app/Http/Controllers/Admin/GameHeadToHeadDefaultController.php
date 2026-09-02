@@ -10,23 +10,23 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-final class GameTournamentDefaultController extends Controller
+final class GameHeadToHeadDefaultController extends Controller
 {
     public function edit(Game $game): View
     {
         abort_unless(config('features.tournament_v2.enabled'), 404);
         abort_unless(request()->user()?->can('tournaments.manage'), 403);
-        $game->load(['translations', 'platforms:id,name', 'tournamentDefaults']);
+        $game->load(['translations', 'platforms:id,name', 'headToHeadDefaults']);
 
         return view('admin.games.competition-defaults', [
             'game' => $game,
-            'defaults' => $game->tournamentDefaults,
-            'title' => 'Game Tournament Template',
-            'eyebrow' => 'Game Management · Tournament V2',
-            'competitionName' => 'Tournament',
-            'bannerColumn' => 'tournament_banner_path',
-            'bannerInput' => 'tournament_banner',
-            'updateRoute' => route('admin.games.tournament-defaults.update', $game),
+            'defaults' => $game->headToHeadDefaults,
+            'title' => 'Game Head-to-Head Template',
+            'eyebrow' => 'Game Management · Platform H2H',
+            'competitionName' => 'Head-to-Head',
+            'bannerColumn' => 'head_to_head_banner_path',
+            'bannerInput' => 'head_to_head_banner',
+            'updateRoute' => route('admin.games.head-to-head-defaults.update', $game),
         ]);
     }
 
@@ -38,17 +38,17 @@ final class GameTournamentDefaultController extends Controller
             'default_platform_id' => ['required', 'integer', 'exists:platforms,id'],
             'description' => ['nullable', 'string', 'max:10000'],
             'rules' => ['nullable', 'string', 'max:20000'],
-            'tournament_banner' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
+            'head_to_head_banner' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
         ]);
         abort_unless($game->platforms()->whereKey($data['default_platform_id'])->exists(), 422, 'Platform is not configured for this game.');
-        $existing = $game->tournamentDefaults;
-        $path = $request->file('tournament_banner')?->store("games/{$game->id}/tournament-templates", 'public')
-            ?? $existing?->tournament_banner_path;
-        $game->tournamentDefaults()->updateOrCreate(['game_id' => $game->id], [
+        $existing = $game->headToHeadDefaults;
+        $path = $request->file('head_to_head_banner')?->store("games/{$game->id}/head-to-head-templates", 'public')
+            ?? $existing?->head_to_head_banner_path;
+        $game->headToHeadDefaults()->updateOrCreate(['game_id' => $game->id], [
             ...$data,
-            'tournament_banner_path' => $path,
+            'head_to_head_banner_path' => $path,
         ]);
 
-        return back()->with('success', 'Tournament defaults saved. Existing occurrences remain unchanged.');
+        return back()->with('success', 'Head-to-Head defaults saved. Existing H2H occurrences remain unchanged.');
     }
 }

@@ -21,7 +21,7 @@ class CreateHeadToHeadChallengeAction
     public function __construct(private readonly LockHeadToHeadStakeAction $lockStake) {}
 
     /**
-     * @param array{game_id:int, platform_id?:int|null, stake_amount:float|int|string, creator_game_handle:string, region?:string|null, match_timer_minutes?:int|null} $data
+     * @param  array{game_id:int, platform_id?:int|null, stake_amount:float|int|string, creator_game_handle:string, region?:string|null, match_timer_minutes?:int|null}  $data
      */
     public function execute(User $creator, array $data): HeadToHeadChallenge
     {

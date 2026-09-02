@@ -13,6 +13,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadChallenge;
 use App\Modules\Match\Models\HeadToHeadMatch;
+use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Tournament\Models\Bracket;
 use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
@@ -45,6 +46,10 @@ class PlayerTournamentComponentsTest extends TestCase
     {
         parent::setUp();
 
+        // These fixtures deliberately exercise the retained V1 list/query
+        // path. Do not inherit a developer's local V2 feature flag.
+        config()->set('features.tournament_v2.enabled', false);
+
         $this->seed(RolesAndPermissionsSeeder::class);
 
         $this->player = $this->makeUser('PLAYER', 'player@example.com');
@@ -64,6 +69,23 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertSeeHtml('hasLost: true')
             ->assertSeeHtml("value === 'bracket' && hasLost && !acknowledgedElimination")
             ->assertSee('Eliminated');
+    }
+
+    public function test_game_stream_tab_does_not_render_seeded_sample_trailers(): void
+    {
+        StreamChannel::query()->create([
+            'game_id' => $this->game->id,
+            'provider' => 'youtube',
+            'source_url' => 'https://www.youtube.com/watch?v=sample123',
+            'title' => 'Sample trailer that must stay hidden',
+            'is_public' => true,
+            'metadata' => ['kind' => 'sample_game_trailer'],
+        ]);
+
+        Livewire::test(GameShow::class, ['game' => $this->game])
+            ->set('activeTab', 'streams')
+            ->assertDontSee('Sample trailer that must stay hidden')
+            ->assertSee('No public streams for this game yet.');
     }
 
     public function test_elimination_modal_does_not_show_if_not_lost(): void
@@ -249,7 +271,7 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$weekly->id]);
     }
 
-    public function test_discovery_orders_games_by_active_tournaments_and_game_page_shows_featured_events(): void
+    public function test_discovery_orders_games_and_game_page_keeps_competitions_in_browse_only(): void
     {
         $otherGame = $this->makeGame('racing', 'Racing');
         $featured = $this->makeTournament('Featured Arena Cup', TournamentStatus::REGISTRATION_OPEN);
@@ -262,10 +284,12 @@ class PlayerTournamentComponentsTest extends TestCase
 
         Livewire::test(GameShow::class, ['game' => $this->game])
             ->assertSee('Arena')
-            ->assertSee('Featured Arena Cup')
             ->assertSee('Overview')
-            ->assertSee('Browse')
-            ->assertSee('Streams');
+            ->assertSee('Browse Tournaments')
+            ->assertSee('Streams')
+            ->assertDontSee('Featured Arena Cup')
+            ->set('activeTab', 'browse')
+            ->assertSee('Featured Arena Cup');
     }
 
     private function makeUser(string $role, string $email): User

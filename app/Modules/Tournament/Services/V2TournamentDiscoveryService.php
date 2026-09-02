@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 final class V2TournamentDiscoveryService
 {
     /**
-     * @param array{search?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,team_format?: string,start_date?: string} $filters
+     * @param  array{search?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,team_format?: string,start_date?: string}  $filters
      */
     public function paginate(string $tab, array $filters, int $perPage = 12, bool $featuredOnly = false): LengthAwarePaginator
     {
