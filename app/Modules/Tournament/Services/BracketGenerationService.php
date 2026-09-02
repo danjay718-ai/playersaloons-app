@@ -41,7 +41,7 @@ class BracketGenerationService
             ->values();
 
         $participantCount = $participants->count();
-        $minRequired      = $tournament->min_participants ?? 2;
+        $minRequired = $tournament->min_participants ?? 2;
 
         if ($participantCount < $minRequired) {
             throw new InsufficientParticipantsException(
@@ -52,9 +52,9 @@ class BracketGenerationService
         }
 
         // ── Step 2: Power-of-two sizing ────────────────────────────────────
-        $bracketSize  = $this->nextPowerOfTwo($participantCount);
-        $totalRounds  = (int) log($bracketSize, 2);
-        $byeCount     = $bracketSize - $participantCount;
+        $bracketSize = $this->nextPowerOfTwo($participantCount);
+        $totalRounds = (int) log($bracketSize, 2);
+        $byeCount = $bracketSize - $participantCount;
 
         // Players at the end of the seeded list receive byes (standard practice:
         // top seeds advance automatically; they meet the bye-receivers in R2).
@@ -69,17 +69,17 @@ class BracketGenerationService
         // ── Step 3: Create Bracket & Rounds ───────────────────────────────
         $bracket = Bracket::query()->create([
             'tournament_id' => $tournament->getKey(),
-            'generated_at'  => now(),
-            'created_at'    => now(),
+            'generated_at' => now(),
+            'created_at' => now(),
         ]);
 
         /** @var array<int, Round> $roundModels */
         $roundModels = [];
         for ($r = 1; $r <= $totalRounds; $r++) {
             $roundModels[$r] = Round::query()->create([
-                'bracket_id'   => $bracket->getKey(),
+                'bracket_id' => $bracket->getKey(),
                 'round_number' => $r,
-                'created_at'   => now(),
+                'created_at' => now(),
             ]);
         }
 
@@ -90,10 +90,10 @@ class BracketGenerationService
             $slotsInRound = $bracketSize / (2 ** $r);
             for ($j = 1; $j <= $slotsInRound; $j++) {
                 $matchesByRound[$r][$j] = GameMatch::query()->create([
-                    'uuid'          => Str::uuid()->toString(),
+                    'uuid' => Str::uuid()->toString(),
                     'tournament_id' => $tournament->getKey(),
-                    'round_id'      => $roundModels[$r]->getKey(),
-                    'status'        => MatchStatus::PENDING,
+                    'round_id' => $roundModels[$r]->getKey(),
+                    'status' => MatchStatus::PENDING,
                 ]);
             }
         }
@@ -105,13 +105,13 @@ class BracketGenerationService
         //   Slot 2 → seed 3 vs seed 4  …etc.
         for ($i = 1; $i <= $actualMatchCount; $i++) {
             /** @var GameMatch $match */
-            $match   = $matchesByRound[1][$i];
+            $match = $matchesByRound[1][$i];
             $playerA = $participants->get((2 * $i) - 2); // seed (2i-1)
             $playerB = $participants->get((2 * $i) - 1); // seed (2i)
 
             $match->player_a_registration_id = $playerA->registration_id;
             $match->player_b_registration_id = $playerB->registration_id;
-            $match->status                   = MatchStatus::READY;
+            $match->status = MatchStatus::READY;
             $match->save();
 
             MatchCreated::dispatch(
@@ -127,13 +127,13 @@ class BracketGenerationService
         // will propagate them into Round 2 in the next step.
         for ($i = 1; $i <= $byeCount; $i++) {
             /** @var GameMatch $match */
-            $match   = $matchesByRound[1][$actualMatchCount + $i];
+            $match = $matchesByRound[1][$actualMatchCount + $i];
             $playerA = $participants->get((2 * $actualMatchCount) + ($i - 1));
 
             $match->player_a_registration_id = $playerA->registration_id;
             $match->player_b_registration_id = null;
-            $match->winner_registration_id   = $playerA->registration_id;
-            $match->status                   = MatchStatus::COMPLETED;
+            $match->winner_registration_id = $playerA->registration_id;
+            $match->status = MatchStatus::COMPLETED;
             $match->save();
         }
 
@@ -145,7 +145,7 @@ class BracketGenerationService
             $slotsInRound = $bracketSize / (2 ** $r);
             for ($j = 1; $j <= $slotsInRound; $j++) {
                 /** @var GameMatch $match */
-                $match    = $matchesByRound[$r][$j];
+                $match = $matchesByRound[$r][$j];
                 $winnerId = $match->winner_registration_id;
 
                 if ($winnerId === null) {

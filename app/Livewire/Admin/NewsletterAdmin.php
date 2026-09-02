@@ -29,7 +29,6 @@ class NewsletterAdmin extends AdminComponent
     {
         parent::boot();
 
-
         abort_unless($this->actor()->can('newsletters.view'), 403);
     }
 

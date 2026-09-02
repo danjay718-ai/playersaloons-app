@@ -72,5 +72,4 @@ class PolicyPageSeeder extends Seeder
             ],
         ];
     }
-
 }

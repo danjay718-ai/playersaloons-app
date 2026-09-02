@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Community\Models\BroadcastMessage;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Livewire\WithPagination;
 
@@ -22,17 +22,24 @@ class BroadcastNotificationAdmin extends AdminComponent
     protected $paginationTheme = 'tailwind';
 
     // Form fields
-    public string $title   = '';
+    public string $title = '';
+
     public string $message = '';
+
     public string $startsAt = '';
-    public string $endsAt   = '';
+
+    public string $endsAt = '';
 
     // Modal state
-    public bool $showFormModal    = false;
+    public bool $showFormModal = false;
+
     public bool $showConfirmModal = false;
-    public ?int $editingId        = null;
-    public ?int $confirmTargetId  = null;
-    public string $confirmAction  = ''; // 'delete' | 'expire'
+
+    public ?int $editingId = null;
+
+    public ?int $confirmTargetId = null;
+
+    public string $confirmAction = ''; // 'delete' | 'expire'
 
     // Search
     public string $search = '';
@@ -47,7 +54,7 @@ class BroadcastNotificationAdmin extends AdminComponent
     public function openCreate(): void
     {
         $this->resetForm();
-        $this->editingId   = null;
+        $this->editingId = null;
         $this->showFormModal = true;
     }
 
@@ -55,28 +62,28 @@ class BroadcastNotificationAdmin extends AdminComponent
     {
         $broadcast = BroadcastMessage::findOrFail($id);
 
-        $this->editingId  = $id;
-        $this->title      = $broadcast->title;
-        $this->message    = $broadcast->message;
-        $this->startsAt   = $broadcast->starts_at ? \Illuminate\Support\Carbon::parse($broadcast->starts_at)->format('Y-m-d\TH:i') : '';
-        $this->endsAt     = $broadcast->ends_at ? \Illuminate\Support\Carbon::parse($broadcast->ends_at)->format('Y-m-d\TH:i') : '';
+        $this->editingId = $id;
+        $this->title = $broadcast->title;
+        $this->message = $broadcast->message;
+        $this->startsAt = $broadcast->starts_at ? Carbon::parse($broadcast->starts_at)->format('Y-m-d\TH:i') : '';
+        $this->endsAt = $broadcast->ends_at ? Carbon::parse($broadcast->ends_at)->format('Y-m-d\TH:i') : '';
         $this->showFormModal = true;
     }
 
     public function save(): void
     {
         $this->validate([
-            'title'    => 'required|string|max:255',
-            'message'  => 'required|string|max:2000',
+            'title' => 'required|string|max:255',
+            'message' => 'required|string|max:2000',
             'startsAt' => 'nullable|date',
-            'endsAt'   => 'nullable|date|after_or_equal:startsAt',
+            'endsAt' => 'nullable|date|after_or_equal:startsAt',
         ]);
 
         $data = [
-            'title'     => $this->title,
-            'message'   => $this->message,
+            'title' => $this->title,
+            'message' => $this->message,
             'starts_at' => $this->startsAt ?: null,
-            'ends_at'   => $this->endsAt   ?: null,
+            'ends_at' => $this->endsAt ?: null,
         ];
 
         if ($this->editingId) {
@@ -94,7 +101,7 @@ class BroadcastNotificationAdmin extends AdminComponent
     public function confirmExpire(int $id): void
     {
         $this->confirmTargetId = $id;
-        $this->confirmAction   = 'expire';
+        $this->confirmAction = 'expire';
         $this->showConfirmModal = true;
     }
 
@@ -103,7 +110,7 @@ class BroadcastNotificationAdmin extends AdminComponent
         $this->guardSuperAdmin();
 
         $this->confirmTargetId = $id;
-        $this->confirmAction   = 'delete';
+        $this->confirmAction = 'delete';
         $this->showConfirmModal = true;
     }
 
@@ -125,15 +132,15 @@ class BroadcastNotificationAdmin extends AdminComponent
         }
 
         $this->showConfirmModal = false;
-        $this->confirmTargetId  = null;
-        $this->confirmAction    = '';
+        $this->confirmTargetId = null;
+        $this->confirmAction = '';
     }
 
     public function cancelConfirm(): void
     {
         $this->showConfirmModal = false;
-        $this->confirmTargetId  = null;
-        $this->confirmAction    = '';
+        $this->confirmTargetId = null;
+        $this->confirmAction = '';
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
@@ -145,10 +152,10 @@ class BroadcastNotificationAdmin extends AdminComponent
 
     private function resetForm(): void
     {
-        $this->title    = '';
-        $this->message  = '';
+        $this->title = '';
+        $this->message = '';
         $this->startsAt = '';
-        $this->endsAt   = '';
+        $this->endsAt = '';
     }
 
     /**
@@ -170,7 +177,7 @@ class BroadcastNotificationAdmin extends AdminComponent
         if ($this->search) {
             $query->where(function ($q): void {
                 $q->where('title', 'like', '%'.$this->search.'%')
-                  ->orWhere('message', 'like', '%'.$this->search.'%');
+                    ->orWhere('message', 'like', '%'.$this->search.'%');
             });
         }
 

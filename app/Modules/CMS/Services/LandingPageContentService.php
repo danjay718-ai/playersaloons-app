@@ -6,6 +6,7 @@ namespace App\Modules\CMS\Services;
 
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\LandingSection;
+use App\Modules\CMS\Models\LandingSectionItem;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Wallet\Models\LedgerEntry;
@@ -52,7 +53,7 @@ class LandingPageContentService
     }
 
     /**
-     * @param  Collection<int, \App\Modules\CMS\Models\LandingSectionItem>  $items
+     * @param  Collection<int, LandingSectionItem>  $items
      * @return array<int, array<string, string>>
      */
     private function stats(Collection $items): array

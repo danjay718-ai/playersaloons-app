@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RolePermissionAdmin extends AdminComponent
 {
@@ -229,9 +229,10 @@ class RolePermissionAdmin extends AdminComponent
     {
         $this->authorizeRoleManagement();
         $role = Role::findById($this->activeRoleId);
-        
+
         if ($role->name === 'SUPER_ADMIN') {
             session()->flash('error', 'Modification of SUPER_ADMIN permissions is restricted.');
+
             return;
         }
 
@@ -260,7 +261,7 @@ class RolePermissionAdmin extends AdminComponent
             $group = explode('.', $perm->name, 2)[0] ?: 'General';
             $groupedPermissions[ucfirst(strtolower($group))][] = $perm;
         }
-        
+
         // Sort groups alphabetically
         ksort($groupedPermissions);
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Http\Middleware\EnsureNotComplianceBlocked;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
-use App\Http\Middleware\EnsureNotComplianceBlocked;
 use App\Modules\Identity\Policies\KycPolicy;
 use App\Modules\Identity\Policies\UserPolicy;
 use App\Modules\Match\Models\GameMatch;

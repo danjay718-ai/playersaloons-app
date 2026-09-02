@@ -7,6 +7,7 @@ namespace Tests\Feature\Match;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\Identity\Models\User;
+use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Jobs\AutoForfeitJob;
@@ -22,10 +23,9 @@ use App\Modules\Tournament\Actions\PublishTournamentAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
-use App\Shared\Enums\RegistrationStatus;
-use App\Shared\Enums\PaymentStatus;
 use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
@@ -38,6 +38,7 @@ class ConfirmResultFlowTest extends TestCase
     use RefreshDatabase;
 
     private User $adminUser;
+
     private Game $game;
 
     protected function setUp(): void
@@ -83,7 +84,7 @@ class ConfirmResultFlowTest extends TestCase
         ]);
         $user->assignRole('PLAYER');
 
-        \App\Modules\Wallet\Models\Wallet::query()->create([
+        Wallet::query()->create([
             'uuid' => Str::uuid()->toString(),
             'user_id' => $user->id,
             'cached_balance' => 100.00,
@@ -276,8 +277,8 @@ class ConfirmResultFlowTest extends TestCase
         $this->assertTrue($match->fresh()->isTimedOut());
 
         // Run the AutoForfeitJob
-        $job = new AutoForfeitJob();
-        $job->handle(app(\App\Modules\Match\Actions\AutoForfeitAction::class));
+        $job = new AutoForfeitJob;
+        $job->handle(app(AutoForfeitAction::class));
 
         $match->refresh();
         $this->assertEquals(MatchStatus::COMPLETED, $match->status);

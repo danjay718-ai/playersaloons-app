@@ -15,6 +15,7 @@ class StreamViewerCountUpdated implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public int $streamChannelId;
+
     public int $viewerCount;
 
     public function __construct(int $streamChannelId, int $viewerCount)
@@ -26,7 +27,7 @@ class StreamViewerCountUpdated implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('stream.' . $this->streamChannelId),
+            new Channel('stream.'.$this->streamChannelId),
         ];
     }
 

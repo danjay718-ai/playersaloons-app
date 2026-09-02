@@ -15,6 +15,7 @@ class StreamMessageDeleted implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public int $streamChannelId;
+
     public int $messageId;
 
     public function __construct(int $streamChannelId, int $messageId)
@@ -26,7 +27,7 @@ class StreamMessageDeleted implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('stream.' . $this->streamChannelId),
+            new Channel('stream.'.$this->streamChannelId),
         ];
     }
 

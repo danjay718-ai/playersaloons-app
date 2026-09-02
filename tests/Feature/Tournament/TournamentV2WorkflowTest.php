@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Tournament;
 
 use App\Modules\CMS\Models\Game;
-use App\Modules\CMS\Models\GameTournamentDefault;
 use App\Modules\CMS\Models\GameHeadToHeadDefault;
+use App\Modules\CMS\Models\GameTournamentDefault;
 use App\Modules\CMS\Models\Platform;
+use App\Modules\Identity\Models\PlayerProgression;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
@@ -26,18 +27,18 @@ use App\Modules\Tournament\Actions\VoteOnV2CancellationAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Services\V2TournamentLifecycle;
 use App\Modules\Wallet\Models\Wallet;
-use App\Modules\Identity\Models\PlayerProgression;
+use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\DisputeResolution;
 use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
-use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\WalletStatus;
 use Carbon\CarbonImmutable;
 use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -103,17 +104,17 @@ final class TournamentV2WorkflowTest extends TestCase
         $player = $this->user('reset-player@example.com', 'resetplayer', 'PLAYER');
         $wallet = $this->walletFor($player, '9.00');
 
-        $ledgerId = \Illuminate\Support\Facades\DB::table('ledger_entries')->insertGetId([
+        $ledgerId = DB::table('ledger_entries')->insertGetId([
             'uuid' => (string) Str::uuid(), 'wallet_id' => $wallet->id,
             'reference_type' => Tournament::class, 'reference_id' => $tournament->id,
             'type' => 'entry_fee', 'amount' => '-1.00', 'running_balance' => '9.00',
             'description' => 'Tournament test entry', 'created_at' => now(),
         ]);
-        \Illuminate\Support\Facades\DB::table('wallet_transactions')->insert([
+        DB::table('wallet_transactions')->insert([
             'uuid' => (string) Str::uuid(), 'wallet_id' => $wallet->id, 'ledger_entry_id' => $ledgerId,
             'type' => 'entry_fee', 'status' => 'completed', 'amount' => '-1.00', 'created_at' => now(), 'updated_at' => now(),
         ]);
-        \Illuminate\Support\Facades\DB::table('player_experience_awards')->insert([
+        DB::table('player_experience_awards')->insert([
             'uuid' => (string) Str::uuid(), 'user_id' => $player->id, 'source_type' => 'tournament', 'source_id' => $tournament->id,
             'reason' => 'participation', 'amount' => 10, 'metadata' => json_encode(['version' => 2]), 'created_at' => now(), 'updated_at' => now(),
         ]);

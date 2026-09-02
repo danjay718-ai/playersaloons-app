@@ -23,8 +23,9 @@ class TournamentStateMachineTest extends TestCase
     {
         parent::setUp();
         // Use an anonymous subclass to suppress the activity() DB call in unit tests
-        $this->machine = new class extends TournamentStateMachine {
-            protected function logTransition(\App\Modules\Tournament\Models\Tournament $tournament, \App\Shared\Enums\TournamentStatus $to, array $context = []): void {}
+        $this->machine = new class extends TournamentStateMachine
+        {
+            protected function logTransition(Tournament $tournament, TournamentStatus $to, array $context = []): void {}
         };
     }
 

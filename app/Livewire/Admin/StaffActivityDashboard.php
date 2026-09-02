@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Identity\Models\User;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 use Spatie\Activitylog\Models\Activity;
 
 class StaffActivityDashboard extends AdminComponent
@@ -26,7 +26,7 @@ class StaffActivityDashboard extends AdminComponent
     public function mount(): void
     {
         $this->dateFrom = now()->subDays(7)->format('Y-m-d');
-        $this->dateTo   = now()->format('Y-m-d');
+        $this->dateTo = now()->format('Y-m-d');
     }
 
     public function render()
@@ -40,9 +40,9 @@ class StaffActivityDashboard extends AdminComponent
         $staffUsers = $staffQuery->with('roles')->orderBy('username')->get();
 
         $from = $this->dateFrom ? $this->dateFrom.' 00:00:00' : now()->subDays(7)->startOfDay();
-        $to   = $this->dateTo   ? $this->dateTo.' 23:59:59'   : now()->endOfDay();
+        $to = $this->dateTo ? $this->dateTo.' 23:59:59' : now()->endOfDay();
 
-        /** @var array<int, array{user: User, counts: array<string,int>, total: int, last_at: \Illuminate\Support\Carbon|null}> $rows */
+        /** @var array<int, array{user: User, counts: array<string,int>, total: int, last_at: Carbon|null}> $rows */
         $rows = [];
 
         foreach ($staffUsers as $staff) {
@@ -57,9 +57,9 @@ class StaffActivityDashboard extends AdminComponent
                 ->toArray();
 
             $rows[] = [
-                'user'    => $staff,
-                'counts'  => $counts,
-                'total'   => $logs->count(),
+                'user' => $staff,
+                'counts' => $counts,
+                'total' => $logs->count(),
                 'last_at' => $logs->sortByDesc('created_at')->first()?->created_at,
             ];
         }
@@ -77,7 +77,7 @@ class StaffActivityDashboard extends AdminComponent
             ->get();
 
         return view('livewire.admin.staff-activity-dashboard', [
-            'rows'       => $rows,
+            'rows' => $rows,
             'topActions' => $topActions,
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Staff Activity Dashboard',

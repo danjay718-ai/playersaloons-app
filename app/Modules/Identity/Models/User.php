@@ -56,8 +56,9 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, ComplianceBlock> $complianceBlocks
  * @property-read Collection<int, Referral> $referrals
  *
- * @mixin \Spatie\Permission\Traits\HasRoles
- * @mixin \Illuminate\Foundation\Auth\User
+ * @mixin HasRoles
+ * @mixin Authenticatable
+ *
  * @method bool hasRole(string|int|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection ...$roles, string|null $guard = null)
  * @method bool hasAnyRole(string|int|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection ...$roles, string|null $guard = null)
  * @method bool hasAllRoles(string|int|array|\Spatie\Permission\Contracts\Role|\Illuminate\Support\Collection ...$roles, string|null $guard = null)

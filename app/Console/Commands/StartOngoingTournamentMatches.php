@@ -42,9 +42,10 @@ class StartOngoingTournamentMatches extends Command
         }
 
         $matches = $query->get();
-        
+
         if ($matches->isEmpty()) {
-            $this->info("No READY matches found for ongoing tournaments.");
+            $this->info('No READY matches found for ongoing tournaments.');
+
             return;
         }
 
@@ -55,7 +56,7 @@ class StartOngoingTournamentMatches extends Command
                 $startMatchAction->execute($match);
                 $this->line("Started match #{$match->id}");
             } catch (\Exception $e) {
-                $this->error("Failed to start match #{$match->id}: " . $e->getMessage());
+                $this->error("Failed to start match #{$match->id}: ".$e->getMessage());
             }
         }
 

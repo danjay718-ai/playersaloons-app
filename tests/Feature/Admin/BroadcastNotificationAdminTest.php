@@ -7,9 +7,9 @@ namespace Tests\Feature\Admin;
 use App\Livewire\Admin\BroadcastNotificationAdmin;
 use App\Modules\Community\Models\BroadcastMessage;
 use App\Modules\Identity\Models\User;
+use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
-use App\Modules\Wallet\Models\Wallet;
 use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
@@ -23,6 +23,7 @@ class BroadcastNotificationAdminTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $superAdmin;
 
     protected function setUp(): void
@@ -33,7 +34,7 @@ class BroadcastNotificationAdminTest extends TestCase
         $this->seed(PlatformSystemUserSeeder::class);
         $this->seed(SystemSettingsSeeder::class);
 
-        $this->admin      = $this->makeUser('ADMIN', 'admin@example.com');
+        $this->admin = $this->makeUser('ADMIN', 'admin@example.com');
         $this->superAdmin = $this->makeUser('SUPER_ADMIN', 'super@example.com');
     }
 
@@ -41,20 +42,20 @@ class BroadcastNotificationAdminTest extends TestCase
     {
         /** @var User $user */
         $user = User::query()->create([
-            'uuid'              => Str::uuid()->toString(),
-            'email'             => $email,
-            'username'          => explode('@', $email)[0],
-            'password'          => bcrypt('password'),
+            'uuid' => Str::uuid()->toString(),
+            'email' => $email,
+            'username' => explode('@', $email)[0],
+            'password' => bcrypt('password'),
             'email_verified_at' => now(),
-            'status'            => UserStatus::ACTIVE,
+            'status' => UserStatus::ACTIVE,
         ]);
         $user->assignRole($role);
 
         Wallet::query()->create([
-            'uuid'           => Str::uuid()->toString(),
-            'user_id'        => $user->id,
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->id,
             'cached_balance' => '0.00',
-            'status'         => WalletStatus::ACTIVE,
+            'status' => WalletStatus::ACTIVE,
         ]);
 
         return $user;
@@ -63,8 +64,8 @@ class BroadcastNotificationAdminTest extends TestCase
     private function makeBroadcast(array $overrides = []): BroadcastMessage
     {
         return BroadcastMessage::create(array_merge([
-            'uuid'    => Str::uuid()->toString(),
-            'title'   => 'Test Broadcast',
+            'uuid' => Str::uuid()->toString(),
+            'title' => 'Test Broadcast',
             'message' => 'Test message content.',
         ], $overrides));
     }
@@ -94,7 +95,7 @@ class BroadcastNotificationAdminTest extends TestCase
             ->call('save');
 
         $this->assertDatabaseHas('broadcast_messages', [
-            'title'   => 'Maintenance Tonight',
+            'title' => 'Maintenance Tonight',
             'message' => 'Platform will be down from 2-4 AM.',
         ]);
     }
@@ -123,7 +124,7 @@ class BroadcastNotificationAdminTest extends TestCase
             ->call('save');
 
         $this->assertDatabaseHas('broadcast_messages', [
-            'id'    => $broadcast->id,
+            'id' => $broadcast->id,
             'title' => 'Updated Title',
         ]);
     }

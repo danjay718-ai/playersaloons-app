@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
-use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;

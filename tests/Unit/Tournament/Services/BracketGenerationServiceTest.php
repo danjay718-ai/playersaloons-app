@@ -27,7 +27,9 @@ class BracketGenerationServiceTest extends TestCase
     use RefreshDatabase;
 
     private User $adminUser;
+
     private Game $game;
+
     private BracketGenerationService $service;
 
     protected function setUp(): void
@@ -71,7 +73,7 @@ class BracketGenerationServiceTest extends TestCase
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
             'name' => "Tournament {$count} Players",
-            'slug' => "tournament-{$count}-" . Str::random(6),
+            'slug' => "tournament-{$count}-".Str::random(6),
             'game_id' => $this->game->id,
             'max_participants' => 16,
             'min_participants' => 2,
@@ -147,7 +149,7 @@ class BracketGenerationServiceTest extends TestCase
         // byes = 8 - 5 = 3.
         // actual matches = (5 - 3) / 2 = 1.
         $this->assertCount(4, $matches);
-        
+
         $readyMatches = $matches->where('status', MatchStatus::READY);
         $completedMatches = $matches->where('status', MatchStatus::COMPLETED);
 
@@ -195,7 +197,7 @@ class BracketGenerationServiceTest extends TestCase
         // byes = 8 - 6 = 2.
         // actual matches = (6 - 2) / 2 = 2.
         $this->assertCount(4, $matches);
-        
+
         $readyMatches = $matches->where('status', MatchStatus::READY);
         $completedMatches = $matches->where('status', MatchStatus::COMPLETED);
 
@@ -243,7 +245,7 @@ class BracketGenerationServiceTest extends TestCase
         // byes = 8 - 8 = 0.
         // actual matches = 4.
         $this->assertCount(4, $matches);
-        
+
         $readyMatches = $matches->where('status', MatchStatus::READY);
         $this->assertCount(4, $readyMatches);
 

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Admin\GameTournamentDefaultController;
 use App\Http\Controllers\Admin\GameHeadToHeadDefaultController;
+use App\Http\Controllers\Admin\GameTournamentDefaultController;
 use App\Http\Controllers\Admin\KycDocumentController;
-use App\Http\Controllers\Admin\V2TournamentOccurrenceController;
 use App\Http\Controllers\Admin\V2HeadToHeadController;
+use App\Http\Controllers\Admin\V2TournamentOccurrenceController;
 use App\Http\Controllers\Admin\V2TournamentTemplateController;
 use App\Http\Controllers\Admin\V2TournamentTemplateSlotsController;
 use App\Http\Controllers\Auth\EmailVerificationController;
@@ -68,8 +68,8 @@ use App\Livewire\Stream\StreamList;
 use App\Livewire\Stream\StreamWatch;
 use App\Livewire\Team\TeamDashboard;
 use App\Livewire\Tournament\MyTournamentsList;
-use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\PlatformHeadToHeadList;
+use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Livewire\Wallet\WalletDashboard;
