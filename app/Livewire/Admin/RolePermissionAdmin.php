@@ -56,7 +56,7 @@ class RolePermissionAdmin extends AdminComponent
     public function boot(): void
     {
         parent::boot();
-        abort_unless($this->actor()->hasAnyRole(['SUPER_ADMIN', 'ADMIN']), 403);
+        abort_unless($this->actor()->can('roles.view'), 403);
     }
 
     public function mount()
@@ -80,6 +80,7 @@ class RolePermissionAdmin extends AdminComponent
 
     public function createRole(?string $name = null): void
     {
+        $this->authorizeRoleManagement();
         if ($name !== null) {
             $this->newRoleName = $name;
         }
@@ -108,6 +109,7 @@ class RolePermissionAdmin extends AdminComponent
 
     public function openEditRole(int $roleId): void
     {
+        $this->authorizeRoleManagement();
         $role = Role::findOrFail($roleId);
 
         if (in_array($role->name, self::PROTECTED_ROLES, true)) {
@@ -123,6 +125,7 @@ class RolePermissionAdmin extends AdminComponent
 
     public function updateRoleName(?int $id = null, ?string $name = null): void
     {
+        $this->authorizeRoleManagement();
         $targetId = $id ?? $this->editingRoleId;
         if (! $targetId) {
             return;
@@ -164,6 +167,7 @@ class RolePermissionAdmin extends AdminComponent
 
     public function openDeleteRole(int $roleId): void
     {
+        $this->authorizeRoleManagement();
         $role = Role::findOrFail($roleId);
 
         if (in_array($role->name, self::PROTECTED_ROLES, true)) {
@@ -185,6 +189,7 @@ class RolePermissionAdmin extends AdminComponent
 
     public function confirmDeleteRole(?int $id = null): void
     {
+        $this->authorizeRoleManagement();
         $targetId = $id ?? $this->deletingRoleId;
         if (! $targetId) {
             return;
@@ -222,6 +227,7 @@ class RolePermissionAdmin extends AdminComponent
 
     public function togglePermission($permissionName)
     {
+        $this->authorizeRoleManagement();
         $role = Role::findById($this->activeRoleId);
         
         if ($role->name === 'SUPER_ADMIN') {
@@ -247,12 +253,11 @@ class RolePermissionAdmin extends AdminComponent
             ->orderBy('name')
             ->get();
 
-        // Group permissions based on prefixes (e.g., 'manage_users' -> 'manage' or 'user')
-        // We'll group by the first word before an underscore or dash.
+        // Permission names follow resource.action. Group by resource so the
+        // matrix mirrors the real admin pages and CRUD domains.
         $groupedPermissions = [];
         foreach ($allPermissions as $perm) {
-            $parts = preg_split('/[_\\-]/', $perm->name, 2);
-            $group = count($parts) > 1 ? $parts[0] : 'General';
+            $group = explode('.', $perm->name, 2)[0] ?: 'General';
             $groupedPermissions[ucfirst(strtolower($group))][] = $perm;
         }
         
@@ -262,8 +267,14 @@ class RolePermissionAdmin extends AdminComponent
         return view('livewire.admin.role-permission-admin', [
             'roles' => $roles,
             'groupedPermissions' => $groupedPermissions,
+            'canManageRoles' => $this->actor()->can('roles.manage'),
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Roles & Permissions',
         ]);
+    }
+
+    private function authorizeRoleManagement(): void
+    {
+        abort_unless($this->actor()->can('roles.manage'), 403);
     }
 }

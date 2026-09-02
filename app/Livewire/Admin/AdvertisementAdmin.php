@@ -31,9 +31,7 @@ class AdvertisementAdmin extends AdminComponent
     public function boot(): void
     {
         parent::boot();
-        if (! $this->actor()->hasAnyRole(['SUPER_ADMIN', 'ADMIN'])) {
-            abort(403);
-        }
+        abort_unless($this->actor()->can('advertisements.view'), 403);
     }
 
     public function edit(int $id): void
@@ -52,6 +50,7 @@ class AdvertisementAdmin extends AdminComponent
 
     public function save(): void
     {
+        abort_unless($this->actor()->can('advertisements.manage'), 403);
         $data = $this->validate([
             'title' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:1000'],
             'imageUrl' => ['nullable', 'url', 'max:2048'], 'targetUrl' => ['nullable', 'url', 'max:2048'], 'ctaLabel' => ['required', 'string', 'max:50'],
@@ -70,6 +69,7 @@ class AdvertisementAdmin extends AdminComponent
 
     public function delete(int $id): void
     {
+        abort_unless($this->actor()->can('advertisements.manage'), 403);
         Advertisement::query()->findOrFail($id)->delete();
         if ($this->editingId === $id) {
             $this->reset(['editingId', 'title', 'description']);

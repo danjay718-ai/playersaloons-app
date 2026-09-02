@@ -20,10 +20,7 @@ class StaffActivityDashboard extends AdminComponent
     {
         parent::boot();
 
-        $user = Auth::user();
-        if (! $user || ! $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN'])) {
-            abort(403, 'Only admins may view the staff activity dashboard.');
-        }
+        abort_unless($this->actor()->can('staff_activity.view'), 403);
     }
 
     public function mount(): void

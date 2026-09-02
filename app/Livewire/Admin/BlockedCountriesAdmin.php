@@ -17,13 +17,12 @@ class BlockedCountriesAdmin extends AdminComponent
     public function boot(): void
     {
         parent::boot();
-        if (! $this->actor()->hasAnyRole(['SUPER_ADMIN', 'ADMIN'])) {
-            abort(403);
-        }
+        abort_unless($this->actor()->can('geo_blocking.view'), 403);
     }
 
     public function addCountry(): void
     {
+        abort_unless($this->actor()->can('geo_blocking.manage'), 403);
         $this->validate([
             'countryCode' => ['required', 'string', 'size:2', 'in:'.implode(',', array_keys(config('countries', [])))],
             'message' => ['required', 'string', 'max:1000'],
@@ -49,6 +48,7 @@ class BlockedCountriesAdmin extends AdminComponent
 
     public function removeCountry(string $code): void
     {
+        abort_unless($this->actor()->can('geo_blocking.manage'), 403);
         BlockedCountry::where('country_code', $code)->delete();
         app(CountryEligibilityService::class)->forget();
         session()->flash('success', "Unblocked $code successfully.");

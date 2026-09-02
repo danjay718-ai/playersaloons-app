@@ -30,9 +30,7 @@ class NewsletterAdmin extends AdminComponent
         parent::boot();
 
 
-        if (! $this->actor()->hasAnyRole(['SUPER_ADMIN', 'ADMIN'])) {
-            abort(403, 'Only administrators can manage newsletter campaigns.');
-        }
+        abort_unless($this->actor()->can('newsletters.view'), 403);
     }
 
     public function updatingSearch(): void
@@ -42,6 +40,7 @@ class NewsletterAdmin extends AdminComponent
 
     public function sendCampaign(): void
     {
+        abort_unless($this->actor()->can('newsletters.manage'), 403);
         $validated = $this->validate([
             'subject' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string', 'max:10000'],
