@@ -93,4 +93,24 @@
             <button type="submit" class="rounded-lg bg-pink-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-pink-500">Save localization settings</button>
         </form>
     </section>
+    @if(app()->environment(['local', 'testing']) && auth()->user()?->hasRole('SUPER_ADMIN'))
+        <section class="rounded-xl border border-red-500/30 bg-red-950/15 p-6">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-red-300">Local testing only</p>
+            <h2 class="mt-1 text-xl font-bold text-white">Reset tournament test data</h2>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Permanently removes every tournament and H2H occurrence, templates, slots, brackets, registrations, matches, disputes, prize/refund records, and their linked wallet transactions. Remaining wallet balances and XP are rebuilt from non-tournament records. This tool is unavailable in production.</p>
+            <button wire:click="openTournamentTestingReset" type="button" class="mt-5 rounded-lg border border-red-400/50 bg-red-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-500">Delete all tournament test data</button>
+        </section>
+
+        @if($showTournamentResetModal)
+            <div class="fixed inset-0 z-[200] flex items-end bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-5" role="dialog" aria-modal="true">
+                <div class="w-full rounded-t-2xl border border-red-500/30 bg-slate-950 p-6 shadow-2xl sm:max-w-lg sm:rounded-2xl">
+                    <p class="text-[11px] font-black uppercase tracking-wider text-red-300">Irreversible local test action</p><h3 class="mt-2 text-lg font-black text-white">Delete all tournament test data?</h3>
+                    <p class="mt-3 text-sm leading-6 text-slate-400">This cannot be undone. Type <code class="rounded bg-slate-800 px-1.5 py-0.5 text-red-200">DELETE TOURNAMENT TEST DATA</code> to continue.</p>
+                    <input wire:model="tournamentResetConfirmation" type="text" autocomplete="off" class="mt-5 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" placeholder="DELETE TOURNAMENT TEST DATA">
+                    @error('tournamentResetConfirmation')<p class="mt-2 text-xs text-red-400">{{ $message }}</p>@enderror
+                    <div class="mt-6 flex justify-end gap-3"><button wire:click="$set('showTournamentResetModal', false)" type="button" class="rounded-lg border border-slate-700 px-4 py-2 text-xs font-bold uppercase text-slate-300 hover:bg-slate-800">Cancel</button><button wire:click="resetTournamentTestingData" wire:loading.attr="disabled" type="button" class="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-red-500 disabled:opacity-60">Permanently delete</button></div>
+                </div>
+            </div>
+        @endif
+    @endif
 </div>

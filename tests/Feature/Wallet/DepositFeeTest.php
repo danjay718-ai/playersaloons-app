@@ -76,4 +76,14 @@ class DepositFeeTest extends TestCase
 
         $this->assertDatabaseHas('system_settings', ['key' => 'platform.commission_percentage', 'value' => '12.50', 'updated_by' => $admin->id]);
     }
+
+    public function test_only_super_admin_can_open_the_local_tournament_test_reset(): void
+    {
+        $admin = User::query()->create(['uuid' => Str::uuid(), 'email' => 'reset-admin@example.com', 'username' => 'reset-admin', 'password' => 'password', 'status' => UserStatus::ACTIVE, 'email_verified_at' => now()]);
+        $admin->assignRole('ADMIN');
+
+        Livewire::actingAs($admin)->test(SystemSettingsAdmin::class)
+            ->call('openTournamentTestingReset')
+            ->assertForbidden();
+    }
 }

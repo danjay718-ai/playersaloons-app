@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use DateTimeZone;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,12 +37,14 @@ class SystemSettingsAdmin extends AdminComponent
 
     public int $loginLockoutMinutes = 15;
 
+    public bool $showTournamentResetModal = false;
+
+    public string $tournamentResetConfirmation = '';
+
     public function boot(): void
     {
         parent::boot();
-        if (! $this->actor()->hasAnyRole(['SUPER_ADMIN', 'ADMIN'])) {
-            abort(403);
-        }
+        abort_unless($this->actor()->can('system_settings.view'), 403);
     }
 
     public function mount(): void
@@ -75,6 +78,7 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function saveTournamentSettings(): void
     {
+        $this->authorizeManagement();
         $this->validate([
             'defaultWaitingResultTime' => ['required', 'integer', 'min:1', 'max:1440'],
             'tournamentTimezone' => ['required', 'timezone'],
@@ -92,6 +96,7 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function savePlatformCommissionSettings(): void
     {
+        $this->authorizeManagement();
         $this->validate([
             'platformCommissionPercentage' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
         ]);
@@ -106,6 +111,7 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function saveDepositFeeSettings(): void
     {
+        $this->authorizeManagement();
         $this->validate([
             'depositFeeEnabled' => ['boolean'],
             'depositFeeFixed' => ['required', 'numeric', 'min:0', 'max:1000', 'decimal:0,2'],
@@ -125,6 +131,7 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function saveReferralSettings(): void
     {
+        $this->authorizeManagement();
         $this->validate([
             'referralEnabled' => ['boolean'],
             'referrerReward' => ['required', 'numeric', 'min:0', 'max:10000', 'decimal:0,2'],
@@ -144,6 +151,7 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function saveLanguageSwitcherSettings(): void
     {
+        $this->authorizeManagement();
         $this->validate([
             'showLanguageSwitcherGuest' => ['boolean'],
             'showLanguageSwitcherAdmin' => ['boolean'],
@@ -161,6 +169,7 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function saveAuthenticationSettings(): void
     {
+        $this->authorizeManagement();
         $this->validate([
             'loginMaxAttempts' => ['required', 'integer', 'min:3', 'max:20'],
             'loginLockoutMinutes' => ['required', 'integer', 'min:1', 'max:1440'],
@@ -176,10 +185,41 @@ class SystemSettingsAdmin extends AdminComponent
         session()->flash('success', 'Authentication security settings updated.');
     }
 
+    public function openTournamentTestingReset(): void
+    {
+        $this->authorizeTournamentTestingReset();
+        $this->tournamentResetConfirmation = '';
+        $this->showTournamentResetModal = true;
+    }
+
+    public function resetTournamentTestingData(ResetTournamentTestingDataAction $reset): void
+    {
+        $this->authorizeTournamentTestingReset();
+        $this->validate(['tournamentResetConfirmation' => ['required', 'in:DELETE TOURNAMENT TEST DATA']]);
+
+        $summary = $reset->execute();
+        $this->showTournamentResetModal = false;
+        $this->tournamentResetConfirmation = '';
+        session()->flash('success', sprintf(
+            'Tournament test reset completed: %d occurrence(s), %d template(s), %d linked ledger entry/entries, and %d XP award(s) removed.',
+            $summary['tournaments'], $summary['templates'], $summary['ledger_entries'], $summary['experience_awards'],
+        ));
+    }
+
     public function render()
     {
         return view('livewire.admin.system-settings-admin', [
             'timezones' => DateTimeZone::listIdentifiers(),
         ])->layout('components.layouts.admin', ['admin_title' => 'System Settings']);
+    }
+
+    private function authorizeManagement(): void
+    {
+        abort_unless($this->actor()->can('system_settings.manage'), 403);
+    }
+
+    private function authorizeTournamentTestingReset(): void
+    {
+        abort_unless(app()->environment(['local', 'testing']) && $this->actor()->hasRole('SUPER_ADMIN'), 403);
     }
 }
