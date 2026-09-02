@@ -9,6 +9,7 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentScheduleSlot;
 use App\Modules\Tournament\Services\OccurrencePeriod;
 use App\Shared\Enums\RecurrenceFrequency;
+use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,7 @@ final class MaterializeV2OccurrenceAction
     {
         return DB::transaction(function () use ($slot, $creator, $now): ?Tournament {
             $lockedSlot = TournamentScheduleSlot::query()
-                ->with('template.game.tournamentDefaults')
+                ->with('template.game.tournamentDefaults', 'template.game.headToHeadDefaults')
                 ->lockForUpdate()
                 ->findOrFail($slot->id);
             $template = $lockedSlot->template;
@@ -69,7 +70,11 @@ final class MaterializeV2OccurrenceAction
             }
 
             $settings = array_replace($template->settings_json ?? [], $lockedSlot->overrides_json ?? []);
-            $defaults = $template->game->tournamentDefaults;
+            // Tournament and platform H2H defaults deliberately remain
+            // separate. The occurrence receives a snapshot either way.
+            $defaults = $template->competition_type === CompetitionType::HEAD_TO_HEAD
+                ? $template->game->headToHeadDefaults
+                : $template->game->tournamentDefaults;
 
             return Tournament::query()->create([
                 'uuid' => Str::uuid()->toString(),
@@ -102,7 +107,9 @@ final class MaterializeV2OccurrenceAction
                 'frequency' => $isOneTime ? 'one_time' : $frequency->value,
                 'description' => $settings['description'] ?? $defaults?->description,
                 'rules' => $settings['rules'] ?? $defaults?->rules,
-                'banner_url' => $this->publicMediaUrl($settings['banner_url'] ?? $defaults?->tournament_banner_path),
+                'banner_url' => $this->publicMediaUrl($settings['banner_url'] ?? ($template->competition_type === CompetitionType::HEAD_TO_HEAD
+                    ? $defaults?->head_to_head_banner_path
+                    : $defaults?->tournament_banner_path)),
                 'platform_id' => $settings['platform_id'] ?? $defaults?->default_platform_id,
                 'waiting_result_time' => (int) ($settings['waiting_result_time'] ?? 5),
                 'round_duration_seconds' => $settings['round_duration_seconds'] ?? null,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use App\Modules\Tournament\Models\TournamentTemplate;
+use App\Shared\Enums\CompetitionType;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -26,6 +27,7 @@ final class StoreV2TournamentScheduleSlotRequest extends FormRequest
             if ($start->startOfDay()->lessThan(now($template->timezone)->startOfDay())) $validator->errors()->add('schedule_start_at', 'Start date cannot be in the past.');
             if (! $template->is_recurring && $start->lessThan(now($template->timezone))) $validator->errors()->add('schedule_start_at', 'A one-time slot must start in the future.');
             if ($this->filled('max_teams') && $this->integer('max_teams') % 2 !== 0) $validator->errors()->add('max_teams', 'Maximum teams must be an even number.');
+            if ($template->competition_type === CompetitionType::HEAD_TO_HEAD && $this->filled('max_teams') && $this->integer('max_teams') !== 2) $validator->errors()->add('max_teams', 'A Head-to-Head slot always has two players.');
             if ($template->recurrence_frequency?->value === 'weekly' && ! $this->filled('day_of_week')) $validator->errors()->add('day_of_week', 'Select a day of week.');
             if ($template->recurrence_frequency?->value === 'monthly' && ! $this->filled('day_of_month')) $validator->errors()->add('day_of_month', 'Enter a day of month.');
         });

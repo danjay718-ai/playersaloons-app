@@ -39,6 +39,20 @@
                 @php($isActive = $item->match_pattern
                     ? collect(explode('|', $item->match_pattern))->contains(fn ($pattern) => request()->is(trim($pattern)))
                     : url()->current() === url($item->url))
+                @php($isTournamentMenu = trim((string) parse_url($item->url, PHP_URL_PATH), '/') === 'tournaments' && config('features.tournament_v2.enabled'))
+                @if($isTournamentMenu)
+                    <div x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" class="relative">
+                        <button type="button" @click="open = !open" :aria-expanded="open.toString()"
+                            class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] {{ request()->is('tournaments*') || request()->is('h2h') ? 'text-cyan-400' : 'text-zinc-400 hover:text-white' }} transition-colors duration-300">
+                            @if($item->icon)<i data-lucide="{{ $item->icon }}" class="h-3.5 w-3.5"></i>@endif
+                            <span>{{ __($item->label) }}</span><i data-lucide="chevron-down" class="h-3.5 w-3.5 transition-transform" :class="open && 'rotate-180'"></i>
+                        </button>
+                        <div x-show="open" x-cloak x-transition.origin.top.left @click.outside="open = false" class="absolute left-0 top-full z-50 mt-3 w-52 overflow-hidden rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-xl">
+                            <a href="{{ $item->url }}" class="flex items-center gap-3 rounded-lg px-3 py-3 text-[10px] font-black uppercase tracking-wider text-zinc-200 transition hover:bg-cyan-500/10 hover:text-cyan-300"><i data-lucide="trophy" class="h-4 w-4"></i>Tournaments</a>
+                            <a href="{{ route('platform-h2h', ['view' => 'guest']) }}" class="flex items-center gap-3 rounded-lg px-3 py-3 text-[10px] font-black uppercase tracking-wider text-zinc-200 transition hover:bg-fuchsia-500/10 hover:text-fuchsia-300"><i data-lucide="swords" class="h-4 w-4"></i>Head-to-Head</a>
+                        </div>
+                    </div>
+                @else
                 <a href="{{ $item->url }}"
                     @if($item->opens_new_tab) target="_blank" rel="noopener" @endif
                     class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em]
@@ -49,6 +63,7 @@
                     @endif
                     <span>{{ __($item->label) }}</span>
                 </a>
+                @endif
             @endforeach
         </nav>
 
@@ -140,6 +155,13 @@
                 @php($isActive = $item->match_pattern
                     ? collect(explode('|', $item->match_pattern))->contains(fn ($pattern) => request()->is(trim($pattern)))
                     : url()->current() === url($item->url))
+                @php($isTournamentMenu = trim((string) parse_url($item->url, PHP_URL_PATH), '/') === 'tournaments' && config('features.tournament_v2.enabled'))
+                @if($isTournamentMenu)
+                    <div x-data="{ open: {{ request()->is('tournaments*') || request()->is('h2h') ? 'true' : 'false' }} }" class="rounded-xl border border-zinc-800/60 bg-zinc-900/50">
+                        <button type="button" @click="open = !open" :aria-expanded="open.toString()" class="flex w-full items-center justify-between px-4 py-3.5 text-[10px] font-black uppercase tracking-widest {{ request()->is('tournaments*') || request()->is('h2h') ? 'text-cyan-300' : 'text-zinc-300' }}"><span>{{ __($item->label) }}</span><i data-lucide="chevron-down" class="h-4 w-4 transition-transform" :class="open && 'rotate-180'"></i></button>
+                        <div x-show="open" x-cloak x-transition class="space-y-1 border-t border-zinc-800/70 p-2"><a href="{{ $item->url }}" class="flex items-center gap-3 rounded-lg px-3 py-3 text-[10px] font-black uppercase tracking-wider text-zinc-300 hover:bg-cyan-500/10 hover:text-cyan-300"><i data-lucide="trophy" class="h-4 w-4"></i>Tournaments</a><a href="{{ route('platform-h2h', ['view' => 'guest']) }}" class="flex items-center gap-3 rounded-lg px-3 py-3 text-[10px] font-black uppercase tracking-wider text-zinc-300 hover:bg-fuchsia-500/10 hover:text-fuchsia-300"><i data-lucide="swords" class="h-4 w-4"></i>Head-to-Head</a></div>
+                    </div>
+                @else
                 <a href="{{ $item->url }}"
                     @if($item->opens_new_tab) target="_blank" rel="noopener" @endif
                     class="flex items-center justify-between rounded-xl border border-zinc-800/60
@@ -151,6 +173,7 @@
                         <i data-lucide="{{ $item->icon }}" class="h-4 w-4"></i>
                     @endif
                 </a>
+                @endif
             @endforeach
 
             {{-- Authenticated extras --}}

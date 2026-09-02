@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\GameTournamentDefaultController;
+use App\Http\Controllers\Admin\GameHeadToHeadDefaultController;
 use App\Http\Controllers\Admin\KycDocumentController;
 use App\Http\Controllers\Admin\V2TournamentOccurrenceController;
+use App\Http\Controllers\Admin\V2HeadToHeadController;
 use App\Http\Controllers\Admin\V2TournamentTemplateController;
 use App\Http\Controllers\Admin\V2TournamentTemplateSlotsController;
 use App\Http\Controllers\Auth\EmailVerificationController;
@@ -67,6 +69,7 @@ use App\Livewire\Stream\StreamWatch;
 use App\Livewire\Team\TeamDashboard;
 use App\Livewire\Tournament\MyTournamentsList;
 use App\Livewire\Tournament\PlayerTournamentList;
+use App\Livewire\Tournament\PlatformHeadToHeadList;
 use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Livewire\Wallet\WalletDashboard;
@@ -80,6 +83,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', LandingPage::class);
 Route::get('/about', AboutPage::class)->name('about');
 Route::get('/tournaments', PublicTournamentList::class);
+Route::get('/h2h', PlatformHeadToHeadList::class)->name('platform-h2h');
 Route::get('/games/{game:slug}', GameShow::class)->name('games.show');
 Route::get('/streams/{id}', StreamWatch::class)->name('streams.watch');
 Route::get('/tournaments/{uuid}/view', TournamentDetail::class)->name('tournaments.view');
@@ -169,6 +173,9 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->group(function () {
     Route::get('/', AdminDashboard::class);
     Route::get('/profile', AdminProfile::class);
     Route::get('/tournaments', TournamentAdmin::class)->name('admin.tournaments');
+    Route::get('/head-to-head', [V2HeadToHeadController::class, 'index'])->name('admin.h2h.index');
+    Route::get('/head-to-head/create', [V2TournamentTemplateController::class, 'createHeadToHead'])->name('admin.h2h.v2.create');
+    Route::post('/head-to-head', [V2TournamentTemplateController::class, 'storeHeadToHead'])->name('admin.h2h.v2.store');
     Route::get('/tournaments/create', TournamentForm::class)->name('admin.tournaments.create');
     Route::get('/tournaments/v2/create', [V2TournamentTemplateController::class, 'create'])->name('admin.tournaments.v2.create');
     Route::post('/tournaments/v2', [V2TournamentTemplateController::class, 'store'])->name('admin.tournaments.v2.store');
@@ -178,8 +185,11 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->group(function () {
     Route::get('/tournaments/v2/occurrences/{tournament}/edit', [V2TournamentOccurrenceController::class, 'edit'])->name('admin.tournaments.v2.occurrences.edit');
     Route::get('/tournaments/v2/occurrences/{tournament}', [V2TournamentOccurrenceController::class, 'show'])->name('admin.tournaments.v2.occurrences.show');
     Route::put('/tournaments/v2/occurrences/{tournament}', [V2TournamentOccurrenceController::class, 'update'])->name('admin.tournaments.v2.occurrences.update');
+    Route::post('/tournaments/v2/occurrences/{tournament}/cancel', [V2TournamentOccurrenceController::class, 'cancel'])->name('admin.tournaments.v2.occurrences.cancel');
     Route::get('/games/{game}/tournament-defaults', [GameTournamentDefaultController::class, 'edit'])->name('admin.games.tournament-defaults.edit');
     Route::put('/games/{game}/tournament-defaults', [GameTournamentDefaultController::class, 'update'])->name('admin.games.tournament-defaults.update');
+    Route::get('/games/{game}/head-to-head-defaults', [GameHeadToHeadDefaultController::class, 'edit'])->name('admin.games.head-to-head-defaults.edit');
+    Route::put('/games/{game}/head-to-head-defaults', [GameHeadToHeadDefaultController::class, 'update'])->name('admin.games.head-to-head-defaults.update');
     Route::get('/tournaments/{id}/edit', TournamentForm::class)->name('admin.tournaments.edit');
     Route::get('/tournaments/{id}/matches', TournamentMatches::class)->name('admin.tournaments.matches');
     Route::get('/matches', MatchAdmin::class);

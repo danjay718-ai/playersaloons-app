@@ -28,6 +28,10 @@ final class CreateV2TournamentTemplateAction
                 throw new LogicException('The selected platform is not configured for this game.');
             }
 
+            $competitionType = CompetitionType::from($data['competition_type'] ?? CompetitionType::TOURNAMENT->value);
+            if ($competitionType === CompetitionType::HEAD_TO_HEAD && (int) $data['max_teams'] !== 2) {
+                throw new LogicException('A Head-to-Head template must have exactly two player slots.');
+            }
             $firstBps = (int) $data['full_first_bps'];
             $secondBps = (int) $data['full_second_bps'];
             if ((int) $data['max_teams'] <= 4) {
@@ -43,7 +47,7 @@ final class CreateV2TournamentTemplateAction
                 'workflow_version' => 2,
                 'game_id' => $game->id,
                 'created_by' => $data['created_by'] ?? null,
-                'competition_type' => CompetitionType::TOURNAMENT,
+                'competition_type' => $competitionType,
                 'name' => $data['name'],
                 'format' => 'single_elimination',
                 'max_participants' => (int) $data['max_teams'],
@@ -78,6 +82,9 @@ final class CreateV2TournamentTemplateAction
 
             foreach (array_values($data['slots']) as $index => $slot) {
                 $overrides = $slot['overrides'] ?? [];
+                if ($competitionType === CompetitionType::HEAD_TO_HEAD && isset($overrides['max_teams']) && (int) $overrides['max_teams'] !== 2) {
+                    throw new LogicException('A Head-to-Head slot cannot override the two-player limit.');
+                }
                 if (isset($overrides['platform_id']) && ! $game->platforms->contains('id', (int) $overrides['platform_id'])) {
                     throw new LogicException('A schedule slot platform is not configured for this game.');
                 }

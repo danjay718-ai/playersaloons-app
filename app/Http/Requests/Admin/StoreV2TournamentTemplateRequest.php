@@ -20,6 +20,7 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'competition_type' => ['nullable', 'in:tournament,head_to_head'],
             'game_id' => ['required', 'integer', 'exists:games,id'],
             'platform_id' => ['required', 'integer', 'exists:platforms,id'],
             'name' => ['required', 'string', 'max:191'],
@@ -61,6 +62,12 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        // The dedicated platform H2H form posts this value as a hidden field.
+        // Keeping the invariant here makes direct HTTP requests fail safely too.
+        if ($this->input('competition_type') === 'head_to_head') {
+            $this->merge(['max_teams' => 2]);
+        }
+
         $this->merge([
             'full_first_percent' => $this->input('max_teams') <= 4 ? 90 : $this->input('full_first_percent', 75),
             'full_second_percent' => $this->input('max_teams') <= 4 ? 0 : $this->input('full_second_percent', 15),
@@ -76,6 +83,9 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
             }
             if ($this->integer('max_teams') % 2 !== 0) {
                 $validator->errors()->add('max_teams', 'Maximum teams must be an even number.');
+            }
+            if ($this->input('competition_type') === 'head_to_head' && $this->integer('max_teams') !== 2) {
+                $validator->errors()->add('max_teams', 'A Head-to-Head schedule always has exactly two player slots.');
             }
             foreach ((array) $this->input('slots', []) as $index => $slot) {
                 $timezone = app(TournamentTimezone::class)->value();
@@ -104,6 +114,9 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
                 }
                 if (isset($slot['max_teams']) && (int) $slot['max_teams'] % 2 !== 0) {
                     $validator->errors()->add("slots.{$index}.max_teams", 'Maximum teams must be an even number.');
+                }
+                if ($this->input('competition_type') === 'head_to_head' && isset($slot['max_teams']) && (int) $slot['max_teams'] !== 2) {
+                    $validator->errors()->add("slots.{$index}.max_teams", 'A Head-to-Head slot cannot override the two-player limit.');
                 }
                 $day = match ($this->input('frequency')) {
                     'weekly' => 'w'.($slot['day_of_week'] ?? ''),

@@ -26,6 +26,7 @@ final class V2TournamentTemplateSlotsController extends Controller
     public function show(TournamentTemplate $template): View
     {
         $this->guard($template);
+        $now = CarbonImmutable::now($template->timezone)->addMinute()->second(0);
 
         $template->load([
             'game.translations',
@@ -35,16 +36,18 @@ final class V2TournamentTemplateSlotsController extends Controller
                 ->orderByDesc('start_at'),
         ]);
 
-        return view('admin.tournaments.v2-template-slots', compact('template'));
+        return view('admin.tournaments.v2-template-slots', compact('template', 'now'));
     }
 
-    public function create(TournamentTemplate $template): View
+    public function create(TournamentTemplate $template): RedirectResponse
     {
         $this->guard($template);
         abort_unless(request()->user()?->can('tournaments.manage'), 403);
-        $now = CarbonImmutable::now($template->timezone)->addMinute()->second(0);
 
-        return view('admin.tournaments.v2-create-slot', compact('template', 'now'));
+        // Retained route for bookmarks. Slot creation now happens in the
+        // schedule-management modal so admins do not leave the slot list.
+        return redirect()->route('admin.tournaments.v2.templates.slots', $template)
+            ->with('open_add_slot', true);
     }
 
     public function store(StoreV2TournamentScheduleSlotRequest $request, TournamentTemplate $template, AddV2TournamentScheduleSlotAction $add, MaterializeV2OccurrenceAction $materialize): RedirectResponse

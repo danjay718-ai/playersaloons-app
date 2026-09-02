@@ -1,4 +1,4 @@
-@props(['template', 'tab' => 'upcoming'])
+@props(['template', 'tab' => 'upcoming', 'publicView' => false])
 
 @php
     $occurrences = $template->discovery_occurrences ?? collect();
@@ -12,6 +12,9 @@
     $minimumFee = $fees->min() ?? 0;
     $maximumFee = $fees->max() ?? 0;
     $hasFeeVariation = $minimumFee !== $maximumFee;
+    $isHeadToHead = ($template->competition_type?->value ?? $template->competition_type) === 'head_to_head';
+    $entryLabel = $isHeadToHead ? 'players' : 'teams';
+    $viewQuery = $publicView ? '?view=guest' : '';
 @endphp
 
 <article x-data="{ open: false }" class="player-tournament-card group overflow-hidden">
@@ -27,11 +30,11 @@
     <div class="flex min-h-[245px] flex-col gap-4 p-4 sm:p-5">
         <div>
             <h3 class="line-clamp-2 font-orbitron text-base font-black leading-tight tracking-wide text-white sm:text-lg">{{ $template->name }}</h3>
-            <p class="mt-2 text-xs text-zinc-500">Choose a {{ $tab === 'upcoming' ? 'currently available' : $tab }} slot to view its exact details.</p>
+            <p class="mt-2 text-xs text-zinc-500">Choose a {{ $tab === 'upcoming' ? 'currently available' : $tab }} {{ $isHeadToHead ? '1v1' : 'tournament' }} slot to view its exact details.</p>
         </div>
         <div class="grid grid-cols-2 gap-3 border-y border-zinc-800/60 py-3 text-xs">
             <div><span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-600">Entry fee</span><span class="font-orbitron font-black text-violet-300">{{ $minimumFee > 0 ? '$'.number_format($minimumFee, 2) : 'Free' }}{{ $hasFeeVariation ? '+' : '' }}</span></div>
-            <div class="text-right"><span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-600">Max teams</span><span class="font-mono font-bold text-zinc-200">{{ $template->max_participants }}</span></div>
+            <div class="text-right"><span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-600">Max {{ $entryLabel }}</span><span class="font-mono font-bold text-zinc-200">{{ $template->max_participants }}</span></div>
         </div>
         <button type="button" @click="open = true" class="player-card-action mt-auto w-full">
             <span>{{ $tab === 'upcoming' ? 'View Available Slots' : 'View Slots' }}</span><i data-lucide="calendar-days" class="h-3.5 w-3.5 text-cyan-400"></i>
@@ -48,8 +51,8 @@
                 <div class="space-y-3">
                     @foreach($occurrences as $occurrence)
                         <div class="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-                            <div class="min-w-0"><p class="font-orbitron text-xs font-black uppercase text-white">{{ $occurrence->start_at?->timezone($occurrence->timezone)->format('D, M j · g:i A') }}</p><p class="mt-1 text-xs text-zinc-500">{{ str_replace('_', ' ', $occurrence->status->value ?? $occurrence->status) }} · {{ $occurrence->registrations_count }}/{{ $occurrence->max_participants }} teams</p></div>
-                            <div class="flex items-center justify-between gap-4 sm:justify-end"><span class="font-orbitron text-sm font-black text-violet-300">{{ (float) $occurrence->entry_fee > 0 ? '$'.number_format((float) $occurrence->entry_fee, 2) : 'Free' }}</span><a href="/tournaments/{{ $occurrence->uuid }}/view" wire:navigate class="rounded-lg bg-violet-600 px-4 py-2 text-center text-[10px] font-black uppercase tracking-wider text-white hover:bg-violet-500">{{ $tab === 'upcoming' ? 'Select slot' : 'View' }}</a></div>
+                            <div class="min-w-0"><p class="font-orbitron text-xs font-black uppercase text-white">{{ $occurrence->start_at?->timezone($occurrence->timezone)->format('D, M j · g:i A') }}</p><p class="mt-1 text-xs text-zinc-500">{{ str_replace('_', ' ', $occurrence->status->value ?? $occurrence->status) }} · {{ $occurrence->registrations_count }}/{{ $occurrence->max_participants }} {{ $isHeadToHead ? 'players' : 'teams' }}</p></div>
+                            <div class="flex items-center justify-between gap-4 sm:justify-end"><span class="font-orbitron text-sm font-black text-violet-300">{{ (float) $occurrence->entry_fee > 0 ? '$'.number_format((float) $occurrence->entry_fee, 2) : 'Free' }}</span><a href="/tournaments/{{ $occurrence->uuid }}/view{{ $viewQuery }}" wire:navigate class="rounded-lg bg-violet-600 px-4 py-2 text-center text-[10px] font-black uppercase tracking-wider text-white hover:bg-violet-500">{{ $tab === 'upcoming' ? 'Select slot' : 'View' }}</a></div>
                         </div>
                     @endforeach
                 </div>

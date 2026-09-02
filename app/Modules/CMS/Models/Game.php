@@ -82,6 +82,12 @@ class Game extends Model
         return $this->hasOne(GameTournamentDefault::class);
     }
 
+    /** Defaults for platform-managed 1v1 schedules; never shared with tournaments. */
+    public function headToHeadDefaults(): HasOne
+    {
+        return $this->hasOne(GameHeadToHeadDefault::class);
+    }
+
     public function platforms(): BelongsToMany
     {
         return $this->belongsToMany(Platform::class)->withTimestamps();

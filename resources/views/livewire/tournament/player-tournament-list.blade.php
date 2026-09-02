@@ -1,3 +1,13 @@
+@php
+    $isHeadToHeadListing = ($listingType ?? 'tournament') === 'head_to_head';
+    $competitionLabel = $isHeadToHeadListing ? 'Head-to-Head' : 'Tournament';
+    $competitionPlural = $isHeadToHeadListing ? 'Head-to-Head Matches' : 'Tournaments';
+    $publicView = $publicView ?? false;
+    $gameContextQuery = $isHeadToHeadListing
+        ? '?competitionType=head_to_head'.($publicView ? '&view=guest' : '')
+        : '';
+@endphp
+
 <div class="space-y-12" x-data>
     <section class="space-y-5">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -10,7 +20,7 @@
             </button>
             <div x-ref="gamesRail" class="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @forelse($popularGames as $game)
-                    <a href="/games/{{ $game->slug }}" wire:navigate wire:key="game-{{ $game->slug }}" class="group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
+                    <a href="/games/{{ $game->slug }}{{ $gameContextQuery }}" wire:navigate wire:key="game-{{ $game->slug }}" class="group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
                         <div class="aspect-[4/3] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.35),transparent_45%),linear-gradient(135deg,#18181b,#09090b)]"></div>@endif</div>
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent"></div><div class="absolute inset-x-0 bottom-0 p-4"><h2 class="font-orbitron text-sm font-black uppercase text-white">{{ $game->localizedName() }}</h2></div>
                     </a>
@@ -25,41 +35,45 @@
     </section>
 
     <section class="space-y-6">
-        <div class="flex items-end justify-between gap-4"><div><p class="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Selected competitions</p><h2 class="mt-2 font-orbitron text-2xl font-black uppercase text-white">Featured Tournaments</h2></div><span class="hidden text-xs text-zinc-500 sm:block">Highlights from active competitions</span></div>
+        <div class="flex items-end justify-between gap-4"><div><p class="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Selected competitions</p><h2 class="mt-2 font-orbitron text-2xl font-black uppercase text-white">Featured {{ $competitionPlural }}</h2></div><span class="hidden text-xs text-zinc-500 sm:block">Highlights from active competitions</span></div>
         @if(($featuredGroups && $featuredGroups->count()) || $featuredTournaments->isNotEmpty())
             @if($featuredGroups)
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($featuredGroups as $template)<div wire:key="featured-template-{{ $template->uuid }}"><x-player.v2-tournament-parent-card :template="$template" /></div>@endforeach</div>
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($featuredGroups as $template)<div wire:key="featured-template-{{ $template->uuid }}"><x-player.v2-tournament-parent-card :template="$template" :public-view="$publicView" /></div>@endforeach</div>
             @else
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($featuredTournaments as $tournament)<div wire:key="featured-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" action-label="View Tournament" class="min-w-0" /></div>@endforeach</div>
             @endif
             @if($hasMoreFeatured)<div class="text-center"><button wire:click="loadMoreFeatured" wire:loading.attr="disabled" class="rounded-xl border border-violet-500/30 bg-violet-500/10 px-6 py-3 font-orbitron text-[10px] font-black uppercase tracking-widest text-violet-200 transition hover:bg-violet-500/20 disabled:opacity-50"><span wire:loading.remove wire:target="loadMoreFeatured">View More</span><span wire:loading wire:target="loadMoreFeatured">Loading...</span></button></div>@endif
         @else
-            <div class="rounded-2xl border border-dashed border-zinc-800 p-10 text-center text-zinc-500">No featured tournaments are active right now.</div>
+            <div class="rounded-2xl border border-dashed border-zinc-800 p-10 text-center text-zinc-500">No featured {{ strtolower($competitionPlural) }} are active right now.</div>
         @endif
     </section>
 
     <section class="space-y-6">
         <div class="flex gap-2 overflow-x-auto border-b border-zinc-800 pb-3 [scrollbar-width:none]">
-            @foreach(['upcoming' => 'Upcoming', 'ongoing' => 'Ongoing', 'past' => 'Past Tournaments'] as $key => $label)<button wire:click="$set('activeTab', '{{ $key }}')" class="whitespace-nowrap rounded-lg px-5 py-2.5 font-orbitron text-[10px] font-black uppercase tracking-widest transition {{ $activeTab === $key ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(124,58,237,.3)]' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white' }}">{{ $label }}</button>@endforeach
+            @foreach(['upcoming' => $isHeadToHeadListing ? 'Upcoming H2H' : 'Upcoming', 'ongoing' => $isHeadToHeadListing ? 'Ongoing H2H' : 'Ongoing', 'past' => 'Past '.$competitionPlural] as $key => $label)<button wire:click="$set('activeTab', '{{ $key }}')" class="whitespace-nowrap rounded-lg px-5 py-2.5 font-orbitron text-[10px] font-black uppercase tracking-widest transition {{ $activeTab === $key ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(124,58,237,.3)]' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white' }}">{{ $label }}</button>@endforeach
         </div>
-        <div class="rounded-2xl border border-zinc-800/80 bg-zinc-900/35 p-4 backdrop-blur-xl sm:p-5"><div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
-            <input wire:model.live.debounce.300ms="search" type="search" placeholder="Search tournaments" class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus:border-violet-500">
-            <select wire:model.live="teamFormat" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All formats</option><option value="solo">Solo</option><option value="team">Team</option></select>
+        <div class="rounded-2xl border border-zinc-800/80 bg-zinc-900/35 p-4 backdrop-blur-xl sm:p-5"><div class="grid grid-cols-1 gap-4 sm:grid-cols-2 {{ $isHeadToHeadListing ? 'xl:grid-cols-5' : 'xl:grid-cols-6' }}">
+            <input wire:model.live.debounce.300ms="search" type="search" placeholder="Search {{ strtolower($competitionPlural) }}" class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus:border-violet-500">
+            @if($isHeadToHeadListing)
+                <div class="flex items-center rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 px-3 py-3 text-sm font-semibold text-fuchsia-200"><i data-lucide="swords" class="mr-2 h-4 w-4"></i>1v1 only</div>
+            @else
+                <select wire:model.live="teamFormat" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All formats</option><option value="solo">Solo</option><option value="team">Team</option></select>
+            @endif
             <select wire:model.live="gameId" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All games</option>@foreach($games as $game)<option value="{{ $game->id }}">{{ $game->localizedName() }}</option>@endforeach</select>
             <select wire:model.live="frequency" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All frequencies</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="one-time">One-time</option></select>
-            <select wire:model.live="competitionType" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">Tournament & H2H</option><option value="tournament">Tournament</option><option value="head_to_head">Head-to-Head</option></select>
+            @if($allowCompetitionSwitch ?? false)<select wire:model.live="competitionType" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">Tournaments</option><option value="head_to_head">Head-to-Head</option></select>@else<div class="flex items-center rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm font-semibold text-zinc-400">{{ $competitionLabel }}</div>@endif
             <select wire:model.live="platformId" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All platforms</option>@foreach($platforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select>
         </div></div>
         @if($tournamentGroups ? $tournamentGroups->count() : $tournaments->count())
             @if($tournamentGroups)
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($tournamentGroups as $template)<div wire:key="browse-template-{{ $template->uuid }}"><x-player.v2-tournament-parent-card :template="$template" :tab="$activeTab" /></div>@endforeach</div>
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($tournamentGroups as $template)<div wire:key="browse-template-{{ $template->uuid }}"><x-player.v2-tournament-parent-card :template="$template" :tab="$activeTab" :public-view="$publicView" /></div>@endforeach</div>
                 <div class="border-t border-zinc-900/60 pt-6">{{ $tournamentGroups->links('vendor.livewire.custom-pagination') }}</div>
             @else
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($tournaments as $tournament)<div wire:key="browse-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" :action-label="$activeTab === 'past' ? 'View Results' : 'View Tournament'" /></div>@endforeach</div>
                 <div class="border-t border-zinc-900/60 pt-6">{{ $tournaments->links('vendor.livewire.custom-pagination') }}</div>
             @endif
         @else
-            <div class="rounded-2xl border border-dashed border-zinc-800 p-12 text-center"><i data-lucide="trophy" class="mx-auto h-9 w-9 text-zinc-700"></i><h3 class="mt-4 font-orbitron text-sm font-black uppercase text-zinc-300">No tournaments found</h3><p class="mt-2 text-sm text-zinc-600">Try changing the selected tab or filters.</p></div>
+            <div class="rounded-2xl border border-dashed border-zinc-800 p-12 text-center"><i data-lucide="trophy" class="mx-auto h-9 w-9 text-zinc-700"></i><h3 class="mt-4 font-orbitron text-sm font-black uppercase text-zinc-300">No {{ strtolower($competitionPlural) }} found</h3><p class="mt-2 text-sm text-zinc-600">Try changing the selected tab or filters.</p></div>
         @endif
     </section>
 </div>

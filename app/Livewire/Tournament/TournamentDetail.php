@@ -42,6 +42,10 @@ class TournamentDetail extends Component
     #[Url]
     public string $activeTab = 'overview';
 
+    /** Public discovery links must not unexpectedly switch into the player shell. */
+    #[Url(as: 'view')]
+    public string $viewMode = '';
+
     /** @var array<string, bool> */
     public array $loadedSections = [];
 
@@ -54,9 +58,9 @@ class TournamentDetail extends Component
         $this->uuid = $uuid;
 
         $user = Auth::user();
-        if ($user && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
+        if ($user && $this->viewMode !== 'guest' && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
             $this->layout = 'components.layouts.admin';
-        } elseif ($user) {
+        } elseif ($user && $this->viewMode !== 'guest') {
             $this->layout = 'components.layouts.dashboard';
         } else {
             // Guest visitors use app layout

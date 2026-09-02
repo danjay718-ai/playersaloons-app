@@ -28,6 +28,19 @@ final class V2TournamentTemplateController extends Controller
         return view('admin.tournaments.v2-create', [
             'games' => $games,
             'timezone' => $timezone->value(),
+            'h2h' => false,
+        ]);
+    }
+
+    public function createHeadToHead(TournamentTimezone $timezone): View
+    {
+        abort_unless(config('features.tournament_v2.enabled'), 404);
+        abort_unless(request()->user()?->can('tournaments.create') || request()->user()?->can('tournaments.manage'), 403);
+
+        return view('admin.tournaments.v2-create', [
+            'games' => Game::query()->where('is_active', true)->with(['translations', 'platforms:id,name', 'headToHeadDefaults'])->orderBy('slug')->get(),
+            'timezone' => $timezone->value(),
+            'h2h' => true,
         ]);
     }
 
@@ -87,6 +100,16 @@ final class V2TournamentTemplateController extends Controller
             $materialize->execute($slot, $request->user());
         }
 
-        return redirect()->route('admin.tournaments')->with('success', 'Tournament V2 schedule created. Occurrences will be materialized safely from its schedule slots.');
+        $isHeadToHead = ($data['competition_type'] ?? 'tournament') === 'head_to_head';
+
+        return redirect()->route($isHeadToHead ? 'admin.h2h.index' : 'admin.tournaments')->with(
+            'success',
+            ($isHeadToHead ? 'Platform H2H' : 'Tournament V2').' schedule created. Occurrences will be materialized safely from its schedule slots.',
+        );
+    }
+
+    public function storeHeadToHead(StoreV2TournamentTemplateRequest $request, CreateV2TournamentTemplateAction $create, MaterializeV2OccurrenceAction $materialize, TournamentTimezone $timezone): RedirectResponse
+    {
+        return $this->store($request, $create, $materialize, $timezone);
     }
 }

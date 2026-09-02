@@ -35,9 +35,9 @@
             ['label' => __('My Games'), 'icon' => 'trophy', 'url' => '/my-tournaments', 'pattern' => 'my-tournaments'],
             ['label' => __('More'), 'icon' => 'grid-3x3', 'url' => null, 'pattern' => null],
         ];
-        if (config('features.player_wager.enabled')) {
+        if (config('features.tournament_v2.enabled')) {
             array_splice($bottomNavItems, 2, 0, [[
-                'label' => __('H2H'), 'icon' => 'swords', 'url' => '/head-to-head', 'pattern' => 'head-to-head',
+                'label' => __('H2H'), 'icon' => 'swords', 'url' => '/h2h', 'pattern' => 'h2h',
             ]]);
         }
     @endphp
@@ -141,8 +141,13 @@
                     ['label' => __('Support'),     'icon' => 'headphones',       'url' => '/contact',          'active' => request()->is('contact')],
                     ['label' => __('Review Us'),   'icon' => 'star',             'url' => '/reviews',          'active' => request()->is('reviews')],
                 ];
-                if (config('features.player_wager.enabled')) {
+                if (config('features.tournament_v2.enabled')) {
                     array_splice($navItems, 3, 0, [[
+                        'label' => __('H2H'), 'icon' => 'swords', 'url' => '/h2h', 'active' => request()->is('h2h'),
+                    ]]);
+                }
+                if (config('features.player_wager.enabled')) {
+                    array_splice($navItems, 4, 0, [[
                         'label' => __('H2H Duels'), 'icon' => 'swords', 'url' => '/head-to-head', 'active' => request()->is('head-to-head'),
                     ]]);
                 }

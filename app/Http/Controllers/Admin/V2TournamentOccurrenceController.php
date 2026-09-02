@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Tournament\Actions\CancelTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\CompetitionType;
+use App\Shared\Enums\TournamentStatus;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,7 +50,7 @@ final class V2TournamentOccurrenceController extends Controller
             $rules += [
                 'name' => ['required', 'string', 'max:191'],
                 'platform_id' => ['required', 'integer', 'exists:platforms,id'],
-                'max_teams' => ['required', 'integer', 'in:4,8,16,32,64'],
+                'max_teams' => ['required', 'integer', 'min:2', 'max:128'],
                 'entry_fee' => ['required', 'regex:/^\d+(?:\.\d{1,2})?$/'],
                 'start_at' => ['required', 'date'],
                 'end_date' => ['required', 'date'],
@@ -57,6 +60,8 @@ final class V2TournamentOccurrenceController extends Controller
         }
         $data = $request->validate($rules);
         if (! $hasRegistrations) {
+            abort_if((int) $data['max_teams'] % 2 !== 0, 422, 'Maximum teams must be an even number.');
+            abort_if($tournament->competition_type === CompetitionType::HEAD_TO_HEAD && (int) $data['max_teams'] !== 2, 422, 'Head-to-Head occurrences always have two players.');
             abort_unless($tournament->game->platforms()->whereKey($data['platform_id'])->exists(), 422, 'Platform is not configured for this game.');
             $start = CarbonImmutable::parse($data['start_at'], $tournament->timezone)->utc();
             $end = CarbonImmutable::parse($data['end_date'], $tournament->timezone)->addDay()->startOfDay()->utc();
@@ -69,17 +74,33 @@ final class V2TournamentOccurrenceController extends Controller
                 'winning_points' => $data['winning_points'], 'winner_bonus_xp' => $data['winning_points'],
             ]);
         }
-        $tournament->fill([
-            'description' => $data['description'] ?? null,
-            'rules' => $data['rules'] ?? null,
-            'is_featured' => $request->boolean('is_featured'),
-        ]);
+        $presentation = [];
+        foreach (['description', 'rules'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $presentation[$field] = $data[$field];
+            }
+        }
+        if ($request->has('is_featured')) {
+            $presentation['is_featured'] = $request->boolean('is_featured');
+        }
+        $tournament->fill($presentation);
         if ($path = $request->file('banner')?->store('tournaments/occurrences', 'public')) {
             $tournament->banner_url = '/storage/'.$path;
         }
         $tournament->save();
 
-        return redirect()->route('admin.tournaments')->with('success', 'Tournament V2 occurrence updated.');
+        return redirect()->route('admin.tournaments.v2.templates.slots', $tournament->template_id)->with('success', 'Schedule occurrence updated.');
+    }
+
+    public function cancel(Tournament $tournament, CancelTournamentAction $cancel): RedirectResponse
+    {
+        $this->authorizeEdit($tournament);
+        abort_unless($tournament->status === TournamentStatus::REGISTRATION_OPEN, 422, 'Only an open registration slot can be cancelled.');
+
+        $cancel->execute($tournament, request()->user(), 'admin_slot_cancelled', 'Cancelled by an administrator from schedule management.');
+
+        return redirect()->route('admin.tournaments.v2.templates.slots', $tournament->template_id)
+            ->with('success', 'Slot cancelled. Any paid confirmed entries were refunded and remain in transaction history.');
     }
 
     private function authorizeEdit(Tournament $tournament): void

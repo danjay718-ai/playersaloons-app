@@ -6,6 +6,7 @@ namespace Tests\Feature\Tournament;
 
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTournamentDefault;
+use App\Modules\CMS\Models\GameHeadToHeadDefault;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\ResolveDisputeAction;
@@ -20,14 +21,17 @@ use App\Modules\Tournament\Actions\MaterializeV2OccurrenceAction;
 use App\Modules\Tournament\Actions\PurgeEmptyV2OccurrencesAction;
 use App\Modules\Tournament\Actions\RegisterForV2TournamentAction;
 use App\Modules\Tournament\Actions\RequestV2CancellationAction;
+use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use App\Modules\Tournament\Actions\VoteOnV2CancellationAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Services\V2TournamentLifecycle;
 use App\Modules\Wallet\Models\Wallet;
+use App\Modules\Identity\Models\PlayerProgression;
 use App\Shared\Enums\DisputeResolution;
 use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\WalletStatus;
 use Carbon\CarbonImmutable;
 use Database\Seeders\PlatformSystemUserSeeder;
@@ -63,6 +67,13 @@ final class TournamentV2WorkflowTest extends TestCase
             'description' => 'Default tournament copy',
             'rules' => 'Default tournament rules',
         ]);
+        GameHeadToHeadDefault::query()->create([
+            'game_id' => $this->game->id,
+            'default_platform_id' => $this->platform->id,
+            'head_to_head_banner_path' => 'games/v2/head-to-head.webp',
+            'description' => 'Default H2H copy',
+            'rules' => 'Default H2H rules',
+        ]);
     }
 
     public function test_materialization_is_idempotent_and_snapshots_game_defaults(): void
@@ -83,6 +94,244 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame($this->platform->id, $first->platform_id);
         self::assertTrue($first->registration_close_at->equalTo($first->start_at));
         self::assertTrue($first->join_closes_at->equalTo($first->start_at));
+    }
+
+    public function test_local_testing_reset_removes_tournament_records_and_rebuilds_linked_wallet_and_xp_data(): void
+    {
+        $template = $this->template('daily', 4, '23:59');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        $player = $this->user('reset-player@example.com', 'resetplayer', 'PLAYER');
+        $wallet = $this->walletFor($player, '9.00');
+
+        $ledgerId = \Illuminate\Support\Facades\DB::table('ledger_entries')->insertGetId([
+            'uuid' => (string) Str::uuid(), 'wallet_id' => $wallet->id,
+            'reference_type' => Tournament::class, 'reference_id' => $tournament->id,
+            'type' => 'entry_fee', 'amount' => '-1.00', 'running_balance' => '9.00',
+            'description' => 'Tournament test entry', 'created_at' => now(),
+        ]);
+        \Illuminate\Support\Facades\DB::table('wallet_transactions')->insert([
+            'uuid' => (string) Str::uuid(), 'wallet_id' => $wallet->id, 'ledger_entry_id' => $ledgerId,
+            'type' => 'entry_fee', 'status' => 'completed', 'amount' => '-1.00', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        \Illuminate\Support\Facades\DB::table('player_experience_awards')->insert([
+            'uuid' => (string) Str::uuid(), 'user_id' => $player->id, 'source_type' => 'tournament', 'source_id' => $tournament->id,
+            'reason' => 'participation', 'amount' => 10, 'metadata' => json_encode(['version' => 2]), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        PlayerProgression::query()->create(['user_id' => $player->id, 'experience_points' => 10, 'level' => 1, 'tournaments_completed' => 1]);
+
+        $summary = app(ResetTournamentTestingDataAction::class)->execute();
+
+        self::assertSame(1, $summary['tournaments']);
+        $this->assertDatabaseCount('tournaments', 0);
+        $this->assertDatabaseCount('tournament_templates', 0);
+        $this->assertDatabaseMissing('ledger_entries', ['id' => $ledgerId]);
+        $this->assertDatabaseMissing('wallet_transactions', ['ledger_entry_id' => $ledgerId]);
+        $this->assertDatabaseHas('wallets', ['id' => $wallet->id, 'cached_balance' => '0.00']);
+        $this->assertDatabaseHas('player_progressions', ['user_id' => $player->id, 'experience_points' => 0, 'tournaments_completed' => 0]);
+    }
+
+    public function test_platform_head_to_head_template_is_fixed_to_one_versus_one_and_snapshots_the_type(): void
+    {
+        $template = app(CreateV2TournamentTemplateAction::class)->execute([
+            'game_id' => $this->game->id,
+            'platform_id' => $this->platform->id,
+            'name' => 'PC Evening H2H',
+            'competition_type' => CompetitionType::HEAD_TO_HEAD->value,
+            'frequency' => 'daily',
+            'timezone' => 'UTC',
+            'max_teams' => 2,
+            'entry_fee' => '1.00',
+            'full_first_bps' => 9000,
+            'full_second_bps' => 0,
+            'slots' => [[
+                'label' => 'Evening',
+                'local_start_time' => '23:59',
+                'schedule_start_at' => CarbonImmutable::parse('2026-08-29 23:59:00', 'UTC'),
+                'schedule_end_at' => CarbonImmutable::parse('2026-08-29 23:59:59', 'UTC'),
+            ]],
+        ]);
+
+        self::assertSame(CompetitionType::HEAD_TO_HEAD, $template->competition_type);
+        self::assertSame(2, $template->max_participants);
+        self::assertSame(2, $template->min_participants);
+
+        $occurrence = app(MaterializeV2OccurrenceAction::class)->execute(
+            $template->scheduleSlots->firstOrFail(),
+            $this->admin,
+            CarbonImmutable::parse('2026-08-29 10:00:00', 'UTC'),
+        );
+
+        self::assertNotNull($occurrence);
+        self::assertSame(CompetitionType::HEAD_TO_HEAD, $occurrence->competition_type);
+        self::assertSame(2, $occurrence->max_participants);
+        self::assertSame(2, $occurrence->min_participants);
+        self::assertSame(1, $occurrence->team_size);
+        self::assertSame('Default H2H copy', $occurrence->description);
+        self::assertSame('Default H2H rules', $occurrence->rules);
+        self::assertSame('/storage/games/v2/head-to-head.webp', $occurrence->banner_url);
+    }
+
+    public function test_admin_can_manage_a_separate_game_head_to_head_template(): void
+    {
+        $this->actingAs($this->admin)
+            ->get(route('admin.games.head-to-head-defaults.edit', $this->game))
+            ->assertOk()
+            ->assertSee('Head-to-Head');
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.games.head-to-head-defaults.update', $this->game), [
+                'default_platform_id' => $this->platform->id,
+                'description' => '<p>Changed H2H defaults.</p>',
+                'rules' => '<p>H2H only rules.</p>',
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('game_head_to_head_defaults', [
+            'game_id' => $this->game->id,
+            'description' => '<p>Changed H2H defaults.</p>',
+            'rules' => '<p>H2H only rules.</p>',
+        ]);
+        $this->assertDatabaseHas('game_tournament_defaults', [
+            'game_id' => $this->game->id,
+            'description' => 'Default tournament copy',
+        ]);
+    }
+
+    public function test_platform_head_to_head_has_separate_public_and_admin_management_pages(): void
+    {
+        $this->get('/h2h')
+            ->assertOk()
+            ->assertSee('Head-to-Head');
+
+        $this->actingAs($this->admin)
+            ->get('/admin/head-to-head')
+            ->assertOk()
+            ->assertSee('Head-to-Head schedules');
+
+        $this->actingAs($this->admin)
+            ->get('/admin/head-to-head/create')
+            ->assertOk()
+            ->assertSee('Create Head-to-Head schedule')
+            ->assertSee('2 players (1v1)');
+    }
+
+    public function test_admin_head_to_head_management_supports_tournament_style_tabs_and_filters(): void
+    {
+        $this->actingAs($this->admin)
+            ->get(route('admin.h2h.index', [
+                'status_tab' => 'all',
+                'tab' => 'daily',
+                'status' => TournamentStatus::REGISTRATION_OPEN->value,
+                'game_id' => $this->game->id,
+                'platform_id' => $this->platform->id,
+                'start_date' => now()->toDateString(),
+                'end_date' => now()->addDay()->toDateString(),
+                'per_page' => 25,
+            ]))
+            ->assertOk()
+            ->assertSee('Filter Head-to-Head')
+            ->assertSee('Scheduled → Ongoing')
+            ->assertSee('All platforms');
+    }
+
+    public function test_public_head_to_head_navigation_keeps_a_signed_in_player_in_the_public_shell(): void
+    {
+        $player = $this->user('public-h2h-player@example.com', 'publich2hplayer', 'PLAYER');
+
+        $this->actingAs($player)
+            ->get(route('platform-h2h', ['view' => 'guest']))
+            ->assertOk()
+            ->assertSee('id="public-nav"', false)
+            ->assertDontSee('id="desktop-sidebar"', false);
+
+        $this->actingAs($player)
+            ->get(route('platform-h2h'))
+            ->assertOk()
+            ->assertSee('id="desktop-sidebar"', false);
+
+        $this->actingAs($player)
+            ->get(route('games.show', [
+                'game' => $this->game,
+                'competitionType' => 'head_to_head',
+                'view' => 'guest',
+            ]))
+            ->assertOk()
+            ->assertSee('id="public-nav"', false)
+            ->assertDontSee('id="desktop-sidebar"', false);
+    }
+
+    public function test_admin_h2h_creation_forces_the_parent_to_two_players(): void
+    {
+        $start = now('UTC')->addDay()->setTime(18, 0);
+        $end = $start->copy()->endOfDay();
+
+        $this->actingAs($this->admin)
+            ->post('/admin/head-to-head', [
+                'competition_type' => 'head_to_head',
+                'game_id' => $this->game->id,
+                'platform_id' => $this->platform->id,
+                'name' => 'Admin-created H2H',
+                'description' => '<p>Dedicated 1v1 rules.</p>',
+                'rules' => '<p>Report results after each match.</p>',
+                'frequency' => 'daily',
+                // The browser does not allow this in the dedicated UI. The
+                // request test proves the server still persists exactly two.
+                'max_teams' => 64,
+                'entry_fee' => '1.00',
+                'winning_points' => 15,
+                'waiting_result_time' => 5,
+                'full_first_percent' => 90,
+                'full_second_percent' => 0,
+                'slots' => [[
+                    'label' => 'Evening',
+                    'local_start_time' => '18:00',
+                    'schedule_start_at' => $start->format('Y-m-d H:i:s'),
+                    'schedule_end_at' => $end->format('Y-m-d H:i:s'),
+                ]],
+            ])
+            ->assertRedirect(route('admin.h2h.index'));
+
+        $this->assertDatabaseHas('tournament_templates', [
+            'name' => 'Admin-created H2H',
+            'competition_type' => CompetitionType::HEAD_TO_HEAD->value,
+            'max_participants' => 2,
+            'min_participants' => 2,
+        ]);
+    }
+
+    public function test_admin_can_update_or_cancel_a_future_empty_slot_from_schedule_management(): void
+    {
+        $now = CarbonImmutable::now('UTC');
+        $template = $this->template('daily', 4, $now->addHours(3)->format('H:i'));
+        $occurrence = app(MaterializeV2OccurrenceAction::class)->execute(
+            $template->scheduleSlots->firstOrFail(),
+            $this->admin,
+            $now,
+        );
+        self::assertNotNull($occurrence);
+
+        $rescheduledStart = $now->addHours(4)->second(0);
+        $this->actingAs($this->admin)
+            ->put(route('admin.tournaments.v2.occurrences.update', $occurrence), [
+                'name' => 'Updated empty slot',
+                'platform_id' => $this->platform->id,
+                'max_teams' => 4,
+                'entry_fee' => '1.00',
+                'start_at' => $rescheduledStart->format('Y-m-d H:i:s'),
+                'end_date' => $rescheduledStart->addDay()->format('Y-m-d'),
+                'waiting_result_time' => 5,
+                'winning_points' => 15,
+            ])
+            ->assertRedirect(route('admin.tournaments.v2.templates.slots', $template));
+
+        $this->assertDatabaseHas('tournaments', ['id' => $occurrence->id, 'name' => 'Updated empty slot']);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.tournaments.v2.occurrences.cancel', $occurrence))
+            ->assertRedirect(route('admin.tournaments.v2.templates.slots', $template));
+
+        $this->assertDatabaseHas('tournaments', ['id' => $occurrence->id, 'status' => TournamentStatus::CANCELLED->value]);
+        $this->assertDatabaseHas('tournament_cancellations', ['tournament_id' => $occurrence->id, 'reason' => 'admin_slot_cancelled']);
     }
 
     public function test_elapsed_slots_wait_for_the_next_period_instead_of_precreating_it(): void

@@ -1,3 +1,8 @@
+@php
+    $isHeadToHead = $competitionType === 'head_to_head';
+    $competitionLabel = $isHeadToHead ? 'Head-to-Head' : 'Tournaments';
+    $competitionSingular = $isHeadToHead ? 'Head-to-Head' : 'Tournament';
+@endphp
 <div class="space-y-8">
     <section class="relative -mx-4 -mt-4 overflow-hidden border-b border-zinc-800 sm:-mx-6 md:rounded-2xl md:border lg:-mx-0">
         <div class="h-64 sm:h-80 lg:h-96">
@@ -17,7 +22,7 @@
     </section>
 
     <nav class="flex gap-2 overflow-x-auto border-b border-zinc-800 pb-3 [scrollbar-width:none]">
-        @foreach(['overview' => 'Overview', 'browse' => 'Browse', 'streams' => 'Streams'] as $key => $label)
+        @foreach(['overview' => 'Overview', 'browse' => 'Browse '.$competitionLabel, 'streams' => 'Streams'] as $key => $label)
             <button wire:click="$set('activeTab', '{{ $key }}')" class="rounded-lg px-5 py-2.5 font-orbitron text-[10px] font-black uppercase tracking-widest transition {{ $activeTab === $key ? 'bg-violet-600 text-white' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white' }}">{{ $label }}</button>
         @endforeach
     </nav>
@@ -25,28 +30,19 @@
     @if($activeTab === 'overview')
         <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
             <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6"><p class="text-[10px] font-black uppercase tracking-[0.25em] text-violet-400">About the game</p><h2 class="mt-3 font-orbitron text-xl font-black uppercase text-white">Overview</h2><div class="prose prose-invert mt-4 max-w-none text-sm leading-7 text-zinc-400">{!! nl2br(e($game->localizedDescription() ?: 'Game information will be added soon.')) !!}</div></div>
-            <aside class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-6"><p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Active competitions</p><p class="mt-3 font-orbitron text-4xl font-black text-violet-400">{{ $game->tournaments()->whereIn('status', ['REGISTRATION_OPEN','REGISTRATION_CLOSED','CHECKIN_OPEN','CHECKIN_CLOSED','BRACKET_GENERATED','ONGOING'])->count() }}</p><p class="mt-2 text-xs text-zinc-500">Open, check-in, and live tournaments.</p></aside>
-        </section>
-
-        <section class="space-y-5"><div><p class="text-[10px] font-black uppercase tracking-[0.25em] text-amber-400">Hand-picked events</p><h2 class="mt-2 font-orbitron text-xl font-black uppercase text-white">Featured Tournaments</h2></div>
-            @if(($featuredGroups && $featuredGroups->isNotEmpty()) || $featuredTournaments->isNotEmpty())<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@if($featuredGroups)@foreach($featuredGroups as $template)<x-player.v2-tournament-parent-card :template="$template" />@endforeach @else @foreach($featuredTournaments as $tournament)<x-player.tournament-card :tournament="$tournament" action-label="View Tournament" />@endforeach @endif</div>@else<div class="rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-600">No featured tournaments for this game yet.</div>@endif
-        </section>
-
-        <section class="space-y-5">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><h2 class="font-orbitron text-xl font-black uppercase text-white">Tournaments</h2><div class="flex gap-2">@foreach(['upcoming' => 'Upcoming','ongoing' => 'Ongoing','past' => 'Past'] as $key => $label)<button wire:click="$set('tournamentStatus', '{{ $key }}')" class="rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider {{ $tournamentStatus === $key ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-900 text-zinc-500' }}">{{ $label }}</button>@endforeach</div></div>
-            @if($tournamentGroups ? $tournamentGroups->count() : $tournaments->count())<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@if($tournamentGroups)@foreach($tournamentGroups as $template)<x-player.v2-tournament-parent-card :template="$template" :tab="$tournamentStatus" />@endforeach @else @foreach($tournaments as $tournament)<x-player.tournament-card :tournament="$tournament" action-label="View Tournament" />@endforeach @endif</div><div>{{ ($tournamentGroups ?? $tournaments)->links('vendor.livewire.custom-pagination') }}</div>@else<div class="rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-600">No {{ $tournamentStatus }} tournaments.</div>@endif
+            <aside class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-6"><p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Active {{ $competitionLabel }}</p><p class="mt-3 font-orbitron text-4xl font-black text-violet-400">{{ $game->tournaments()->where('competition_type', $isHeadToHead ? 'head_to_head' : 'tournament')->whereIn('status', ['REGISTRATION_OPEN','REGISTRATION_CLOSED','CHECKIN_OPEN','CHECKIN_CLOSED','BRACKET_GENERATED','ONGOING'])->count() }}</p><p class="mt-2 text-xs text-zinc-500">Open, check-in, and live {{ strtolower($competitionLabel) }}.</p></aside>
         </section>
     @elseif($activeTab === 'browse')
         <section class="space-y-6">
+            <div class="space-y-4"><div class="flex items-end justify-between gap-4"><div><p class="text-[10px] font-black uppercase tracking-[0.25em] text-amber-400">Hand-picked events</p><h2 class="mt-2 font-orbitron text-xl font-black uppercase text-white">Featured {{ $competitionLabel }}</h2></div><span class="hidden text-xs text-zinc-500 sm:block">Highlights from active {{ strtolower($competitionLabel) }}</span></div>@if(($featuredGroups && $featuredGroups->isNotEmpty()) || $featuredTournaments->isNotEmpty())<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@if($featuredGroups)@foreach($featuredGroups as $template)<x-player.v2-tournament-parent-card :template="$template" :public-view="$publicView ?? false" />@endforeach @else @foreach($featuredTournaments as $tournament)<x-player.tournament-card :tournament="$tournament" :action-label="'View '.$competitionSingular" />@endforeach @endif</div>@else<div class="rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-600">No featured {{ strtolower($competitionLabel) }} for this game yet.</div>@endif</div>
             <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 sm:p-5"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                <input wire:model.live.debounce.300ms="search" type="search" placeholder="Search tournaments" class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus:border-violet-500">
+                <input wire:model.live.debounce.300ms="search" type="search" placeholder="Search {{ strtolower($competitionLabel) }}" class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus:border-violet-500">
                 <input wire:model.live="startDate" type="date" class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-300 [color-scheme:dark]">
                 <select wire:model.live="platformId" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All platforms</option>@foreach($platforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select>
-                <select wire:model.live="competitionType" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">Tournament & H2H</option><option value="tournament">Tournament</option><option value="head_to_head">Head-to-Head</option></select>
                 <select wire:model.live="frequency" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All frequencies</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="one-time">One-time</option></select>
             </div></div>
             <div class="flex gap-2">@foreach(['upcoming' => 'Upcoming','ongoing' => 'Ongoing','past' => 'Past'] as $key => $label)<button wire:click="$set('tournamentStatus', '{{ $key }}')" class="rounded-lg px-4 py-2 text-[10px] font-black uppercase tracking-wider {{ $tournamentStatus === $key ? 'bg-violet-600 text-white' : 'bg-zinc-900 text-zinc-500' }}">{{ $label }}</button>@endforeach</div>
-            @if($tournamentGroups ? $tournamentGroups->count() : $tournaments->count())<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@if($tournamentGroups)@foreach($tournamentGroups as $template)<x-player.v2-tournament-parent-card :template="$template" :tab="$tournamentStatus" />@endforeach @else @foreach($tournaments as $tournament)<x-player.tournament-card :tournament="$tournament" action-label="View Tournament" />@endforeach @endif</div><div>{{ ($tournamentGroups ?? $tournaments)->links('vendor.livewire.custom-pagination') }}</div>@else<div class="rounded-2xl border border-dashed border-zinc-800 p-10 text-center text-sm text-zinc-600">No tournaments match these filters.</div>@endif
+            @if($tournamentGroups ? $tournamentGroups->count() : $tournaments->count())<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@if($tournamentGroups)@foreach($tournamentGroups as $template)<x-player.v2-tournament-parent-card :template="$template" :tab="$tournamentStatus" :public-view="$publicView ?? false" />@endforeach @else @foreach($tournaments as $tournament)<x-player.tournament-card :tournament="$tournament" action-label="View {{ $competitionSingular }}" />@endforeach @endif</div><div>{{ ($tournamentGroups ?? $tournaments)->links('vendor.livewire.custom-pagination') }}</div>@else<div class="rounded-2xl border border-dashed border-zinc-800 p-10 text-center text-sm text-zinc-600">No {{ strtolower($competitionLabel) }} match these filters.</div>@endif
         </section>
     @else
         <section class="space-y-5"><div><p class="text-[10px] font-black uppercase tracking-[0.25em] text-red-400">Watch the action</p><h2 class="mt-2 font-orbitron text-xl font-black uppercase text-white">{{ $game->localizedName() }} Streams</h2></div>
