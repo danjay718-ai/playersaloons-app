@@ -326,30 +326,31 @@
                     <h2 class="landing-section-title mt-2 text-white">{{ $reviewsSection?->title }}</h2>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                    @foreach($playerReviews as $review)
-                        <article class="landing-card rounded-2xl border border-amber-500/20 bg-zinc-900/30 p-5 sm:p-6">
-                            <div class="text-lg tracking-wider text-amber-300">{{ str_repeat('★', $review->rating) }}<span class="text-zinc-700">{{ str_repeat('★', 5-$review->rating) }}</span></div>
-                            <p class="mt-4 text-sm leading-6 text-zinc-300">{{ $review->review }}</p>
-                            <p class="mt-5 border-t border-zinc-800/60 pt-4 text-[10px] font-black uppercase tracking-[0.2em] text-fuchsia-300">{{ $review->user->profile?->display_name ?? $review->user->username }}</p>
-                        </article>
-                    @endforeach
-                    @foreach($reviewsSection?->activeItems ?? [] as $item)
+                    @forelse($playerReviews as $review)
+                        @php($playerName = $review->user->profile?->display_name ?? $review->user->username)
                         <article class="landing-card group relative overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/30 p-5 transition-all duration-500 hover:-translate-y-1 hover:border-fuchsia-500/40 hover:shadow-[0_20px_60px_-15px_rgba(192,38,211,0.15)] sm:p-6">
                             <div class="absolute -top-8 -right-8 h-20 w-20 rounded-full bg-fuchsia-500/10 blur-2xl transition-all duration-500 group-hover:bg-fuchsia-500/20"></div>
                             {{-- Quote icon --}}
                             <div class="relative mb-5 flex h-10 w-10 items-center justify-center rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-300">
-                                <i data-lucide="{{ $item->icon ?: 'quote' }}" class="h-5 w-5"></i>
+                                <i data-lucide="quote" class="h-5 w-5" aria-hidden="true"></i>
                             </div>
-                            <h3 class="relative break-words text-base font-black text-white">{{ $item->title }}</h3>
-                            <p class="relative mt-4 text-sm leading-6 text-zinc-400">{{ $item->body }}</p>
+                            <blockquote class="relative break-words text-sm leading-6 text-zinc-300">&ldquo;{{ $review->review }}&rdquo;</blockquote>
+                            <div class="relative mt-4 text-lg tracking-wider text-amber-300" role="img" aria-label="{{ $review->rating }} out of 5 stars">
+                                <span aria-hidden="true">{{ str_repeat('★', $review->rating) }}<span class="text-zinc-700">{{ str_repeat('★', 5 - $review->rating) }}</span></span>
+                            </div>
                             <div class="relative mt-6 flex items-center gap-3 border-t border-zinc-800/60 pt-4">
                                 <span class="flex h-8 w-8 items-center justify-center rounded-full bg-fuchsia-500/10 text-xs font-black text-fuchsia-300">
-                                    {{ strtoupper(substr($item->subtitle ?? 'P', 0, 1)) }}
+                                    {{ mb_strtoupper(mb_substr($playerName, 0, 1)) }}
                                 </span>
-                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ $item->subtitle }}</p>
+                                <p class="min-w-0 break-words text-[10px] font-black uppercase tracking-[0.2em] text-fuchsia-300">{{ $playerName }}</p>
                             </div>
                         </article>
-                    @endforeach
+                    @empty
+                        <div class="rounded-2xl border border-zinc-800/60 bg-zinc-900/30 px-6 py-12 text-center sm:col-span-2 md:col-span-3">
+                            <p class="text-sm font-semibold text-zinc-300">No reviews yet.</p>
+                            <p class="mt-2 text-sm text-zinc-500">Player feedback will appear here once available.</p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
         </section>
