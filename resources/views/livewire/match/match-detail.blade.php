@@ -1,6 +1,18 @@
 <div class="space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))">
     <x-ui.toasts />
 
+    @if($isParticipant && in_array($match->resolution_reason, ['rematch', 'admin_draw_rematch', 'admin_rematch', 'agreed_rematch'], true) && !$isSubmitter && !in_array($match->status->value, ['completed', 'forfeited'], true))
+        <div role="alert" class="flex items-start gap-3 rounded-2xl border border-cyan-400/40 bg-cyan-500/10 p-4 text-cyan-100 shadow-lg shadow-cyan-950/20">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-300">
+                <i data-lucide="refresh-cw" class="h-5 w-5"></i>
+            </span>
+            <div>
+                <p class="text-xs font-black uppercase tracking-wider text-cyan-200">Rematch required</p>
+                <p class="mt-1 text-sm leading-relaxed">This match has been reset for a rematch. Play again and submit a new result.</p>
+            </div>
+        </div>
+    @endif
+
     <!-- Match Header Card -->
     <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

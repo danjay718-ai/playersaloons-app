@@ -37,6 +37,15 @@ window.matchRoomRealtime = function (wire, matchUuid) {
 
             this.echo.private(this.channelName)
                 .listen('.match.result.submitted', () => wire.$refresh())
+                .listen('.match.rematch.created', (event) => {
+                    if (!event.same_match && event.rematch_uuid) {
+                        const url = `/matches/${event.rematch_uuid}`;
+                        window.Livewire?.navigate ? window.Livewire.navigate(url) : window.location.assign(url);
+                        return;
+                    }
+
+                    wire.$refresh();
+                })
                 .listen('.match.completed', () => wire.$refresh());
         },
 

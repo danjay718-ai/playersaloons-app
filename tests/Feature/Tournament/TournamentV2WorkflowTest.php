@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tournament;
 
+use App\Livewire\Match\MatchDetail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameHeadToHeadDefault;
 use App\Modules\CMS\Models\GameTournamentDefault;
@@ -44,6 +45,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 use LogicException;
 use Tests\TestCase;
 
@@ -515,6 +517,10 @@ final class TournamentV2WorkflowTest extends TestCase
 
         self::assertSame(2, $match->fresh()->active_attempt_number);
         self::assertSame(MatchStatus::IN_PROGRESS, $match->fresh()->status);
+        Livewire::actingAs($p1)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->assertSee('Rematch required')
+            ->assertSee('Play again and submit a new result.');
 
         $submit->execute($match->fresh(), $p1->id, MatchOutcome::WIN);
         $submit->execute($match->fresh(), $p2->id, MatchOutcome::LOSS);

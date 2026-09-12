@@ -172,7 +172,7 @@ final class SubmitV2MatchResultAction
                     'stalled_deadline_at' => $stalledDeadline,
                 ]);
             }
-            MatchRematchCreated::dispatch($match->id, $match->id);
+            MatchRematchCreated::dispatch($match->id, $match->id, $match->uuid, $match->uuid);
 
             return;
         }

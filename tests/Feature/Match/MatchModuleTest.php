@@ -416,6 +416,17 @@ class MatchModuleTest extends TestCase
             'status' => MatchStatus::READY->value,
             'player_a_registration_id' => $match->player_a_registration_id,
             'player_b_registration_id' => $match->player_b_registration_id,
+            'resolution_reason' => 'admin_rematch',
+        ]);
+
+        $rematch = GameMatch::query()->where('id', '!=', $match->id)->latest('id')->firstOrFail();
+        Livewire::actingAs($this->playerA)
+            ->test(MatchDetail::class, ['uuid' => $rematch->uuid])
+            ->assertSee('Rematch required')
+            ->assertSee('Play again and submit a new result.');
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $this->playerA->id,
+            'title' => 'Rematch Required',
         ]);
 
         Event::assertDispatched(TournamentBracketUpdated::class);

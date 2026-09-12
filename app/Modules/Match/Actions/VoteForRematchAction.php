@@ -52,8 +52,9 @@ class VoteForRematchAction
                 'player_b_registration_id' => $locked->player_b_registration_id,
                 'status' => MatchStatus::READY,
                 'scheduled_at' => now(),
+                'resolution_reason' => 'agreed_rematch',
             ]);
-            MatchRematchCreated::dispatch($locked->id, $rematch->id);
+            MatchRematchCreated::dispatch($locked->id, $rematch->id, $locked->uuid, $rematch->uuid);
 
             return $rematch;
         });

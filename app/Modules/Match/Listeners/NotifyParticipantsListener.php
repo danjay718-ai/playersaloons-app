@@ -71,9 +71,11 @@ class NotifyParticipantsListener
                 $this->notificationService->send($recipient, 'match_ready', 'Match Ready', "Your match against {$opponentName} in tournament '{$tournament->name}' is now ready.", $matchUrl);
             }
         } elseif ($event instanceof MatchRematchCreated) {
-            // Rematch created (dispute resolved)
+            $message = $event->originalMatchId === $event->rematchMatchId
+                ? "Your match in tournament '{$tournament->name}' has been reset for a rematch. Play again and submit a new result."
+                : "A rematch has been scheduled in tournament '{$tournament->name}'. Open the new Match Room, play again, and submit a new result.";
             foreach ($playerAUsers->merge($playerBUsers)->unique('id') as $recipient) {
-                $this->notificationService->send($recipient, 'match_rematch', 'Rematch Scheduled', "A dispute on your match in tournament '{$tournament->name}' was resolved with a rematch. A new match is ready.", $matchUrl);
+                $this->notificationService->send($recipient, 'match_rematch', 'Rematch Required', $message, $matchUrl);
             }
         } elseif ($event instanceof MatchStarted) {
             foreach ($playerAUsers->merge($playerBUsers)->unique('id') as $recipient) {

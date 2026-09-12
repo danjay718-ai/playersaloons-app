@@ -127,7 +127,7 @@ class ResolveDisputeAction
                             ['uuid' => Str::uuid()->toString(), 'status' => 'open', 'stalled_deadline_at' => $stalledDeadline],
                         );
                     }
-                    MatchRematchCreated::dispatch($match->id, $match->id);
+                    MatchRematchCreated::dispatch($match->id, $match->id, $match->uuid, $match->uuid);
 
                     return;
                 }
@@ -143,9 +143,10 @@ class ResolveDisputeAction
                     'player_b_registration_id' => $match->player_b_registration_id,
                     'status' => MatchStatus::READY,
                     'scheduled_at' => Carbon::now(),
+                    'resolution_reason' => 'admin_rematch',
                 ]);
 
-                MatchRematchCreated::dispatch($match->id, $rematch->id);
+                MatchRematchCreated::dispatch($match->id, $rematch->id, $match->uuid, $rematch->uuid);
             }
         });
     }
