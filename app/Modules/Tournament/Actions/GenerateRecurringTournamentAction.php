@@ -125,6 +125,7 @@ final class GenerateRecurringTournamentAction
             'description' => $settings['description'] ?? null,
             'rules' => $settings['rules'] ?? null,
             'platform_id' => $settings['platform_id'] ?? null,
+            'platform_ids' => $settings['platform_ids'] ?? null,
             'frequency' => $template->recurrence_frequency->value,
             'timezone' => $template->timezone,
             'registration_duration_minutes' => $settings['registration_duration_minutes'] ?? 10,

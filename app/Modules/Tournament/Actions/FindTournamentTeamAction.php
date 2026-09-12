@@ -23,13 +23,18 @@ final class FindTournamentTeamAction
         private readonly ChatService $chat,
     ) {}
 
-    public function execute(Tournament $tournament, User $user, string $gameIdValue, string $readyMode): ?TournamentTeam
+    public function execute(Tournament $tournament, User $user, string $gameIdValue, string $readyMode, ?int $platformId = null): ?TournamentTeam
     {
         if ($tournament->status !== TournamentStatus::REGISTRATION_OPEN || (int) $tournament->team_size <= 1 || $tournament->platform_id === null) {
             throw new \LogicException('Team finding is not available for this tournament.');
         }
 
-        return DB::transaction(function () use ($tournament, $user, $gameIdValue, $readyMode): ?TournamentTeam {
+        $platformId ??= $tournament->platform_id;
+        if (! in_array($platformId, $tournament->supportedPlatformIds(), true)) {
+            throw new \LogicException('Select a platform supported by this competition.');
+        }
+
+        return DB::transaction(function () use ($tournament, $user, $gameIdValue, $readyMode, $platformId): ?TournamentTeam {
             $alreadyInTeam = TournamentTeamMember::query()
                 ->where('tournament_id', $tournament->getKey())
                 ->where('user_id', $user->getKey())
@@ -45,7 +50,7 @@ final class FindTournamentTeamAction
                 'tournament_id' => $tournament->getKey(),
                 'user_id' => $user->getKey(),
             ], [
-                'platform_id' => $tournament->platform_id,
+                'platform_id' => $platformId,
                 'game_id_value' => trim($gameIdValue),
                 'ready_mode' => $readyMode,
                 'status' => 'searching',
@@ -54,7 +59,7 @@ final class FindTournamentTeamAction
 
             $entries = TournamentTeamSearchEntry::query()
                 ->where('tournament_id', $tournament->getKey())
-                ->where('platform_id', $tournament->platform_id)
+                ->where('platform_id', $platformId)
                 ->where('status', 'searching')
                 ->oldest('id')
                 ->lockForUpdate()
@@ -96,7 +101,7 @@ final class FindTournamentTeamAction
                 UserGameAccount::query()->updateOrCreate([
                     'user_id' => $player->id,
                     'game_id' => $tournament->game_id,
-                    'platform_id' => $tournament->platform_id,
+                    'platform_id' => $platformId,
                 ], [
                     'game_id_value' => (string) $entries->firstWhere('user_id', $player->id)?->game_id_value,
                 ]);

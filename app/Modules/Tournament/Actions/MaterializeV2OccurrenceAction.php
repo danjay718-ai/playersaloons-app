@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentScheduleSlot;
 use App\Modules\Tournament\Services\OccurrencePeriod;
+use App\Modules\Tournament\Support\CompetitionPlatforms;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\RecurrenceFrequency;
 use App\Shared\Enums\TournamentStatus;
@@ -70,6 +71,9 @@ final class MaterializeV2OccurrenceAction
             }
 
             $settings = array_replace($template->settings_json ?? [], $lockedSlot->overrides_json ?? []);
+            if (isset($lockedSlot->overrides_json['platform_id']) && ! isset($lockedSlot->overrides_json['platform_ids'])) {
+                $settings['platform_ids'] = [(int) $lockedSlot->overrides_json['platform_id']];
+            }
             // Tournament and platform H2H defaults deliberately remain
             // separate. The occurrence receives a snapshot either way.
             $defaults = $template->competition_type === CompetitionType::HEAD_TO_HEAD
@@ -111,6 +115,7 @@ final class MaterializeV2OccurrenceAction
                     ? $defaults?->head_to_head_banner_path
                     : $defaults?->tournament_banner_path)),
                 'platform_id' => $settings['platform_id'] ?? $defaults?->default_platform_id,
+                'platform_ids' => CompetitionPlatforms::ids($settings + ['platform_id' => $defaults?->default_platform_id]),
                 'waiting_result_time' => (int) ($settings['waiting_result_time'] ?? 5),
                 'round_duration_seconds' => $settings['round_duration_seconds'] ?? null,
                 'winning_points' => (int) ($settings['winning_points'] ?? 15),

@@ -108,7 +108,7 @@ trait TournamentListTrait
         }
 
         if ($this->platformId !== '') {
-            $query->where('platform_id', $this->platformId);
+            $query->forPlatform((int) $this->platformId);
         }
 
         if ($this->teamFormat === 'solo') {

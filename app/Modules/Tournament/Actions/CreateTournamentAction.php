@@ -58,6 +58,7 @@ class CreateTournamentAction
                 'description' => $data['description'] ?? null,
                 'rules' => $data['rules'] ?? null,
                 'platform_id' => $data['platform_id'] ?? null,
+                'platform_ids' => $data['platform_ids'] ?? null,
                 'frequency' => $data['frequency'] ?? 'daily',
                 'timezone' => $data['timezone'] ?? config('app.tournament_timezone', 'UTC'),
                 'registration_duration_minutes' => $data['registration_duration_minutes'] ?? 10,

@@ -80,5 +80,11 @@
     "Enter one unused recovery code.": "请输入一个未使用的恢复代码。",
     "Verify identity": "验证身份",
     "Use a recovery code": "使用恢复代码",
-    "Use authenticator code": "使用验证器代码"
+    "Use authenticator code": "使用验证器代码",
+    "Platforms": "Platforms",
+    "Select all platforms players can use for this competition.": "Select all platforms players can use for this competition.",
+    "Select a game to see its supported platforms.": "Select a game to see its supported platforms.",
+    "Select platforms supported by the selected game.": "Select platforms supported by the selected game.",
+    "Your platform": "Your platform",
+    "Select a platform supported by this competition.": "Select a platform supported by this competition."
 }

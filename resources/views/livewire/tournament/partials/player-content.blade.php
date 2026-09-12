@@ -204,6 +204,11 @@
                             @if(Auth::user()->hasRole('PLAYER'))
                                 <div class="mb-3 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-left">
                                     <div>
+                                        @if($competitionPlatforms->count() > 1)
+                                            <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ __('Your platform') }}</label>
+                                            <select wire:model.live="selectedPlatformId" class="mb-3 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white">@foreach($competitionPlatforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select>
+                                            @error('selectedPlatformId')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
+                                        @endif
                                         <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ $gameIdSettings['label'] ?? 'Game ID / In-Game Name' }}</label>
                                         <input wire:model="gameIdValue" type="text" maxlength="191" placeholder="{{ $gameIdSettings['example'] ?? 'Enter the ID opponents can find' }}" class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-600">
                                         @error('gameIdValue')<p class="mt-1 text-[10px] text-red-400">{{ $message }}</p>@enderror
@@ -468,7 +473,7 @@
                                         <i data-lucide="monitor" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Platform</span>
                                     </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $tournament->platform->name ?? 'N/A' }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $tournament->platform_names ?: '—' }}</span>
                                 </div>
                             @endif
 

@@ -13,6 +13,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -67,6 +68,14 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (Throwable $exception, Request $request) {
+            // Let Laravel's normal validation renderer return a 422 response
+            // (or redirect with errors for a browser form). Treating this as a
+            // generic Throwable would incorrectly turn validation failures into
+            // HTTP 500 responses.
+            if ($exception instanceof ValidationException) {
+                return null;
+            }
+
             if ($exception instanceof AuthenticationException) {
                 if ($request->is('api/*') || $request->expectsJson()) {
                     return response()->json(['message' => 'Unauthenticated.'], 401);

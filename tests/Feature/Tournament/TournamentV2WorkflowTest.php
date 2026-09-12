@@ -25,6 +25,7 @@ use App\Modules\Tournament\Actions\RequestV2CancellationAction;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use App\Modules\Tournament\Actions\VoteOnV2CancellationAction;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Services\V2TournamentDiscoveryService;
 use App\Modules\Tournament\Services\V2TournamentLifecycle;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\CompetitionType;
@@ -657,6 +658,96 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame('4.50', User::query()->findOrFail($playerAUserId)->wallet->cached_balance);
         $playerBUserId = $held->playerBRegistration->user_id;
         self::assertSame('4.49', User::query()->findOrFail($playerBUserId)->wallet->cached_balance);
+    }
+
+    public function test_both_admin_creation_forms_save_multiple_platforms_and_show_them_in_overviews(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-12 10:00:00', 'UTC'));
+        $console = Platform::query()->create(['name' => 'PlayStation', 'slug' => 'ps-multi', 'is_active' => true]);
+        $this->game->platforms()->attach($console);
+        $ids = [$this->platform->id, $console->id];
+
+        foreach (['tournament', 'head_to_head'] as $type) {
+            $route = $type === 'head_to_head' ? 'admin.h2h.v2' : 'admin.tournaments.v2';
+            $this->actingAs($this->admin)->get(route($route.'.create'))
+                ->assertOk()->assertSee('name="platform_ids[]"', false);
+            $this->post(route($route.'.store'), $this->multiPlatformPayload($ids, $type))
+                ->assertSessionHasNoErrors()->assertRedirect();
+            $tournament = Tournament::query()->latest('id')->firstOrFail();
+            self::assertSame($ids, $tournament->platform_ids);
+            self::assertSame($ids, $tournament->template->settings_json['platform_ids']);
+            self::assertSame($this->platform->id, $tournament->platform_id);
+            $this->get(route('admin.tournaments.v2.occurrences.show', $tournament))
+                ->assertOk()->assertSee('PC, PlayStation');
+            self::assertTrue(Tournament::query()->forPlatform($console->id)->whereKey($tournament->id)->exists());
+            $discovery = app(V2TournamentDiscoveryService::class)
+                ->paginate('upcoming', ['platform_id' => (string) $console->id, 'competition_type' => $type]);
+            self::assertSame(1, $discovery->total());
+        }
+    }
+
+    public function test_platform_selection_rejects_empty_duplicate_inactive_and_unrelated_platforms(): void
+    {
+        $other = Platform::query()->create(['name' => 'Other', 'slug' => 'other-multi', 'is_active' => true]);
+        $inactive = Platform::query()->create(['name' => 'Inactive', 'slug' => 'inactive-multi', 'is_active' => false]);
+        $this->game->platforms()->attach($inactive);
+        foreach ([[], [$this->platform->id, $this->platform->id], [$this->platform->id, $other->id], [$this->platform->id, $inactive->id]] as $ids) {
+            $response = $this->actingAs($this->admin)->post(
+                route('admin.tournaments.v2.store'),
+                $this->multiPlatformPayload($ids),
+            );
+            $response->assertSessionHasErrors();
+        }
+        self::assertSame(0, Tournament::query()->count());
+    }
+
+    public function test_multi_platform_selection_survives_slot_edits_and_is_locked_after_joining(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-12 10:00:00', 'UTC'));
+        $console = Platform::query()->create(['name' => 'Xbox', 'slug' => 'xbox-multi', 'is_active' => true]);
+        $this->game->platforms()->attach($console);
+        $ids = [$this->platform->id, $console->id];
+        $this->actingAs($this->admin)->post(route('admin.tournaments.v2.store'), $this->multiPlatformPayload($ids))->assertSessionHasNoErrors();
+        $tournament = Tournament::query()->firstOrFail();
+        $this->get(route('admin.tournaments.v2.templates.slots', $tournament->template_id))
+            ->assertOk()->assertSee('name="platform_ids[]"', false);
+        $this->put(route('admin.tournaments.v2.occurrences.update', $tournament), [
+            'name' => 'Edited multiple platforms', 'platform_ids' => $ids,
+            'max_teams' => 4, 'entry_fee' => '0.00', 'start_at' => '2026-09-12T23:00',
+            'end_date' => '2026-09-13', 'waiting_result_time' => 5, 'winning_points' => 15,
+        ])->assertSessionHasNoErrors()->assertRedirect();
+        self::assertSame($ids, $tournament->fresh()->platform_ids);
+        $player = $this->user('multi-player@example.com', 'multiplayer', 'PLAYER');
+        app(RegisterForV2TournamentAction::class)->execute($tournament->fresh(), $player, null, 'XboxHandle', platformId: $console->id);
+        $this->assertDatabaseHas('user_game_accounts', ['user_id' => $player->id, 'platform_id' => $console->id, 'game_id_value' => 'XboxHandle']);
+        $this->expectException(\LogicException::class);
+        $tournament->fresh()->update(['platform_ids' => [$this->platform->id]]);
+    }
+
+    public function test_legacy_platform_remains_visible_and_filterable(): void
+    {
+        $template = $this->template('daily', 4, '23:59');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        $tournament->update(['platform_ids' => null]);
+        self::assertSame([$this->platform->id], $tournament->fresh()->supportedPlatformIds());
+        self::assertSame('PC', $tournament->fresh()->platform_names);
+        self::assertTrue(Tournament::query()->forPlatform($this->platform->id)->whereKey($tournament->id)->exists());
+    }
+
+    private function multiPlatformPayload(array $ids, string $type = 'tournament'): array
+    {
+        return [
+            'name' => 'Multiple Platforms '.$type, 'competition_type' => $type,
+            'game_id' => $this->game->id, 'platform_ids' => $ids,
+            'frequency' => 'daily', 'max_teams' => 4, 'entry_fee' => '0.00',
+            'winning_points' => 15, 'waiting_result_time' => 5,
+            'full_first_percent' => 90, 'full_second_percent' => 0,
+            'slots' => [[
+                'local_start_time' => '23:00',
+                'schedule_start_at' => now()->format('Y-m-d').'T23:00',
+                'schedule_end_at' => now()->addDay()->format('Y-m-d').'T23:59',
+            ]],
+        ];
     }
 
     private function activeTwoPlayerMatch(): array

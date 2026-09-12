@@ -18,7 +18,7 @@ final class StoreV2TournamentScheduleSlotRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['label' => ['nullable', 'string', 'max:100'], 'local_start_time' => ['required', 'date_format:H:i'], 'schedule_start_at' => ['required', 'date'], 'schedule_end_at' => ['required', 'date', 'after:schedule_start_at'], 'day_of_week' => ['nullable', 'integer', 'between:0,6'], 'day_of_month' => ['nullable', 'integer', 'between:1,31'], 'name' => ['nullable', 'string', 'max:191'], 'max_teams' => ['nullable', 'integer', 'min:2', 'max:128'], 'entry_fee' => ['nullable', 'regex:/^\d+(?:\.\d{1,2})?$/']];
+        return ['label' => ['nullable', 'string', 'max:100'], 'local_start_time' => ['nullable', 'date_format:H:i'], 'schedule_start_at' => ['required', 'date'], 'schedule_end_at' => ['required', 'date', 'after:schedule_start_at'], 'day_of_week' => ['nullable', 'integer', 'between:0,6'], 'day_of_month' => ['nullable', 'integer', 'between:1,31'], 'name' => ['nullable', 'string', 'max:191'], 'max_teams' => ['nullable', 'integer', 'min:2', 'max:128'], 'entry_fee' => ['nullable', 'regex:/^\d+(?:\.\d{1,2})?$/']];
     }
 
     public function withValidator($validator): void

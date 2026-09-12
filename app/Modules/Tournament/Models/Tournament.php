@@ -6,8 +6,10 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Modules\Stream\Models\StreamChannel;
+use App\Modules\Tournament\Support\CompetitionPlatforms;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -68,7 +70,7 @@ class Tournament extends Model implements HasMedia
 
             $presentation = ['banner_url', 'description', 'rules'];
             $structural = [
-                'name', 'game_id', 'platform_id', 'competition_type', 'entry_fee', 'max_participants',
+                'name', 'game_id', 'platform_id', 'platform_ids', 'competition_type', 'entry_fee', 'max_participants',
                 'min_participants', 'team_size', 'registration_open_at', 'registration_close_at',
                 'start_at', 'end_at', 'join_closes_at', 'timezone', 'frequency', 'waiting_result_time',
                 'round_duration_seconds', 'winning_points', 'winner_bonus_xp', 'full_first_bps',
@@ -127,6 +129,7 @@ class Tournament extends Model implements HasMedia
         'description',
         'rules',
         'platform_id',
+        'platform_ids',
         'waiting_time',
         'match_ready_minutes',
         'match_extra_wait_minutes',
@@ -170,6 +173,7 @@ class Tournament extends Model implements HasMedia
     protected function casts(): array
     {
         return [
+            'platform_ids' => 'array',
             'status' => TournamentStatus::class,
             'workflow_version' => 'integer',
             'competition_type' => CompetitionType::class,
@@ -255,6 +259,26 @@ class Tournament extends Model implements HasMedia
      *
      * @return BelongsTo<Platform, Tournament>
      */
+    /** @return array<int, int> */
+    public function supportedPlatformIds(): array
+    {
+        return CompetitionPlatforms::ids([
+            'platform_ids' => $this->platform_ids,
+            'platform_id' => $this->platform_id,
+        ]);
+    }
+
+    public function getPlatformNamesAttribute(): string
+    {
+        return Platform::query()->whereIn('id', $this->supportedPlatformIds())->orderBy('name')->pluck('name')->implode(', ');
+    }
+
+    public function scopeForPlatform(Builder $query, int $platformId): void
+    {
+        $query->where(fn ($query) => $query->whereJsonContains('platform_ids', $platformId)
+            ->orWhere(fn ($legacy) => $legacy->whereNull('platform_ids')->where('platform_id', $platformId)));
+    }
+
     public function platform(): BelongsTo
     {
         return $this->belongsTo(Platform::class);

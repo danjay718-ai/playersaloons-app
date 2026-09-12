@@ -41,7 +41,7 @@ final class V2HeadToHeadController extends Controller
             ->withCount('scheduleSlots')
             ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->when($gameId !== '', fn ($query) => $query->where('game_id', $gameId))
-            ->when($platformId !== '', fn ($query) => $query->where('settings_json->platform_id', (int) $platformId))
+            ->when($platformId !== '', fn ($query) => $query->where(fn ($platforms) => $platforms->whereJsonContains('settings_json->platform_ids', (int) $platformId)->orWhere('settings_json->platform_id', (int) $platformId)))
             ->when($activeTab !== 'all', function ($query) use ($activeTab): void {
                 if ($activeTab === 'one-time') {
                     $query->where('is_recurring', false);
@@ -91,7 +91,7 @@ final class V2HeadToHeadController extends Controller
             ->where('competition_type', CompetitionType::HEAD_TO_HEAD)
             ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->when($gameId !== '', fn ($query) => $query->where('game_id', $gameId))
-            ->when($platformId !== '', fn ($query) => $query->where('settings_json->platform_id', (int) $platformId));
+            ->when($platformId !== '', fn ($query) => $query->where(fn ($platforms) => $platforms->whereJsonContains('settings_json->platform_ids', (int) $platformId)->orWhere('settings_json->platform_id', (int) $platformId)));
         $countActive = (clone $countBase)->where(function ($query) use ($activeStatuses): void {
             $query->whereDoesntHave('scheduleSlots.occurrences')
                 ->orWhereHas('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->whereIn('status', $activeStatuses));

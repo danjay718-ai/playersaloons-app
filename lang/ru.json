@@ -80,5 +80,11 @@
     "Enter one unused recovery code.": "Введите один неиспользованный код восстановления.",
     "Verify identity": "Подтвердить личность",
     "Use a recovery code": "Использовать код восстановления",
-    "Use authenticator code": "Использовать код аутентификатора"
+    "Use authenticator code": "Использовать код аутентификатора",
+    "Platforms": "Platforms",
+    "Select all platforms players can use for this competition.": "Select all platforms players can use for this competition.",
+    "Select a game to see its supported platforms.": "Select a game to see its supported platforms.",
+    "Select platforms supported by the selected game.": "Select platforms supported by the selected game.",
+    "Your platform": "Your platform",
+    "Select a platform supported by this competition.": "Select a platform supported by this competition."
 }

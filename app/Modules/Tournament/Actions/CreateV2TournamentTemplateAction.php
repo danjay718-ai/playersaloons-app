@@ -7,6 +7,7 @@ namespace App\Modules\Tournament\Actions;
 use App\Modules\CMS\Models\Game;
 use App\Modules\Tournament\Models\TournamentScheduleSlot;
 use App\Modules\Tournament\Models\TournamentTemplate;
+use App\Modules\Tournament\Support\CompetitionPlatforms;
 use App\Shared\Enums\CompetitionType;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,10 +24,8 @@ final class CreateV2TournamentTemplateAction
 
         return DB::transaction(function () use ($data): TournamentTemplate {
             $game = Game::query()->with('platforms:id')->findOrFail((int) $data['game_id']);
-            $platformId = (int) $data['platform_id'];
-            if (! $game->platforms->contains('id', $platformId)) {
-                throw new LogicException('The selected platform is not configured for this game.');
-            }
+            $platformIds = CompetitionPlatforms::validate($game, $data);
+            $platformId = $platformIds[0];
 
             $competitionType = CompetitionType::from($data['competition_type'] ?? CompetitionType::TOURNAMENT->value);
             if ($competitionType === CompetitionType::HEAD_TO_HEAD && (int) $data['max_teams'] !== 2) {
@@ -66,6 +65,7 @@ final class CreateV2TournamentTemplateAction
                     'rules' => $data['rules'] ?? null,
                     'banner_url' => $data['banner_url'] ?? null,
                     'platform_id' => $platformId,
+                    'platform_ids' => $platformIds,
                     'team_size' => 1,
                     'waiting_result_time' => (int) ($data['waiting_result_time'] ?? 5),
                     'round_duration_seconds' => $data['round_duration_seconds'] ?? null,
@@ -87,6 +87,10 @@ final class CreateV2TournamentTemplateAction
                 }
                 if (isset($overrides['platform_id']) && ! $game->platforms->contains('id', (int) $overrides['platform_id'])) {
                     throw new LogicException('A schedule slot platform is not configured for this game.');
+                }
+                if (isset($overrides['platform_ids']) || isset($overrides['platform_id'])) {
+                    $overrides['platform_ids'] = CompetitionPlatforms::validate($game, $overrides);
+                    $overrides['platform_id'] = $overrides['platform_ids'][0];
                 }
                 $slotFirst = (int) ($overrides['full_first_bps'] ?? $firstBps);
                 $slotSecond = (int) ($overrides['full_second_bps'] ?? $secondBps);

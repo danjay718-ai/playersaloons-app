@@ -30,6 +30,7 @@ final class RegisterForV2TournamentAction
         ?string $gameIdValue = null,
         string $readyMode = 'auto',
         ?TournamentTeam $tournamentTeam = null,
+        ?int $platformId = null,
     ): TournamentRegistration {
         if (! config('features.tournament_v2.enabled')) {
             throw new LogicException('Tournament V2 is temporarily unavailable.');
@@ -41,7 +42,7 @@ final class RegisterForV2TournamentAction
             throw new LogicException('This tournament occurrence is closed to new entries.');
         }
 
-        return DB::transaction(function () use ($tournament, $user, $team, $gameIdValue, $readyMode, $tournamentTeam): TournamentRegistration {
+        return DB::transaction(function () use ($tournament, $user, $team, $gameIdValue, $readyMode, $tournamentTeam, $platformId): TournamentRegistration {
             // Serialize registration across slots of the same parent. This is
             // a row lock on the template, so two simultaneous requests cannot
             // put one player into two daily slots of the same tournament.
@@ -74,7 +75,7 @@ final class RegisterForV2TournamentAction
                 throw new LogicException('You already have an active entry in another slot for this tournament period.');
             }
 
-            $registration = $this->register->execute($tournament, $user, $team, $gameIdValue, $readyMode, $tournamentTeam);
+            $registration = $this->register->execute($tournament, $user, $team, $gameIdValue, $readyMode, $tournamentTeam, $platformId);
             $this->lifecycle->reconcile($tournament->fresh() ?? $tournament);
 
             return $registration;

@@ -47,6 +47,7 @@ class RegisterForTournamentAction
         ?string $gameIdValue = null,
         string $readyMode = 'auto',
         ?TournamentTeam $tournamentTeam = null,
+        ?int $platformId = null,
     ): TournamentRegistration {
         if ($tournament->status !== TournamentStatus::REGISTRATION_OPEN) {
             throw new TournamentNotOpenForRegistrationException(
@@ -63,12 +64,17 @@ class RegisterForTournamentAction
             throw new \LogicException('Choose a valid match readiness option.');
         }
 
-        return DB::transaction(function () use ($tournament, $user, $team, $gameIdValue, $readyMode, $tournamentTeam): TournamentRegistration {
+        return DB::transaction(function () use ($tournament, $user, $team, $gameIdValue, $readyMode, $tournamentTeam, $platformId): TournamentRegistration {
             // Lock tournament row to prevent race conditions on participant count
             /** @var Tournament|null $locked */
             $locked = Tournament::query()->where('id', $tournament->getKey())->lockForUpdate()->first();
             if ($locked === null) {
                 throw new \RuntimeException('Tournament not found.');
+            }
+
+            $platformId ??= $locked->platform_id;
+            if ($platformId !== null && ! in_array($platformId, $locked->supportedPlatformIds(), true)) {
+                throw new \LogicException('Select a platform supported by this competition.');
             }
 
             if (($locked->team_size ?? 1) > 1) {
@@ -90,7 +96,7 @@ class RegisterForTournamentAction
                     if (TournamentRegistration::query()->where('tournament_id', $locked->getKey())->where('team_id', $team->getKey())->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])->exists()) {
                         throw new \LogicException('This squad already has a registered tournament team.');
                     }
-                    $tournamentTeam = $this->snapshotSquadLineup($locked, $team, $user, $gameIdValue, $readyMode);
+                    $tournamentTeam = $this->snapshotSquadLineup($locked, $team, $user, $gameIdValue, $readyMode, $platformId);
                 } else {
                     throw new \LogicException('Form a tournament team or use Find a Team before registering.');
                 }
@@ -178,11 +184,11 @@ class RegisterForTournamentAction
                 ]);
             }
 
-            if ($locked->platform_id !== null) {
+            if ($platformId !== null) {
                 UserGameAccount::query()->updateOrCreate([
                     'user_id' => $user->getKey(),
                     'game_id' => $locked->game_id,
-                    'platform_id' => $locked->platform_id,
+                    'platform_id' => $platformId,
                 ], [
                     'game_id_value' => $gameIdValue,
                 ]);
@@ -217,6 +223,7 @@ class RegisterForTournamentAction
         User $leader,
         string $leaderGameId,
         string $leaderReadyMode,
+        ?int $platformId,
     ): TournamentTeam {
         $members = $squad->members()
             ->where('status', 'active')
@@ -228,7 +235,7 @@ class RegisterForTournamentAction
         $accountIds = UserGameAccount::query()
             ->whereIn('user_id', $members->pluck('user_id'))
             ->where('game_id', $tournament->game_id)
-            ->where('platform_id', $tournament->platform_id)
+            ->where('platform_id', $platformId)
             ->pluck('game_id_value', 'user_id');
 
         $team = TournamentTeam::query()->create([

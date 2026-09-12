@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Tournament;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
+use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\UserGameAccount;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Stream\Support\StreamEmbedService;
@@ -27,6 +28,7 @@ use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Spatie\Activitylog\Models\Activity;
@@ -51,6 +53,8 @@ class TournamentDetail extends Component
 
     public string $gameIdValue = '';
 
+    public ?int $selectedPlatformId = null;
+
     public string $readyMode = 'auto';
 
     public function mount(string $uuid): void
@@ -70,6 +74,7 @@ class TournamentDetail extends Component
         if ($user) {
             $tournament = $this->getTournamentQuery()->where('uuid', $uuid)->first(['game_id', 'platform_id']);
             if ($tournament?->platform_id !== null) {
+                $this->selectedPlatformId = (int) $tournament->platform_id;
                 $this->gameIdValue = (string) (UserGameAccount::query()
                     ->where('user_id', $user->getKey())
                     ->where('game_id', $tournament->game_id)
@@ -77,6 +82,16 @@ class TournamentDetail extends Component
                     ->value('game_id_value') ?? '');
             }
         }
+    }
+
+    public function updatedSelectedPlatformId(): void
+    {
+        $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
+        $this->gameIdValue = (string) (UserGameAccount::query()
+            ->where('user_id', Auth::id())
+            ->where('game_id', $tournament->game_id)
+            ->where('platform_id', $this->selectedPlatformId)
+            ->value('game_id_value') ?? '');
     }
 
     private function getTournamentQuery()
@@ -119,6 +134,7 @@ class TournamentDetail extends Component
         $user = Auth::user();
 
         $this->validate([
+            'selectedPlatformId' => ['nullable', 'integer', Rule::in($tournament->supportedPlatformIds())],
             'gameIdValue' => 'required|string|max:191',
             'readyMode' => 'required|in:auto,confirm_each_match',
         ]);
@@ -135,7 +151,7 @@ class TournamentDetail extends Component
                 $squad = Team::query()->where('captain_user_id', $user->id)->where('status', 'active')->first();
 
                 if ($tournamentTeam === null && $squad === null) {
-                    $formed = $findTeam->execute($tournament, $user, $this->gameIdValue, $this->readyMode);
+                    $formed = $findTeam->execute($tournament, $user, $this->gameIdValue, $this->readyMode, $this->selectedPlatformId);
                     session()->flash('message', $formed && (int) $formed->leader_user_id === (int) $user->id
                         ? 'Your tournament team is complete. Click Register Team to finalize the entry.'
                         : ($formed ? 'Your tournament team is complete. The Team Leader will finalize registration.' : 'You are now looking for a team. There is no charge until a full team is formed.'));
@@ -145,9 +161,9 @@ class TournamentDetail extends Component
             }
 
             if ((int) $tournament->workflow_version === 2) {
-                $v2Action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam);
+                $v2Action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam, $this->selectedPlatformId);
             } else {
-                $action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam);
+                $action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam, $this->selectedPlatformId);
             }
             session()->flash('message', ($tournament->team_size ?? 1) > 1 ? 'Tournament team registered successfully!' : 'Successfully joined the tournament!');
         } catch (\Exception $e) {
@@ -393,7 +409,7 @@ class TournamentDetail extends Component
                     TournamentStatus::PUBLISHED,
                 ], true);
 
-        $gameIdSettings = (array) (($tournament->game->game_id_settings ?? [])[(string) $tournament->platform_id]
+        $gameIdSettings = (array) (($tournament->game->game_id_settings ?? [])[(string) ($this->selectedPlatformId ?? $tournament->platform_id)]
             ?? ($tournament->game->game_id_settings['default'] ?? []));
         $userTournamentTeam = $user ? TournamentTeam::query()
             ->where('tournament_id', $tournament->id)
@@ -415,6 +431,7 @@ class TournamentDetail extends Component
 
         return view('livewire.tournament.tournament-detail', [
             'tournament' => $tournament,
+            'competitionPlatforms' => Platform::query()->whereIn('id', $tournament->supportedPlatformIds())->orderBy('name')->get(),
             'prizeCalculation' => $prizeCalculation,
             'displayPrizeCalculation' => $displayPrizeCalculation,
             'isV2Registration' => $isV2Registration,

@@ -35,6 +35,31 @@ final class V2TournamentTemplateSlotsController extends Controller
                 ->withCount('registrations')
                 ->orderByDesc('start_at'),
         ]);
+        $frequency = $template->recurrence_frequency?->value ?? 'one_time';
+
+        // Keep the schedule useful throughout the day: upcoming slots stay at
+        // the top in chronological order, while elapsed slots remain visible
+        // underneath so admins can see what will recur next.
+        $template->setRelation('scheduleSlots', $template->scheduleSlots
+            ->sortBy(function ($slot) use ($now, $template, $frequency): string {
+                if ($frequency === 'daily' && $slot->local_start_time !== null) {
+                    [$hour, $minute] = array_map('intval', explode(':', $slot->local_start_time));
+                    $slotSeconds = ($hour * 3600) + ($minute * 60);
+                    $nowSeconds = ($now->hour * 3600) + ($now->minute * 60);
+
+                    $isPast = $slotSeconds < $nowSeconds;
+                    $sortSeconds = $isPast ? 86400 - $slotSeconds : $slotSeconds;
+
+                    return sprintf('%d-%06d-%010d', $isPast ? 1 : 0, $sortSeconds, $slot->id);
+                }
+
+                $start = $slot->occurrences->sortBy('start_at')->first()?->start_at?->timezone($template->timezone)
+                    ?? $slot->schedule_start_at?->timezone($template->timezone);
+                $timestamp = $start?->timestamp ?? PHP_INT_MAX;
+
+                return sprintf('%d-%012d-%010d', ($start !== null && $start->greaterThanOrEqualTo($now)) ? 0 : 1, $timestamp, $slot->id);
+            })
+            ->values());
 
         return view('admin.tournaments.v2-template-slots', compact('template', 'now'));
     }

@@ -545,7 +545,7 @@
                         </div>
                         <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
                             <span class="text-slate-500 font-medium block">Platform</span>
-                            <span class="text-slate-200 font-semibold mt-1 block uppercase">{{ $selectedTournament->platform ? $selectedTournament->platform->name : 'N/A' }}</span>
+                            <span class="text-slate-200 font-semibold mt-1 block uppercase">{{ $selectedTournament->platform_names ?: '—' }}</span>
                         </div>
                         <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
                             <span class="text-slate-500 font-medium block">Frequency</span>

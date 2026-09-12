@@ -56,6 +56,7 @@ final class CreateRecurringCompetitionAction
                     'description' => $data['description'] ?? null,
                     'rules' => $data['rules'] ?? null,
                     'platform_id' => $data['platform_id'] ?? null,
+                    'platform_ids' => $data['platform_ids'] ?? null,
                     'prize_pool' => $data['prize_pool'] ?? 0,
                     'end_lead_minutes' => isset($data['end_at'])
                         ? $startAt->diffInMinutes(CarbonImmutable::instance($data['end_at']), false)

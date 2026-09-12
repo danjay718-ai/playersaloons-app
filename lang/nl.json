@@ -80,5 +80,11 @@
     "Enter one unused recovery code.": "Voer één ongebruikte herstelcode in.",
     "Verify identity": "Identiteit verifiëren",
     "Use a recovery code": "Gebruik een herstelcode",
-    "Use authenticator code": "Gebruik authenticatorcode"
+    "Use authenticator code": "Gebruik authenticatorcode",
+    "Platforms": "Platforms",
+    "Select all platforms players can use for this competition.": "Select all platforms players can use for this competition.",
+    "Select a game to see its supported platforms.": "Select a game to see its supported platforms.",
+    "Select platforms supported by the selected game.": "Select platforms supported by the selected game.",
+    "Your platform": "Your platform",
+    "Select a platform supported by this competition.": "Select a platform supported by this competition."
 }

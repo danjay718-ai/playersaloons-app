@@ -14,6 +14,7 @@
     $hasFeeVariation = $minimumFee !== $maximumFee;
     $isHeadToHead = ($template->competition_type?->value ?? $template->competition_type) === 'head_to_head';
     $entryLabel = $isHeadToHead ? 'players' : 'teams';
+    $platformNames = $lead?->platform_names ?: $lead?->platform?->name;
     $viewQuery = $publicView ? '?view=guest' : '';
 @endphp
 
@@ -36,6 +37,9 @@
             <div><span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-600">Entry fee</span><span class="font-orbitron font-black text-violet-300">{{ $minimumFee > 0 ? '$'.number_format($minimumFee, 2) : 'Free' }}{{ $hasFeeVariation ? '+' : '' }}</span></div>
             <div class="text-right"><span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-600">Max {{ $entryLabel }}</span><span class="font-mono font-bold text-zinc-200">{{ $template->max_participants }}</span></div>
         </div>
+        @if($platformNames)
+            <div class="-mt-2 text-xs"><span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-600">Platform{{ str_contains($platformNames, ',') ? 's' : '' }}</span><span class="font-semibold text-cyan-300">{{ $platformNames }}</span></div>
+        @endif
         <button type="button" @click="open = true" class="player-card-action mt-auto w-full">
             <span>{{ $tab === 'upcoming' ? 'View Available Slots' : 'View Slots' }}</span><i data-lucide="calendar-days" class="h-3.5 w-3.5 text-cyan-400"></i>
         </button>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use App\Modules\Tournament\Services\TournamentTimezone;
+use App\Modules\Tournament\Support\CompetitionPlatforms;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,7 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
         return [
             'competition_type' => ['nullable', 'in:tournament,head_to_head'],
             'game_id' => ['required', 'integer', 'exists:games,id'],
-            'platform_id' => ['required', 'integer', 'exists:platforms,id'],
+            ...CompetitionPlatforms::rules($this->integer('game_id')),
             'name' => ['required', 'string', 'max:191'],
             'description' => ['nullable', 'string', 'max:10000'],
             'rules' => ['nullable', 'string', 'max:20000'],
@@ -62,6 +63,9 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        if (! $this->exists('platform_ids') && $this->filled('platform_id')) {
+            $this->merge(['platform_ids' => [$this->input('platform_id')]]);
+        }
         // The dedicated platform H2H form posts this value as a hidden field.
         // Keeping the invariant here makes direct HTTP requests fail safely too.
         if ($this->input('competition_type') === 'head_to_head') {

@@ -86,10 +86,13 @@ final class V2TournamentDiscoveryService
         if (($filters['start_date'] ?? '') !== '') {
             $query->whereDate('start_at', '>=', $filters['start_date']);
         }
-        foreach (['game_id', 'frequency', 'competition_type', 'platform_id'] as $column) {
+        foreach (['game_id', 'frequency', 'competition_type'] as $column) {
             if (($filters[$column] ?? '') !== '') {
                 $query->where($column, $filters[$column]);
             }
+        }
+        if (($filters['platform_id'] ?? '') !== '') {
+            $query->forPlatform((int) $filters['platform_id']);
         }
         if (($filters['team_format'] ?? '') === 'solo') {
             $query->where('team_size', 1);

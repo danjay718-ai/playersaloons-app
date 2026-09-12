@@ -13,6 +13,7 @@ use App\Modules\Tournament\Actions\CreateRecurringCompetitionAction;
 use App\Modules\Tournament\Actions\CreateTournamentAction;
 use App\Modules\Tournament\Actions\PublishTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Support\CompetitionPlatforms;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Carbon\CarbonImmutable;
@@ -81,6 +82,8 @@ class TournamentForm extends AdminComponent
     public string $rules = '';
 
     public ?int $platform_id = null;
+
+    public array $platform_ids = [];
 
     public string $frequency = '';
 
@@ -182,7 +185,7 @@ class TournamentForm extends AdminComponent
 
             $this->description = $tournament->description ?? '';
             $this->rules = (string) ($tournament->getAttribute('rules') ?? '');
-            $this->platform_id = $tournament->platform_id;
+            $this->platform_ids = $tournament->supportedPlatformIds();
             $this->frequency = $tournament->frequency ?? 'daily';
             $this->is_auto_cancel_underfilled = (bool) $tournament->is_auto_cancel_underfilled;
             $this->is_featured = (bool) $tournament->is_featured;
@@ -236,6 +239,25 @@ class TournamentForm extends AdminComponent
         }
     }
 
+    public function updatedGameId(): void
+    {
+        $this->platform_ids = [];
+        $this->platform_id = null;
+    }
+
+    private function platformRules(): array
+    {
+        // Keep legacy programmatic callers accepting a single platform.
+        if ($this->platform_ids === [] && $this->platform_id !== null) {
+            $this->platform_ids = [$this->platform_id];
+        }
+        if ($this->isLocked || ! Game::query()->whereKey($this->game_id)->whereHas('platforms')->exists()) {
+            return ['platform_ids' => ['required', 'array', 'min:1'], 'platform_ids.*' => ['integer', 'distinct', 'exists:platforms,id']];
+        }
+
+        return CompetitionPlatforms::rules($this->game_id);
+    }
+
     public function validateStep(int $step): bool
     {
         $rules = match ($step) {
@@ -243,7 +265,7 @@ class TournamentForm extends AdminComponent
                 'name' => 'required|string|max:255',
                 'game_id' => 'required|exists:games,id',
                 'competition_type' => 'required|in:tournament,head_to_head',
-                'platform_id' => 'required|exists:platforms,id',
+                ...$this->platformRules(),
                 'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
                 'entry_fee' => 'required|numeric|min:0',
             ],
@@ -320,7 +342,7 @@ class TournamentForm extends AdminComponent
             'tournament_end_at' => 'required|date|after:registration_open_at',
             'description' => 'nullable|string',
             'rules' => 'nullable|string',
-            'platform_id' => 'required|exists:platforms,id',
+            ...$this->platformRules(),
             'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
             'timezone' => 'required|timezone:all',
             'is_auto_cancel_underfilled' => 'boolean',
@@ -397,7 +419,8 @@ class TournamentForm extends AdminComponent
             'extra_registration_minutes' => $extraRegistration,
             'description' => $this->nullableRichText($this->description),
             'rules' => $this->nullableRichText($this->rules),
-            'platform_id' => $this->platform_id,
+            'platform_id' => (int) $this->platform_ids[0],
+            'platform_ids' => array_map('intval', $this->platform_ids),
             'frequency' => $this->frequency,
             'timezone' => $this->timezone,
             'is_auto_cancel_underfilled' => true,
@@ -450,6 +473,7 @@ class TournamentForm extends AdminComponent
                     $data['min_participants'],
                     $data['team_size'],
                     $data['platform_id'],
+                    $data['platform_ids'],
                     $data['frequency'],
                     $data['is_auto_cancel_underfilled'],
                     $data['winning_points'],
@@ -567,11 +591,9 @@ class TournamentForm extends AdminComponent
 
         if ($platforms === null || $platforms->isEmpty()) {
             $platforms = Platform::where('is_active', true)->orderBy('name')->get();
-        } elseif ($this->platform_id && ! $platforms->contains('id', $this->platform_id)) {
-            $currentPlatform = Platform::query()->find($this->platform_id);
-            if ($currentPlatform) {
-                $platforms->push($currentPlatform);
-            }
+        }
+        if ($this->isEditMode) {
+            $platforms = $platforms->merge(Platform::query()->whereIn('id', $this->platform_ids)->get());
         }
 
         return view('livewire.admin.tournament-form', [

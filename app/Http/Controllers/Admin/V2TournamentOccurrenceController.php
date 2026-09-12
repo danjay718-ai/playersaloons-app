@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Modules\Tournament\Actions\CancelTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Support\CompetitionPlatforms;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Carbon\CarbonImmutable;
@@ -40,6 +41,9 @@ final class V2TournamentOccurrenceController extends Controller
     {
         $this->authorizeEdit($tournament);
         $hasRegistrations = $tournament->registrations()->exists();
+        if (! $request->exists('platform_ids') && $request->filled('platform_id')) {
+            $request->merge(['platform_ids' => [$request->input('platform_id')]]);
+        }
         $rules = [
             'description' => ['nullable', 'string', 'max:10000'],
             'rules' => ['nullable', 'string', 'max:20000'],
@@ -49,7 +53,7 @@ final class V2TournamentOccurrenceController extends Controller
         if (! $hasRegistrations) {
             $rules += [
                 'name' => ['required', 'string', 'max:191'],
-                'platform_id' => ['required', 'integer', 'exists:platforms,id'],
+                ...CompetitionPlatforms::rules((int) $tournament->game_id),
                 'max_teams' => ['required', 'integer', 'min:2', 'max:128'],
                 'entry_fee' => ['required', 'regex:/^\d+(?:\.\d{1,2})?$/'],
                 'start_at' => ['required', 'date'],
@@ -62,12 +66,12 @@ final class V2TournamentOccurrenceController extends Controller
         if (! $hasRegistrations) {
             abort_if((int) $data['max_teams'] % 2 !== 0, 422, 'Maximum teams must be an even number.');
             abort_if($tournament->competition_type === CompetitionType::HEAD_TO_HEAD && (int) $data['max_teams'] !== 2, 422, 'Head-to-Head occurrences always have two players.');
-            abort_unless($tournament->game->platforms()->whereKey($data['platform_id'])->exists(), 422, 'Platform is not configured for this game.');
+            $platformIds = CompetitionPlatforms::ids($data);
             $start = CarbonImmutable::parse($data['start_at'], $tournament->timezone)->utc();
             $end = CarbonImmutable::parse($data['end_date'], $tournament->timezone)->addDay()->startOfDay()->utc();
             abort_if($end->lessThanOrEqualTo($start), 422, 'End Date must be after Start Date and Time.');
             $tournament->fill([
-                'name' => $data['name'], 'platform_id' => $data['platform_id'],
+                'name' => $data['name'], 'platform_id' => $platformIds[0], 'platform_ids' => $platformIds,
                 'max_participants' => $data['max_teams'], 'entry_fee' => $data['entry_fee'],
                 'start_at' => $start, 'end_at' => $end, 'join_closes_at' => $start,
                 'registration_close_at' => $start, 'waiting_result_time' => $data['waiting_result_time'],

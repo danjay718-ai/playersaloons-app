@@ -422,7 +422,7 @@ class TournamentAdmin extends AdminComponent
         }
 
         if ($this->platformFilter) {
-            $query->where('platform_id', $this->platformFilter);
+            $query->forPlatform((int) $this->platformFilter);
         }
 
         if ($this->activeTab !== 'all') {
