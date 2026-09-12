@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class BroadcastMatchCompleted implements ShouldBroadcast
@@ -17,12 +17,12 @@ class BroadcastMatchCompleted implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return array<int, Channel>
+     * @return array<int, PrivateChannel>
      */
     public function broadcastOn(): array
     {
         return [
-            new Channel('match.'.$this->matchUuid),
+            new PrivateChannel('match.'.$this->matchUuid),
         ];
     }
 

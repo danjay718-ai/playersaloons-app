@@ -11,7 +11,9 @@ use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\PlayerProgression;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\ResolveDisputeAction;
+use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
+use App\Modules\Match\Jobs\ResolveV2ResultTimeoutJob;
 use App\Modules\Match\Jobs\ResolveV2ResultTimeoutsJob;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
@@ -40,7 +42,9 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use LogicException;
 use Tests\TestCase;
 
 final class TournamentV2WorkflowTest extends TestCase
@@ -538,13 +542,30 @@ final class TournamentV2WorkflowTest extends TestCase
         app(SubmitV2MatchResultAction::class)->execute($match, $p1->id, MatchOutcome::LOSS);
         $this->travelTo(now()->addMinutes(5)->addSecond());
 
-        (new ResolveV2ResultTimeoutsJob)->handle(app(SubmitV2MatchResultAction::class));
+        (new ResolveV2ResultTimeoutsJob)->handle(app(ResolveV2ResultTimeoutAction::class));
 
         self::assertSame(MatchStatus::COMPLETED, $match->fresh()->status);
         self::assertSame($match->playerARegistration->includesUser($p1->id)
             ? $match->player_a_registration_id
             : $match->player_b_registration_id, $match->fresh()->winner_registration_id);
         self::assertSame('opponent_submission_timeout', $match->fresh()->resolution_reason);
+    }
+
+    public function test_first_submission_queues_exact_timeout_and_rejects_a_response_at_the_deadline(): void
+    {
+        Queue::fake();
+        [$match, $p1, $p2] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $p1->id, MatchOutcome::WIN);
+        $attempt = $match->attempts()->firstOrFail();
+
+        Queue::assertPushed(ResolveV2ResultTimeoutJob::class, fn (ResolveV2ResultTimeoutJob $job): bool => $job->attemptId === $attempt->id);
+
+        $this->travelTo($attempt->result_deadline_at);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('The result submission deadline has passed.');
+        $submit->execute($match->fresh(), $p2->id, MatchOutcome::LOSS);
     }
 
     public function test_cancellation_uses_snapshotted_half_threshold_and_immutable_vote(): void
@@ -583,7 +604,7 @@ final class TournamentV2WorkflowTest extends TestCase
         );
         $tournament->fresh()->update(['description' => 'Presentation remains editable before start.']);
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $tournament->fresh()->update(['max_participants' => 32]);
     }
 
@@ -611,7 +632,7 @@ final class TournamentV2WorkflowTest extends TestCase
 
         app(RegisterForV2TournamentAction::class)->execute($first, $player, null, 'one-slot-a');
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         app(RegisterForV2TournamentAction::class)->execute($second, $player, null, 'one-slot-b');
     }
 
@@ -720,7 +741,7 @@ final class TournamentV2WorkflowTest extends TestCase
         $player = $this->user('multi-player@example.com', 'multiplayer', 'PLAYER');
         app(RegisterForV2TournamentAction::class)->execute($tournament->fresh(), $player, null, 'XboxHandle', platformId: $console->id);
         $this->assertDatabaseHas('user_game_accounts', ['user_id' => $player->id, 'platform_id' => $console->id, 'game_id_value' => 'XboxHandle']);
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $tournament->fresh()->update(['platform_ids' => [$this->platform->id]]);
     }
 

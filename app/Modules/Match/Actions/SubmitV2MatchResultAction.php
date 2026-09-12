@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Actions;
 
+use App\Modules\Match\Events\BroadcastMatchResultSubmitted;
 use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Events\MatchDisputed;
 use App\Modules\Match\Events\MatchRematchCreated;
 use App\Modules\Match\Events\MatchResultSubmitted;
+use App\Modules\Match\Jobs\ResolveV2ResultTimeoutJob;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchAttempt;
 use App\Modules\Match\Models\MatchDispute;
@@ -32,13 +34,18 @@ final class SubmitV2MatchResultAction
         ?string $notes = null,
         ?UploadedFile $proof = null,
     ): MatchResultSubmission {
-        return DB::transaction(function () use ($match, $userId, $outcome, $notes, $proof): MatchResultSubmission {
+        $timeoutAttemptId = null;
+        $resultDeadline = null;
+        $matchUuid = (string) $match->uuid;
+
+        $submission = DB::transaction(function () use ($match, $userId, $outcome, $notes, $proof, &$timeoutAttemptId, &$resultDeadline, &$matchUuid): MatchResultSubmission {
             $tournamentId = GameMatch::query()->whereKey($match->id)->value('tournament_id');
             Tournament::query()->lockForUpdate()->findOrFail($tournamentId);
             $locked = GameMatch::query()
                 ->with(['tournament', 'playerARegistration', 'playerBRegistration'])
                 ->lockForUpdate()
                 ->findOrFail($match->id);
+            $matchUuid = (string) $locked->uuid;
 
             if ((int) $locked->tournament->workflow_version !== 2) {
                 throw new LogicException('This result workflow is only available for V2 tournaments.');
@@ -83,14 +90,18 @@ final class SubmitV2MatchResultAction
 
             if ($attempt->first_submitted_at === null) {
                 $minutes = max(1, (int) ($locked->tournament->waiting_result_time ?: 5));
+                $resultDeadline = now()->addMinutes($minutes);
                 $attempt->update([
                     'first_submitted_at' => now(),
-                    'result_deadline_at' => now()->addMinutes($minutes),
+                    'result_deadline_at' => $resultDeadline,
                 ]);
+                $timeoutAttemptId = (int) $attempt->id;
                 $locked->forceFill([
                     'status' => MatchStatus::WAITING_FOR_CONFIRMATION,
                     'result_submitted_at' => now(),
                 ])->save();
+            } else {
+                $resultDeadline = $attempt->result_deadline_at;
             }
 
             MatchResultSubmitted::dispatch($locked->id, $submission->id, $userId, $submission->winner_registration_id);
@@ -102,6 +113,17 @@ final class SubmitV2MatchResultAction
 
             return $submission;
         }, 3);
+
+        if ($timeoutAttemptId !== null && $resultDeadline !== null) {
+            ResolveV2ResultTimeoutJob::dispatch($timeoutAttemptId)->delay($resultDeadline);
+        }
+
+        broadcast(new BroadcastMatchResultSubmitted(
+            $matchUuid,
+            $resultDeadline?->toIso8601String(),
+        ))->toOthers();
+
+        return $submission;
     }
 
     private function participantRegistration(GameMatch $match, int $userId): TournamentRegistration

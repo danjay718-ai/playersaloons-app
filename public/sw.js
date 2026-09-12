@@ -1,4 +1,4 @@
-const CACHE_NAME = 'playersaloons-68ee119f5151';
+const CACHE_NAME = 'playersaloons-9c903c136276';
 const STATIC_ASSETS = [
     '/playersaloons_logo.webp',
     '/icon-192.png',

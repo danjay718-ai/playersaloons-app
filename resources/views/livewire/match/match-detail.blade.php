@@ -1,4 +1,4 @@
-<div class="space-y-8">
+<div class="space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))">
     <x-ui.toasts />
 
     <!-- Match Header Card -->
@@ -209,6 +209,18 @@
 
                 @if(((int) $match->tournament->workflow_version === 2 && in_array($statusVal, ['in_progress', 'waiting_for_confirmation']) && !$isSubmitter) || ((int) $match->tournament->workflow_version !== 2 && $statusVal === 'in_progress'))
                     <form wire:submit.prevent="submitResult" class="space-y-4">
+                        @if((int) $match->tournament->workflow_version === 2 && $statusVal === 'waiting_for_confirmation')
+                            <div role="alert" class="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-300">
+                                    <i data-lucide="triangle-alert" class="h-5 w-5"></i>
+                                </span>
+                                <div>
+                                    <p class="text-xs font-black uppercase tracking-wider text-amber-200">Opponent result reported</p>
+                                    <p class="mt-1 text-sm leading-relaxed">Your opponent has reported a result. Report your result on time to avoid an automatic loss.</p>
+                                </div>
+                            </div>
+                        @endif
+
                         <!-- Select Winner -->
                         <div>
                             <span class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">{{ (int) $match->tournament->workflow_version === 2 ? 'Your Result' : 'Declare Winner' }}</span>
@@ -276,6 +288,7 @@
                         <div class="flex flex-col space-y-4 pt-2 border-t border-zinc-800/50" x-data="{
                             endTime: new Date('{{ ((int) $match->tournament->workflow_version === 2 ? $activeAttempt?->result_deadline_at : ($match->started_at ?? now())->addMinutes($match->tournament->waiting_result_time))?->toIso8601String() ?? '' }}').getTime(),
                             timeLeft: 0,
+                            expired: false,
                             init() {
                                 this.updateTimer();
                                 setInterval(() => this.updateTimer(), 1000);
@@ -283,7 +296,8 @@
                             updateTimer() {
                                 const now = new Date().getTime();
                                 const diff = this.endTime - now;
-                                this.timeLeft = Math.max(0, Math.floor(diff / 1000));
+                                this.expired = Number.isFinite(this.endTime) && diff <= 0;
+                                this.timeLeft = Math.max(0, Math.ceil(diff / 1000));
                             },
                             formatTime(seconds) {
                                 const m = Math.floor(seconds / 60);
@@ -297,9 +311,10 @@
                                 <div class="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-zinc-500">SUBMISSION DEADLINE: <span class="text-amber-400" x-text="formatTime(timeLeft)"></span></div>
                             @endif
 
-                            <button type="submit" 
-                                class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 shadow-md shadow-violet-900/20 uppercase tracking-widest font-orbitron">
-                                Submit Match Results
+                            <button type="submit" :disabled="expired"
+                                class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 shadow-md shadow-violet-900/20 uppercase tracking-widest font-orbitron disabled:cursor-not-allowed disabled:opacity-50">
+                                <span x-show="!expired">Submit Match Results</span>
+                                <span x-show="expired" x-cloak>Submission Time Expired</span>
                             </button>
                             
                             <div class="space-y-3">

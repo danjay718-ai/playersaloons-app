@@ -26,6 +26,26 @@ window.ensurePlayerSaloonsEcho = function () {
     return window.Echo;
 };
 
+window.matchRoomRealtime = function (wire, matchUuid) {
+    return {
+        echo: null,
+        channelName: `match.${matchUuid}`,
+
+        init() {
+            this.echo = window.ensurePlayerSaloonsEcho?.();
+            if (!this.echo) return;
+
+            this.echo.private(this.channelName)
+                .listen('.match.result.submitted', () => wire.$refresh())
+                .listen('.match.completed', () => wire.$refresh());
+        },
+
+        destroy() {
+            this.echo?.leave(this.channelName);
+        },
+    };
+};
+
 window.imageCropUpload = function (config) {
     return {
         ...config,
