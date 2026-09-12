@@ -142,7 +142,7 @@
                     </div>
                 </div>
                 @if((int) $tournament->workflow_version === 2)
-                    <p class="-mt-3 text-xs text-zinc-500">Estimated only until entries lock. Full tournaments use a 10% platform commission; underfilled tournaments use 15%. The actual pool is paid entries × entry fee.</p>
+                    <p class="-mt-3 text-xs text-zinc-500">Estimated prize only until entries close. The final prize is based on the actual number of paid entries and may be adjusted if the tournament starts below capacity.</p>
                 @else
                     <p class="-mt-3 text-xs text-zinc-500">Based on {{ $prizeCalculation['confirmed_count'] }} confirmed of {{ $tournament->max_participants }} players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.</p>
                 @endif
@@ -512,7 +512,7 @@
                             <div class="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-800/50 bg-cyan-950/20 p-4 text-xs leading-relaxed text-cyan-100/75">
                                 <i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0 text-cyan-400"></i>
                                 <p>
-                                    This is the estimated payout if all {{ $tournament->max_participants }} teams join. Final prizes use the actual entry pool when the tournament starts. If it starts under capacity with at least two teams, the bracket uses automatic BYEs, the platform commission is 15%, and 85% of the pool is awarded to First Place.
+                                    This is the estimated payout if all {{ $tournament->max_participants }} teams join. The final prize is based on the actual entry pool when the tournament starts. If the tournament starts below capacity, the bracket uses automatic BYEs and the final prize is adjusted based on confirmed entries.
                                 </p>
                             </div>
                         @endif
@@ -1088,7 +1088,7 @@
             <div class="space-y-2 text-center">
                 <h3 class="text-xl font-black uppercase tracking-widest text-white font-orbitron">Tournament Started Under Capacity</h3>
                 <p class="text-sm leading-relaxed text-zinc-400">
-                    {{ $prizeCalculation['confirmed_count'] }} of {{ $tournament->max_participants }} teams joined. Automatic BYEs have been applied where needed. The final payout uses a 15% platform commission; First Place receives the remaining 85% of the collected entry pool.
+                    {{ $prizeCalculation['confirmed_count'] }} of {{ $tournament->max_participants }} teams joined. Automatic BYEs have been applied where needed, and the final prize has been adjusted based on confirmed paid entries.
                 </p>
             </div>
             <button type="button" @click="showUnderfilledNotice = false" class="w-full rounded-xl bg-amber-500 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-950 transition hover:bg-amber-400">
