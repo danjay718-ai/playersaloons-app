@@ -13,7 +13,7 @@ class PlayerDashboard extends Component
     private const PLAYER_NAV_ITEMS = [
         ['label' => 'Overview', 'url' => '/dashboard', 'pattern' => 'dashboard'],
         ['label' => 'My Tournaments', 'url' => '/my-tournaments', 'pattern' => 'my-tournaments'],
-        ['label' => 'Browse', 'url' => '/tournaments/browse', 'pattern' => 'tournaments/browse*'],
+        ['label' => 'Daily Tournaments', 'url' => '/tournaments/browse?frequency=daily', 'pattern' => 'tournaments/browse*'],
         ['label' => 'Leaderboard', 'url' => '/leaderboards', 'pattern' => 'leaderboards'],
         ['label' => 'Streams', 'url' => '/streams', 'pattern' => 'streams'],
         ['label' => 'Chat', 'url' => '/chat', 'pattern' => 'chat'],

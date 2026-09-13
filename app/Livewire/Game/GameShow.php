@@ -20,6 +20,8 @@ class GameShow extends Component
 {
     use WithPagination;
 
+    private const PLAYER_FREQUENCIES = ['daily', 'weekly', 'monthly'];
+
     public Game $game;
 
     #[Url(as: 'tab')]
@@ -73,6 +75,7 @@ class GameShow extends Component
         $featured = ! $usesV2Discovery && $this->activeTab === 'browse'
             ? $this->baseTournamentQuery()
                 ->where('competition_type', $this->competitionType ?: 'tournament')
+                ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency))
                 ->where('is_featured', true)
                 ->whereIn('status', array_merge($this->statuses('upcoming'), $this->statuses('ongoing')))
                 ->orderBy('start_at')
@@ -89,6 +92,7 @@ class GameShow extends Component
             ? $discovery->paginate('upcoming', [
                 'game_id' => (string) $this->game->id,
                 'competition_type' => $this->competitionType ?: 'tournament',
+                'frequency' => $this->frequency,
             ], 4, true)
             : null;
 
@@ -123,6 +127,7 @@ class GameShow extends Component
             'platforms' => $platforms,
             'publicView' => $this->viewMode === 'guest',
             'activeCompetitionCount' => $activeCompetitionCount,
+            'fixedFrequency' => $this->hasPlayerFrequencyContext(),
         ]);
 
         return Auth::check() && $this->viewMode !== 'guest'
@@ -169,6 +174,7 @@ class GameShow extends Component
 
         return $this->game->tournaments()
             ->where('competition_type', $this->competitionType ?: 'tournament')
+            ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency))
             ->where(function ($query) use ($now): void {
                 $query->where(function ($upcoming) use ($now): void {
                     $upcoming->where('status', TournamentStatus::REGISTRATION_OPEN->value)
@@ -182,6 +188,14 @@ class GameShow extends Component
                 });
             })
             ->count();
+    }
+
+    private function hasPlayerFrequencyContext(): bool
+    {
+        return Auth::check()
+            && $this->viewMode !== 'guest'
+            && $this->competitionType !== 'head_to_head'
+            && in_array($this->frequency, self::PLAYER_FREQUENCIES, true);
     }
 
     /** @return array<int, string> */

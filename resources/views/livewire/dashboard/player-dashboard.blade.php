@@ -22,7 +22,7 @@
                     <h1 class="mt-2 break-words font-orbitron text-2xl font-black uppercase leading-tight text-white [overflow-wrap:anywhere] sm:text-4xl">Welcome, {{ $displayName }}</h1>
                     <p class="mt-2 text-xs text-zinc-400">Your competitions, progression, squad activity, and platform updates in one place.</p>
                     <div class="mt-4 grid grid-cols-2 gap-2">
-                        <a href="{{ route('tournaments.browse') }}" wire:navigate class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-2 py-3 text-center text-[9px] font-black uppercase leading-tight tracking-wider text-white transition hover:bg-violet-500 sm:px-4 sm:text-[10px] sm:tracking-widest"><i data-lucide="search" class="h-3.5 w-3.5 shrink-0"></i><span>Find Tournaments</span></a>
+                        <a href="{{ route('tournaments.browse', ['frequency' => 'daily']) }}" wire:navigate class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-2 py-3 text-center text-[9px] font-black uppercase leading-tight tracking-wider text-white transition hover:bg-violet-500 sm:px-4 sm:text-[10px] sm:tracking-widest"><i data-lucide="search" class="h-3.5 w-3.5 shrink-0"></i><span>Find Tournaments</span></a>
                         <a href="{{ route('my-tournaments') }}" wire:navigate class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-950/60 px-2 py-3 text-center text-[9px] font-black uppercase leading-tight tracking-wider text-zinc-300 transition hover:border-zinc-500 hover:text-white sm:px-4 sm:text-[10px] sm:tracking-widest"><i data-lucide="trophy" class="h-3.5 w-3.5 shrink-0"></i><span>My Tournaments</span></a>
                         <a href="{{ route('platform-h2h') }}" wire:navigate class="col-span-2 inline-flex min-w-0 items-center justify-center gap-2 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-4 py-3 text-center text-[10px] font-black uppercase leading-tight tracking-wider text-fuchsia-200 transition hover:border-fuchsia-400/60 hover:bg-fuchsia-500/20 sm:tracking-widest"><i data-lucide="swords" class="h-3.5 w-3.5 shrink-0"></i><span>Find Head-to-Head Matches</span></a>
                     </div>
@@ -67,7 +67,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="p-8 text-center"><i data-lucide="calendar-plus" class="mx-auto h-8 w-8 text-zinc-700"></i><p class="mt-3 text-sm font-bold text-zinc-400">Your competition queue is clear.</p><a href="/tournaments/browse" wire:navigate class="mt-2 inline-block text-xs text-violet-400">Browse open tournaments</a></div>
+                    <div class="p-8 text-center"><i data-lucide="calendar-plus" class="mx-auto h-8 w-8 text-zinc-700"></i><p class="mt-3 text-sm font-bold text-zinc-400">Your competition queue is clear.</p><a href="/tournaments/browse?frequency=daily" wire:navigate class="mt-2 inline-block text-xs text-violet-400">Browse open tournaments</a></div>
                 @endif
             </section>
 

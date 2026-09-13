@@ -270,18 +270,70 @@ class PlayerTournamentComponentsTest extends TestCase
 
         Livewire::actingAs($this->player)
             ->test(PlayerTournamentList::class)
-            ->assertViewHas('tournaments', fn ($items) => $items->total() === 2)
+            ->assertSet('frequency', 'daily')
+            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$daily->id])
             ->set('search', 'Clash')
-            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->sort()->values()->all() === collect([$daily->id, $other->id])->sort()->values()->all())
+            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$daily->id])
+            ->set('frequency', 'weekly')
             ->set('gameId', (string) $otherGame->id)
             ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$other->id])
             ->set('search', '')
-            ->set('frequency', 'weekly')
             ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$other->id])
             ->set('gameId', '')
             ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$other->id])
             ->set('activeTab', 'ongoing')
             ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$weekly->id]);
+    }
+
+    public function test_player_frequency_context_is_preserved_from_tournament_listing_to_game_hub(): void
+    {
+        $dailyUpcoming = $this->makeTournament('Daily Featured Cup', TournamentStatus::REGISTRATION_OPEN, 'daily');
+        $dailyUpcoming->update(['is_featured' => true, 'start_at' => now()->addHour(), 'end_at' => now()->addHours(2)]);
+        $dailyOngoing = $this->makeTournament('Daily Live Cup', TournamentStatus::ONGOING, 'daily');
+        $dailyOngoing->update(['start_at' => now()->subHour(), 'end_at' => now()->addHour()]);
+        $dailyPast = $this->makeTournament('Daily Finished Cup', TournamentStatus::COMPLETED, 'daily');
+
+        $weeklyUpcoming = $this->makeTournament('Weekly Featured Cup', TournamentStatus::REGISTRATION_OPEN, 'weekly');
+        $weeklyUpcoming->update(['is_featured' => true, 'start_at' => now()->addHour(), 'end_at' => now()->addHours(2)]);
+        $this->makeTournament('Weekly Live Cup', TournamentStatus::ONGOING, 'weekly')
+            ->update(['start_at' => now()->subHour(), 'end_at' => now()->addHour()]);
+        $this->makeTournament('Weekly Finished Cup', TournamentStatus::COMPLETED, 'weekly');
+
+        $this->actingAs($this->player);
+
+        $this->get(route('tournaments.browse', ['frequency' => 'weekly']))
+            ->assertOk()
+            ->assertSee('Daily Tournaments')
+            ->assertSee('Weekly Tournaments')
+            ->assertSee('Monthly Tournaments')
+            ->assertSee('Weekly Featured Cup')
+            ->assertDontSee('Daily Featured Cup');
+
+        Livewire::withQueryParams(['frequency' => 'daily'])
+            ->test(PlayerTournamentList::class)
+            ->assertSet('frequency', 'daily')
+            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$dailyUpcoming->id])
+            ->assertSee('Daily Tournaments')
+            ->assertSee('frequency=daily', escape: false)
+            ->assertSee('tab=browse', escape: false)
+            ->assertDontSee('Weekly Featured Cup');
+
+        $gameHub = Livewire::withQueryParams(['frequency' => 'daily', 'tab' => 'browse'])
+            ->test(GameShow::class, ['game' => $this->game])
+            ->assertSet('frequency', 'daily')
+            ->assertSet('activeTab', 'browse')
+            ->assertViewHas('fixedFrequency', true)
+            ->assertViewHas('activeCompetitionCount', 2)
+            ->assertSee('Browse Daily Tournaments')
+            ->assertSee('Daily Featured Cup')
+            ->assertDontSee('Weekly Featured Cup');
+
+        $gameHub->set('tournamentStatus', 'ongoing')
+            ->assertSee('Daily Live Cup')
+            ->assertDontSee('Weekly Live Cup')
+            ->set('tournamentStatus', 'past')
+            ->assertSee('Daily Finished Cup')
+            ->assertDontSee('Weekly Finished Cup');
     }
 
     public function test_discovery_orders_games_and_game_page_keeps_competitions_in_browse_only(): void

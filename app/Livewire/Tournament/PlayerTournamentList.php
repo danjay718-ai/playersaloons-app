@@ -9,14 +9,27 @@ class PlayerTournamentList extends Component
 {
     use TournamentListTrait;
 
+    private const PLAYER_FREQUENCIES = ['daily', 'weekly', 'monthly'];
+
+    public function mount(): void
+    {
+        if (! in_array($this->frequency, self::PLAYER_FREQUENCIES, true)) {
+            $this->frequency = 'daily';
+        }
+    }
+
     public function render(V2TournamentDiscoveryService $discovery)
     {
         $usesV2Discovery = (bool) config('features.tournament_v2.enabled');
+        $frequencyLabel = ucfirst($this->frequency).' Tournaments';
 
         return view('livewire.tournament.player-tournament-list', [
             'tournaments' => $usesV2Discovery ? null : $this->getTournamentQuery()->paginate(12),
             'tournamentGroups' => $usesV2Discovery ? $discovery->paginate($this->activeTab, $this->discoveryFilters()) : null,
-            'featuredGroups' => $usesV2Discovery ? $discovery->paginate('upcoming', ['competition_type' => 'tournament'], $this->featuredLimit, true) : null,
+            'featuredGroups' => $usesV2Discovery ? $discovery->paginate('upcoming', [
+                'competition_type' => 'tournament',
+                'frequency' => $this->frequency,
+            ], $this->featuredLimit, true) : null,
             'games' => $this->getGames(),
             'popularGames' => $this->getPopularGames(),
             'featuredTournaments' => $usesV2Discovery ? collect() : $this->getFeaturedTournaments(),
@@ -24,7 +37,11 @@ class PlayerTournamentList extends Component
             'platforms' => $this->getPlatforms(),
             'listingType' => 'tournament',
             'allowCompetitionSwitch' => false,
-        ])->layout('components.layouts.dashboard', ['title' => 'Browse Tournaments | PlayerSaloons', 'dashboard_title' => 'BROWSE TOURNAMENTS']);
+            'fixedFrequency' => true,
+        ])->layout('components.layouts.dashboard', [
+            'title' => $frequencyLabel.' | PlayerSaloons',
+            'dashboard_title' => strtoupper($frequencyLabel),
+        ]);
     }
 
     /** @return array<string, string> */

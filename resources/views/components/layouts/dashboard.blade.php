@@ -31,7 +31,7 @@
     @php
         $bottomNavItems = [
             ['label' => __('Overview'), 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'pattern' => 'dashboard'],
-            ['label' => __('Browse'), 'icon' => 'search', 'url' => '/tournaments/browse', 'pattern' => 'tournaments/browse*'],
+            ['label' => __('Tournaments'), 'icon' => 'calendar-days', 'url' => '/tournaments/browse?frequency=daily', 'pattern' => 'tournaments/browse*'],
             ['label' => __('My Games'), 'icon' => 'trophy', 'url' => '/my-tournaments', 'pattern' => 'my-tournaments'],
             ['label' => __('More'), 'icon' => 'grid-3x3', 'url' => null, 'pattern' => null],
         ];
@@ -69,6 +69,8 @@
 
         @php
             $moreItems = [
+                ['label' => __('Weekly Tournaments'), 'icon' => 'calendar-range', 'url' => '/tournaments/browse?frequency=weekly', 'pattern' => null],
+                ['label' => __('Monthly Tournaments'), 'icon' => 'calendar-fold', 'url' => '/tournaments/browse?frequency=monthly', 'pattern' => null],
                 ['label' => __('Leaderboard'), 'icon' => 'award',          'url' => '/leaderboards',    'pattern' => 'leaderboards'],
                 ['label' => __('Streams'),     'icon' => 'tv',              'url' => '/streams',         'pattern' => 'streams'],
                 ['label' => __('Chat'),        'icon' => 'message-square',  'url' => '/chat',            'pattern' => 'chat'],
@@ -133,9 +135,15 @@
 
             <!-- Navigation Links -->
             @php
+                $playerTournamentFrequency = request()->query('frequency', 'daily');
+                if (! in_array($playerTournamentFrequency, ['daily', 'weekly', 'monthly'], true)) {
+                    $playerTournamentFrequency = 'daily';
+                }
                 $navItems = [
                     ['label' => __('Overview'),    'icon' => 'layout-dashboard', 'url' => '/dashboard',        'active' => request()->is('dashboard')],
-                    ['label' => __('Tournaments'), 'icon' => 'search',           'url' => '/tournaments/browse','active' => request()->is('tournaments/browse*')],
+                    ['label' => __('Daily Tournaments'), 'icon' => 'calendar-days', 'url' => '/tournaments/browse?frequency=daily', 'active' => request()->is('tournaments/browse*') && $playerTournamentFrequency === 'daily'],
+                    ['label' => __('Weekly Tournaments'), 'icon' => 'calendar-range', 'url' => '/tournaments/browse?frequency=weekly', 'active' => request()->is('tournaments/browse*') && $playerTournamentFrequency === 'weekly'],
+                    ['label' => __('Monthly Tournaments'), 'icon' => 'calendar-fold', 'url' => '/tournaments/browse?frequency=monthly', 'active' => request()->is('tournaments/browse*') && $playerTournamentFrequency === 'monthly'],
                     ['label' => __('My Games'),    'icon' => 'trophy',           'url' => '/my-tournaments',   'active' => request()->is('my-tournaments')],
                     ['label' => __('Leaderboard'), 'icon' => 'award',            'url' => '/leaderboards',     'active' => request()->is('leaderboards')],
                     ['label' => __('Streams'),     'icon' => 'tv',               'url' => '/streams',          'active' => request()->is('streams')],
@@ -161,7 +169,7 @@
                 }
             @endphp
 
-            <nav class="flex-grow my-8 px-3 space-y-2.5">
+            <nav class="my-5 min-h-0 flex-grow space-y-1.5 overflow-y-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @foreach($navItems as $item)
                     <a href="{{ $item['url'] }}" wire:navigate 
                        class="flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
@@ -171,7 +179,7 @@
                         <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                             <i data-lucide="{{ $item['icon'] }}" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
                         </div>
-                        <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-widest transition-opacity duration-200">
+                        <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-wider transition-opacity duration-200">
                             {{ $item['label'] }}
                         </span>
                     </a>
@@ -186,7 +194,7 @@
                     <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                         <i data-lucide="shield" class="w-5 h-5"></i>
                     </div>
-                    <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-widest transition-opacity duration-200">
+                    <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-wider transition-opacity duration-200">
                         {{ __('Admin Panel') }}
                     </span>
                 </a>
@@ -198,7 +206,7 @@
                         <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
                         </div>
-                        <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-widest transition-opacity duration-200">
+                        <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-wider transition-opacity duration-200">
                             {{ __('Exit Terminal') }}
                         </span>
                     </button>

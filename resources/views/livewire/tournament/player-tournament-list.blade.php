@@ -1,11 +1,22 @@
 @php
     $isHeadToHeadListing = ($listingType ?? 'tournament') === 'head_to_head';
+    $fixedFrequency = $fixedFrequency ?? false;
     $competitionLabel = $isHeadToHeadListing ? 'Head-to-Head' : 'Tournament';
-    $competitionPlural = $isHeadToHeadListing ? 'Head-to-Head Matches' : 'Tournaments';
+    $competitionPlural = $isHeadToHeadListing
+        ? 'Head-to-Head Matches'
+        : ($fixedFrequency ? ucfirst($frequency).' Tournaments' : 'Tournaments');
     $publicView = $publicView ?? false;
-    $gameContextQuery = $isHeadToHeadListing
-        ? '?competitionType=head_to_head'.($publicView ? '&view=guest' : '')
-        : '';
+    $gameContext = [];
+    if ($isHeadToHeadListing) {
+        $gameContext['competitionType'] = 'head_to_head';
+    }
+    if ($publicView) {
+        $gameContext['view'] = 'guest';
+    }
+    if ($fixedFrequency && $frequency !== '') {
+        $gameContext['frequency'] = $frequency;
+        $gameContext['tab'] = 'browse';
+    }
 @endphp
 
 <div class="space-y-12" x-data>
@@ -20,7 +31,7 @@
             </button>
             <div x-ref="gamesRail" class="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @forelse($popularGames as $game)
-                    <a href="{{ route('games.show', $game) }}{{ $gameContextQuery }}" wire:navigate wire:key="game-{{ $game->slug }}" class="group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
+                    <a href="{{ route('games.show', ['game' => $game, ...$gameContext]) }}" wire:navigate wire:key="game-{{ $game->slug }}" class="group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
                         <div class="aspect-[4/3] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.35),transparent_45%),linear-gradient(135deg,#18181b,#09090b)]"></div>@endif</div>
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent"></div><div class="absolute inset-x-0 bottom-0 p-4"><h2 class="font-orbitron text-sm font-black uppercase text-white">{{ $game->localizedName() }}</h2></div>
                     </a>
@@ -60,7 +71,11 @@
                 <select wire:model.live="teamFormat" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All formats</option><option value="solo">Solo</option><option value="team">Team</option></select>
             @endif
             <select wire:model.live="gameId" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All games</option>@foreach($games as $game)<option value="{{ $game->id }}">{{ $game->localizedName() }}</option>@endforeach</select>
-            <select wire:model.live="frequency" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All frequencies</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="one-time">One-time</option></select>
+            @if($fixedFrequency)
+                <div class="flex items-center rounded-xl border border-violet-500/25 bg-violet-500/10 px-3 py-3 text-sm font-semibold text-violet-200"><i data-lucide="calendar-days" class="mr-2 h-4 w-4"></i>{{ ucfirst($frequency) }} Tournaments</div>
+            @else
+                <select wire:model.live="frequency" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All frequencies</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="one-time">One-time</option></select>
+            @endif
             @if($allowCompetitionSwitch ?? false)<select wire:model.live="competitionType" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">Tournaments</option><option value="head_to_head">Head-to-Head</option></select>@else<div class="flex items-center rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm font-semibold text-zinc-400">{{ $competitionLabel }}</div>@endif
             <select wire:model.live="platformId" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All platforms</option>@foreach($platforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select>
         </div></div>

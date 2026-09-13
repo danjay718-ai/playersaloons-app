@@ -156,6 +156,7 @@ trait TournamentListTrait
             ->withCount(['registrations' => fn ($query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])])
             ->where('is_featured', true)
             ->whereIn('status', array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing')))
+            ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency))
             ->orderBy('start_at')
             ->limit($this->featuredLimit);
         $this->applyWorkflowFlag($query);
@@ -167,7 +168,8 @@ trait TournamentListTrait
     {
         $query = Tournament::query()
             ->where('is_featured', true)
-            ->whereIn('status', array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing')));
+            ->whereIn('status', array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing')))
+            ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency));
         $this->applyWorkflowFlag($query);
 
         return $query->count();

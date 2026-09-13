@@ -63,7 +63,7 @@
                 <p class="mt-2 text-sm text-zinc-500 max-w-sm mx-auto font-medium">
                     You haven't joined any active tournaments yet. Head over to browse page to find one!
                 </p>
-                <a href="/tournaments/browse" wire:navigate class="mt-6 inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold uppercase tracking-widest text-white rounded-xl transition-all shadow-lg">
+                <a href="/tournaments/browse?frequency=daily" wire:navigate class="mt-6 inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold uppercase tracking-widest text-white rounded-xl transition-all shadow-lg">
                     <span>Browse Tournaments</span>
                     <i data-lucide="chevron-right" class="w-4 h-4"></i>
                 </a>

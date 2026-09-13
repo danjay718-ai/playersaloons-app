@@ -114,6 +114,8 @@ class PlayerDashboardTest extends TestCase
             ->assertSee('My Tournaments')
             ->assertSee('Find Head-to-Head Matches')
             ->assertSee(route('platform-h2h'), escape: false)
+            ->assertSee('Daily Tournaments')
+            ->assertSee('frequency=daily', escape: false)
             ->assertDontSee('Find Competition')
             ->assertSee('LEVEL 1')
             ->assertSee('Open Dashboard Cup')
