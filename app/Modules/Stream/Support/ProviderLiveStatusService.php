@@ -19,15 +19,15 @@ class ProviderLiveStatusService
                 'youtube' => $this->youtube($channel->source_url), 'twitch' => $this->twitch($channel->source_url), 'facebook' => $this->facebook($channel->source_url), default => null
             };
             if ($isLive === null) {
-                $channel->forceFill(['provider_status' => 'unavailable', 'provider_checked_at' => now(), 'provider_status_error' => null])->save();
+                $channel->forceFill(['provider_status' => 'unavailable', 'provider_checked_at' => now(), 'provider_status_error' => null])->saveQuietly();
 
                 return null;
             }
-            $channel->forceFill(['is_live' => $isLive, 'provider_status' => $isLive ? 'live' : 'offline', 'provider_checked_at' => now(), 'provider_status_error' => null])->save();
+            $channel->forceFill(['is_live' => $isLive, 'provider_status' => $isLive ? 'live' : 'offline', 'provider_checked_at' => now(), 'provider_status_error' => null])->saveQuietly();
 
             return $isLive;
         } catch (Throwable $exception) {
-            $channel->forceFill(['provider_status' => 'error', 'provider_checked_at' => now(), 'provider_status_error' => Str::limit($exception->getMessage(), 1000, '')])->save();
+            $channel->forceFill(['provider_status' => 'error', 'provider_checked_at' => now(), 'provider_status_error' => Str::limit($exception->getMessage(), 1000, '')])->saveQuietly();
 
             return null;
         }
