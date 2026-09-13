@@ -145,41 +145,48 @@
                 <p class="max-w-lg text-sm leading-6 text-zinc-500 sm:leading-7">{{ $gamesSection?->body }}</p>
             </div>
 
-            <div class="landing-games-scroll -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-                @forelse($games as $game)
-                    @php($translation = $game->translation())
-                    <article class="landing-card group relative min-h-[300px] w-[82vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/30 transition-all duration-500 hover:-translate-y-1 hover:border-cyan-500/40 hover:shadow-[0_20px_60px_-15px_rgba(34,211,238,0.18)] sm:min-h-[330px] sm:w-[340px]">
-                        <div class="relative h-36 overflow-hidden bg-zinc-950 sm:h-40">
-                            @if($game->bannerUrl())
-                                <img src="{{ $game->bannerUrl() }}" alt="{{ $game->localizedName() }} banner" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
-                            @else
-                                <div class="landing-game-card-pattern flex h-full w-full items-center justify-center">
-                                    <i data-lucide="gamepad-2" class="h-12 w-12 text-cyan-300/60"></i>
-                                </div>
-                            @endif
-                            <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/25 to-transparent"></div>
-                            <div class="absolute left-4 top-4 rounded-full border border-cyan-400/20 bg-zinc-950/60 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-300 backdrop-blur">
-                                Active
-                            </div>
-                        </div>
-                        <div class="relative p-5 sm:p-6">
-                            <div class="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-500/10 blur-2xl transition-all duration-500 group-hover:bg-cyan-500/20"></div>
-                            <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-violet-500/20 border border-cyan-500/20 text-cyan-300 transition-all duration-300 group-hover:border-cyan-400/40">
-                                <i data-lucide="gamepad-2" class="h-5 w-5"></i>
-                            </div>
-                            <h3 class="relative text-lg font-black text-white">{{ $translation?->name ?? $game->slug }}</h3>
-                            <p class="relative mt-3 line-clamp-3 text-sm leading-6 text-zinc-500">{{ $translation?->description ?? 'Competitive events available soon.' }}</p>
-                        </div>
-                    </article>
-                @empty
-                    <div class="w-full rounded-2xl border border-zinc-800 bg-zinc-900/30 p-8 text-center text-sm text-zinc-600">
-                        <i data-lucide="gamepad-2" class="mx-auto mb-3 h-8 w-8 opacity-40"></i>
-                        <p>No active games available yet.</p>
-                    </div>
-                @endforelse
-            </div>
             @if($games->isNotEmpty())
-                <p class="mt-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700 sm:hidden">Swipe to browse games</p>
+                <div class="relative" x-data>
+                    <button type="button" aria-label="Previous available games" @click="$refs.landingGamesRail.scrollBy({ left: -360, behavior: 'smooth' })" class="absolute -left-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-400/30 bg-zinc-950/95 text-white shadow-2xl transition hover:border-cyan-300 hover:bg-cyan-600 sm:-left-3">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+                    </button>
+                    <div x-ref="landingGamesRail" class="landing-games-scroll -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-hidden px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+                        @foreach($games as $game)
+                            @php($translation = $game->translation())
+                            <a href="{{ route('games.show', $game) }}" wire:navigate class="landing-card group relative min-h-[300px] w-[82vw] max-w-[340px] shrink-0 snap-start overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/30 transition-all duration-500 hover:-translate-y-1 hover:border-cyan-500/40 hover:shadow-[0_20px_60px_-15px_rgba(34,211,238,0.18)] sm:min-h-[330px] sm:w-[340px]">
+                                <div class="relative h-36 overflow-hidden bg-zinc-950 sm:h-40">
+                                    @if($game->bannerUrl())
+                                        <img src="{{ $game->bannerUrl() }}" alt="{{ $game->localizedName() }} banner" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+                                    @else
+                                        <div class="landing-game-card-pattern flex h-full w-full items-center justify-center">
+                                            <i data-lucide="gamepad-2" class="h-12 w-12 text-cyan-300/60"></i>
+                                        </div>
+                                    @endif
+                                    <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/25 to-transparent"></div>
+                                    <div class="absolute left-4 top-4 rounded-full border border-cyan-400/20 bg-zinc-950/60 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-300 backdrop-blur">
+                                        Active
+                                    </div>
+                                </div>
+                                <div class="relative p-5 sm:p-6">
+                                    <div class="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-500/10 blur-2xl transition-all duration-500 group-hover:bg-cyan-500/20"></div>
+                                    <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-violet-500/20 border border-cyan-500/20 text-cyan-300 transition-all duration-300 group-hover:border-cyan-400/40">
+                                        <i data-lucide="gamepad-2" class="h-5 w-5"></i>
+                                    </div>
+                                    <h3 class="relative text-lg font-black text-white">{{ $translation?->name ?? $game->slug }}</h3>
+                                    <p class="relative mt-3 line-clamp-3 text-sm leading-6 text-zinc-500">{{ $translation?->description ?? 'Competitive events available soon.' }}</p>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                    <button type="button" aria-label="Next available games" @click="$refs.landingGamesRail.scrollBy({ left: 360, behavior: 'smooth' })" class="absolute -right-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-400/30 bg-zinc-950/95 text-white shadow-2xl transition hover:border-cyan-300 hover:bg-cyan-600 sm:-right-3">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </button>
+                </div>
+            @else
+                <div class="w-full rounded-2xl border border-zinc-800 bg-zinc-900/30 p-8 text-center text-sm text-zinc-600">
+                    <i data-lucide="gamepad-2" class="mx-auto mb-3 h-8 w-8 opacity-40"></i>
+                    <p>No active games available yet.</p>
+                </div>
             @endif
         </section>
         @endif

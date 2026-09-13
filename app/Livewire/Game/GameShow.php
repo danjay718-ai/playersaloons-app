@@ -112,6 +112,8 @@ class GameShow extends Component
             ->limit(12)
             ->get();
 
+        $activeCompetitionCount = $this->activeCompetitionCount();
+
         $view = view('livewire.game.game-show', [
             'featuredTournaments' => $featured,
             'featuredGroups' => $featuredGroups,
@@ -120,6 +122,7 @@ class GameShow extends Component
             'streams' => $streams,
             'platforms' => $platforms,
             'publicView' => $this->viewMode === 'guest',
+            'activeCompetitionCount' => $activeCompetitionCount,
         ]);
 
         return Auth::check() && $this->viewMode !== 'guest'
@@ -158,6 +161,27 @@ class GameShow extends Component
             ->where('game_id', $this->game->getKey())
             ->with(['game.translations', 'platform'])
             ->withCount(['registrations' => fn ($query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])]);
+    }
+
+    private function activeCompetitionCount(): int
+    {
+        $now = now();
+
+        return $this->game->tournaments()
+            ->where('competition_type', $this->competitionType ?: 'tournament')
+            ->where(function ($query) use ($now): void {
+                $query->where(function ($upcoming) use ($now): void {
+                    $upcoming->where('status', TournamentStatus::REGISTRATION_OPEN->value)
+                        ->where('start_at', '>', $now);
+                })->orWhere(function ($ongoing) use ($now): void {
+                    $ongoing->whereIn('status', $this->statuses('ongoing'))
+                        ->where(function ($scheduled) use ($now): void {
+                            $scheduled->whereNull('end_at')
+                                ->orWhere('end_at', '>', $now);
+                        });
+                });
+            })
+            ->count();
     }
 
     /** @return array<int, string> */

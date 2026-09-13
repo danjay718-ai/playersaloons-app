@@ -30,7 +30,7 @@
     @if($activeTab === 'overview')
         <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
             <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6"><p class="text-[10px] font-black uppercase tracking-[0.25em] text-violet-400">About the game</p><h2 class="mt-3 font-orbitron text-xl font-black uppercase text-white">Overview</h2><div class="prose prose-invert mt-4 max-w-none text-sm leading-7 text-zinc-400">{!! nl2br(e($game->localizedDescription() ?: 'Game information will be added soon.')) !!}</div></div>
-            <aside class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-6"><p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Active {{ $competitionLabel }}</p><p class="mt-3 font-orbitron text-4xl font-black text-violet-400">{{ $game->tournaments()->where('competition_type', $isHeadToHead ? 'head_to_head' : 'tournament')->whereIn('status', ['REGISTRATION_OPEN','REGISTRATION_CLOSED','CHECKIN_OPEN','CHECKIN_CLOSED','BRACKET_GENERATED','ONGOING'])->count() }}</p><p class="mt-2 text-xs text-zinc-500">Open, check-in, and live {{ strtolower($competitionLabel) }}.</p></aside>
+            <aside class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-6"><p class="text-[10px] font-black uppercase tracking-widest text-zinc-600">Active {{ $competitionLabel }}</p><p class="mt-3 font-orbitron text-4xl font-black text-violet-400">{{ $activeCompetitionCount }}</p><p class="mt-2 text-xs text-zinc-500">Upcoming and ongoing {{ strtolower($competitionLabel) }}.</p></aside>
         </section>
     @elseif($activeTab === 'browse')
         <section class="space-y-6">

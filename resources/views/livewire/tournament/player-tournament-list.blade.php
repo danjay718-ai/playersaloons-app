@@ -20,7 +20,7 @@
             </button>
             <div x-ref="gamesRail" class="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @forelse($popularGames as $game)
-                    <a href="/games/{{ $game->slug }}{{ $gameContextQuery }}" wire:navigate wire:key="game-{{ $game->slug }}" class="group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
+                    <a href="{{ route('games.show', $game) }}{{ $gameContextQuery }}" wire:navigate wire:key="game-{{ $game->slug }}" class="group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
                         <div class="aspect-[4/3] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.35),transparent_45%),linear-gradient(135deg,#18181b,#09090b)]"></div>@endif</div>
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent"></div><div class="absolute inset-x-0 bottom-0 p-4"><h2 class="font-orbitron text-sm font-black uppercase text-white">{{ $game->localizedName() }}</h2></div>
                     </a>

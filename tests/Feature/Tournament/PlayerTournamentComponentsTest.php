@@ -293,7 +293,10 @@ class PlayerTournamentComponentsTest extends TestCase
         $this->makeTournament('Racing Open', TournamentStatus::REGISTRATION_OPEN, 'daily', $otherGame);
 
         Livewire::test(PlayerTournamentList::class)
-            ->assertViewHas('popularGames', fn ($games) => $games->first()->is($this->game));
+            ->assertViewHas('popularGames', fn ($games) => $games->first()->is($this->game))
+            ->assertSee('Previous games')
+            ->assertSee('Next games')
+            ->assertSee(route('games.show', $this->game), escape: false);
 
         Livewire::test(GameShow::class, ['game' => $this->game])
             ->assertSee('Arena')
@@ -303,6 +306,27 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertDontSee('Featured Arena Cup')
             ->set('activeTab', 'browse')
             ->assertSee('Featured Arena Cup');
+    }
+
+    public function test_game_overview_counts_only_upcoming_and_unexpired_ongoing_competitions(): void
+    {
+        $upcoming = $this->makeTournament('Upcoming Arena Cup', TournamentStatus::REGISTRATION_OPEN);
+        $upcoming->update(['start_at' => now()->addHour(), 'end_at' => now()->addHours(2)]);
+
+        $ongoing = $this->makeTournament('Ongoing Arena Cup', TournamentStatus::ONGOING);
+        $ongoing->update(['start_at' => now()->subHour(), 'end_at' => now()->addHour()]);
+
+        $expiredOpen = $this->makeTournament('Expired Open Cup', TournamentStatus::REGISTRATION_OPEN);
+        $expiredOpen->update(['start_at' => now()->subHours(2), 'end_at' => now()->subHour()]);
+
+        $expiredOngoing = $this->makeTournament('Expired Ongoing Cup', TournamentStatus::ONGOING);
+        $expiredOngoing->update(['start_at' => now()->subHours(2), 'end_at' => now()->subHour()]);
+
+        $this->makeTournament('Completed Arena Cup', TournamentStatus::COMPLETED);
+
+        Livewire::test(GameShow::class, ['game' => $this->game])
+            ->assertViewHas('activeCompetitionCount', 2)
+            ->assertSee('Upcoming and ongoing tournaments.');
     }
 
     private function makeUser(string $role, string $email): User

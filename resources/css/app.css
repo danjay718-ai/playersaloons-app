@@ -2,7 +2,7 @@
 
 /* ───────────────────────────────────
    PREVENT GLOBAL HORIZONTAL SCROLL
-   The only allowed horizontal scroll is inside .landing-games-scroll
+   Keep page-level decorative content from creating horizontal overflow.
 ─────────────────────────────────── */
 html,
 body {
@@ -130,22 +130,11 @@ body {
 }
 
 .landing-games-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(34, 211, 238, 0.45) rgba(39, 39, 42, 0.45);
+    scrollbar-width: none;
 }
 
 .landing-games-scroll::-webkit-scrollbar {
-    height: 8px;
-}
-
-.landing-games-scroll::-webkit-scrollbar-track {
-    background: rgba(39, 39, 42, 0.45);
-    border-radius: 999px;
-}
-
-.landing-games-scroll::-webkit-scrollbar-thumb {
-    background: linear-gradient(90deg, rgba(34, 211, 238, 0.7), rgba(168, 85, 247, 0.7));
-    border-radius: 999px;
+    display: none;
 }
 
 .landing-game-card-pattern {
@@ -283,11 +272,11 @@ body {
     overflow-x: clip;
 }
 
-/* The games scroll strip MUST keep overflow-x: auto */
+/* The games carousel scrolls through its side-arrow controls. */
 .landing-games-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
     position: relative;
+    scroll-behavior: smooth;
     z-index: 1;
 }
 
@@ -319,14 +308,6 @@ body {
     .landing-main-pattern {
         background-size: 48px 48px, 48px 48px, 100% 100%;
         background-position: 0 0, 24px 24px, center top;
-    }
-
-    .landing-games-scroll {
-        scrollbar-width: none;
-    }
-
-    .landing-games-scroll::-webkit-scrollbar {
-        display: none;
     }
 
     .landing-card:hover,
