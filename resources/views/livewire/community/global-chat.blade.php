@@ -1,5 +1,5 @@
 <div
-    class="min-h-[calc(100vh-5rem)]"
+    class="player-global-chat min-h-[calc(100vh-5rem)]"
     x-data="chatConsole({
         endpoints: {
             conversations: '{{ route('chat.conversations') }}',
@@ -87,8 +87,8 @@
                     <button
                         type="button"
                         @click="selectConversation(conversation)"
-                        :class="selected?.uuid === conversation.uuid ? 'border-purple-400/50 bg-purple-950/35' : 'border-transparent bg-transparent hover:border-zinc-700 hover:bg-zinc-900/60'"
-                        class="mb-1 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition"
+                        :class="selected?.uuid === conversation.uuid ? 'player-chat-conversation-active border-purple-400/50 bg-purple-950/35' : 'border-transparent bg-transparent hover:border-zinc-700 hover:bg-zinc-900/60'"
+                        class="player-chat-conversation mb-1 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition"
                     >
                         <div :class="conversation.type === 'global' ? 'from-fuchsia-500 to-purple-600' : conversation.type === 'team' ? 'from-cyan-500 to-blue-600' : 'from-emerald-500 to-teal-600'" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-[10px] font-black text-white shadow-[0_0_16px_rgba(168,85,247,0.25)]">
                             <span x-text="conversation.type === 'global' ? 'GL' : conversation.type === 'team' ? 'TM' : 'P2'"></span>
@@ -152,7 +152,7 @@
                                 </template>
                                 <span x-show="!message.user.avatar_url" x-text="message.user.initials"></span>
                             </button>
-                            <div :class="message.user.uuid === currentUserUuid ? 'border-fuchsia-500/25 bg-fuchsia-950/20' : 'border-zinc-800 bg-zinc-950/70'" class="rounded-xl border px-3 py-2">
+                            <div :class="message.user.uuid === currentUserUuid ? 'player-chat-bubble-own border-fuchsia-500/25 bg-fuchsia-950/20' : 'player-chat-bubble-other border-zinc-800 bg-zinc-950/70'" class="player-chat-bubble rounded-xl border px-3 py-2">
                                 <div class="mb-1 flex items-center gap-2" :class="message.user.uuid === currentUserUuid ? 'justify-end' : ''">
                                     <button type="button" @click="openPlayerProfile(message.user.uuid)" class="font-orbitron text-[10px] font-black uppercase tracking-wider hover:underline" :class="message.user.uuid === currentUserUuid ? 'text-fuchsia-200' : 'text-cyan-200'" x-text="message.user.username"></button>
                                     <span class="text-[9px] text-zinc-600" x-text="message.time"></span>

@@ -37,7 +37,7 @@
             return String(n);
         }
     }"
-    class="flex flex-col gap-0 -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8"
+    class="player-streams flex flex-col gap-0 -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8"
 >
     <x-ui.toasts />
 

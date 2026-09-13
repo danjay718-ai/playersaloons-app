@@ -17,7 +17,7 @@
 @endphp
 
 <div
-    class="space-y-6 min-w-0"
+    class="player-profile space-y-6 min-w-0"
     x-data="{ activeTab: 'profile', showKycDrawer: false, isEditingProfile: false, isEditingAccount: false }"
     @profile-kyc-submitted.window="showKycDrawer = false"
     @profile-updated.window="isEditingProfile = false"
@@ -25,10 +25,10 @@
 >
     <x-ui.toasts />
 
-    <section class="relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+    <section class="player-profile-shell relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
         <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-cyan-400 to-fuchsia-500"></div>
         <div class="grid grid-cols-1 xl:grid-cols-[360px_1fr]">
-            <aside class="border-b border-zinc-800 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_32%),linear-gradient(135deg,#111827,#09090b_68%)] p-5 sm:p-6 xl:border-b-0 xl:border-r">
+            <aside class="player-profile-identity border-b border-zinc-800 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_32%),linear-gradient(135deg,#111827,#09090b_68%)] p-5 sm:p-6 xl:border-b-0 xl:border-r">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-300 font-orbitron">Player Card</p>
@@ -124,19 +124,20 @@
                     </div>
                 </div>
 
-                <div class="mt-6 rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
-                    <div class="grid grid-cols-2 gap-2 md:grid-cols-4">
+                <div class="player-profile-tabs mt-6 rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
+                    <div class="grid grid-cols-2 gap-2 md:grid-cols-5">
                         @foreach([
                             ['key' => 'profile', 'label' => 'Profile', 'icon' => 'badge'],
                             ['key' => 'account', 'label' => 'Account', 'icon' => 'id-card'],
                             ['key' => 'security', 'label' => 'Security', 'icon' => 'key-round'],
+                            ['key' => 'appearance', 'label' => 'Theme', 'icon' => 'palette'],
                             ['key' => 'comms', 'label' => 'Comms', 'icon' => 'bell'],
                         ] as $tab)
                             <button
                                 type="button"
                                 @click="activeTab = '{{ $tab['key'] }}'"
                                 class="inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-black uppercase tracking-widest transition-colors font-orbitron"
-                                :class="activeTab === '{{ $tab['key'] }}' ? 'border-cyan-400/40 bg-cyan-500/15 text-cyan-100' : 'border-transparent bg-zinc-950/50 text-zinc-500 hover:border-zinc-700 hover:text-zinc-250'"
+                                :class="activeTab === '{{ $tab['key'] }}' ? 'player-profile-tab-active border-cyan-400/40 bg-cyan-500/15 text-cyan-100' : 'border-transparent bg-zinc-950/50 text-zinc-500 hover:border-zinc-700 hover:text-zinc-250'"
                             >
                                 <i data-lucide="{{ $tab['icon'] }}" class="w-4 h-4"></i>
                                 {{ $tab['label'] }}
@@ -388,6 +389,17 @@
                                 Change Password
                             </button>
                         </form>
+                    </div>
+
+                    <div x-show="activeTab === 'appearance'" x-cloak>
+                        <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
+                            <i data-lucide="palette" class="w-4 h-4 text-cyan-300"></i>
+                            <div>
+                                <h3 class="text-sm font-black uppercase tracking-widest text-white font-orbitron">Arena Theme</h3>
+                                <p class="mt-1 text-xs font-semibold text-zinc-500">Your selection follows your account across player and admin pages.</p>
+                            </div>
+                        </div>
+                        <livewire:identity.theme-switcher variant="cards" key="player-profile-theme" />
                     </div>
 
                     <div x-show="activeTab === 'comms'" x-cloak>

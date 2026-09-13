@@ -7,11 +7,12 @@
     $winRate = $stats['matches_played'] > 0 ? (int) round(($stats['wins'] / $stats['matches_played']) * 100) : 0;
 @endphp
 
-<div class="min-w-0 max-w-full space-y-6 overflow-x-hidden" wire:poll.30s.visible>
+<div class="player-dashboard min-w-0 max-w-full space-y-6 overflow-x-hidden" wire:poll.30s.visible>
     <x-player.dashboard-tabs :items="$navItems" />
 
-    <section class="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-[radial-gradient(circle_at_82%_12%,rgba(124,58,237,.28),transparent_28%),linear-gradient(120deg,#17102d,#0b0816_58%,#08070d)] p-5 shadow-2xl sm:p-7">
+    <section class="player-dashboard-welcome relative overflow-hidden rounded-3xl border border-violet-500/20 bg-[radial-gradient(circle_at_82%_12%,rgba(124,58,237,.28),transparent_28%),linear-gradient(120deg,#17102d,#0b0816_58%,#08070d)] p-5 shadow-2xl sm:p-7">
         <div class="absolute inset-0 opacity-20 cyber-grid"></div>
+        <i data-lucide="gamepad-2" aria-hidden="true" class="player-dashboard-watermark"></i>
         <div class="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
             <div class="flex min-w-0 flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
                 <div class="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-violet-400/40 bg-zinc-950 shadow-[0_0_28px_rgba(139,92,246,.25)] sm:h-20 sm:w-20">
@@ -29,8 +30,8 @@
                 </div>
             </div>
 
-            <div class="rounded-2xl border border-white/10 bg-black/25 p-5 backdrop-blur-sm">
-                <div class="flex items-end justify-between gap-4"><div><p class="text-[9px] font-black uppercase tracking-[0.24em] text-zinc-500">Platform progression</p><p class="mt-2 font-orbitron text-2xl font-black text-white">LEVEL {{ $progression->level }}</p></div><div class="text-right"><p class="font-orbitron text-sm font-black text-violet-300">{{ number_format($progression->experience_points) }} XP</p><p class="mt-1 text-[9px] uppercase tracking-wider text-zinc-600">Lifetime XP</p></div></div>
+            <div class="player-dashboard-progression rounded-2xl border border-white/10 bg-black/25 p-5 backdrop-blur-sm">
+                <div class="flex items-end justify-between gap-4"><div><p class="text-[9px] font-black uppercase tracking-[0.24em] text-zinc-500">Platform progression</p><p class="player-level-title mt-2 font-orbitron text-2xl font-black text-white">LEVEL {{ $progression->level }}</p></div><div class="text-right"><p class="player-level-xp font-orbitron text-sm font-black text-violet-300">{{ number_format($progression->experience_points) }} XP</p><p class="mt-1 text-[9px] uppercase tracking-wider text-zinc-600">Lifetime XP</p></div></div>
                 <div class="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800"><div class="h-full rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-400 shadow-[0_0_12px_rgba(168,85,247,.7)]" style="width: {{ $progression->progressPercent() }}%"></div></div>
                 <div class="mt-2 flex justify-between text-[9px] font-bold uppercase tracking-wider text-zinc-500"><span>{{ $xpWithinLevel }} / {{ $xpTarget }} XP</span><span>{{ $xpTarget - $xpWithinLevel }} to next level</span></div>
             </div>
@@ -44,8 +45,8 @@
             ['label' => 'Win Rate', 'value' => $winRate.'%', 'icon' => 'target', 'color' => 'text-fuchsia-300', 'border' => 'border-fuchsia-500/20'],
             ['label' => 'Prize Earnings', 'value' => '$'.number_format($stats['earnings'], 2), 'icon' => 'badge-dollar-sign', 'color' => 'text-emerald-300', 'border' => 'border-emerald-500/20'],
         ] as $metric)
-            <article class="min-w-[15rem] snap-start rounded-2xl border {{ $metric['border'] }} bg-zinc-950/65 p-5 shadow-lg sm:min-w-0">
-                <div class="flex items-center justify-between gap-3"><p class="text-[9px] font-black uppercase tracking-widest text-zinc-600">{{ $metric['label'] }}</p><i data-lucide="{{ $metric['icon'] }}" class="h-4 w-4 {{ $metric['color'] }}"></i></div>
+            <article class="player-stat-card min-w-[15rem] snap-start rounded-2xl border {{ $metric['border'] }} bg-zinc-950/65 p-5 shadow-lg sm:min-w-0">
+                <div class="flex items-center justify-between gap-3"><p class="text-[9px] font-black uppercase tracking-widest text-zinc-600">{{ $metric['label'] }}</p><span class="player-stat-icon"><i data-lucide="{{ $metric['icon'] }}" class="h-5 w-5 {{ $metric['color'] }}"></i></span></div>
                 <p class="mt-3 break-words font-orbitron text-xl font-black {{ $metric['color'] }} sm:text-2xl">{{ $metric['value'] }}</p>
             </article>
         @endforeach
@@ -59,7 +60,7 @@
                     <div class="divide-y divide-zinc-800/70">
                         @foreach($activeTournaments as $tournament)
                             @php $status = $tournament['status']; @endphp
-                            <a href="/tournaments/{{ $tournament['uuid'] }}/view" wire:navigate class="grid gap-3 px-5 py-4 transition hover:bg-violet-500/5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+                            <a href="/tournaments/{{ $tournament['uuid'] }}/view" wire:navigate class="player-clickable-row grid gap-3 px-5 py-4 transition hover:bg-violet-500/5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
                                 <div class="min-w-0"><div class="flex items-start gap-2"><span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ $status === 'ONGOING' ? 'animate-pulse bg-red-400' : ($status === 'REGISTRATION_OPEN' ? 'bg-emerald-400' : 'bg-amber-400') }}"></span><h3 class="break-words text-sm font-bold text-zinc-100">{{ $tournament['name'] }}</h3></div><p class="mt-1 break-words pl-4 text-[10px] uppercase tracking-wider text-zinc-600">{{ $tournament['game'] }} · {{ str_replace('_', ' ', $status) }}</p></div>
                                 <div class="text-left sm:text-right"><p class="text-[9px] font-black uppercase tracking-wider text-zinc-600">Starts</p><p class="mt-1 text-xs font-bold text-zinc-300">{{ $tournament['starts_at'] }}</p></div>
                                 <div class="text-left sm:w-16 sm:text-right"><p class="text-[9px] font-black uppercase tracking-wider text-zinc-600">Players</p><p class="mt-1 text-xs font-bold text-cyan-300">{{ $tournament['registrations_count'] }}/{{ $tournament['max_participants'] }}</p></div>
@@ -76,7 +77,7 @@
                 @if($recentMatches !== [])
                     <div class="flex w-full max-w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible">
                         @foreach($recentMatches as $match)
-                            <a href="/matches/{{ $match['uuid'] }}" wire:navigate class="min-w-[17rem] snap-start rounded-xl border border-zinc-800 bg-zinc-900/55 p-4 transition hover:border-violet-500/30 sm:min-w-0"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="break-words text-xs font-bold text-white">{{ $match['tournament'] }}</p><p class="mt-1 break-words text-[10px] text-zinc-600">{{ $match['game'] }} · {{ ucfirst($match['status']) }}</p></div><span class="shrink-0 rounded-md px-2 py-1 text-[9px] font-black uppercase {{ $match['outcome'] === 'win' ? 'bg-emerald-500/10 text-emerald-300' : ($match['outcome'] === 'loss' ? 'bg-rose-500/10 text-rose-300' : 'bg-amber-500/10 text-amber-300') }}">{{ $match['outcome'] }}</span></div><p class="mt-3 break-words text-[9px] font-black uppercase tracking-wider text-violet-400">Open Match Room · {{ $match['updated_at'] }}</p></a>
+                            <a href="/matches/{{ $match['uuid'] }}" wire:navigate class="player-clickable-card min-w-[17rem] snap-start rounded-xl border border-zinc-800 bg-zinc-900/55 p-4 transition hover:border-violet-500/30 sm:min-w-0"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="break-words text-xs font-bold text-white">{{ $match['tournament'] }}</p><p class="mt-1 break-words text-[10px] text-zinc-600">{{ $match['game'] }} · {{ ucfirst($match['status']) }}</p></div><span class="shrink-0 rounded-md px-2 py-1 text-[9px] font-black uppercase {{ $match['outcome'] === 'win' ? 'bg-emerald-500/10 text-emerald-300' : ($match['outcome'] === 'loss' ? 'bg-rose-500/10 text-rose-300' : 'bg-amber-500/10 text-amber-300') }}">{{ $match['outcome'] }}</span></div><p class="mt-3 break-words text-[9px] font-black uppercase tracking-wider text-violet-400">Open Match Room · {{ $match['updated_at'] }}</p></a>
                         @endforeach
                     </div>
                 @else
@@ -86,7 +87,7 @@
         </div>
 
         <aside class="min-w-0 max-w-full space-y-6 xl:col-span-4">
-            <section class="w-full max-w-full overflow-hidden rounded-2xl border border-amber-500/20 bg-[linear-gradient(145deg,rgba(120,53,15,.18),rgba(9,9,11,.9))]">
+            <section class="player-dashboard-announcements w-full max-w-full overflow-hidden rounded-2xl border border-amber-500/20 bg-[linear-gradient(145deg,rgba(120,53,15,.18),rgba(9,9,11,.9))]">
                 <header class="flex min-w-0 items-center justify-between border-b border-amber-500/15 px-5 py-4"><div class="flex min-w-0 items-center gap-2"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10"><i data-lucide="megaphone" class="h-4 w-4 text-amber-300"></i></span><div class="min-w-0"><p class="break-words text-[9px] font-black uppercase tracking-[0.22em] text-amber-400">Official feed</p><h2 class="break-words font-orbitron text-sm font-black uppercase text-white">Announcements</h2></div></div></header>
                 <div class="divide-y divide-amber-500/10">
                     @forelse($announcements as $announcement)
@@ -119,10 +120,10 @@
                 </div>
             </section>
 
-            <section class="flex w-full max-w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0">
-                <a href="/wallet" wire:navigate class="min-w-[13rem] snap-start rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4 transition hover:bg-emerald-500/10 sm:min-w-0"><i data-lucide="wallet" class="h-5 w-5 text-emerald-400"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-600">Balance</p><p class="mt-1 break-words font-orbitron text-lg font-black text-emerald-300">${{ number_format($stats['balance'], 2) }}</p></a>
-                <a href="/profile" wire:navigate class="min-w-[13rem] snap-start rounded-2xl border border-cyan-500/15 bg-cyan-500/5 p-4 transition hover:bg-cyan-500/10 sm:min-w-0"><i data-lucide="shield-check" class="h-5 w-5 text-cyan-400"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-600">Completed</p><p class="mt-1 break-words font-orbitron text-lg font-black text-cyan-300">{{ $progression->tournaments_completed }} events</p></a>
-            </section>
+            <div class="player-dashboard-quick-links flex w-full max-w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0">
+                <a href="/wallet" wire:navigate class="player-dashboard-quick-card player-dashboard-balance min-w-[13rem] snap-start rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4 transition hover:bg-emerald-500/10 sm:min-w-0"><i data-lucide="wallet" class="h-5 w-5 text-emerald-400"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-600">Balance</p><p class="mt-1 break-words font-orbitron text-lg font-black text-emerald-300">${{ number_format($stats['balance'], 2) }}</p></a>
+                <a href="/profile" wire:navigate class="player-dashboard-quick-card player-dashboard-completed min-w-[13rem] snap-start rounded-2xl border border-cyan-500/15 bg-cyan-500/5 p-4 transition hover:bg-cyan-500/10 sm:min-w-0"><i data-lucide="shield-check" class="h-5 w-5 text-cyan-400"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-600">Completed</p><p class="mt-1 break-words font-orbitron text-lg font-black text-cyan-300">{{ $progression->tournaments_completed }} events</p></a>
+            </div>
         </aside>
     </div>
 </div>

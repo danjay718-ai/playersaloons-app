@@ -1,10 +1,17 @@
-<div class="space-y-8" x-data="{ searchFilter: '', topPlayers: @js($topPlayers) }">
+<div class="player-leaderboard space-y-8" x-data="{ searchFilter: '', topPlayers: @js($topPlayers) }">
     @if(count($topPlayers) > 0)
         <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
             @foreach(array_slice($topPlayers, 0, 3) as $player)
-                <x-player.panel class="{{ $player['rank'] === 1 ? 'border-purple-500/40 bg-purple-950/20' : '' }}">
+                @php
+                    $podiumIcon = $player['rank'] === 1 ? 'crown' : 'medal';
+                @endphp
+                <x-player.panel class="leaderboard-podium-card leaderboard-rank-{{ $player['rank'] }} relative isolate overflow-hidden {{ $player['rank'] === 1 ? 'border-purple-500/40 bg-purple-950/20' : '' }}">
+                    <i data-lucide="{{ $podiumIcon }}" aria-hidden="true" class="leaderboard-podium-watermark pointer-events-none absolute -bottom-6 -right-5 h-36 w-36 -rotate-12 opacity-[0.07]"></i>
                     <div class="flex items-center justify-between">
-                        <span class="font-orbitron text-xs font-black text-purple-400">#{{ $player['rank'] }}</span>
+                        <span class="leaderboard-rank-label inline-flex items-center gap-2 font-orbitron text-xs font-black text-purple-400">
+                            <i data-lucide="{{ $podiumIcon }}" class="h-4 w-4"></i>
+                            #{{ $player['rank'] }}
+                        </span>
                         <span class="rounded-full border border-zinc-800 bg-zinc-950 px-2 py-1 font-orbitron text-[9px] font-bold uppercase text-zinc-400">
                             {{ $player['tier'] }}
                         </span>

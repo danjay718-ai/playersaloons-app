@@ -19,19 +19,19 @@
     }
 @endphp
 
-<div class="space-y-12" x-data>
+<div class="player-tournament-discovery space-y-12" x-data>
     <section class="space-y-5">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div><p class="text-[10px] font-black uppercase tracking-[0.3em] text-violet-400">Discover your next arena</p><h1 class="mt-2 font-orbitron text-2xl font-black uppercase tracking-tight text-white sm:text-3xl">Popular Games</h1></div>
-            <label class="relative block w-full sm:max-w-xs"><span class="sr-only">Search game</span><i data-lucide="search" class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"></i><input wire:model.live.debounce.250ms="gameSearch" type="search" placeholder="Search game" class="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-3 pl-10 pr-4 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/10"></label>
+            <label class="relative block w-full sm:max-w-xs"><span class="sr-only">Search game</span><i data-lucide="search" class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"></i><input wire:model.live.debounce.250ms="gameSearch" type="search" placeholder="Search game" class="player-filter-field w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-3 pl-10 pr-4 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/10"></label>
         </div>
         <div class="relative">
-            <button type="button" aria-label="Previous games" @click="$refs.gamesRail.scrollBy({ left: -420, behavior: 'smooth' })" class="absolute -left-1 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-zinc-950/95 text-white shadow-2xl transition hover:border-violet-400/50 hover:bg-violet-600 sm:-left-3 sm:h-11 sm:w-11">
+            <button type="button" aria-label="Previous games" @click="$refs.gamesRail.scrollBy({ left: -420, behavior: 'smooth' })" class="player-rail-button absolute -left-1 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-zinc-950/95 text-white shadow-2xl transition hover:border-violet-400/50 hover:bg-violet-600 sm:-left-3 sm:h-11 sm:w-11">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
             </button>
             <div x-ref="gamesRail" class="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @forelse($popularGames as $game)
-                    <a href="{{ route('games.show', ['game' => $game, ...$gameContext]) }}" wire:navigate wire:key="game-{{ $game->slug }}" class="group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
+                    <a href="{{ route('games.show', ['game' => $game, ...$gameContext]) }}" wire:navigate wire:key="game-{{ $game->slug }}" class="player-game-card group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
                         <div class="aspect-[4/3] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.35),transparent_45%),linear-gradient(135deg,#18181b,#09090b)]"></div>@endif</div>
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent"></div><div class="absolute inset-x-0 bottom-0 p-4"><h2 class="font-orbitron text-sm font-black uppercase text-white">{{ $game->localizedName() }}</h2></div>
                     </a>
@@ -39,7 +39,7 @@
                     <div class="w-full rounded-2xl border border-dashed border-zinc-800 p-10 text-center text-sm text-zinc-500">No games match your search.</div>
                 @endforelse
             </div>
-            <button type="button" aria-label="Next games" @click="$refs.gamesRail.scrollBy({ left: 420, behavior: 'smooth' })" class="absolute -right-1 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-zinc-950/95 text-white shadow-2xl transition hover:border-violet-400/50 hover:bg-violet-600 sm:-right-3 sm:h-11 sm:w-11">
+            <button type="button" aria-label="Next games" @click="$refs.gamesRail.scrollBy({ left: 420, behavior: 'smooth' })" class="player-rail-button absolute -right-1 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-zinc-950/95 text-white shadow-2xl transition hover:border-violet-400/50 hover:bg-violet-600 sm:-right-3 sm:h-11 sm:w-11">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
             </button>
         </div>
@@ -63,7 +63,7 @@
         <div class="flex gap-2 overflow-x-auto border-b border-zinc-800 pb-3 [scrollbar-width:none]">
             @foreach(['upcoming' => $isHeadToHeadListing ? 'Upcoming H2H' : 'Upcoming', 'ongoing' => $isHeadToHeadListing ? 'Ongoing H2H' : 'Ongoing', 'past' => 'Past '.$competitionPlural] as $key => $label)<button wire:click="$set('activeTab', '{{ $key }}')" class="whitespace-nowrap rounded-lg px-5 py-2.5 font-orbitron text-[10px] font-black uppercase tracking-widest transition {{ $activeTab === $key ? 'bg-violet-600 text-white shadow-[0_0_20px_rgba(124,58,237,.3)]' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white' }}">{{ $label }}</button>@endforeach
         </div>
-        <div class="rounded-2xl border border-zinc-800/80 bg-zinc-900/35 p-4 backdrop-blur-xl sm:p-5"><div class="grid grid-cols-1 gap-4 sm:grid-cols-2 {{ $isHeadToHeadListing ? 'xl:grid-cols-5' : 'xl:grid-cols-6' }}">
+        <div class="player-filter-panel rounded-2xl border border-zinc-800/80 bg-zinc-900/35 p-4 backdrop-blur-xl sm:p-5"><div class="grid grid-cols-1 gap-4 sm:grid-cols-2 {{ $isHeadToHeadListing ? 'xl:grid-cols-5' : 'xl:grid-cols-6' }}">
             <input wire:model.live.debounce.300ms="search" type="search" placeholder="Search {{ strtolower($competitionPlural) }}" class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none focus:border-violet-500">
             @if($isHeadToHeadListing)
                 <div class="flex items-center rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 px-3 py-3 text-sm font-semibold text-fuchsia-200"><i data-lucide="swords" class="mr-2 h-4 w-4"></i>1v1 only</div>

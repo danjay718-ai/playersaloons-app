@@ -14,7 +14,7 @@
         'REFUNDED' => 'text-orange-400 border-orange-900/50 bg-orange-950/20',
     ][$statusValue] ?? 'text-zinc-500 border-zinc-800 bg-zinc-900/50';
 @endphp
-<div class="space-y-10" 
+<div class="player-tournament-detail space-y-10"
      x-data="{ 
          activeTab: localStorage.getItem('tournament_tab_{{ $tournament->id }}') || 'overview', 
          canViewRestricted: @json($canViewRestricted),
@@ -405,7 +405,8 @@
                         <span class="w-1.5 h-8 bg-cyan-500 rounded-full"></span>
                         <span>ABOUT THIS TOURNAMENT</span>
                     </h2>
-                    <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8 space-y-6">
+                    <div class="decorated-card tournament-overview-card bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8 space-y-6">
+                        <i data-lucide="trophy" aria-hidden="true" class="ui-card-watermark"></i>
                         @if($tournament->description)
                             <x-ui.collapsible-rich-text :content="$tournament->description" :threshold="500" :preview-height="220" />
                         @else
@@ -532,7 +533,8 @@
                         <span class="w-1.5 h-8 bg-fuchsia-500 rounded-full"></span>
                         <span>TOURNAMENT RULES</span>
                     </h2>
-                    <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
+                    <div class="decorated-card tournament-overview-card bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
+                        <i data-lucide="scroll-text" aria-hidden="true" class="ui-card-watermark"></i>
                         @if($tournament->rules)
                             <x-ui.collapsible-rich-text :content="$tournament->rules" :threshold="900" :preview-height="420" />
                         @else
@@ -564,7 +566,8 @@
                 <!-- Chronology -->
                 <section class="space-y-6">
                     <h2 class="text-xl font-black font-orbitron tracking-widest text-white">CHRONOLOGY</h2>
-                    <div class="relative bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8 space-y-8 overflow-hidden">
+                    <div class="decorated-card tournament-overview-card relative bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8 space-y-8 overflow-hidden">
+                        <i data-lucide="clock-3" aria-hidden="true" class="ui-card-watermark"></i>
                         <div class="absolute top-12 bottom-12 left-11 w-px bg-gradient-to-b from-cyan-500 via-violet-500 to-fuchsia-500 opacity-20"></div>
                         
                         @foreach([
@@ -599,7 +602,8 @@
                 <!-- Quick Info -->
                 <section class="space-y-4">
                     <h2 class="text-xl font-black font-orbitron tracking-widest text-white">QUICK INFO</h2>
-                    <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 space-y-4">
+                    <div class="decorated-card tournament-overview-card bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 space-y-4">
+                        <i data-lucide="info" aria-hidden="true" class="ui-card-watermark"></i>
                         <div class="flex items-center justify-between text-sm">
                             <span class="text-zinc-600 font-medium">Minimum Participants</span>
                             <span class="text-zinc-300 font-bold">{{ $tournament->min_participants }}</span>

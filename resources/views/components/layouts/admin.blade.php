@@ -1,8 +1,12 @@
+@php
+    $accountTheme = auth()->user()?->theme ?? \App\Shared\Enums\UserTheme::PURPLE_DARK;
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $accountTheme->value }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="{{ $accountTheme->metaColor() }}">
     <title>{{ $title ?? __('Admin Panel | PlayerSaloons') }}</title>
 
     <!-- Google Fonts for Professional Aesthetic (Inter only, no Orbitron for admin) -->
@@ -22,15 +26,16 @@
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
-<body class="bg-[#090d16] text-slate-100 h-screen overflow-hidden antialiased flex flex-col">
+<body class="theme-auth theme-admin bg-[#090d16] text-slate-100 h-screen overflow-hidden antialiased flex flex-col">
 
     <!-- Mobile Header -->
-    <header class="md:hidden flex items-center justify-between bg-[#0f172a] border-b border-slate-800 px-4 py-3 sticky top-0 z-50">
+    <header class="theme-header md:hidden flex items-center justify-between bg-[#0f172a] border-b border-slate-800 px-4 py-3 sticky top-0 z-50">
         <div class="flex items-center space-x-3">
             <span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
             <span class="font-bold text-sm tracking-wider uppercase text-slate-200">{{ __('PS ADMIN') }}</span>
         </div>
         <div class="flex items-center space-x-2">
+            <livewire:identity.theme-switcher key="admin-mobile-theme" />
             @php $mobileRole = auth()->user()?->roles?->pluck('name')?->first() ?? 'Staff'; @endphp
             <span class="text-[9px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-900/40 border border-indigo-700/30 rounded-full px-2 py-0.5">
                 {{ $mobileRole }}
@@ -45,7 +50,7 @@
 
     <div class="flex flex-1 flex-col md:flex-row relative overflow-hidden">
         <!-- Sidebar Navigation -->
-        <aside id="admin-sidebar" class="hidden md:flex flex-col w-64 bg-[#0f172a] border-r border-slate-800 h-full z-40 shrink-0">
+        <aside id="admin-sidebar" class="theme-sidebar hidden md:flex flex-col w-64 bg-[#0f172a] border-r border-slate-800 h-full z-40 shrink-0">
             <!-- Logo Section -->
             <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-[#0b0f19]">
                 <div class="flex items-center space-x-3">
@@ -136,7 +141,7 @@
                                 <a href="{{ $item['url'] }}" wire:navigate
                                    class="flex items-center px-4 py-2.5 rounded-lg border text-sm transition-all duration-150 group
                                    {{ $isActive
-                                      ? 'bg-indigo-600/15 border-indigo-500/20 text-indigo-300 font-semibold shadow-[inset_0_0_8px_rgba(99,102,241,0.05)]'
+                                      ? 'theme-nav-active bg-indigo-600/15 border-indigo-500/20 text-indigo-300 font-semibold shadow-[inset_0_0_8px_rgba(99,102,241,0.05)]'
                                       : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 hover:border-slate-800' }}">
                                     <i data-lucide="{{ $item['icon'] }}" class="w-4 h-4 mr-3 transition-colors {{ $isActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-300' }}"></i>
                                     <span>{{ $item['label'] }}</span>
@@ -176,7 +181,7 @@
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
             <!-- Topbar (Desktop only) -->
-            <header class="hidden md:flex h-16 border-b border-slate-800 bg-[#0f172a] px-8 items-center justify-between sticky top-0 z-30">
+            <header class="theme-header hidden md:flex h-16 border-b border-slate-800 bg-[#0f172a] px-8 items-center justify-between sticky top-0 z-30">
                 <div class="flex items-center space-x-3">
                     <span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
                     <h2 class="font-extrabold text-sm uppercase tracking-widest text-slate-200">
@@ -235,6 +240,7 @@
                             </span>
                         </div>
                     </a>
+                    <livewire:identity.theme-switcher key="admin-header-theme" />
                     <x-localization.language-switcher variant="admin" />
                     <form method="POST" action="{{ route('logout') }}" class="m-0">
                         @csrf
@@ -255,7 +261,7 @@
     <!-- Mobile Drawer JS & Menu Backdrop -->
     <div id="mobile-menu" class="fixed inset-0 z-40 hidden md:hidden flex">
         <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" id="mobile-menu-overlay"></div>
-        <div class="relative flex-1 flex flex-col max-w-xs w-full bg-[#0f172a] border-r border-slate-800 pt-5 pb-4">
+        <div class="theme-sidebar relative flex-1 flex flex-col max-w-xs w-full bg-[#0f172a] border-r border-slate-800 pt-5 pb-4">
             <div class="px-6 flex items-center justify-between pb-4 border-b border-slate-800">
                 <div class="flex items-center space-x-3">
                     <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white">PS</div>
@@ -296,7 +302,7 @@
                                 <a href="{{ $item['url'] }}" wire:navigate
                                    class="flex items-center px-4 py-2.5 rounded-lg border text-sm transition-all duration-150
                                    {{ $isActive
-                                      ? 'bg-indigo-600/15 border-indigo-500/20 text-indigo-300 font-semibold'
+                                      ? 'theme-nav-active bg-indigo-600/15 border-indigo-500/20 text-indigo-300 font-semibold'
                                       : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 hover:border-slate-800' }}">
                                     <i data-lucide="{{ $item['icon'] }}" class="w-4 h-4 mr-3"></i>
                                     <span>{{ $item['label'] }}</span>

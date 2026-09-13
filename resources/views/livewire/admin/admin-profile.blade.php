@@ -168,5 +168,16 @@
                 </div>
             </form>
         </div>
+
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl p-6 shadow-sm">
+            <div class="border-b border-slate-800 pb-3 flex items-start gap-3 mb-6">
+                <i data-lucide="palette" class="mt-0.5 w-4.5 h-4.5 text-indigo-400"></i>
+                <div>
+                    <h3 class="text-sm font-bold tracking-wider text-slate-200 uppercase">Appearance</h3>
+                    <p class="mt-1 text-xs text-slate-500">Choose the theme used across your player and admin account.</p>
+                </div>
+            </div>
+            <livewire:identity.theme-switcher variant="cards" key="admin-profile-theme" />
+        </div>
     </div>
 </div>

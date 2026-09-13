@@ -12,6 +12,7 @@ use App\Modules\Wallet\Models\Wallet;
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
 use App\Shared\Enums\UserStatus;
+use App\Shared\Enums\UserTheme;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Collection;
@@ -34,6 +35,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $username
  * @property string $password
  * @property string $locale
+ * @property UserTheme $theme
  * @property Carbon|null $email_verified_at
  * @property Carbon|null $accepted_terms_at
  * @property Carbon|null $accepted_privacy_policy_at
@@ -95,6 +97,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'email_verified_at',
         'status',
         'locale',
+        'theme',
         'last_login_at',
         'accepted_terms_at',
         'accepted_privacy_policy_at',
@@ -139,6 +142,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             'newsletter_subscribed_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'theme' => UserTheme::class,
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',

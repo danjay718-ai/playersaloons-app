@@ -1,5 +1,8 @@
+@php
+    $accountTheme = auth()->user()?->theme ?? \App\Shared\Enums\UserTheme::PURPLE_DARK;
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $accountTheme->value }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,7 +10,7 @@
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0a0718">
+    <meta name="theme-color" content="{{ $accountTheme->metaColor() }}">
     <link rel="apple-touch-icon" href="/playersaloons_logo.webp">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -27,7 +30,7 @@
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
-<body class="bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-violet-600 selection:text-white relative cyber-grid">
+<body class="theme-auth theme-player bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-violet-600 selection:text-white relative cyber-grid">
     @php
         $bottomNavItems = [
             ['label' => __('Overview'), 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'pattern' => 'dashboard'],
@@ -172,9 +175,9 @@
             <nav class="my-5 min-h-0 flex-grow space-y-1.5 overflow-y-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @foreach($navItems as $item)
                     <a href="{{ $item['url'] }}" wire:navigate 
-                       class="flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
+                       class="theme-nav-item flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
                        {{ $item['active'] 
-                          ? 'bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
+                          ? 'theme-nav-active bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
                           : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
                         <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                             <i data-lucide="{{ $item['icon'] }}" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
@@ -218,25 +221,25 @@
         <div class="flex-1 flex flex-col min-w-0 relative md:pl-20">
             
             <!-- Topbar sticky header -->
-            <header class="sticky top-0 z-40 h-16 md:h-20 border-b border-purple-500/15 bg-[#0a0718]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+            <header class="theme-header sticky top-0 z-40 h-16 md:h-20 border-b border-purple-500/15 bg-[#0a0718]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
                 <!-- Left: Logo (mobile only) + Desktop section title -->
                 <div class="flex items-center space-x-3">
                     <!-- Mobile Logo -->
-                    <a href="/dashboard" wire:navigate class="md:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_12px_rgba(168,85,247,0.4)]">
-                        <div class="w-full h-full bg-[#0a0718] rounded-md flex items-center justify-center">
+                    <a href="/dashboard" wire:navigate class="theme-sidebar-logo-shell md:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_12px_rgba(168,85,247,0.4)]">
+                        <div class="theme-sidebar-logo-inner w-full h-full bg-[#0a0718] rounded-md flex items-center justify-center">
                             <img src="/playersaloons_logo.webp" alt="Logo" class="w-6 h-6 object-contain">
                         </div>
                     </a>
 
                     <!-- Mobile Page Title -->
-                    <h1 class="md:hidden text-xs font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple">
+                    <h1 class="theme-page-title md:hidden text-xs font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple">
                         @yield('dashboard_title', __('TERMINAL'))
                     </h1>
 
                     <!-- Desktop section title -->
                     <div class="hidden md:flex items-center space-x-3">
-                        <span class="hidden xs:block w-2 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)]"></span>
-                        <h1 class="text-xs sm:text-sm md:text-base font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple truncate max-w-[150px] sm:max-w-none">
+                        <span class="theme-title-marker hidden xs:block w-2 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)]"></span>
+                        <h1 class="theme-page-title text-xs sm:text-sm md:text-base font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple truncate max-w-[150px] sm:max-w-none">
                             @yield('dashboard_title', __('DASHBOARD'))
                         </h1>
                     </div>
@@ -257,11 +260,13 @@
                     </a>
 
                     <!-- Deposit CTA Button (hidden on smallest screens) -->
-                    <a href="/wallet" wire:navigate class="hidden sm:inline-flex relative items-center justify-center p-0.5 overflow-hidden text-xs font-bold text-white rounded-lg group bg-gradient-to-br from-purple-600 to-fuchsia-500 hover:from-purple-500 hover:to-fuchsia-400 border border-fuchsia-400/20 shadow-[0_0_15px_rgba(217,70,239,0.3)] hover:shadow-[0_0_20px_rgba(217,70,239,0.6)] transition-all duration-300 cursor-pointer">
+                    <a href="/wallet" wire:navigate class="theme-primary-action hidden sm:inline-flex relative items-center justify-center p-0.5 overflow-hidden text-xs font-bold text-white rounded-lg group bg-gradient-to-br from-purple-600 to-fuchsia-500 hover:from-purple-500 hover:to-fuchsia-400 border border-fuchsia-400/20 shadow-[0_0_15px_rgba(217,70,239,0.3)] hover:shadow-[0_0_20px_rgba(217,70,239,0.6)] transition-all duration-300 cursor-pointer">
                         <span class="relative px-3 py-1.5 transition-all ease-in duration-75 bg-[#0a0718]/90 rounded-md group-hover:bg-transparent font-orbitron tracking-widest uppercase text-[10px]">
                             {{ __('+ Deposit') }}
                         </span>
                     </a>
+
+                    <livewire:identity.theme-switcher key="player-header-theme" />
 
                     <!-- Notifications Bell -->
                     <livewire:notification.notification-bell />
@@ -294,7 +299,7 @@
                              x-transition:leave="transition ease-in duration-75"
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
-                             class="absolute right-0 mt-3 w-52 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-1"
+                             class="theme-popover absolute right-0 mt-3 w-52 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-1"
                              x-cloak>
                             {{-- Role badge --}}
                             @php 
