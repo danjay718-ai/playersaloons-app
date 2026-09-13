@@ -73,12 +73,16 @@
                 ['label' => __('Streams'),     'icon' => 'tv',              'url' => '/streams',         'pattern' => 'streams'],
                 ['label' => __('Chat'),        'icon' => 'message-square',  'url' => '/chat',            'pattern' => 'chat'],
                 ['label' => __('Squads'),       'icon' => 'users',           'url' => '/teams',           'pattern' => 'teams'],
-                ['label' => __('Find Team'),     'icon' => 'user-search',     'url' => '/teams#find-team', 'pattern' => 'teams/find-team'],
                 ['label' => __('Wallet'),      'icon' => 'wallet',          'url' => '/wallet',          'pattern' => 'wallet'],
                 ['label' => __('Profile'),     'icon' => 'user-round',      'url' => '/profile',         'pattern' => 'profile'],
                 ['label' => __('Support'),     'icon' => 'headphones',      'url' => '/contact',         'pattern' => 'contact'],
                 ['label' => __('Review Us'),   'icon' => 'star',            'url' => '/reviews',         'pattern' => 'reviews'],
             ];
+            if (config('features.team_finder.enabled')) {
+                array_splice($moreItems, 4, 0, [[
+                    'label' => __('Find Team'), 'icon' => 'user-search', 'url' => '/teams#find-team', 'pattern' => 'teams/find-team',
+                ]]);
+            }
             if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER'])) {
                 $moreItems[] = ['label' => __('Admin'), 'icon' => 'shield', 'url' => '/admin', 'pattern' => 'admin*'];
             }
@@ -137,10 +141,14 @@
                     ['label' => __('Streams'),     'icon' => 'tv',               'url' => '/streams',          'active' => request()->is('streams')],
                     ['label' => __('Chat'),        'icon' => 'message-square',   'url' => '/chat',             'active' => request()->is('chat')],
                     ['label' => __('Squads'),      'icon' => 'users',            'url' => '/teams',            'active' => request()->is('teams')],
-                    ['label' => __('Find Team'),    'icon' => 'user-search',      'url' => '/teams#find-team',  'active' => false],
                     ['label' => __('Support'),     'icon' => 'headphones',       'url' => '/contact',          'active' => request()->is('contact')],
                     ['label' => __('Review Us'),   'icon' => 'star',             'url' => '/reviews',          'active' => request()->is('reviews')],
                 ];
+                if (config('features.team_finder.enabled')) {
+                    array_splice($navItems, 7, 0, [[
+                        'label' => __('Find Team'), 'icon' => 'user-search', 'url' => '/teams#find-team', 'active' => false,
+                    ]]);
+                }
                 if (config('features.tournament_v2.enabled')) {
                     array_splice($navItems, 3, 0, [[
                         'label' => __('Head-to-Head'), 'icon' => 'swords', 'url' => '/h2h', 'active' => request()->is('h2h'),

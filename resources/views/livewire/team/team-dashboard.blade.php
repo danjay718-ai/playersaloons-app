@@ -35,7 +35,7 @@
                         <span class="text-xs font-black font-orbitron text-zinc-200">{{ $teamMembers->count() }}</span>
                     </div>
                 </div></div>
-            @else
+            @elseif(config('features.team_finder.enabled'))
                 <a href="#find-team" class="inline-flex items-center gap-2 rounded-xl border border-cyan-700/60 bg-cyan-950/30 px-4 py-3 text-[10px] font-black uppercase tracking-wider text-cyan-300 hover:border-cyan-500">
                     <i data-lucide="user-search" class="h-4 w-4"></i>
                     Find a Tournament Team
@@ -44,6 +44,7 @@
         </div>
     </div>
 
+    @if(config('features.team_finder.enabled'))
     <section id="find-team" class="scroll-mt-6 rounded-2xl border border-cyan-900/50 bg-gradient-to-br from-zinc-900 to-cyan-950/10 p-5 md:p-6">
         <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -76,6 +77,7 @@
             @endforelse
         </div>
     </section>
+    @endif
 
     @if(!$team)
         <!-- NO TEAM STATE -->

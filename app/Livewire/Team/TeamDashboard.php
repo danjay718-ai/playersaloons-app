@@ -469,26 +469,28 @@ class TeamDashboard extends Component
 
         // Keep the finder lightweight: only load open team tournaments and the
         // relations required by the compact discovery cards.
-        $teamFinderTournaments = Tournament::query()
-            ->select([
-                'id', 'uuid', 'name', 'game_id', 'platform_id', 'team_size',
-                'max_participants', 'registration_close_at',
-            ])
-            ->where('status', TournamentStatus::REGISTRATION_OPEN)
-            ->where('team_size', '>', 1)
-            ->where(function ($query): void {
-                $query->whereNull('registration_close_at')
-                    ->orWhere('registration_close_at', '>', now());
-            })
-            ->with([
-                'game:id,slug',
-                'game.translations:id,game_id,locale,name',
-                'platform:id,name',
-            ])
-            ->withCount('registrations')
-            ->orderBy('registration_close_at')
-            ->limit(8)
-            ->get();
+        $teamFinderTournaments = config('features.team_finder.enabled')
+            ? Tournament::query()
+                ->select([
+                    'id', 'uuid', 'name', 'game_id', 'platform_id', 'team_size',
+                    'max_participants', 'registration_close_at',
+                ])
+                ->where('status', TournamentStatus::REGISTRATION_OPEN)
+                ->where('team_size', '>', 1)
+                ->where(function ($query): void {
+                    $query->whereNull('registration_close_at')
+                        ->orWhere('registration_close_at', '>', now());
+                })
+                ->with([
+                    'game:id,slug',
+                    'game.translations:id,game_id,locale,name',
+                    'platform:id,name',
+                ])
+                ->withCount('registrations')
+                ->orderBy('registration_close_at')
+                ->limit(8)
+                ->get()
+            : collect();
 
         $view = view('livewire.team.team-dashboard', [
             'team' => $team,

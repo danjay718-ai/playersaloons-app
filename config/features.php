@@ -15,4 +15,8 @@ return [
     'player_wager' => [
         'enabled' => (bool) env('PLAYER_WAGER_ENABLED', false),
     ],
+
+    'team_finder' => [
+        'enabled' => (bool) env('TEAM_FINDER_ENABLED', false),
+    ],
 ];
