@@ -285,70 +285,65 @@
         $now = now();
         $timerLabel = null;
         $timerTarget = null;
-        $timerColor = 'cyan';
 
         $statusVal = $tournament->status->value ?? $tournament->status;
         if ((int) $tournament->workflow_version === 2 && $statusVal === 'REGISTRATION_OPEN' && $tournament->start_at) {
             $timerLabel = 'First matches begin in';
             $timerTarget = $tournament->start_at;
-            $timerColor = 'violet';
         } elseif ($statusVal === 'REGISTRATION_OPEN' && $tournament->registration_close_at) {
             $timerLabel = $tournament->extra_registration_started_at ? 'Extra Registration closes in' : 'Registration closes in';
             $timerTarget = $tournament->registration_close_at;
-            $timerColor = 'emerald';
         } elseif (in_array($statusVal, ['REGISTRATION_CLOSED', 'CHECKIN_OPEN', 'CHECKIN_CLOSED']) && $tournament->start_at) {
             $timerLabel = 'First matches begin in';
             $timerTarget = $tournament->start_at;
-            $timerColor = 'violet';
         } elseif ($statusVal === 'PUBLISHED' && $tournament->registration_open_at) {
             $timerLabel = 'Registration opens in';
             $timerTarget = $tournament->registration_open_at;
-            $timerColor = 'cyan';
         }
     @endphp
 
     @if($timerLabel && $timerTarget && $timerTarget > $now)
-        <div class="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/60 rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4"
+        <div class="bg-amber-950/35 backdrop-blur-xl border border-amber-500/50 rounded-2xl px-5 py-7 sm:p-7 flex flex-col sm:flex-row items-center gap-5 sm:gap-6 shadow-[0_12px_35px_-18px_rgba(245,158,11,0.45)]"
              x-data="countdownTimer('{{ $timerTarget->toIso8601String() }}')"
              x-init="start()">
-            <div class="flex items-center space-x-3 text-{{ $timerColor }}-400">
-                <i data-lucide="timer" class="w-5 h-5"></i>
-                <span class="text-xs font-black uppercase tracking-widest text-zinc-400">{{ $timerLabel }}</span>
+            <div class="flex items-center space-x-3 text-amber-300">
+                <i data-lucide="timer" class="w-7 h-7"></i>
+                <span class="text-sm font-black uppercase tracking-widest text-amber-100 sm:text-base">{{ $timerLabel }}</span>
             </div>
-            <div class="flex items-center gap-2 ml-auto">
+            <div class="flex items-center gap-2 sm:gap-3 sm:ml-auto">
                 <template x-if="!expired">
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1.5 sm:gap-2">
                         <div class="text-center">
-                            <div class="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 min-w-[3rem] text-center">
-                                <span class="text-lg font-black font-orbitron text-{{ $timerColor }}-400" x-text="String(days).padStart(2,'0')"></span>
+                            <div class="bg-amber-950/75 border border-amber-500/60 rounded-xl px-3 py-3 min-w-[3.5rem] sm:min-w-[4rem] text-center shadow-inner">
+                                <span class="text-2xl sm:text-3xl font-black font-orbitron text-amber-200" x-text="String(days).padStart(2,'0')"></span>
                             </div>
-                            <span class="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mt-1 block">Days</span>
+                            <span class="text-[10px] text-amber-300 uppercase tracking-widest font-bold mt-1.5 block">Days</span>
                         </div>
-                        <span class="text-zinc-600 font-black text-lg">:</span>
+                        <span class="text-amber-400 font-black text-xl sm:text-2xl">:</span>
                         <div class="text-center">
-                            <div class="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 min-w-[3rem] text-center">
-                                <span class="text-lg font-black font-orbitron text-{{ $timerColor }}-400" x-text="String(hours).padStart(2,'0')"></span>
+                            <div class="bg-amber-950/75 border border-amber-500/60 rounded-xl px-3 py-3 min-w-[3.5rem] sm:min-w-[4rem] text-center shadow-inner">
+                                <span class="text-2xl sm:text-3xl font-black font-orbitron text-amber-200" x-text="String(hours).padStart(2,'0')"></span>
                             </div>
-                            <span class="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mt-1 block">Hrs</span>
+                            <span class="text-[10px] text-amber-300 uppercase tracking-widest font-bold mt-1.5 block">Hrs</span>
                         </div>
-                        <span class="text-zinc-600 font-black text-lg">:</span>
+                        <span class="text-amber-400 font-black text-xl sm:text-2xl">:</span>
                         <div class="text-center">
-                            <div class="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 min-w-[3rem] text-center">
-                                <span class="text-lg font-black font-orbitron text-{{ $timerColor }}-400" x-text="String(minutes).padStart(2,'0')"></span>
+                            <div class="bg-amber-950/75 border border-amber-500/60 rounded-xl px-3 py-3 min-w-[3.5rem] sm:min-w-[4rem] text-center shadow-inner">
+                                <span class="text-2xl sm:text-3xl font-black font-orbitron text-amber-200" x-text="String(minutes).padStart(2,'0')"></span>
                             </div>
-                            <span class="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mt-1 block">Min</span>
+                            <span class="text-[10px] text-amber-300 uppercase tracking-widest font-bold mt-1.5 block">Min</span>
                         </div>
-                        <span class="text-zinc-600 font-black text-lg">:</span>
+                        <span class="text-amber-400 font-black text-xl sm:text-2xl">:</span>
                         <div class="text-center">
-                            <div class="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 min-w-[3rem] text-center">
-                                <span class="text-lg font-black font-orbitron text-{{ $timerColor }}-400" x-text="String(seconds).padStart(2,'0')"></span>
+                            <div class="bg-amber-950/75 border border-amber-500/60 rounded-xl px-3 py-3 min-w-[3.5rem] sm:min-w-[4rem] text-center shadow-inner">
+                                <span class="text-2xl sm:text-3xl font-black font-orbitron text-amber-200" x-text="String(seconds).padStart(2,'0')"></span>
                             </div>
-                            <span class="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mt-1 block">Sec</span>
+                            <span class="text-[10px] text-amber-300 uppercase tracking-widest font-bold mt-1.5 block">Sec</span>
                         </div>
                     </div>
                 </template>
                 <template x-if="expired">
-                    <span class="text-xs font-black text-zinc-500 uppercase tracking-widest">Time's up — refresh to update status</span>
+                    <span class="text-xs font-black text-amber-200 uppercase tracking-widest">Time's up — refresh to update status</span>
                 </template>
             </div>
         </div>
