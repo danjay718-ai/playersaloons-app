@@ -172,6 +172,18 @@
                             <span>{{ $currentMatchLabel }}</span>
                         </a>
                         <p class="text-center text-[10px] font-bold uppercase tracking-wider text-cyan-400">Round {{ $currentMatch->round?->round_number ?? '—' }} · {{ str_replace('_', ' ', $currentMatchStatus) }}</p>
+                    @elseif($hasLost)
+                        <div role="alert" class="w-full rounded-2xl border border-rose-500/40 bg-rose-500/10 px-6 py-5 text-center shadow-[0_0_20px_rgba(244,63,94,0.12)]">
+                            <div class="flex items-center justify-center gap-2 text-rose-300">
+                                <i data-lucide="shield-x" class="h-5 w-5"></i>
+                                <span class="text-xs font-black uppercase tracking-[0.2em]">Defeated</span>
+                            </div>
+                            @if($defeatXp > 0)
+                                <p class="mt-2 text-sm font-bold text-amber-300">+{{ number_format($defeatXp) }} XP earned</p>
+                            @else
+                                <p class="mt-2 text-xs font-semibold text-zinc-400">Your XP award is being processed.</p>
+                            @endif
+                        </div>
                     @elseif((int) $tournament->workflow_version === 2 && $isRegistered)
                         <div class="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-8 py-5 text-center text-xs font-black uppercase tracking-[0.2em] text-emerald-400"><span>Reservation Confirmed</span></div>
                         <button type="button" @click="showCancelModal = true" class="w-full rounded-xl border border-red-800/50 bg-red-950/30 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-red-400">{{ $canCancelRegistration ? 'Request Cancellation' : 'Cancellation Details' }}</button>

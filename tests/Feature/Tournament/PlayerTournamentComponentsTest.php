@@ -9,6 +9,7 @@ use App\Livewire\Tournament\MyTournamentsList;
 use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Modules\CMS\Models\Game;
+use App\Modules\Identity\Models\PlayerExperienceAward;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadChallenge;
@@ -63,12 +64,24 @@ class PlayerTournamentComponentsTest extends TestCase
         $tournament = $this->makeTournament('Elimination Cup', TournamentStatus::ONGOING);
         [$playerRegistration, $opponentRegistration] = $this->registerPlayers($tournament);
         $this->makeMatch($tournament, $playerRegistration, $opponentRegistration, $opponentRegistration);
+        PlayerExperienceAward::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $this->player->id,
+            'source_type' => 'tournament',
+            'source_id' => $tournament->id,
+            'reason' => 'participation',
+            'amount' => 10,
+        ]);
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
             ->assertSeeHtml('hasLost: true')
             ->assertSeeHtml("value === 'bracket' && hasLost && !acknowledgedElimination")
-            ->assertSee('Eliminated');
+            ->assertSee('Eliminated')
+            ->assertSee('Defeated')
+            ->assertSee('+10 XP earned')
+            ->assertDontSee('Reservation Confirmed')
+            ->assertDontSee('Cancellation Details');
     }
 
     public function test_game_stream_tab_does_not_render_seeded_sample_trailers(): void
