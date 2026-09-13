@@ -65,6 +65,8 @@ class ThemePreferenceTest extends TestCase
             ->get('/dashboard')
             ->assertOk()
             ->assertSeeHtml('data-theme="light"')
+            ->assertSeeHtml('id="desktop-sidebar" class="theme-sidebar')
+            ->assertDontSeeHtml('id="desktop-sidebar" class="group/sidebar hidden md:flex fixed top-0 left-0 h-screen bg-[#0a0718]/90')
             ->assertSee('Choose color theme');
 
         $admin = User::factory()->create(['theme' => UserTheme::BLUE_DARK]);

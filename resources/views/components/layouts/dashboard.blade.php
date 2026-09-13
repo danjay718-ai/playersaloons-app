@@ -123,13 +123,13 @@
     <div class="relative z-10 flex min-h-screen w-full">
 
         <!-- Desktop Sidebar Panel (Hidden on mobile, sticky on desktop) -->
-        <aside id="desktop-sidebar" class="group/sidebar hidden md:flex fixed top-0 left-0 h-screen bg-[#0a0718]/90 border-r border-purple-500/15 backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden shadow-[5px_0_25px_rgba(0,0,0,0.6)]">
+        <aside id="desktop-sidebar" class="theme-sidebar group/sidebar hidden md:flex fixed top-0 left-0 h-screen border-r backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden">
             
             <!-- Sidebar Header / Logo -->
             <div class="px-4 flex items-center justify-center">
                 <a href="/dashboard" wire:navigate class="flex items-center justify-center w-full">
-                    <div class="relative flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-transform duration-500 group-hover/sidebar:rotate-[360deg]">
-                        <div class="w-full h-full bg-[#0a0718] rounded-xl flex items-center justify-center">
+                    <div class="theme-sidebar-logo-shell relative flex-shrink-0 w-12 h-12 rounded-xl p-[1px] transition-transform duration-500 group-hover/sidebar:rotate-[360deg]">
+                        <div class="theme-sidebar-logo-inner w-full h-full rounded-xl flex items-center justify-center">
                             <img src="/playersaloons_logo.webp" alt="Logo" class="w-9 h-9 object-contain">
                         </div>
                     </div>
