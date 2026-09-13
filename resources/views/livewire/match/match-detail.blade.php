@@ -1,4 +1,4 @@
-<div class="space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))">
+<div class="player-match-room space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))">
     <x-ui.toasts />
 
     @if($isDefeated)
@@ -19,7 +19,8 @@
     @endif
 
     <!-- Match Header Card -->
-    <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+    <div class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+        <i data-lucide="gamepad-2" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
                 <a href="/tournaments/{{ $match->tournament->uuid }}/view" wire:navigate class="inline-flex items-center gap-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs font-bold text-violet-300 transition-colors hover:bg-violet-500/20 uppercase tracking-wider">
@@ -57,7 +58,8 @@
     </div>
 
     <!-- H2H Matchups Display -->
-    <div class="bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-850 rounded-2xl p-6 md:p-10 shadow-xl relative overflow-hidden">
+    <div class="decorated-card match-room-card bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-850 rounded-2xl p-6 md:p-10 shadow-xl relative overflow-hidden">
+        <i data-lucide="swords" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="absolute inset-0 bg-gradient-to-r from-violet-600/5 to-fuchsia-600/5 pointer-events-none"></div>
 
         <div class="grid grid-cols-1 md:grid-cols-7 items-center gap-6 md:gap-0 relative z-10">
@@ -127,9 +129,12 @@
             $opponentReady = $viewerIsA ? $match->player_b_ready_at : $match->player_a_ready_at;
             $readyTarget = $match->extra_wait_deadline_at ?? $match->ready_deadline_at;
             $canReportAbsent = $isParticipant && $match->status->value === 'ready' && $match->ready_deadline_at?->isPast() && $match->extra_wait_started_at === null;
-            $isRematch = in_array($match->resolution_reason, ['rematch', 'admin_draw_rematch', 'admin_rematch', 'agreed_rematch'], true);
+            $isRematch = (int) ($match->active_attempt_number ?? 1) > 1
+                || in_array($match->resolution_reason, ['rematch', 'admin_draw_rematch', 'admin_rematch', 'agreed_rematch'], true)
+                || $match->attempts->contains(fn ($attempt) => $attempt->status === 'rematch');
         @endphp
-        <div class="rounded-2xl border border-cyan-900/40 bg-cyan-950/10 p-5 md:p-6">
+        <div class="decorated-card match-connection-card rounded-2xl border border-cyan-900/40 bg-cyan-950/10 p-5 md:p-6">
+            <i data-lucide="wifi" aria-hidden="true" class="ui-card-watermark"></i>
             <div class="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div><h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-cyan-100">Game & Connection Details</h2><p class="mt-1 text-xs text-zinc-500">Everything needed to find the opponent and start this match.</p></div>
                 <span class="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $match->tournament->timezone ?: config('app.tournament_timezone') }}</span>
@@ -149,7 +154,7 @@
             @if($isParticipant && $match->status->value === 'ready')
                 <div class="mt-5 flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-bold text-white">{{ $isRematch ? 'Rematch required' : ($viewerReady ? 'You are ready' : 'Confirm when you are ready') }} · Opponent {{ $opponentReady ? 'is ready' : 'has not confirmed' }}</p>
+                        <p class="text-xs font-bold text-white">{{ $isRematch ? 'This is a rematch' : ($viewerReady ? 'You are ready' : 'Confirm when you are ready') }} · Opponent {{ $opponentReady ? 'is ready' : 'has not confirmed' }}</p>
                         @if($isRematch)<p class="mt-1 text-[11px] text-cyan-300">Play the rematch, then submit a new result.</p>@endif
                         @if($readyTarget)<p class="mt-1 text-[10px] uppercase tracking-wider text-zinc-500">{{ $match->extra_wait_started_at ? 'Extra Wait Time ends' : 'Get Ready Time ends' }}: {{ $readyTarget->setTimezone($match->tournament->timezone)->format('M j, Y g:i A T') }}</p>@endif
                     </div>
@@ -164,7 +169,7 @@
                 <div role="{{ $isRematch ? 'alert' : 'status' }}" class="mt-5 flex items-center gap-3 rounded-xl border p-4 {{ $isRematch ? 'border-cyan-400/40 bg-cyan-500/10' : 'border-emerald-800/50 bg-emerald-950/20' }}">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $isRematch ? 'bg-cyan-400/15 text-cyan-300' : 'bg-emerald-500/15 text-emerald-300' }}"><i data-lucide="{{ $isRematch ? 'refresh-cw' : 'check-circle-2' }}" class="h-5 w-5"></i></span>
                     @if($isRematch)
-                        <div><p class="text-xs font-black uppercase tracking-wider text-cyan-200">Rematch required — play again</p><p class="mt-1 text-[11px] text-cyan-100/75">The previous attempt was reset as a rematch. Play again and submit a new result{{ $isSubmitter ? '; your result is submitted and the opponent still needs to respond' : '' }}.</p></div>
+                        <div><p class="text-xs font-black uppercase tracking-wider text-cyan-200">This is a rematch — play again</p><p class="mt-1 text-[11px] text-cyan-100/75">The previous attempt ended without a winner. Play this rematch and submit a new result{{ $isSubmitter ? '; your new result is submitted and the opponent still needs to respond' : '' }}.</p></div>
                     @else
                         <div><p class="text-xs font-black uppercase tracking-wider text-emerald-200">Ready confirmed — play now</p><p class="mt-1 text-[11px] text-zinc-400">This match used automatic ready confirmation, so no extra Ready button is required.</p></div>
                     @endif
@@ -182,6 +187,19 @@
             @endif
         </div>
     @endif
+
+    <div x-data="{ resultPanelTab: 'submit' }" @match-dispute-opened.window="resultPanelTab = 'disputes'" class="match-result-workspace space-y-6">
+        <nav class="match-result-tabs grid grid-cols-3 gap-2 rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-1.5" aria-label="Match result sections">
+            <button type="button" @click="resultPanelTab = 'submit'" :class="resultPanelTab === 'submit' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
+                <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0"></i><span class="truncate">Submit Results</span>
+            </button>
+            <button type="button" @click="resultPanelTab = 'submissions'" :class="resultPanelTab === 'submissions' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
+                <i data-lucide="history" class="h-4 w-4 shrink-0"></i><span class="truncate">Submissions ({{ $match->resultSubmissions->count() }})</span>
+            </button>
+            <button type="button" @click="resultPanelTab = 'disputes'" :class="resultPanelTab === 'disputes' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
+                <i data-lucide="shield-alert" class="h-4 w-4 shrink-0"></i><span class="truncate">Disputes ({{ $match->disputes->count() }})</span>
+            </button>
+        </nav>
 
     <!-- Match Participant Hub Actions -->
     @if($isParticipant || $isAdmin)
@@ -211,7 +229,8 @@
             @endif
 
             <!-- Result Submission or Dispute info -->
-            <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
+            <div x-show="resultPanelTab === 'submit'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
+                <i data-lucide="clipboard-check" aria-hidden="true" class="ui-card-watermark"></i>
                 @php
                     $statusVal = $match->status->value ?? $match->status;
                     $activeRematchVotes = $match->rematchVotes->where('expires_at', '>', now());
@@ -250,7 +269,7 @@
                             @if((int) $match->tournament->workflow_version === 2)
                                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                     @foreach(['win' => 'Win', 'loss' => 'Loss', 'draw' => 'Draw'] as $value => $label)
-                                        <label class="flex cursor-pointer items-center gap-3 rounded-xl border {{ $resultOutcome === $value ? 'border-violet-500' : 'border-zinc-800' }} bg-zinc-950 p-3.5 hover:border-zinc-700">
+                                        <label class="player-result-option flex cursor-pointer items-center gap-3 rounded-xl border {{ $resultOutcome === $value ? 'border-violet-500' : 'border-zinc-800' }} bg-zinc-950 p-3.5 hover:border-zinc-700">
                                             <input wire:model="resultOutcome" type="radio" value="{{ $value }}" class="h-4 w-4 text-violet-600">
                                             <span class="text-sm font-semibold text-zinc-200">{{ $label }}</span>
                                         </label>
@@ -261,7 +280,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <!-- Player A -->
                                 @if($match->player_a_registration_id)
-                                    <label class="flex items-center space-x-3 bg-zinc-950 border {{ $winnerRegistrationId === $match->player_a_registration_id ? 'border-violet-500' : 'border-zinc-800' }} rounded-xl p-3.5 cursor-pointer hover:border-zinc-700 transition-colors">
+                                    <label class="player-result-option flex items-center space-x-3 bg-zinc-950 border {{ $winnerRegistrationId === $match->player_a_registration_id ? 'border-violet-500' : 'border-zinc-800' }} rounded-xl p-3.5 cursor-pointer hover:border-zinc-700 transition-colors">
                                         <input wire:model="winnerRegistrationId" type="radio" value="{{ $match->player_a_registration_id }}" class="h-4 w-4 text-violet-600 border-zinc-800 focus:ring-violet-500 focus:ring-offset-zinc-900">
                                         <span class="text-sm font-semibold text-zinc-200">
                                             {{ $match->playerARegistration?->team?->name ?: $match->playerARegistration?->user?->username }} (Side A)
@@ -271,7 +290,7 @@
                                 
                                 <!-- Player B -->
                                 @if($match->player_b_registration_id)
-                                    <label class="flex items-center space-x-3 bg-zinc-950 border {{ $winnerRegistrationId === $match->player_b_registration_id ? 'border-violet-500' : 'border-zinc-800' }} rounded-xl p-3.5 cursor-pointer hover:border-zinc-700 transition-colors">
+                                    <label class="player-result-option flex items-center space-x-3 bg-zinc-950 border {{ $winnerRegistrationId === $match->player_b_registration_id ? 'border-violet-500' : 'border-zinc-800' }} rounded-xl p-3.5 cursor-pointer hover:border-zinc-700 transition-colors">
                                         <input wire:model="winnerRegistrationId" type="radio" value="{{ $match->player_b_registration_id }}" class="h-4 w-4 text-violet-600 border-zinc-800 focus:ring-violet-500 focus:ring-offset-zinc-900">
                                         <span class="text-sm font-semibold text-zinc-200">
                                             {{ $match->playerBRegistration?->team?->name ?: $match->playerBRegistration?->user?->username }} (Side B)
@@ -356,7 +375,7 @@
                                 @error('evidenceFile') <span class="text-[10px] text-red-500 block">{{ $message }}</span> @enderror
                                 
                                 <button type="button" wire:click="openDispute"
-                                    class="w-full bg-red-950/20 border border-red-900/40 hover:border-red-750 text-red-400 hover:text-red-300 font-bold text-[10px] py-2 rounded-lg transition-colors duration-200 uppercase tracking-widest font-orbitron">
+                                    class="match-open-dispute-button w-full !bg-red-600 border border-red-700 hover:!bg-red-700 hover:border-red-800 !text-white font-bold text-[10px] py-2 rounded-lg transition-colors duration-200 uppercase tracking-widest font-orbitron">
                                     Open Official Dispute
                                 </button>
                             </div>
@@ -404,7 +423,7 @@
                                 <span wire:loading.remove wire:target="confirmResult">Confirm Result</span><span wire:loading wire:target="confirmResult">Confirming…</span>
                             </button>
                             <button type="button" wire:click="openDispute" wire:loading.attr="disabled" wire:target="openDispute"
-                                class="border border-red-700/70 bg-red-950/40 font-bold text-sm py-2.5 px-4 rounded-lg text-red-200 transition-colors hover:border-red-500 hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-60">
+                                class="match-open-dispute-button border border-red-700 !bg-red-600 font-bold text-sm py-2.5 px-4 rounded-lg !text-white transition-colors hover:border-red-800 hover:!bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">
                                 <span wire:loading.remove wire:target="openDispute">Open Dispute</span><span wire:loading wire:target="openDispute">Opening dispute…</span>
                             </button>
                         </div>
@@ -424,7 +443,8 @@
 
             <!-- Dispute & Evidence Upload Panel -->
             @if($activeDispute)
-            <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
+            <div x-show="resultPanelTab === 'disputes'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
+                <i data-lucide="shield-alert" aria-hidden="true" class="ui-card-watermark"></i>
                 <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase border-b border-zinc-850 pb-3">
                     DISPUTE MANAGER
                 </h2>
@@ -481,7 +501,8 @@
     @endif
 
     <!-- Results Submissions log -->
-    <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-4">
+    <div x-show="resultPanelTab === 'submissions'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-4">
+        <i data-lucide="history" aria-hidden="true" class="ui-card-watermark"></i>
         <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase border-b border-zinc-850 pb-3">
             SUBMISSIONS LOG
         </h2>
@@ -522,7 +543,8 @@
     </div>
 
     <!-- Active Disputes & Evidence files -->
-    <div class="bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-4">
+    <div x-show="resultPanelTab === 'disputes'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-4">
+        <i data-lucide="file-warning" aria-hidden="true" class="ui-card-watermark"></i>
         <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase border-b border-zinc-850 pb-3">
             DISPUTES & EVIDENCE FILES
         </h2>
@@ -569,5 +591,6 @@
                 No disputes logged for this match.
             </div>
         @endif
+    </div>
     </div>
 </div>

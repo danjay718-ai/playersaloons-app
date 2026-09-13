@@ -269,6 +269,7 @@ class MatchDetail extends Component
                 ? 'Dispute and proof submitted successfully.'
                 : 'Dispute opened successfully. You may add proof below.');
             $this->reset(['disputeReason', 'evidenceFile']);
+            $this->dispatch('match-dispute-opened');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to open the match dispute.'));
         }
