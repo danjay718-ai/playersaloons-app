@@ -750,8 +750,11 @@ body {
     font-family: 'Orbitron', sans-serif;
     color: #52525b; /* zinc-600 */
     transition: color 200ms ease;
-    line-height: 1;
-    white-space: nowrap;
+    line-height: 1.15;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: center;
+    white-space: normal;
 }
 
 /* Active pill indicator at top */

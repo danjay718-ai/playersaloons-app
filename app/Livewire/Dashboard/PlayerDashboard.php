@@ -35,13 +35,19 @@ class PlayerDashboard extends Component
             return redirect()->to('/login');
         }
 
+        $navItems = self::PLAYER_NAV_ITEMS;
+        if (config('features.tournament_v2.enabled')) {
+            $navItems[] = ['label' => 'Head-to-Head', 'url' => '/h2h', 'pattern' => 'h2h'];
+        }
+        if (config('features.player_wager.enabled')) {
+            $navItems[] = ['label' => 'Head-to-Head Duels', 'url' => '/head-to-head', 'pattern' => 'head-to-head'];
+        }
+
         return view('livewire.dashboard.player-dashboard', array_merge(
             $dashboard->dataFor($user),
             [
                 'user' => $user,
-                'navItems' => config('features.player_wager.enabled')
-                    ? array_merge(self::PLAYER_NAV_ITEMS, [['label' => 'H2H Duels', 'url' => '/head-to-head', 'pattern' => 'head-to-head']])
-                    : self::PLAYER_NAV_ITEMS,
+                'navItems' => $navItems,
             ],
         ))->layout('components.layouts.dashboard', [
             'title' => 'Gamer Terminal | PlayerSaloons',
