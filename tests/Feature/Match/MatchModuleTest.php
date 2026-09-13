@@ -223,6 +223,13 @@ class MatchModuleTest extends TestCase
             'title' => 'Match Completed',
         ]);
 
+        Livewire::actingAs($this->playerB)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->assertSee('Defeated');
+        Livewire::actingAs($this->playerA)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->assertDontSee('Defeated');
+
         // Bracket completed, so tournament should be completed
         $this->tournament->refresh();
         $this->assertEquals(TournamentStatus::COMPLETED, $this->tournament->status);

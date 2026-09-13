@@ -1,14 +1,19 @@
 <div class="space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))">
     <x-ui.toasts />
 
-    @if($isParticipant && in_array($match->resolution_reason, ['rematch', 'admin_draw_rematch', 'admin_rematch', 'agreed_rematch'], true) && !$isSubmitter && !in_array($match->status->value, ['completed', 'forfeited'], true))
-        <div role="alert" class="flex items-start gap-3 rounded-2xl border border-cyan-400/40 bg-cyan-500/10 p-4 text-cyan-100 shadow-lg shadow-cyan-950/20">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 text-cyan-300">
-                <i data-lucide="refresh-cw" class="h-5 w-5"></i>
+    @if($isDefeated)
+        <div role="alert" class="flex items-start gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 text-rose-100 shadow-lg shadow-rose-950/20">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-300">
+                <i data-lucide="shield-x" class="h-5 w-5"></i>
             </span>
             <div>
-                <p class="text-xs font-black uppercase tracking-wider text-cyan-200">Rematch required</p>
-                <p class="mt-1 text-sm leading-relaxed">This match has been reset for a rematch. Play again and submit a new result.</p>
+                <p class="text-xs font-black uppercase tracking-wider text-rose-200">Defeated</p>
+                <p class="mt-1 text-sm leading-relaxed">You were defeated in this match. Your tournament progress and earned XP are available on the tournament overview.</p>
+                @if($defeatXp > 0)
+                    <p class="mt-2 text-sm font-bold text-amber-300">+{{ number_format($defeatXp) }} XP earned</p>
+                @else
+                    <p class="mt-2 text-xs font-semibold text-rose-200/70">Your XP award is being processed.</p>
+                @endif
             </div>
         </div>
     @endif
@@ -122,6 +127,7 @@
             $opponentReady = $viewerIsA ? $match->player_b_ready_at : $match->player_a_ready_at;
             $readyTarget = $match->extra_wait_deadline_at ?? $match->ready_deadline_at;
             $canReportAbsent = $isParticipant && $match->status->value === 'ready' && $match->ready_deadline_at?->isPast() && $match->extra_wait_started_at === null;
+            $isRematch = in_array($match->resolution_reason, ['rematch', 'admin_draw_rematch', 'admin_rematch', 'agreed_rematch'], true);
         @endphp
         <div class="rounded-2xl border border-cyan-900/40 bg-cyan-950/10 p-5 md:p-6">
             <div class="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -143,7 +149,8 @@
             @if($isParticipant && $match->status->value === 'ready')
                 <div class="mt-5 flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-xs font-bold text-white">{{ $viewerReady ? 'You are ready' : 'Confirm when you are ready' }} · Opponent {{ $opponentReady ? 'is ready' : 'has not confirmed' }}</p>
+                        <p class="text-xs font-bold text-white">{{ $isRematch ? 'Rematch required' : ($viewerReady ? 'You are ready' : 'Confirm when you are ready') }} · Opponent {{ $opponentReady ? 'is ready' : 'has not confirmed' }}</p>
+                        @if($isRematch)<p class="mt-1 text-[11px] text-cyan-300">Play the rematch, then submit a new result.</p>@endif
                         @if($readyTarget)<p class="mt-1 text-[10px] uppercase tracking-wider text-zinc-500">{{ $match->extra_wait_started_at ? 'Extra Wait Time ends' : 'Get Ready Time ends' }}: {{ $readyTarget->setTimezone($match->tournament->timezone)->format('M j, Y g:i A T') }}</p>@endif
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -154,9 +161,13 @@
             @endif
 
             @if($isParticipant && $match->status->value === 'in_progress')
-                <div class="mt-5 flex items-center gap-3 rounded-xl border border-emerald-800/50 bg-emerald-950/20 p-4">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300"><i data-lucide="check-circle-2" class="h-5 w-5"></i></span>
-                    <div><p class="text-xs font-black uppercase tracking-wider text-emerald-200">Ready confirmed — play now</p><p class="mt-1 text-[11px] text-zinc-400">This match used automatic ready confirmation, so no extra Ready button is required.</p></div>
+                <div role="{{ $isRematch ? 'alert' : 'status' }}" class="mt-5 flex items-center gap-3 rounded-xl border p-4 {{ $isRematch ? 'border-cyan-400/40 bg-cyan-500/10' : 'border-emerald-800/50 bg-emerald-950/20' }}">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $isRematch ? 'bg-cyan-400/15 text-cyan-300' : 'bg-emerald-500/15 text-emerald-300' }}"><i data-lucide="{{ $isRematch ? 'refresh-cw' : 'check-circle-2' }}" class="h-5 w-5"></i></span>
+                    @if($isRematch)
+                        <div><p class="text-xs font-black uppercase tracking-wider text-cyan-200">Rematch required — play again</p><p class="mt-1 text-[11px] text-cyan-100/75">The previous attempt was reset as a rematch. Play again and submit a new result{{ $isSubmitter ? '; your result is submitted and the opponent still needs to respond' : '' }}.</p></div>
+                    @else
+                        <div><p class="text-xs font-black uppercase tracking-wider text-emerald-200">Ready confirmed — play now</p><p class="mt-1 text-[11px] text-zinc-400">This match used automatic ready confirmation, so no extra Ready button is required.</p></div>
+                    @endif
                 </div>
             @endif
 

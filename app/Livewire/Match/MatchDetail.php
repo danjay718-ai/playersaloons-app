@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Match;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
+use App\Modules\Identity\Models\PlayerExperienceAward;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
@@ -365,6 +366,20 @@ class MatchDetail extends Component
             $match->playerARegistration?->includesUser($user->id)
             || $match->playerBRegistration?->includesUser($user->id)
         );
+        $viewerRegistration = $user && $match->playerARegistration?->includesUser($user->id)
+            ? $match->playerARegistration
+            : ($user && $match->playerBRegistration?->includesUser($user->id) ? $match->playerBRegistration : null);
+        $isDefeated = $viewerRegistration !== null
+            && in_array($match->status, [MatchStatus::COMPLETED, MatchStatus::FORFEITED], true)
+            && $match->winner_registration_id !== null
+            && (int) $match->winner_registration_id !== (int) $viewerRegistration->id;
+        $defeatXp = $isDefeated
+            ? (int) PlayerExperienceAward::query()
+                ->where('user_id', $user->id)
+                ->where('source_type', 'tournament')
+                ->where('source_id', $match->tournament_id)
+                ->sum('amount')
+            : 0;
 
         $activeDispute = $match->disputes->first(fn ($dispute) => $dispute->status !== DisputeStatus::RESOLVED);
         $hasSubmittedDisputeEvidence = $activeDispute !== null && $user !== null
@@ -382,6 +397,8 @@ class MatchDetail extends Component
         return view('livewire.match.match-detail', [
             'match' => $match,
             'isParticipant' => $isParticipant,
+            'isDefeated' => $isDefeated,
+            'defeatXp' => $defeatXp,
             'isSubmitter' => $isSubmitter,
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
