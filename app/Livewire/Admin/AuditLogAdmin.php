@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use Illuminate\Support\Facades\DB;
 use Livewire\WithPagination;
 use Spatie\Activitylog\Models\Activity;
 
@@ -29,6 +30,8 @@ class AuditLogAdmin extends AdminComponent
 
     // Modals
     public bool $showDetailModal = false;
+
+    public bool $showClearModal = false;
 
     public ?int $selectedLogId = null;
 
@@ -63,6 +66,39 @@ class AuditLogAdmin extends AdminComponent
     {
         $this->selectedLogId = $id;
         $this->showDetailModal = true;
+    }
+
+    public function requestClearLogs(): void
+    {
+        abort_unless($this->actor()->can('audit_logs.manage'), 403);
+
+        $this->showClearModal = true;
+    }
+
+    public function clearLogs(): void
+    {
+        abort_unless($this->actor()->can('audit_logs.manage'), 403);
+
+        $actor = $this->actor();
+        $deletedCount = DB::transaction(function () use ($actor): int {
+            $count = Activity::query()->count();
+
+            Activity::query()->delete();
+
+            activity()
+                ->causedBy($actor)
+                ->withProperties([
+                    'deleted_count' => $count,
+                    'ip' => request()->ip(),
+                ])
+                ->log('audit_logs_cleared');
+
+            return $count;
+        });
+
+        $this->reset('showClearModal', 'showDetailModal', 'selectedLogId');
+        $this->resetPage();
+        session()->flash('success', number_format($deletedCount).' prior audit log record(s) cleared.');
     }
 
     public function render()

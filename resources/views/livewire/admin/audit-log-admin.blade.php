@@ -1,4 +1,20 @@
 <div>
+    @if(session()->has('success'))
+        <div class="mb-5 flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-400">
+            <i data-lucide="check-circle" class="h-4 w-4 shrink-0"></i>
+            <span>{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @can('audit_logs.manage')
+        <div class="mb-4 flex justify-end">
+            <button type="button" wire:click="requestClearLogs" class="inline-flex items-center gap-2 rounded-lg border border-red-500/35 bg-red-500/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-red-400 transition hover:border-red-500/60 hover:bg-red-500/20 hover:text-red-300">
+                <i data-lucide="trash-2" class="h-4 w-4"></i>
+                Clear Audit Logs
+            </button>
+        </div>
+    @endcan
+
     <!-- Filters Area -->
     <div class="bg-[#0f172a] border border-slate-800 rounded-xl p-5 mb-6 shadow-sm">
         <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-3">Filter Logs</span>
@@ -169,6 +185,30 @@
                 <div class="px-6 py-4 border-t border-slate-800 bg-[#0b0f19] flex justify-end">
                     <button wire:click="$set('showDetailModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
                         Close Log
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($showClearModal)
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" wire:click="$set('showClearModal', false)"></div>
+            <div class="relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-red-900/50 bg-[#0f172a] shadow-2xl">
+                <div class="border-b border-slate-800 px-6 py-5">
+                    <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-red-500/25 bg-red-500/10 text-red-400">
+                        <i data-lucide="triangle-alert" class="h-6 w-6"></i>
+                    </div>
+                    <h3 class="text-base font-black text-slate-100">Clear all audit logs?</h3>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-400">This permanently removes the current audit history. A new record identifying who cleared it and how many entries were removed will remain.</p>
+                </div>
+                <div class="flex justify-end gap-3 px-6 py-4">
+                    <button type="button" wire:click="$set('showClearModal', false)" class="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase text-slate-300 hover:bg-slate-700">
+                        Cancel
+                    </button>
+                    <button type="button" wire:click="clearLogs" wire:loading.attr="disabled" wire:target="clearLogs" class="rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold uppercase text-white shadow-lg shadow-red-950/20 hover:bg-red-500 disabled:cursor-wait disabled:opacity-60">
+                        <span wire:loading.remove wire:target="clearLogs">Clear Logs</span>
+                        <span wire:loading wire:target="clearLogs">Clearing…</span>
                     </button>
                 </div>
             </div>
