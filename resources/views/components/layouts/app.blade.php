@@ -36,6 +36,9 @@
     </main>
 
     @include('components.layouts.partials.public-footer')
+    @auth
+        <x-logout-confirmation />
+    @endauth
     <x-pwa-update-prompt />
 
     @livewireScripts

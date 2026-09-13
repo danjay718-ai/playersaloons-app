@@ -188,7 +188,7 @@
 
                 <form method="POST" action="{{ route('logout') }}" class="m-0">
                     @csrf
-                    <button type="submit"
+                        <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()"
                         class="flex w-full items-center justify-between rounded-xl border border-red-500/20
                                bg-red-500/10 px-4 py-3.5 text-[10px] font-black uppercase tracking-widest
                                text-red-300 transition-all hover:bg-red-500/15">

@@ -109,9 +109,9 @@
         <!-- Logout -->
         <form method="POST" action="{{ route('logout') }}" class="m-0">
             @csrf
-            <button type="submit" class="more-panel-logout">
+            <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()" class="more-panel-logout">
                 <i data-lucide="log-out" class="more-panel-logout-icon"></i>
-                {{ __('Disconnect') }}
+                {{ __('Logout') }}
             </button>
         </form>
     </div>
@@ -201,13 +201,13 @@
                 @endif
                 <form method="POST" action="{{ route('logout') }}" class="m-0">
                     @csrf
-                    <button type="submit" 
+                    <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()" 
                             class="w-full flex items-center h-12 px-3 rounded-lg border border-transparent text-zinc-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all duration-200">
                         <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
                         </div>
                         <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-wider transition-opacity duration-200">
-                            {{ __('Exit Terminal') }}
+                            {{ __('Logout') }}
                         </span>
                     </button>
                 </form>
@@ -330,9 +330,9 @@
                             <hr class="border-purple-500/10 my-1">
                             <form method="POST" action="{{ route('logout') }}" class="m-0">
                                 @csrf
-                                <button type="submit" class="w-full flex items-center space-x-2 px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                                <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()" class="w-full flex items-center space-x-2 px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left">
                                     <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
-                                    <span>{{ __('Disconnect') }}</span>
+                                    <span>{{ __('Logout') }}</span>
                                 </button>
                             </form>
                         </div>
@@ -434,6 +434,7 @@
         </div>
     </nav>
 
+    <x-logout-confirmation />
     <x-pwa-update-prompt />
     @livewireScripts
 

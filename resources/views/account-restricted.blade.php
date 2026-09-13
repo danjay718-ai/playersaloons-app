@@ -26,8 +26,9 @@
                 <div class="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4"><dt class="text-[10px] font-black uppercase tracking-widest text-zinc-500">Restriction period</dt><dd class="mt-1 text-zinc-200">{{ $block->expires_at ? 'Until '.$block->expires_at->format('M j, Y g:i A T') : 'Until further notice' }}</dd></div>
             </dl>
             <p class="text-center text-xs leading-relaxed text-zinc-500">If you believe this restriction was applied in error, contact support and provide the details above.</p>
-            <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-black text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800">Sign out</button></form>
+            <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()" class="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-black text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-800">{{ __('Logout') }}</button>
         </div>
     </main>
+    <x-logout-confirmation />
 </body>
 </html>

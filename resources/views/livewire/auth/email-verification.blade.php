@@ -36,8 +36,8 @@
         <div class="pt-2">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
-                    Sign out and verify later
+                <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()" class="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                    {{ __('Logout') }}
                 </button>
             </form>
         </div>

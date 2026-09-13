@@ -151,8 +151,8 @@
             @if($code === '403' && auth()->check())
                 <form method="POST" action="{{ route('logout') }}" class="w-full m-0">
                     @csrf
-                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold py-3 rounded-xl text-xs uppercase tracking-widest font-orbitron cursor-pointer transition-all">
-                        Disconnect / Change Account
+                    <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold py-3 rounded-xl text-xs uppercase tracking-widest font-orbitron cursor-pointer transition-all">
+                        {{ __('Logout') }}
                     </button>
                 </form>
             @elseif($code === '419')
@@ -162,5 +162,8 @@
             @endif
         </div>
     </div>
+    @auth
+        <x-logout-confirmation />
+    @endauth
 </body>
 </html>
