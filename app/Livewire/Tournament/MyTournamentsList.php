@@ -7,6 +7,7 @@ namespace App\Livewire\Tournament;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\RegistrationStatus;
@@ -24,18 +25,36 @@ class MyTournamentsList extends Component
 
     public string $tSubTab = 'active'; // active or history
 
+    public string $competitionTab = 'tournaments';
+
     protected $queryString = [
         'tSubTab' => ['except' => 'active'],
+        'competitionTab' => ['except' => 'tournaments'],
     ];
+
+    public function selectCompetition(string $competition): void
+    {
+        if (! in_array($competition, ['tournaments', 'head_to_head'], true)) {
+            return;
+        }
+
+        $this->competitionTab = $competition;
+        $this->resetPage('tournamentPage');
+        $this->resetPage('historyPage');
+    }
 
     public function render()
     {
         $user = Auth::user();
+        $competitionType = $this->competitionTab === 'head_to_head'
+            ? CompetitionType::HEAD_TO_HEAD
+            : CompetitionType::TOURNAMENT;
 
         // Calculate all lifetime match statistics in one grouped query. Joining
         // only the current user's roster rows avoids growing IN (...) lists as a
         // player's tournament history gets larger.
         $matchStats = GameMatch::query()
+            ->join('tournaments as stats_tournaments', 'stats_tournaments.id', '=', 'matches.tournament_id')
             ->leftJoin('tournament_registrations as player_a_reg', 'player_a_reg.id', '=', 'matches.player_a_registration_id')
             ->leftJoin('tournament_registration_members as player_a_member', function (JoinClause $join) use ($user): void {
                 $join->on('player_a_member.registration_id', '=', 'matches.player_a_registration_id')
@@ -52,6 +71,7 @@ class MyTournamentsList extends Component
                     ->where('winner_member.user_id', '=', $user->id);
             })
             ->whereIn('matches.status', [MatchStatus::COMPLETED->value, MatchStatus::FORFEITED->value])
+            ->where('stats_tournaments.competition_type', $competitionType->value)
             ->where(function ($query) use ($user): void {
                 $query->where('player_a_reg.user_id', $user->id)
                     ->orWhereNotNull('player_a_member.user_id')
@@ -74,7 +94,7 @@ class MyTournamentsList extends Component
         $matchWins = (int) $matchStats->sum('wins');
         $matchLosses = (int) $matchStats->sum('losses');
 
-        $activeCount = Tournament::query()
+        $activeTournamentCount = Tournament::query()
             ->whereHas('registrations', function ($q) use ($user) {
                 $q->where(function ($registration) use ($user) {
                     $registration->where('user_id', $user->id)->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
@@ -82,26 +102,44 @@ class MyTournamentsList extends Component
                     ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
             })
             ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+            ->where('competition_type', $competitionType->value)
             ->whereNotIn('id', $lostTournamentIds)
             ->count();
 
-        $historyCount = $this->matchHistoryCount((int) $user->id);
+        $activeHeadToHeadMatches = collect();
+        if ($competitionType === CompetitionType::HEAD_TO_HEAD) {
+            $activeHeadToHeadMatches = HeadToHeadMatch::query()
+                ->with(['creator', 'opponent', 'game.translations', 'platform'])
+                ->where(fn ($query) => $query->where('creator_user_id', $user->id)->orWhere('opponent_user_id', $user->id))
+                ->whereIn('status', [
+                    HeadToHeadMatchStatus::IN_PROGRESS,
+                    HeadToHeadMatchStatus::WAITING_FOR_CONFIRMATION,
+                    HeadToHeadMatchStatus::DISPUTED,
+                ])
+                ->latest('updated_at')
+                ->get();
+        }
+
+        $activeCount = $activeTournamentCount + $activeHeadToHeadMatches->count();
+        $historyCount = $this->matchHistoryCount((int) $user->id, $competitionType);
         $historyMatches = $this->tSubTab === 'history'
-            ? $this->matchHistory((int) $user->id)
+            ? $this->matchHistory((int) $user->id, $competitionType)
             : new LengthAwarePaginator([], $historyCount, 10, 1, ['pageName' => 'historyPage']);
 
-        $matchWins += HeadToHeadMatch::query()
-            ->where('winner_user_id', $user->id)
-            ->where('status', HeadToHeadMatchStatus::COMPLETED)
-            ->count();
-        $matchLosses += HeadToHeadMatch::query()
-            ->where(fn ($query) => $query->where('creator_user_id', $user->id)->orWhere('opponent_user_id', $user->id))
-            ->whereNotNull('winner_user_id')
-            ->where('winner_user_id', '!=', $user->id)
-            ->where('status', HeadToHeadMatchStatus::COMPLETED)
-            ->count();
+        if ($competitionType === CompetitionType::HEAD_TO_HEAD) {
+            $matchWins += HeadToHeadMatch::query()
+                ->where('winner_user_id', $user->id)
+                ->where('status', HeadToHeadMatchStatus::COMPLETED)
+                ->count();
+            $matchLosses += HeadToHeadMatch::query()
+                ->where(fn ($query) => $query->where('creator_user_id', $user->id)->orWhere('opponent_user_id', $user->id))
+                ->whereNotNull('winner_user_id')
+                ->where('winner_user_id', '!=', $user->id)
+                ->where('status', HeadToHeadMatchStatus::COMPLETED)
+                ->count();
+        }
 
-        $tournaments = new LengthAwarePaginator([], $activeCount, 10, 1, ['pageName' => 'tournamentPage']);
+        $tournaments = new LengthAwarePaginator([], $activeTournamentCount, 10, 1, ['pageName' => 'tournamentPage']);
         $userMatches = collect();
         if ($this->tSubTab === 'active') {
             $tournaments = Tournament::query()
@@ -111,11 +149,12 @@ class MyTournamentsList extends Component
                     })->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
                 })
                 ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+                ->where('competition_type', $competitionType->value)
                 ->whereNotIn('id', $lostTournamentIds)
                 ->with('game.translations')
                 ->withCount(['registrations' => fn ($query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])])
                 ->orderByDesc('created_at')
-                ->paginate(10, ['*'], 'tournamentPage', total: $activeCount);
+                ->paginate(10, ['*'], 'tournamentPage', total: $activeTournamentCount);
 
             $tournamentIds = $tournaments->pluck('id')->all();
             $userMatches = GameMatch::whereIn('tournament_id', $tournamentIds)
@@ -155,13 +194,15 @@ class MyTournamentsList extends Component
             'matchWins' => $matchWins,
             'matchLosses' => $matchLosses,
             'activeMatchRooms' => $activeMatchRooms,
-        ])->layout('components.layouts.dashboard', ['title' => 'My Tournaments | PlayerSaloons', 'dashboard_title' => 'MY TOURNAMENTS']);
+            'activeHeadToHeadMatches' => $activeHeadToHeadMatches,
+        ])->layout('components.layouts.dashboard', ['title' => 'My Games | PlayerSaloons', 'dashboard_title' => 'MY GAMES']);
     }
 
     /** Count completed matches without hydrating tournament graphs. */
-    private function matchHistoryCount(int $userId): int
+    private function matchHistoryCount(int $userId, CompetitionType $competitionType): int
     {
         $tournamentCount = GameMatch::query()
+            ->whereHas('tournament', fn ($query) => $query->where('competition_type', $competitionType->value))
             ->whereIn('status', [MatchStatus::COMPLETED, MatchStatus::FORFEITED])
             ->where(function ($query) use ($userId): void {
                 $query->whereHas('playerARegistration', fn ($registration) => $registration
@@ -173,14 +214,14 @@ class MyTournamentsList extends Component
             })
             ->count();
 
-        $headToHeadCount = HeadToHeadMatch::query()
+        $headToHeadCount = $competitionType === CompetitionType::HEAD_TO_HEAD ? HeadToHeadMatch::query()
             ->where(fn ($query) => $query->where('creator_user_id', $userId)->orWhere('opponent_user_id', $userId))
             ->whereIn('status', [
                 HeadToHeadMatchStatus::COMPLETED,
                 HeadToHeadMatchStatus::CANCELLED,
                 HeadToHeadMatchStatus::EXPIRED,
             ])
-            ->count();
+            ->count() : 0;
 
         return $tournamentCount + $headToHeadCount;
     }
@@ -189,9 +230,10 @@ class MyTournamentsList extends Component
      * Build one lightweight, chronologically ordered history across tournament
      * and head-to-head matches, then hydrate only the records on this page.
      */
-    private function matchHistory(int $userId): LengthAwarePaginator
+    private function matchHistory(int $userId, CompetitionType $competitionType): LengthAwarePaginator
     {
         $tournamentMatches = DB::table('matches as match_history_source')
+            ->join('tournaments as history_tournaments', 'history_tournaments.id', '=', 'match_history_source.tournament_id')
             ->leftJoin('tournament_registrations as history_a', 'history_a.id', '=', 'match_history_source.player_a_registration_id')
             ->leftJoin('tournament_registration_members as history_a_member', function (JoinClause $join) use ($userId): void {
                 $join->on('history_a_member.registration_id', '=', 'match_history_source.player_a_registration_id')
@@ -203,6 +245,7 @@ class MyTournamentsList extends Component
                     ->where('history_b_member.user_id', '=', $userId);
             })
             ->whereIn('match_history_source.status', [MatchStatus::COMPLETED->value, MatchStatus::FORFEITED->value])
+            ->where('history_tournaments.competition_type', $competitionType->value)
             ->where(function ($query) use ($userId): void {
                 $query->where('history_a.user_id', $userId)
                     ->orWhereNotNull('history_a_member.user_id')
@@ -220,8 +263,12 @@ class MyTournamentsList extends Component
             ])
             ->selectRaw("h2h_history_source.id as source_id, 'head_to_head' as match_type, COALESCE(h2h_history_source.completed_at, h2h_history_source.cancelled_at, h2h_history_source.updated_at) as sort_at");
 
+        $historySource = $competitionType === CompetitionType::HEAD_TO_HEAD
+            ? $tournamentMatches->unionAll($headToHeadMatches)
+            : $tournamentMatches;
+
         $history = DB::query()
-            ->fromSub($tournamentMatches->unionAll($headToHeadMatches), 'combined_match_history')
+            ->fromSub($historySource, 'combined_match_history')
             ->orderByDesc('sort_at')
             ->paginate(10, ['*'], 'historyPage');
 
@@ -243,7 +290,7 @@ class MyTournamentsList extends Component
             ->get()
             ->keyBy('id');
 
-        $history->setCollection($history->getCollection()->map(function ($row) use ($userId, $tournamentModels, $headToHeadModels): ?array {
+        $history->setCollection($history->getCollection()->map(function ($row) use ($userId, $competitionType, $tournamentModels, $headToHeadModels): ?array {
             if ($row->match_type === 'head_to_head') {
                 $match = $headToHeadModels->get($row->source_id);
                 if (! $match) {
@@ -270,7 +317,8 @@ class MyTournamentsList extends Component
             $opponentSide = $userSide?->id === $match->player_a_registration_id ? $match->playerBRegistration : $match->playerARegistration;
 
             return [
-                'type' => 'tournament', 'label' => 'Tournament', 'uuid' => $match->uuid,
+                'type' => $competitionType === CompetitionType::HEAD_TO_HEAD ? 'platform_head_to_head' : 'tournament',
+                'label' => $competitionType === CompetitionType::HEAD_TO_HEAD ? 'Head to Head' : 'Tournament', 'uuid' => $match->uuid,
                 'game' => $match->tournament->game->localizedName(),
                 'opponent' => $opponentSide?->team?->name ?? $opponentSide?->user?->username ?? 'Opponent',
                 'round' => $match->round?->round_number, 'status' => $match->status->value,
