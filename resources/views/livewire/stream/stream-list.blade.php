@@ -454,6 +454,18 @@
                                         @endif
                                     </div>
 
+                                    @if($isAdminView)
+                                        @can('streams.delete')
+                                            <x-admin.action-dropdown>
+                                                <livewire:admin.recoverable-delete resource="streams" :menu-item="true" :record-id="$playerStream->id" :key="'delete-stream-'.$playerStream->id" />
+                                            </x-admin.action-dropdown>
+                                        @endcan
+                                    @elseif(auth()->user()?->hasRole('PLAYER') && (int) $playerStream->user_id === (int) auth()->id() && $playerStream->tournament_id === null)
+                                        <button type="button" wire:click="confirmDeletePlayerStream({{ $playerStream->id }})" class="mt-1 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs text-red-400 hover:bg-red-950/30">
+                                            <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>Delete
+                                        </button>
+                                    @endif
+
                                     {{-- Admin actions --}}
                                     @if($canModerateStreams)
                                         <div class="flex flex-col gap-1.5 mt-1">
@@ -587,5 +599,20 @@
         @endif
 
     </div>{{-- end padded content --}}
+    @if($deletePlayerStreamId !== null)
+        @teleport('body')
+            <div class="theme-player fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="delete-player-stream-title" x-on:keydown.escape.window="$wire.cancelDeletePlayerStream()">
+                <button type="button" wire:click="cancelDeletePlayerStream" class="absolute inset-0 bg-black/75" aria-label="Close delete stream dialog"></button>
+                <div class="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-900 p-5 text-zinc-200 shadow-xl">
+                    <h2 id="delete-player-stream-title" class="text-lg font-semibold">Delete {{ $deletePlayerStreamTitle }}?</h2>
+                    <p class="mt-3 text-sm leading-6 text-zinc-400">This hides this stream from the list and makes its watch page unavailable. Chat messages, viewer history, and uploaded files are preserved. Other streams and tournaments are unaffected.</p>
+                    <div class="mt-5 flex justify-end gap-3">
+                        <button type="button" wire:click="cancelDeletePlayerStream" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm">Cancel</button>
+                        <button type="button" wire:click="deletePlayerStream" wire:loading.attr="disabled" wire:target="deletePlayerStream" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Delete</button>
+                    </div>
+                </div>
+            </div>
+        @endteleport
+    @endif
     @if($isAdminView)<x-admin.deletion-actions resource="streams" />@endif
 </div>

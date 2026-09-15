@@ -18,6 +18,7 @@ use App\Shared\Enums\UserStatus;
 use Database\Seeders\GamesTableSeeder;
 use Database\Seeders\GameTrailerStreamSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
@@ -218,6 +219,75 @@ class StreamIntegrationTest extends TestCase
             .$chunk('IEND', '');
 
         return UploadedFile::fake()->createWithContent($name, $png);
+    }
+
+    public function test_player_delete_preserves_chat_and_other_streams_and_cancel_closes_the_dialog(): void
+    {
+        $stream = StreamChannel::query()->create([
+            'user_id' => $this->player->id, 'title' => 'Delete My Stream', 'provider' => 'youtube',
+            'source_url' => 'https://youtu.be/XN3xNJvWXsc', 'is_public' => true, 'is_live' => true,
+        ]);
+        $other = StreamChannel::query()->create([
+            'user_id' => $this->player->id, 'provider' => 'twitch',
+            'source_url' => 'https://www.twitch.tv/player_saloons', 'is_public' => true,
+        ]);
+        $message = StreamChatMessage::query()->create([
+            'stream_channel_id' => $stream->id, 'user_id' => $this->player->id, 'message' => 'Preserve chat',
+        ]);
+        $component = Livewire::actingAs($this->player)->test(StreamList::class);
+        $component->call('confirmDeletePlayerStream', $stream->id)
+            ->assertSee('Chat messages, viewer history, and uploaded files are preserved.')
+            ->call('cancelDeletePlayerStream')
+            ->assertSet('deletePlayerStreamId', null);
+        $this->assertFalse($stream->fresh()->trashed());
+
+        $component->call('confirmDeletePlayerStream', $stream->id)
+            ->call('deletePlayerStream')
+            ->assertSet('deletePlayerStreamId', null)
+            ->assertSet('youtube_stream_url', null)
+            ->assertSet('twitch_stream_url', $other->source_url);
+
+        $this->assertSoftDeleted($stream);
+        $this->assertFalse($stream->fresh()->is_live);
+        $this->assertFalse($stream->fresh()->is_public);
+        $this->assertNotNull($message->fresh());
+        $this->assertFalse($other->fresh()->trashed());
+        $this->actingAs($this->player)->get(route('streams.watch', $stream->id))->assertNotFound();
+    }
+
+    public function test_player_cannot_delete_someone_elses_or_a_tournament_stream(): void
+    {
+        $stream = StreamChannel::query()->create([
+            'user_id' => $this->admin->id, 'provider' => 'youtube', 'source_url' => 'https://youtu.be/XN3xNJvWXsc',
+        ]);
+        foreach ([false, true] as $tournamentStream) {
+            if ($tournamentStream) {
+                $stream->update(['user_id' => $this->player->id, 'tournament_id' => $this->createStreamedTournament()->id]);
+            }
+            try {
+                Livewire::actingAs($this->player)->test(StreamList::class)
+                    ->call('confirmDeletePlayerStream', $stream->id);
+                $this->fail('Player must not be allowed to select this stream for deletion.');
+            } catch (ModelNotFoundException $exception) {
+                $this->assertSame(StreamChannel::class, $exception->getModel());
+            }
+            $this->assertFalse($stream->fresh()->trashed());
+        }
+    }
+
+    public function test_player_delete_does_not_bypass_an_admin_takedown(): void
+    {
+        $stream = StreamChannel::query()->create([
+            'user_id' => $this->player->id, 'provider' => 'youtube', 'source_url' => 'https://youtu.be/XN3xNJvWXsc',
+            'taken_down_at' => now(), 'taken_down_by' => $this->admin->id,
+        ]);
+        Livewire::actingAs($this->player)->test(StreamList::class)
+            ->call('confirmDeletePlayerStream', $stream->id)
+            ->call('deletePlayerStream')
+            ->set('youtube_stream_url', 'https://youtu.be/XN3xNJvWXsc')
+            ->call('savePlayerStream')
+            ->assertSee('Your stream is currently taken down by admin review.');
+        $this->assertSame(0, StreamChannel::query()->where('user_id', $this->player->id)->count());
     }
 
     public function test_admin_can_take_down_and_restore_player_streams(): void

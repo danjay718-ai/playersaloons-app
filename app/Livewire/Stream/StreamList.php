@@ -12,6 +12,8 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
 use Closure;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -44,6 +46,52 @@ class StreamList extends Component
     // ── Browse tab state ────────────────────────────────────────────────
     /** 'all' | 'game:{id}' | 'tournaments' */
     public string $activeTab = 'all';
+
+    #[Locked]
+    public ?int $deletePlayerStreamId = null;
+
+    #[Locked]
+    public string $deletePlayerStreamTitle = '';
+
+    private function ownedPlayerStream(int $id, bool $lock = false): StreamChannel
+    {
+        $user = Auth::user();
+        abort_unless($user?->hasRole('PLAYER'), 403);
+
+        return StreamChannel::query()
+            ->where('user_id', $user->getKey())
+            ->whereNull('tournament_id')
+            ->when($lock, fn ($query) => $query->lockForUpdate())
+            ->findOrFail($id);
+    }
+
+    public function confirmDeletePlayerStream(int $id): void
+    {
+        $stream = $this->ownedPlayerStream($id);
+        $this->deletePlayerStreamId = $stream->id;
+        $this->deletePlayerStreamTitle = $stream->title ?: ucfirst($stream->provider).' stream';
+    }
+
+    public function cancelDeletePlayerStream(): void
+    {
+        $this->reset(['deletePlayerStreamId', 'deletePlayerStreamTitle']);
+    }
+
+    public function deletePlayerStream(): void
+    {
+        abort_unless($this->deletePlayerStreamId !== null, 422);
+        DB::transaction(function (): void {
+            $stream = $this->ownedPlayerStream($this->deletePlayerStreamId, true);
+            $stream->forceFill(['is_public' => false, 'is_live' => false, 'is_featured' => false])->save();
+            $stream->delete();
+        });
+
+        $this->cancelDeletePlayerStream();
+        $this->reset(['streamTitle', 'streamDescription', 'youtube_stream_url', 'twitch_stream_url', 'facebook_stream_url', 'is_public', 'game_id', 'streamThumbnail', 'thumbnailUrl']);
+        $this->mount();
+        $this->resetPage();
+        session()->flash('success', 'Stream deleted. Chat, viewer history, and uploaded files were preserved.');
+    }
 
     public function mount(): void
     {
@@ -106,7 +154,7 @@ class StreamList extends Component
             return;
         }
 
-        $hasTakenDownStream = StreamChannel::query()
+        $hasTakenDownStream = StreamChannel::withTrashed()
             ->where('user_id', $user->getKey())
             ->whereNull('tournament_id')
             ->whereNotNull('taken_down_at')
