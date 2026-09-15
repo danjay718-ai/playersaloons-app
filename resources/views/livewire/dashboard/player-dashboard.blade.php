@@ -68,7 +68,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="p-8 text-center"><i data-lucide="calendar-plus" class="mx-auto h-8 w-8 text-zinc-700"></i><p class="mt-3 text-sm font-bold text-zinc-400">Your competition queue is clear.</p><a href="/tournaments/browse?frequency=daily" wire:navigate class="mt-2 inline-block text-xs text-violet-400">Browse open tournaments</a></div>
+                    <div class="p-8 text-center"><i data-lucide="calendar-plus" class="mx-auto h-8 w-8 text-zinc-700"></i><p class="mt-3 font-sans text-sm font-normal leading-6 text-zinc-400">Your competition queue is clear.</p><a href="/tournaments/browse?frequency=daily" wire:navigate class="mt-2 inline-block font-sans text-sm leading-6 text-violet-400">Browse open tournaments</a></div>
                 @endif
             </section>
 
@@ -81,7 +81,7 @@
                         @endforeach
                     </div>
                 @else
-                    <p class="p-8 text-center text-sm text-zinc-600">Completed and active matches will appear here.</p>
+                    <p class="p-8 text-center font-sans text-sm font-normal leading-6 text-zinc-400">Completed and active matches will appear here.</p>
                 @endif
             </section>
         </div>
@@ -93,7 +93,7 @@
                     @forelse($announcements as $announcement)
                         <article class="px-5 py-4"><div class="flex items-start gap-3"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"></span><div class="min-w-0"><h3 class="break-words text-xs font-black text-amber-100">{{ $announcement['title'] }}</h3><p class="mt-1.5 break-words text-xs leading-5 text-zinc-400">{{ $announcement['message'] }}</p><p class="mt-2 text-[9px] uppercase tracking-wider text-zinc-700">{{ $announcement['created_at'] }}</p></div></div></article>
                     @empty
-                        <p class="p-6 text-center text-xs text-zinc-600">No active platform announcements.</p>
+                        <p class="p-6 text-center font-sans text-sm font-normal leading-6 text-zinc-400">No active platform announcements.</p>
                     @endforelse
                 </div>
             </section>
@@ -104,7 +104,7 @@
                     @forelse($onlineFollowing as $onlinePlayer)
                         <a href="/chat" wire:navigate class="flex items-center gap-3 rounded-xl border border-zinc-800/70 bg-zinc-900/50 p-2.5 transition hover:border-emerald-500/25"><div class="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-800">@if($onlinePlayer['avatar_url'])<img src="{{ $onlinePlayer['avatar_url'] }}" alt="{{ $onlinePlayer['username'] }}" class="h-full w-full object-cover">@else<div class="flex h-full w-full items-center justify-center text-[10px] font-black text-zinc-400">{{ strtoupper(substr($onlinePlayer['username'], 0, 2)) }}</div>@endif<span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 bg-emerald-400"></span></div><div class="min-w-0"><p class="break-words text-xs font-bold text-zinc-200">{{ $onlinePlayer['display_name'] }}</p><p class="text-[9px] uppercase tracking-wider text-emerald-400">Online now</p></div><i data-lucide="message-circle" class="ml-auto h-3.5 w-3.5 shrink-0 text-zinc-600"></i></a>
                     @empty
-                        <div class="rounded-xl border border-dashed border-zinc-800 p-4 text-center text-xs text-zinc-600">No followed players are online right now.</div>
+                        <div class="rounded-xl border border-dashed border-zinc-800 p-4 text-center font-sans text-sm font-normal leading-6 text-zinc-400">No followed players are online right now.</div>
                     @endforelse
                 </div>
             </section>
@@ -115,7 +115,7 @@
                     @forelse($globalMessages as $message)
                         <div class="flex items-start gap-2.5"><div class="h-7 w-7 shrink-0 overflow-hidden rounded-full bg-zinc-800">@if($message['avatar_url'])<img src="{{ $message['avatar_url'] }}" alt="" class="h-full w-full object-cover">@else<div class="flex h-full w-full items-center justify-center text-[8px] font-black text-zinc-500">{{ strtoupper(substr($message['username'], 0, 2)) }}</div>@endif</div><div class="min-w-0"><p class="break-words text-[10px] font-black text-violet-300">{{ $message['display_name'] }}</p><p class="break-words text-xs leading-5 text-zinc-400">{{ $message['body'] }}</p></div></div>
                     @empty
-                        <p class="py-4 text-center text-xs text-zinc-600">Global chat is quiet. Start the conversation.</p>
+                        <p class="py-4 text-center font-sans text-sm font-normal leading-6 text-zinc-400">Global chat is quiet. Start the conversation.</p>
                     @endforelse
                 </div>
             </section>
