@@ -578,6 +578,27 @@ final class TournamentV2WorkflowTest extends TestCase
         $submit->execute($match->fresh(), $p2->id, MatchOutcome::LOSS);
     }
 
+    public function test_player_cancellation_dialog_closes_after_a_v2_request_is_created(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $template = $this->template('daily', 8, '23:59');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
+        $player = $this->user('dialog-cancel@example.com', 'dialogcancel', 'PLAYER');
+        $opponent = $this->user('dialog-opponent@example.com', 'dialogopponent', 'PLAYER');
+        $register = app(RegisterForV2TournamentAction::class);
+        $registration = $register->execute($tournament->fresh(), $player, null, 'dialogplayer');
+        $register->execute($tournament->fresh(), $opponent, null, 'dialogopponent');
+
+        Livewire::actingAs($player)
+            ->test(\App\Livewire\Tournament\TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->call('cancelRegistration')
+            ->assertSet('cancellationError', '')
+            ->assertDispatched('registration-cancellation-completed');
+
+        self::assertSame('pending', $tournament->cancellationRequests()->firstOrFail()->status);
+        self::assertSame('confirmed', $registration->fresh()->status->value);
+    }
+
     public function test_cancellation_uses_snapshotted_half_threshold_and_immutable_vote(): void
     {
         $template = $this->template('daily', 8, '23:59');

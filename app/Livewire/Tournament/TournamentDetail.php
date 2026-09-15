@@ -58,6 +58,8 @@ class TournamentDetail extends Component
 
     public string $readyMode = 'auto';
 
+    public string $cancellationError = '';
+
     public function mount(string $uuid): void
     {
         $this->uuid = $uuid;
@@ -174,6 +176,8 @@ class TournamentDetail extends Component
 
     public function cancelRegistration(CancelRegistrationAction $action, RequestV2CancellationAction $v2Action)
     {
+        $this->cancellationError = '';
+
         if (! Auth::check()) {
             return redirect()->to('/login');
         }
@@ -189,6 +193,7 @@ class TournamentDetail extends Component
             ->first();
 
         if (! $registration) {
+            $this->cancellationError = 'No active registration found.';
             session()->flash('error', 'No active registration found.');
 
             return;
@@ -204,8 +209,10 @@ class TournamentDetail extends Component
                 $action->execute($registration, $user);
                 session()->flash('message', 'Registration cancelled successfully. Any entry fee has been refunded to your wallet.');
             }
+            $this->dispatch('registration-cancellation-completed');
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to cancel the tournament registration.'));
+            $this->cancellationError = $this->safeError($e, 'Unable to cancel the tournament registration.');
+            session()->flash('error', $this->cancellationError);
         }
     }
 

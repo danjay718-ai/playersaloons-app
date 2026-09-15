@@ -1109,52 +1109,63 @@
     </div>
 
     <!-- Cancel Registration Modal -->
-    <div x-show="showCancelModal"
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         x-cloak>
-        <div class="relative bg-zinc-900 border border-red-500/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(239,68,68,0.15)] space-y-6"
-             x-transition:enter="transition ease-out duration-300 transform"
-             x-transition:enter-start="scale-95 translate-y-4"
-             x-transition:enter-end="scale-100 translate-y-0">
+    <template x-teleport="body">
+        <div x-show="showCancelModal"
+             @registration-cancellation-completed.window="showCancelModal = false"
+             @keydown.escape.window="showCancelModal = false"
+             role="dialog" aria-modal="true" aria-labelledby="cancel-registration-title"
+             class="theme-player fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             x-cloak>
+            <div class="relative max-h-[90dvh] overflow-y-auto bg-zinc-900 border border-red-500/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(239,68,68,0.15)] space-y-6"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="scale-95 translate-y-4"
+                 x-transition:enter-end="scale-100 translate-y-0">
 
-            <div class="mx-auto w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500">
-                <i data-lucide="x-circle" class="w-8 h-8"></i>
-            </div>
+                <div class="mx-auto w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500">
+                    <i data-lucide="x-circle" class="w-8 h-8"></i>
+                </div>
 
-            <div class="text-center space-y-2">
-                <h3 class="text-2xl font-black font-orbitron tracking-widest text-white uppercase">Cancel Registration?</h3>
-                <p class="text-zinc-400 text-sm font-medium leading-relaxed">
-                    Are you sure you want to cancel your registration for <strong class="text-white">{{ $tournament->name }}</strong>?
-                    @if((int) $tournament->workflow_version === 2 && $canCancelRegistration)
-                        Other eligible joined players must approve this request. If approved before the tournament starts, your entry fee will be refunded.
-                    @elseif((int) $tournament->workflow_version === 2)
-                        Cancellation requests close 30 minutes before the tournament starts. Your registration can no longer be cancelled for this occurrence.
-                    @elseif($tournament->entry_fee > 0)
-                        Your entry fee of <strong class="text-cyan-400">${{ number_format((float)$tournament->entry_fee, 2) }}</strong> will be refunded to your wallet.
-                    @endif
-                </p>
-            </div>
+                <div class="text-center space-y-2">
+                    <h3 id="cancel-registration-title" class="text-2xl font-black font-orbitron tracking-widest text-white uppercase">Cancel Registration?</h3>
+                    <p class="text-zinc-400 text-sm font-medium leading-relaxed">
+                        Are you sure you want to cancel your registration for <strong class="text-white">{{ $tournament->name }}</strong>?
+                        @if((int) $tournament->workflow_version === 2 && $canCancelRegistration)
+                            Other eligible joined players must approve this request. If approved before the tournament starts, your entry fee will be refunded.
+                        @elseif((int) $tournament->workflow_version === 2)
+                            Cancellation requests close 30 minutes before the tournament starts. Your registration can no longer be cancelled for this occurrence.
+                        @elseif($tournament->entry_fee > 0)
+                            Your entry fee of <strong class="text-cyan-400">${{ number_format((float)$tournament->entry_fee, 2) }}</strong> will be refunded to your wallet.
+                        @endif
+                    </p>
+                </div>
 
-            <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                <button @click="showCancelModal = false"
-                        class="flex-1 py-3 rounded-xl border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-widest transition-all duration-300">
-                    Keep Registration
-                </button>
-                @if((int) $tournament->workflow_version !== 2 || $canCancelRegistration)
-                    <button type="button" wire:click="cancelRegistration" wire:loading.attr="disabled" wire:target="cancelRegistration" @click="showCancelModal = false"
-                            class="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-[10px] font-black text-white uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(239,68,68,0.3)] transition-all duration-300">
-                        {{ (int) $tournament->workflow_version === 2 ? 'Request Cancellation' : 'Yes, Cancel & Refund' }}
-                    </button>
+                @if($cancellationError !== '')
+                    <p role="alert" class="text-sm leading-6 text-red-400">{{ $cancellationError }}</p>
                 @endif
+
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button type="button" @click="showCancelModal = false"
+                            class="flex-1 py-3 rounded-xl border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-widest transition-all duration-300">
+                        Keep Registration
+                    </button>
+                    @if((int) $tournament->workflow_version !== 2 || $canCancelRegistration)
+                        <button type="button" wire:click="cancelRegistration" wire:loading.attr="disabled" wire:target="cancelRegistration"
+                                class="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-[10px] font-black text-white uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(239,68,68,0.3)] transition-all duration-300">
+                            <span wire:loading.remove wire:target="cancelRegistration">{{ (int) $tournament->workflow_version === 2 ? 'Request Cancellation' : 'Yes, Cancel & Refund' }}</span>
+                            <span wire:loading wire:target="cancelRegistration">Processing...</span>
+                        </button>
+                    @endif
+                </div>
             </div>
         </div>
-    </div>
+
+    </template>
 
     <!-- Elimination Modal -->
     <div x-show="showEliminationModal" 

@@ -20,6 +20,7 @@ use App\Modules\Tournament\Models\Bracket;
 use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentRegistration;
+use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\HeadToHeadChallengeStatus;
 use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\MatchStatus;
@@ -58,6 +59,39 @@ class PlayerTournamentComponentsTest extends TestCase
         $this->opponent = $this->makeUser('PLAYER', 'opponent@example.com');
         $this->admin = $this->makeUser('ADMIN', 'admin@example.com');
         $this->game = $this->makeGame('arena', 'Arena');
+    }
+
+    public function test_successful_cancellation_closes_the_player_dialog(): void
+    {
+        $tournament = $this->makeTournament('Cancellation Cup', TournamentStatus::REGISTRATION_OPEN);
+        [$registration] = $this->registerPlayers($tournament);
+
+        Livewire::actingAs($this->player)
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->call('cancelRegistration')
+            ->assertSet('cancellationError', '')
+            ->assertDispatched('registration-cancellation-completed');
+
+        $this->assertSame('cancelled', $registration->fresh()->status->value);
+    }
+
+    public function test_rejected_cancellation_keeps_the_player_dialog_open_with_a_reason(): void
+    {
+        $tournament = $this->makeTournament('Locked Cancellation Cup', TournamentStatus::REGISTRATION_OPEN);
+        [$registration] = $this->registerPlayers($tournament);
+
+        $component = Livewire::actingAs($this->player)
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid]);
+
+        // Registration can become locked between opening the dialog and confirming.
+        $registration->update(['locked_at' => now()]);
+
+        $component->call('cancelRegistration')
+            ->assertSet('cancellationError', fn (string $message): bool => str_starts_with($message, 'Unable to cancel the tournament registration. Reference:'))
+            ->assertSee('Unable to cancel the tournament registration.')
+            ->assertNotDispatched('registration-cancellation-completed');
+
+        $this->assertSame('confirmed', $registration->fresh()->status->value);
     }
 
     public function test_elimination_modal_shows_on_lost_match(): void
