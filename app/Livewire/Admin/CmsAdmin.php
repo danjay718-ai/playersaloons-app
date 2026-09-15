@@ -95,7 +95,7 @@ class CmsAdmin extends AdminComponent
 
     public string $gameIdInstructions = '';
 
-    public string $gameConnectionMethod = 'player_invite';
+    public string $gameConnectionMethod = 'server_room';
 
     /** @var list<int> */
     public array $gamePlatformIds = [];
@@ -423,9 +423,7 @@ class CmsAdmin extends AdminComponent
     // --- GAME ACTIONS ---
     public function updatedGameName(string $name): void
     {
-        if ($this->selectedGameId === null) {
-            $this->gameSlug = Str::slug($name);
-        }
+        $this->gameSlug = Str::slug($name);
     }
 
     public function openGameCreateModal(): void
@@ -462,7 +460,7 @@ class CmsAdmin extends AdminComponent
         $this->gameIdLabel = (string) ($gameIdSettings['label'] ?? 'Game ID / In-Game Name');
         $this->gameIdExample = (string) ($gameIdSettings['example'] ?? '');
         $this->gameIdInstructions = (string) ($gameIdSettings['instructions'] ?? '');
-        $this->gameConnectionMethod = (string) ($gameIdSettings['connection_method'] ?? 'player_invite');
+        $this->gameConnectionMethod = 'server_room';
         $this->gamePlatformIds = $game->platforms->pluck('id')->map(fn ($id): int => (int) $id)->all();
         $this->removeGameCardImage = false;
         $this->removeGameBannerImage = false;
@@ -487,6 +485,10 @@ class CmsAdmin extends AdminComponent
 
     public function saveGameTranslation(): void
     {
+        $this->gameConnectionMethod = 'server_room';
+        $this->gameLocale = 'en';
+        $this->gameSlug = Str::slug($this->gameName);
+
         $newGameNeedsArtwork = $this->selectedGameId === null
             && $this->gameCardImage === null
             && $this->gameBannerImage === null;
@@ -502,7 +504,7 @@ class CmsAdmin extends AdminComponent
             'gameIdLabel' => 'required|string|max:80',
             'gameIdExample' => 'nullable|string|max:120',
             'gameIdInstructions' => 'nullable|string|max:1000',
-            'gameConnectionMethod' => 'required|in:player_invite,lobby_code,server_room,admin_instructions',
+            'gameConnectionMethod' => 'required|in:server_room',
             'gamePlatformIds' => $this->selectedGameId === null
                 ? ['required', 'array', 'min:1']
                 : ['array'],
@@ -510,8 +512,10 @@ class CmsAdmin extends AdminComponent
             'removeGameCardImage' => 'boolean',
             'removeGameBannerImage' => 'boolean',
         ], [
-            'gameCardImage.required' => 'Upload either a game card image or a hero cover.',
-            'gameBannerImage.required' => 'Upload either a hero cover or a game card image.',
+            'gameSlug.unique' => 'This game name generates a slug already in use. Choose a different game name.',
+            'gameSlug.required' => 'Enter a game name containing letters or numbers to generate its slug.',
+            'gameCardImage.required' => 'Upload either a game logo or a game cover photo.',
+            'gameBannerImage.required' => 'Upload either a game cover photo or a game logo.',
         ]);
 
         DB::transaction(function (): void {
@@ -676,7 +680,7 @@ class CmsAdmin extends AdminComponent
         $this->gameIdLabel = 'Game ID / In-Game Name';
         $this->gameIdExample = '';
         $this->gameIdInstructions = '';
-        $this->gameConnectionMethod = 'player_invite';
+        $this->gameConnectionMethod = 'server_room';
         $this->gamePlatformIds = [];
         $this->removeGameCardImage = false;
         $this->removeGameBannerImage = false;

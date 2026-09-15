@@ -114,14 +114,17 @@ class LandingPageTest extends TestCase
         $admin = $this->adminUser();
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
-            'slug' => 'tekken-8',
+            'slug' => 'old-tekken-8',
             'is_active' => true,
+            'game_id_settings' => ['default' => ['connection_method' => 'player_invite']],
         ]);
 
         Livewire::actingAs($admin)
             ->test(CmsAdmin::class)
             ->call('editGameTranslation', $game->id)
+            ->assertSet('gameConnectionMethod', 'server_room')
             ->set('gameName', 'Tekken 8')
+            ->assertSet('gameSlug', 'tekken-8')
             ->set('gameDescription', 'Featured fighting game events.')
             ->set('gameBannerPath', '/images/games/tekken-8.webp')
             ->call('saveGameTranslation')
@@ -130,7 +133,9 @@ class LandingPageTest extends TestCase
         $this->assertDatabaseHas('games', [
             'id' => $game->id,
             'banner_path' => '/images/games/tekken-8.webp',
+            'slug' => 'tekken-8',
         ]);
+        $this->assertSame('server_room', $game->fresh()->game_id_settings['default']['connection_method']);
 
         $this->assertDatabaseHas('game_translations', [
             'game_id' => $game->id,
@@ -151,7 +156,8 @@ class LandingPageTest extends TestCase
             ->test(CmsAdmin::class)
             ->call('openGameCreateModal')
             ->set('gameName', 'Arena Legends')
-            ->set('gameSlug', 'arena-legends')
+            ->assertSet('gameSlug', 'arena-legends')
+            ->set('gameSlug', 'manually-overridden-slug')
             ->set('gameDescription', 'Cross-platform arena competition.')
             ->set('gamePlatformIds', [$pc->id, $console->id])
             ->set('gameCardImage', $this->pngUpload('arena-legends.png', 440, 330))
@@ -159,6 +165,7 @@ class LandingPageTest extends TestCase
             ->assertHasNoErrors();
 
         $game = Game::query()->where('slug', 'arena-legends')->firstOrFail();
+        $this->assertSame('server_room', $game->game_id_settings['default']['connection_method']);
         $this->assertSame([$pc->id, $console->id], $game->platforms()->orderBy('platforms.id')->pluck('platforms.id')->all());
         $this->assertDatabaseHas('game_translations', ['game_id' => $game->id, 'name' => 'Arena Legends']);
 

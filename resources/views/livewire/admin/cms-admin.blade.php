@@ -32,7 +32,7 @@
                 @if($gameRecordTab !== 'deleted')<label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Catalog status</span><select wire:model.live="gameCatalogFilter" class="game-filter-field"><option value="">All statuses</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></label>@endif
                 <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Platform</span><select wire:model.live="gamePlatformFilter" class="game-filter-field"><option value="">All platforms</option>@foreach($gamePlatforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select></label>
                 <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Tournament template</span><select wire:model.live="gameTemplateFilter" class="game-filter-field"><option value="">All templates</option><option value="configured">Configured</option><option value="missing">Not configured</option></select></label>
-                <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Artwork</span><select wire:model.live="gameArtworkFilter" class="game-filter-field"><option value="">All artwork</option><option value="complete">Card + banner present</option><option value="missing_card">Missing card image</option><option value="missing_banner">Missing banner</option></select></label>
+                <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Artwork</span><select wire:model.live="gameArtworkFilter" class="game-filter-field"><option value="">All artwork</option><option value="complete">Logo + cover photo present</option><option value="missing_card">Missing game logo</option><option value="missing_banner">Missing game cover photo</option></select></label>
             </div>
         </div>
         <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6">
@@ -41,7 +41,7 @@
                     <thead>
                         <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
                             <th class="p-4">Game Slug</th>
-                            <th class="p-4">Card / Banner</th>
+                            <th class="p-4">Logo / Cover Photo</th>
                             <th class="p-4">Name (EN)</th>
                             <th class="p-4">Platforms</th>
                             <th class="p-4">Description</th>
@@ -425,23 +425,16 @@
                 </div>
 
                 <form wire:submit.prevent="saveGameTranslation" class="p-6 space-y-4 text-xs">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Language Locale</label>
-                        <select wire:model="gameLocale" x-on:change="switchGameLocale($event.target.value)" x-bind:disabled="!$wire.selectedGameId" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-350 focus:outline-none focus:border-indigo-500 disabled:opacity-60">
-                            <option value="en">English (EN)</option>
-                            <option value="es">Español (ES)</option>
-                            <option value="tl">Tagalog (TL)</option>
-                        </select>
-                    </div>
+
 
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Game Slug</label><input type="text" wire:model="gameSlug" placeholder="e.g. valorant" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">@error('gameSlug')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
+                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Game Slug</label><input type="text" wire:model="gameSlug" disabled aria-label="Game Slug" placeholder="Generated from game name" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">@error('gameSlug')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror</div>
                         <label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900 px-4 py-3"><input type="checkbox" wire:model="gameIsActive" class="rounded border-slate-700 bg-slate-950 text-indigo-500"><span><span class="block text-xs font-bold text-white">Active in catalog</span><span class="mt-0.5 block text-[10px] text-slate-500">Visible to players and tournament creation.</span></span></label>
                     </div>
 
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Game Name</label>
-                        <input type="text" wire:model="gameName" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        <input type="text" wire:model.live.debounce.150ms="gameName" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
                         @error('gameName') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
@@ -453,16 +446,16 @@
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div class="space-y-2">
-                            <x-forms.image-crop-upload model="gameCardImage" label="Game Card Image" :width="440" :height="330" :max-mb="2" />
-                            @if($gameCardImage)<img src="{{ $gameCardImage->temporaryUrl() }}" alt="New card preview" decoding="async" class="aspect-[4/3] w-full rounded-lg border border-slate-800 object-cover">@endif
-                            <img x-show="!$wire.gameCardImage && $wire.gameCardImagePath && !$wire.removeGameCardImage" x-bind:src="$wire.gameCardImagePath" alt="Current card" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-lg border border-slate-800 object-cover">
-                            <label x-show="$wire.gameCardImagePath" class="flex items-center gap-2 text-[10px] font-bold text-red-300"><input type="checkbox" wire:model="removeGameCardImage" class="rounded border-slate-700 bg-slate-900 text-red-500"> Remove current card image</label>
+                            <x-forms.image-crop-upload model="gameCardImage" label="Game Logo" :width="440" :height="330" :max-mb="2" />
+                            @if($gameCardImage)<img src="{{ $gameCardImage->temporaryUrl() }}" alt="New game logo preview" decoding="async" class="aspect-[4/3] w-full rounded-lg border border-slate-800 object-cover">@endif
+                            <img x-show="!$wire.gameCardImage && $wire.gameCardImagePath && !$wire.removeGameCardImage" x-bind:src="$wire.gameCardImagePath" alt="Current game logo" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-lg border border-slate-800 object-cover">
+                            <label x-show="$wire.gameCardImagePath" class="flex items-center gap-2 text-[10px] font-bold text-red-300"><input type="checkbox" wire:model="removeGameCardImage" class="rounded border-slate-700 bg-slate-900 text-red-500"> Remove current game logo</label>
                         </div>
                         <div class="space-y-2">
-                            <x-forms.image-crop-upload model="gameBannerImage" label="Hero Cover" :width="1000" :height="400" :max-mb="2" />
-                            @if($gameBannerImage)<img src="{{ $gameBannerImage->temporaryUrl() }}" alt="New hero preview" decoding="async" class="aspect-[5/2] w-full rounded-lg border border-slate-800 object-cover">@endif
-                            <img x-show="!$wire.gameBannerImage && $wire.gameBannerPath && !$wire.removeGameBannerImage" x-bind:src="$wire.gameBannerPath" alt="Current hero" loading="lazy" decoding="async" class="aspect-[5/2] w-full rounded-lg border border-slate-800 object-cover">
-                            <label x-show="$wire.gameBannerPath" class="flex items-center gap-2 text-[10px] font-bold text-red-300"><input type="checkbox" wire:model="removeGameBannerImage" class="rounded border-slate-700 bg-slate-900 text-red-500"> Remove current hero cover</label>
+                            <x-forms.image-crop-upload model="gameBannerImage" label="Game Cover Photo" :width="1000" :height="400" :max-mb="2" />
+                            @if($gameBannerImage)<img src="{{ $gameBannerImage->temporaryUrl() }}" alt="New game cover photo preview" decoding="async" class="aspect-[5/2] w-full rounded-lg border border-slate-800 object-cover">@endif
+                            <img x-show="!$wire.gameBannerImage && $wire.gameBannerPath && !$wire.removeGameBannerImage" x-bind:src="$wire.gameBannerPath" alt="Current game cover photo" loading="lazy" decoding="async" class="aspect-[5/2] w-full rounded-lg border border-slate-800 object-cover">
+                            <label x-show="$wire.gameBannerPath" class="flex items-center gap-2 text-[10px] font-bold text-red-300"><input type="checkbox" wire:model="removeGameBannerImage" class="rounded border-slate-700 bg-slate-900 text-red-500"> Remove current game cover photo</label>
                         </div>
                     </div>
 
@@ -474,7 +467,7 @@
                         <div class="grid gap-3 sm:grid-cols-2">
                             <div><label class="block text-[10px] font-bold uppercase text-slate-400">Game ID Label</label><input wire:model="gameIdLabel" type="text" placeholder="Game ID / In-Game Name" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white">@error('gameIdLabel')<span class="text-xs text-red-400">{{ $message }}</span>@enderror</div>
                             <div><label class="block text-[10px] font-bold uppercase text-slate-400">Example</label><input wire:model="gameIdExample" type="text" placeholder="e.g. PlayerName#1234" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white"></div>
-                            <div class="sm:col-span-2"><label class="block text-[10px] font-bold uppercase text-slate-400">How Players Connect</label><select wire:model="gameConnectionMethod" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white"><option value="player_invite">Add or invite the opponent</option><option value="lobby_code">Use a lobby code</option><option value="server_room">Join a server or room</option><option value="admin_instructions">Follow organizer instructions</option></select></div>
+                            <div class="sm:col-span-2"><label class="block text-[10px] font-bold uppercase text-slate-400">How Players Connect</label><select disabled aria-label="How Players Connect" class="mt-1 w-full cursor-not-allowed rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white opacity-60"><option value="server_room" selected>Join a Server Room</option></select></div>
                             <div class="sm:col-span-2"><label class="block text-[10px] font-bold uppercase text-slate-400">Player Instructions</label><textarea wire:model="gameIdInstructions" rows="2" placeholder="Where to find the ID and how opponents should connect." class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white"></textarea></div>
                         </div>
                     </fieldset>
