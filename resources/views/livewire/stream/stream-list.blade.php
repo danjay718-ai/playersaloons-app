@@ -283,9 +283,14 @@
                             <div>
                                 <x-forms.image-crop-upload model="streamThumbnail" label="Stream Thumbnail" :width="960" :height="540" :max-mb="2" :disabled="$streamTakenDown" />
                             </div>
-                            @if($streamThumbnail || $thumbnailUrl)
+                            @php
+                                $thumbnailPreviewUrl = $streamThumbnail && $streamThumbnail->isPreviewable()
+                                    ? $streamThumbnail->temporaryUrl()
+                                    : $thumbnailUrl;
+                            @endphp
+                            @if($thumbnailPreviewUrl)
                                 <div class="aspect-video overflow-hidden rounded-xl border border-zinc-800 bg-black">
-                                    <img src="{{ $streamThumbnail ? $streamThumbnail->temporaryUrl() : $thumbnailUrl }}" alt="Stream thumbnail preview" class="h-full w-full object-cover">
+                                    <img src="{{ $thumbnailPreviewUrl }}" alt="Stream thumbnail preview" class="h-full w-full object-cover">
                                 </div>
                             @endif
                         </div>

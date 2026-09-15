@@ -221,6 +221,44 @@ class StreamIntegrationTest extends TestCase
         return UploadedFile::fake()->createWithContent($name, $png);
     }
 
+    public function test_player_can_save_the_reported_youtube_share_url(): void
+    {
+        Storage::fake('public');
+        config(['livewire.temporary_file_upload.disk' => 'public']);
+        $url = 'https://youtu.be/XN3xNJvWXsc?si=QGHsTdjq4vURqrel';
+
+        Livewire::actingAs($this->player)
+            ->test(StreamList::class)
+            ->set('streamTitle', 'Sample Stream')
+            ->set('streamDescription', 'Stream langs')
+            ->set('game_id', $this->game->id)
+            ->set('youtube_stream_url', $url)
+            ->set('streamThumbnail', $this->pngUpload('sample.webp', 960, 540))
+            ->call('savePlayerStream')
+            ->assertHasNoErrors()
+            ->assertSet('streamThumbnail', null)
+            ->assertSee('Stream settings saved.');
+
+        $this->assertDatabaseHas('stream_channels', ['user_id' => $this->player->id, 'source_url' => $url]);
+        $stream = StreamChannel::query()->where('user_id', $this->player->id)->firstOrFail();
+        Storage::disk('public')->assertExists(Str::after($stream->thumbnail_url, '/storage/'));
+        Livewire::actingAs($this->player)->test(StreamList::class)
+            ->assertSet('streamThumbnail', null)
+            ->assertSee($stream->thumbnail_url, false)
+            ->call('savePlayerStream')->assertHasNoErrors();
+    }
+
+    public function test_non_previewable_thumbnail_does_not_crash_render_and_is_rejected_on_save(): void
+    {
+        Livewire::actingAs($this->player)->test(StreamList::class)
+            ->set('youtube_stream_url', 'https://youtu.be/XN3xNJvWXsc')
+            ->set('streamThumbnail', UploadedFile::fake()->createWithContent('thumbnail', 'Not an image'))
+            ->call('savePlayerStream')
+            ->assertHasErrors(['streamThumbnail']);
+
+        $this->assertDatabaseCount('stream_channels', 0);
+    }
+
     public function test_player_delete_preserves_chat_and_other_streams_and_cancel_closes_the_dialog(): void
     {
         $stream = StreamChannel::query()->create([

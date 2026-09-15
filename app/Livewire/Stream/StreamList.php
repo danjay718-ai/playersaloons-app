@@ -169,6 +169,7 @@ class StreamList extends Component
         if ($this->streamThumbnail) {
             $path = $this->streamThumbnail->store('streams/thumbnails/'.$user->getKey(), 'public');
             $this->thumbnailUrl = '/storage/'.$path;
+            $this->reset('streamThumbnail');
         }
 
         $this->syncPlayerStreamChannel($user, 'youtube', $this->youtube_stream_url);
