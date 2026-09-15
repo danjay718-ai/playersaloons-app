@@ -519,8 +519,8 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(MatchStatus::IN_PROGRESS, $match->fresh()->status);
         Livewire::actingAs($p1)
             ->test(MatchDetail::class, ['uuid' => $match->uuid])
-            ->assertSee('Rematch required')
-            ->assertSee('Play again and submit a new result.')
+            ->assertSee('This is a rematch — play again')
+            ->assertSee('The previous attempt ended without a winner. Play this rematch and submit a new result.')
             ->assertDontSee('Ready confirmed — play now');
         $this->assertDatabaseHas('notifications', ['user_id' => $p1->id, 'type' => 'match_rematch', 'title' => 'Rematch Required']);
         $this->assertDatabaseHas('notifications', ['user_id' => $p2->id, 'type' => 'match_rematch', 'title' => 'Rematch Required']);

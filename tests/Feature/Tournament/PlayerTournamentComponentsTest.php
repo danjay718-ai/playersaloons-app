@@ -201,7 +201,7 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertViewHas('historyMatches', fn ($items) => $items->contains(fn ($match) => $match['type'] === 'tournament' && $match['tournament'] === $tournament->name));
     }
 
-    public function test_history_combines_tournament_and_head_to_head_matches(): void
+    public function test_history_separates_tournament_and_head_to_head_matches_by_competition_tab(): void
     {
         $tournament = $this->makeTournament('Mixed Match Cup', TournamentStatus::COMPLETED);
         [$playerRegistration, $opponentRegistration] = $this->registerPlayers($tournament);
@@ -233,9 +233,18 @@ class PlayerTournamentComponentsTest extends TestCase
         Livewire::actingAs($this->player)
             ->test(MyTournamentsList::class)
             ->set('tSubTab', 'history')
-            ->assertViewHas('historyMatches', fn ($items) => $items->pluck('type')->sort()->values()->all() === ['head_to_head', 'tournament'])
+            ->assertViewHas('historyMatches', fn ($items) => $items->pluck('type')->all() === ['tournament'])
+            ->assertViewHas('historyCount', 1)
+            ->assertSee('Mixed Match Cup')
+            ->call('selectCompetition', 'head_to_head')
+            ->assertViewHas('historyMatches', fn ($items) => $items->pluck('type')->all() === ['head_to_head'])
+            ->assertViewHas('historyCount', 1)
             ->assertSee('Head to Head')
-            ->assertSee('Tournament');
+            ->assertDontSee('Mixed Match Cup')
+            ->call('selectCompetition', 'tournaments')
+            ->assertViewHas('historyMatches', fn ($items) => $items->pluck('type')->all() === ['tournament'])
+            ->assertViewHas('historyCount', 1)
+            ->assertSee('Mixed Match Cup');
     }
 
     public function test_n_plus_one_query_prevention(): void
