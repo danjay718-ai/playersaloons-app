@@ -7,6 +7,7 @@
     'sourceMaxMb' => 12,
     'help' => null,
     'disabled' => false,
+    'compact' => false,
 ])
 
 @php
@@ -77,8 +78,8 @@
             x-on:keydown.escape.window="cancelCrop()"
             class="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
         >
-            <section x-on:click.outside="cancelCrop()" class="w-full max-w-2xl overflow-hidden rounded-2xl border border-indigo-500/30 bg-[#0b1020] shadow-2xl">
-                <header class="flex items-start justify-between gap-4 border-b border-slate-800 px-5 py-4">
+            <section x-on:click.outside="cancelCrop()" class="w-full overflow-hidden rounded-2xl border border-indigo-500/30 bg-[#0b1020] shadow-2xl {{ $compact ? 'flex max-h-[90dvh] max-w-lg flex-col' : 'max-w-2xl' }}">
+                <header class="flex items-start justify-between gap-4 border-b border-slate-800 {{ $compact ? 'shrink-0 px-4 py-3' : 'px-5 py-4' }}">
                     <div>
                         <p class="text-[9px] font-black uppercase tracking-[0.25em] text-indigo-400">Image editor</p>
                         <h2 class="mt-1 text-base font-black text-white">Crop {{ $label }}</h2>
@@ -87,8 +88,8 @@
                     <button type="button" x-on:click="cancelCrop()" class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-white">✕</button>
                 </header>
 
-                <div class="space-y-5 p-5">
-                    <div class="mx-auto overflow-hidden rounded-xl border border-slate-700 bg-black shadow-inner" style="max-width: 560px; aspect-ratio: {{ $width }} / {{ $height }};">
+                <div class="{{ $compact ? 'min-h-0 overflow-y-auto space-y-4 p-4' : 'space-y-5 p-5' }}">
+                    <div class="mx-auto overflow-hidden rounded-xl border border-slate-700 bg-black shadow-inner" style="{{ $compact ? 'width: min(100%, 320px, calc(35dvh * '.((int) $width / (int) $height).'));' : 'max-width: 560px;' }} aspect-ratio: {{ $width }} / {{ $height }};">
                         <canvas x-ref="canvas" class="h-full w-full"></canvas>
                     </div>
 
@@ -105,7 +106,7 @@
                     </div>
                 </div>
 
-                <footer class="flex justify-end gap-3 border-t border-slate-800 px-5 py-4">
+                <footer class="flex justify-end gap-3 border-t border-slate-800 {{ $compact ? 'shrink-0 px-4 py-3' : 'px-5 py-4' }}">
                     <button type="button" x-on:click="cancelCrop()" class="rounded-lg border border-slate-700 px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-800">Cancel</button>
                     <button type="button" x-on:click="applyCrop()" x-bind:disabled="processing" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-indigo-500 disabled:opacity-50">
                         <span x-show="!processing">Apply Crop</span><span x-show="processing">Processing…</span>

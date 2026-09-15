@@ -165,7 +165,7 @@
                         </div>
 
                         <form wire:submit="updateAvatar" class="mb-5 rounded-lg border border-zinc-800 bg-zinc-950/60 p-4">
-                            <x-forms.image-crop-upload model="avatarFile" label="Profile Picture" :width="400" :height="400" :max-mb="2">
+                            <x-forms.image-crop-upload model="avatarFile" label="Profile Picture" :width="400" :height="400" :max-mb="2" :compact="true">
                                 <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/15 px-3.5 py-2 text-[11px] font-black uppercase tracking-widest text-cyan-100 hover:bg-cyan-500/25 disabled:opacity-60 font-orbitron transition-colors shrink-0 whitespace-nowrap">
                                     <i data-lucide="image-up" class="w-3.5 h-3.5"></i>
                                     <span wire:loading.remove wire:target="avatarFile, updateAvatar">Upload</span>
