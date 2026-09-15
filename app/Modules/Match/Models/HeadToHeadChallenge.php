@@ -43,7 +43,7 @@ class HeadToHeadChallenge extends Model
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'creator_user_id');
+        return $this->belongsTo(User::class, 'creator_user_id')->withTrashed();
     }
 
     public function game(): BelongsTo
@@ -53,7 +53,7 @@ class HeadToHeadChallenge extends Model
 
     public function platform(): BelongsTo
     {
-        return $this->belongsTo(Platform::class);
+        return $this->belongsTo(Platform::class)->withTrashed();
     }
 
     public function match(): HasOne

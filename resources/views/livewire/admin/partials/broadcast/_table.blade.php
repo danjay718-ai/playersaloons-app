@@ -61,10 +61,7 @@
                                     </button>
                                 @endunless
                                 @if($isSuperAdmin)
-                                    <button wire:click="confirmDelete({{ $broadcast->id }})"
-                                            class="px-3 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors">
-                                        Delete
-                                    </button>
+                                    <livewire:admin.recoverable-delete resource="broadcasts" :record-id="$broadcast->id" :key="'delete-broadcast-'.$broadcast->id" />
                                 @endif
                             </div>
                         </td>

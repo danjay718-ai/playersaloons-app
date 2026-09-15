@@ -160,7 +160,7 @@ class CmsContentAdmin extends AdminComponent
     public function deleteContent(int $id): void
     {
         $page = CmsPage::findOrFail($id);
-        $page->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('content', [$page->id], $this->actor());
 
         if ($this->selectedPageId === $id) {
             $this->resetEditor();

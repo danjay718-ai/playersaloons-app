@@ -231,12 +231,12 @@ class Tournament extends Model implements HasMedia
      */
     public function template(): BelongsTo
     {
-        return $this->belongsTo(TournamentTemplate::class, 'template_id');
+        return $this->belongsTo(TournamentTemplate::class, 'template_id')->withTrashed();
     }
 
     public function scheduleSlot(): BelongsTo
     {
-        return $this->belongsTo(TournamentScheduleSlot::class, 'schedule_slot_id');
+        return $this->belongsTo(TournamentScheduleSlot::class, 'schedule_slot_id')->withTrashed();
     }
 
     public function cancellationRequests(): HasMany
@@ -270,7 +270,7 @@ class Tournament extends Model implements HasMedia
 
     public function getPlatformNamesAttribute(): string
     {
-        return Platform::query()->whereIn('id', $this->supportedPlatformIds())->orderBy('name')->pluck('name')->implode(', ');
+        return Platform::withTrashed()->whereIn('id', $this->supportedPlatformIds())->orderBy('name')->pluck('name')->implode(', ');
     }
 
     public function scopeForPlatform(Builder $query, int $platformId): void
@@ -281,7 +281,7 @@ class Tournament extends Model implements HasMedia
 
     public function platform(): BelongsTo
     {
-        return $this->belongsTo(Platform::class);
+        return $this->belongsTo(Platform::class)->withTrashed();
     }
 
     /**
@@ -379,6 +379,6 @@ class Tournament extends Model implements HasMedia
      */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 }

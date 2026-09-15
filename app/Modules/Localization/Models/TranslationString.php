@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Localization\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property int $id
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class TranslationString extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'key',
         'locale',

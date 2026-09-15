@@ -3,6 +3,7 @@
 namespace App\Modules\Community\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -15,6 +16,8 @@ use Illuminate\Support\Carbon;
  */
 class BroadcastMessage extends Model
 {
+    use SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      *

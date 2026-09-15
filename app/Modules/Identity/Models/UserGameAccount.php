@@ -21,7 +21,7 @@ final class UserGameAccount extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function game(): BelongsTo
@@ -31,6 +31,6 @@ final class UserGameAccount extends Model
 
     public function platform(): BelongsTo
     {
-        return $this->belongsTo(Platform::class);
+        return $this->belongsTo(Platform::class)->withTrashed();
     }
 }

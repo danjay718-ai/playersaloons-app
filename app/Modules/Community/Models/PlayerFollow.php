@@ -23,7 +23,7 @@ class PlayerFollow extends Model
      */
     public function follower(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'follower_user_id');
+        return $this->belongsTo(User::class, 'follower_user_id')->withTrashed();
     }
 
     /**
@@ -31,6 +31,6 @@ class PlayerFollow extends Model
      */
     public function followed(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'followed_user_id');
+        return $this->belongsTo(User::class, 'followed_user_id')->withTrashed();
     }
 }

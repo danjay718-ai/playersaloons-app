@@ -66,7 +66,7 @@ class LandingPageContentService
             'winnings_paid' => '$'.number_format((float) LedgerEntry::query()
                 ->whereIn('type', [LedgerType::PRIZE->value, LedgerType::H2H_PAYOUT->value])
                 ->sum('amount'), 2),
-            'active_players' => (string) DB::table('users')
+            'active_players' => (string) DB::table('users')->whereNull('deleted_at')
                 ->where('status', UserStatus::ACTIVE->value)
                 ->count(),
             'active_games' => (string) Game::query()

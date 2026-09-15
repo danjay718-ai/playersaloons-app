@@ -44,7 +44,7 @@ class StreamViewer extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     /**
@@ -52,6 +52,6 @@ class StreamViewer extends Model
      */
     public function streamChannel(): BelongsTo
     {
-        return $this->belongsTo(StreamChannel::class);
+        return $this->belongsTo(StreamChannel::class)->withTrashed();
     }
 }

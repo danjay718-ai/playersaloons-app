@@ -397,7 +397,7 @@ class CmsAdmin extends AdminComponent
     {
         $platform = Platform::findOrFail($platformId);
         // You could add checks here to see if the platform is linked to existing tournaments before deleting
-        $platform->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('platforms', [$platformId], $this->actor());
 
         session()->flash('success', 'Platform deleted successfully.');
     }
@@ -488,7 +488,7 @@ class CmsAdmin extends AdminComponent
             'gamePlatformIds' => $this->selectedGameId === null
                 ? ['required', 'array', 'min:1']
                 : ['array'],
-            'gamePlatformIds.*' => 'integer|exists:platforms,id',
+            'gamePlatformIds.*' => 'integer|exists:platforms,id,deleted_at,NULL',
             'removeGameCardImage' => 'boolean',
             'removeGameBannerImage' => 'boolean',
         ], [
@@ -550,14 +550,14 @@ class CmsAdmin extends AdminComponent
     public function archiveGame(int $gameId): void
     {
         $game = Game::query()->findOrFail($gameId);
-        $game->update(['is_active' => false]);
-        $game->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('games', [$gameId], $this->actor());
 
         session()->flash('success', 'Game archived. Historical tournaments and player records were preserved.');
     }
 
     public function restoreGame(int $gameId): void
     {
+        abort_unless($this->actor()->can('games.delete'), 403);
         Game::onlyTrashed()->findOrFail($gameId)->restore();
 
         session()->flash('success', 'Game restored as disabled. Activate it when it is ready for display.');
@@ -765,7 +765,7 @@ class CmsAdmin extends AdminComponent
 
     public function deleteLandingItem(int $itemId): void
     {
-        LandingSectionItem::findOrFail($itemId)->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('landing_items', [$itemId], $this->actor());
 
         session()->flash('success', 'Landing item deleted.');
     }
@@ -846,7 +846,7 @@ class CmsAdmin extends AdminComponent
 
     public function deleteNavigationItem(int $itemId): void
     {
-        PublicNavigationItem::findOrFail($itemId)->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('navigation', [$itemId], $this->actor());
 
         session()->flash('success', 'Navigation item deleted.');
     }
@@ -871,7 +871,7 @@ class CmsAdmin extends AdminComponent
             'about' => [],
             default => [
                 'games' => Game::query()
-                    ->when($this->gameRecordTab === 'archived', fn ($query) => $query->onlyTrashed(), fn ($query) => $query->withoutTrashed())
+                    ->withoutTrashed()
                     ->with([
                         'translations:id,game_id,locale,name,description',
                         'platforms:id,name',

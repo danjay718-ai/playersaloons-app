@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Modules\Tournament\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class TournamentScheduleSlot extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'uuid',
         'tournament_template_id',
@@ -40,7 +43,7 @@ final class TournamentScheduleSlot extends Model
 
     public function template(): BelongsTo
     {
-        return $this->belongsTo(TournamentTemplate::class, 'tournament_template_id');
+        return $this->belongsTo(TournamentTemplate::class, 'tournament_template_id')->withTrashed();
     }
 
     public function occurrences(): HasMany

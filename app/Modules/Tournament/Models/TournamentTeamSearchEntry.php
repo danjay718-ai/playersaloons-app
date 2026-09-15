@@ -20,16 +20,16 @@ final class TournamentTeamSearchEntry extends Model
 
     public function tournament(): BelongsTo
     {
-        return $this->belongsTo(Tournament::class);
+        return $this->belongsTo(Tournament::class)->withTrashed();
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function platform(): BelongsTo
     {
-        return $this->belongsTo(Platform::class);
+        return $this->belongsTo(Platform::class)->withTrashed();
     }
 }

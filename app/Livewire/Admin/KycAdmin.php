@@ -11,7 +11,7 @@ use App\Modules\Identity\Models\KycSubmission;
 use App\Shared\Enums\KycStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithPagination;
-use Spatie\Activitylog\Models\Activity;
+use App\Modules\Operations\Models\Activity;
 
 class KycAdmin extends AdminComponent
 {

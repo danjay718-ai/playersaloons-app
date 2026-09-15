@@ -70,7 +70,7 @@ class AdvertisementAdmin extends AdminComponent
     public function delete(int $id): void
     {
         abort_unless($this->actor()->can('advertisements.manage'), 403);
-        Advertisement::query()->findOrFail($id)->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('advertisements', [$id], $this->actor());
         if ($this->editingId === $id) {
             $this->reset(['editingId', 'title', 'description']);
         }

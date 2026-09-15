@@ -1,4 +1,9 @@
 <div class="admin-game-management" x-data="gameManagementUi($wire)">
+    @if($tab === 'games')<livewire:admin.recoverable-delete resource="games" :key="'delete-games'" />
+    @elseif($tab === 'platforms')<livewire:admin.recoverable-delete resource="platforms" :key="'delete-platforms'" />
+    @elseif($tab === 'navigation')<livewire:admin.recoverable-delete resource="navigation" :key="'delete-navigation'" />
+    @elseif($tab === 'landing')<livewire:admin.recoverable-delete resource="landing_items" :key="'delete-landing'" />@endif
+
     <!-- Feedback Alerts -->
     @if(session()->has('success'))
         <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-lg text-sm mb-6 flex items-center">
@@ -17,10 +22,6 @@
         </div>
         <div class="mb-5 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-                <div class="flex rounded-lg border border-slate-800 bg-slate-950 p-1">
-                    <button type="button" wire:click="setGameRecordTab('active')" class="rounded-md px-4 py-2 text-xs font-bold transition {{ $gameRecordTab === 'active' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white' }}">Active Games</button>
-                    <button type="button" wire:click="setGameRecordTab('archived')" class="rounded-md px-4 py-2 text-xs font-bold transition {{ $gameRecordTab === 'archived' ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-white' }}">Archived Games</button>
-                </div>
                 <button type="button" wire:click="clearGameFilters" class="text-left text-xs font-bold text-slate-400 hover:text-white">Clear filters</button>
             </div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -121,7 +122,7 @@
                                                 <a href="{{ route('admin.games.head-to-head-defaults.edit', $game) }}" class="game-action-item"><i data-lucide="swords" class="h-4 w-4 text-fuchsia-300"></i>Head-to-Head template</a>
                                             @endif
                                             <div class="my-1 border-t border-slate-800"></div>
-                                            <button type="button" x-on:click="open = false; openGameArchive({{ $game->id }})" wire:loading.attr="disabled" wire:target="confirmDelete('game', {{ $game->id }})" class="game-action-item text-red-300 hover:bg-red-950/40 hover:text-red-200"><i data-lucide="archive" class="h-4 w-4"></i>Archive game</button>
+                                            <livewire:admin.recoverable-delete resource="games" :record-id="$game->id" :key="'delete-games-'.$game->id" />
                                         </div>
                                     </div>
                                     @endif
@@ -184,9 +185,7 @@
                                     <button wire:click="openPlatformEditModal({{ $platform->id }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit Platform">
                                         <i data-lucide="edit" class="w-4 h-4"></i>
                                     </button>
-                                    <button wire:click="confirmDelete('platform', {{ $platform->id }})" class="p-1.5 text-red-400 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete Platform">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                    </button>
+                                    <livewire:admin.recoverable-delete resource="platforms" :record-id="$platform->id" :key="'delete-platforms-'.$platform->id" />
                                 </td>
                             </tr>
                         @empty
@@ -319,9 +318,7 @@
                                                 <button type="button" wire:click="openEditLandingItemModal({{ $item->id }})" class="rounded-lg border border-indigo-900/50 bg-indigo-950/40 p-1.5 text-indigo-400 hover:text-white" title="Edit">
                                                     <i data-lucide="edit" class="h-4 w-4"></i>
                                                 </button>
-                                                <button type="button" wire:click="deleteLandingItem({{ $item->id }})" class="rounded-lg border border-red-900/50 bg-red-950/40 p-1.5 text-red-400 hover:text-white" title="Delete">
-                                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
-                                                </button>
+                                                <livewire:admin.recoverable-delete resource="landing_items" :record-id="$item->id" :key="'delete-landing_items-'.$item->id" />
                                             </td>
                                         </tr>
                                     @empty
@@ -394,9 +391,7 @@
                                     <button wire:click="openEditNavigationItemModal({{ $item->id }})" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-950/40 border border-indigo-900/50 rounded-lg" title="Edit Navigation Item">
                                         <i data-lucide="edit" class="w-4 h-4"></i>
                                     </button>
-                                    <button wire:click="confirmDelete('navigation', {{ $item->id }})" class="p-1.5 text-red-400 hover:text-white bg-red-950/40 border border-red-900/50 rounded-lg" title="Delete Navigation Item">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                    </button>
+                                    <livewire:admin.recoverable-delete resource="navigation" :record-id="$item->id" :key="'delete-navigation-'.$item->id" />
                                 </td>
                             </tr>
                         @empty
@@ -702,7 +697,7 @@
                     <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
                         <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-200 mb-2" x-text="$wire.deleteTargetType === 'game' ? 'Archive Game' : 'Confirm Deletion'"></h3>
+                    <h3 class="text-lg font-bold text-slate-200 mb-2" x-text="$wire.deleteTargetType === 'game' ? 'Delete Game' : 'Confirm Deletion'"></h3>
                     <div wire:loading wire:target="confirmDelete" class="mb-6 space-y-3">
                         <div class="mx-auto h-3 w-4/5 animate-pulse rounded bg-slate-800"></div>
                         <div class="grid grid-cols-2 gap-3"><div class="h-16 animate-pulse rounded-lg bg-slate-900"></div><div class="h-16 animate-pulse rounded-lg bg-slate-900"></div></div>
@@ -710,7 +705,7 @@
                     </div>
                     <div wire:loading.remove wire:target="confirmDelete">
                     @if($deleteTargetType === 'game' && $gameDeleteImpact)
-                        <p class="text-sm text-slate-400">Archive <strong class="text-white">{{ $gameDeleteImpact['name'] }}</strong>? It will disappear from player-facing catalogs, but all historical data stays intact.</p>
+                        <p class="text-sm text-slate-400">Delete <strong class="text-white">{{ $gameDeleteImpact['name'] }}</strong>? It will disappear from player-facing catalogs, but all historical data stays intact. Future competition generation for this game stops.</p>
                         <div class="my-5 grid grid-cols-2 gap-3"><div class="rounded-lg border border-slate-800 bg-slate-950 p-3"><p class="text-xl font-black text-amber-300">{{ $gameDeleteImpact['tournament_count'] }}</p><p class="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-500">Affected tournaments</p></div><div class="rounded-lg border border-slate-800 bg-slate-950 p-3"><p class="text-xl font-black text-cyan-300">{{ $gameDeleteImpact['player_count'] }}</p><p class="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-500">Unique joined players</p></div></div>
                         @if($gameDeleteImpact['tournaments'] !== [])
                             <div class="mb-6 max-h-56 overflow-y-auto rounded-lg border border-slate-800 text-left"><div class="sticky top-0 bg-slate-900 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-slate-500">Preserved tournament records</div>@foreach($gameDeleteImpact['tournaments'] as $impactTournament)<div class="flex items-center justify-between gap-3 border-t border-slate-800/70 px-3 py-2.5"><div class="min-w-0"><p class="truncate text-xs font-bold text-slate-200">{{ $impactTournament['name'] }}</p><p class="mt-0.5 text-[9px] uppercase text-slate-600">{{ str_replace('_', ' ', $impactTournament['status']) }}</p></div><span class="shrink-0 text-[10px] text-cyan-300">{{ $impactTournament['registrations'] }} joined</span></div>@endforeach @if($gameDeleteImpact['remaining_tournament_count'] > 0)<div class="border-t border-slate-800 px-3 py-2 text-center text-[10px] text-slate-500">+{{ $gameDeleteImpact['remaining_tournament_count'] }} more preserved tournaments</div>@endif</div>
@@ -719,7 +714,7 @@
                             <div class="mb-6 text-left"><p class="mb-2 text-[9px] font-bold uppercase tracking-wider text-slate-500">Players with preserved participation</p><div class="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">@foreach($gameDeleteImpact['players'] as $impactPlayer)<span class="rounded border border-cyan-500/15 bg-cyan-500/5 px-2 py-1 text-[10px] text-cyan-200" title="{{ '@'.$impactPlayer['username'] }}">{{ $impactPlayer['display_name'] }}</span>@endforeach @if($gameDeleteImpact['remaining_player_count'] > 0)<span class="px-2 py-1 text-[10px] text-slate-500">+{{ $gameDeleteImpact['remaining_player_count'] }} more</span>@endif</div></div>
                         @endif
                     @else
-                        <p class="text-sm text-slate-400 mb-6">Are you sure you want to delete this {{ $deleteTargetType === 'navigation' ? 'navigation item' : $deleteTargetType }}? This action cannot be undone.</p>
+                        <p class="text-sm text-slate-400 mb-6">Are you sure you want to delete this {{ $deleteTargetType === 'navigation' ? 'navigation item' : $deleteTargetType }}? The record will be hidden; its data and connected history remain stored.</p>
                     @endif
                     </div>
                     
@@ -730,7 +725,7 @@
                         </button>
                         <button type="button" wire:click="executeDelete" wire:loading.attr="disabled" wire:target="confirmDelete,executeDelete"
                                 class="bg-red-600 hover:bg-red-500 text-white font-bold text-sm px-6 py-2.5 rounded-lg shadow-[0_4px_12px_rgba(220,38,38,0.2)] transition-colors">
-                            {{ $deleteTargetType === 'game' ? 'Archive Game' : 'Yes, Delete' }}
+                            {{ $deleteTargetType === 'game' ? 'Delete Game' : 'Yes, Delete' }}
                         </button>
                     </div>
                 </div>

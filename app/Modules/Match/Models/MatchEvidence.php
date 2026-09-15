@@ -82,6 +82,6 @@ class MatchEvidence extends Model
      */
     public function uploadedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'uploaded_by');
+        return $this->belongsTo(User::class, 'uploaded_by')->withTrashed();
     }
 }

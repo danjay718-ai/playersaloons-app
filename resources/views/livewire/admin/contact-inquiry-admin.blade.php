@@ -1,4 +1,6 @@
 <div class="space-y-6">
+    <livewire:admin.recoverable-delete resource="inquiries" />
+
     @if (session('success'))
         <div class="flex items-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
             <i data-lucide="check-circle" class="mr-2 h-4 w-4"></i>

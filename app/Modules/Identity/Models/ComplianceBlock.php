@@ -32,17 +32,17 @@ class ComplianceBlock extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     public function revoker(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'revoked_by');
+        return $this->belongsTo(User::class, 'revoked_by')->withTrashed();
     }
 
     public function scopeActive(Builder $query): Builder

@@ -1,4 +1,6 @@
 <div class="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <livewire:admin.recoverable-delete resource="content" />
+
     <aside class="space-y-4">
         <div class="rounded-xl border border-slate-800 bg-[#0f172a] p-4">
             <div class="flex items-center justify-between gap-3">
@@ -65,9 +67,7 @@
                             <button type="button" wire:click="editContent({{ $page->id }})" class="rounded-lg border border-indigo-900/50 bg-indigo-950/40 p-1.5 text-indigo-400 hover:text-white" title="Edit">
                                 <i data-lucide="edit" class="h-3.5 w-3.5"></i>
                             </button>
-                            <button type="button" wire:click="deleteContent({{ $page->id }})" wire:confirm="Delete this content item?" class="rounded-lg border border-red-900/50 bg-red-950/40 p-1.5 text-red-400 hover:text-white" title="Delete">
-                                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
-                            </button>
+                            <livewire:admin.recoverable-delete resource="content" :record-id="$page->id" :key="'delete-content-'.$page->id" />
                         </div>
                     </div>
                 </div>

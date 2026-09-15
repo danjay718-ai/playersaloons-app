@@ -6,10 +6,13 @@ namespace App\Modules\Operations\Models;
 
 use App\Modules\Identity\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ErrorIncident extends Model
 {
+    use SoftDeletes;
+
     /** @var list<string> */
     protected $fillable = [
         'reference_id',
@@ -47,11 +50,11 @@ class ErrorIncident extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function resolver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'resolved_by');
+        return $this->belongsTo(User::class, 'resolved_by')->withTrashed();
     }
 }

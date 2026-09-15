@@ -16,7 +16,7 @@ final class TournamentTeam extends Model
 
     public function tournament(): BelongsTo
     {
-        return $this->belongsTo(Tournament::class);
+        return $this->belongsTo(Tournament::class)->withTrashed();
     }
 
     public function sourceTeam(): BelongsTo
@@ -26,7 +26,7 @@ final class TournamentTeam extends Model
 
     public function leader(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'leader_user_id');
+        return $this->belongsTo(User::class, 'leader_user_id')->withTrashed();
     }
 
     public function members(): HasMany

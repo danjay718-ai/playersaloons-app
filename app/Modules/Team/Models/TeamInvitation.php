@@ -73,7 +73,7 @@ class TeamInvitation extends Model
      */
     public function invitee(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'invited_user_id');
+        return $this->belongsTo(User::class, 'invited_user_id')->withTrashed();
     }
 
     /**
@@ -83,6 +83,6 @@ class TeamInvitation extends Model
      */
     public function inviter(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'invited_by_user_id');
+        return $this->belongsTo(User::class, 'invited_by_user_id')->withTrashed();
     }
 }

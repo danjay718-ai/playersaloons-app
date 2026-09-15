@@ -30,7 +30,7 @@ class BlockedCountriesAdmin extends AdminComponent
 
         $countryName = config("countries.{$this->countryCode}", $this->countryCode);
 
-        BlockedCountry::updateOrCreate(
+        BlockedCountry::withTrashed()->updateOrCreate(
             ['country_code' => strtoupper($this->countryCode)],
             [
                 'country_name' => $countryName,
@@ -39,6 +39,7 @@ class BlockedCountriesAdmin extends AdminComponent
             ]
         );
 
+        BlockedCountry::withTrashed()->where('country_code', strtoupper($this->countryCode))->firstOrFail()->restore();
         app(CountryEligibilityService::class)->forget();
 
         $this->reset(['countryCode']);
@@ -49,7 +50,7 @@ class BlockedCountriesAdmin extends AdminComponent
     public function removeCountry(string $code): void
     {
         abort_unless($this->actor()->can('geo_blocking.manage'), 403);
-        BlockedCountry::where('country_code', $code)->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('countries', [BlockedCountry::where('country_code', $code)->firstOrFail()->id], $this->actor());
         app(CountryEligibilityService::class)->forget();
         session()->flash('success', "Unblocked $code successfully.");
     }

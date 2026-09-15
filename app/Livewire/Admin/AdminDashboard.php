@@ -17,7 +17,7 @@ use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Enums\WithdrawalStatus;
-use Spatie\Activitylog\Models\Activity;
+use App\Modules\Operations\Models\Activity;
 
 class AdminDashboard extends AdminComponent
 {

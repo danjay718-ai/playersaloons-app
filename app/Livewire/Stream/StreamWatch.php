@@ -288,7 +288,7 @@ class StreamWatch extends Component
         }
 
         $redirectUrl = $this->isAdminView ? '/admin/streams' : '/streams';
-        $this->streamChannel->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('streams', [$this->streamChannel->id], $admin);
 
         $this->redirect($redirectUrl, navigate: true);
     }

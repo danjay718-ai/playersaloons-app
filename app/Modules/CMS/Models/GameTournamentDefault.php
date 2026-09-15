@@ -19,11 +19,11 @@ final class GameTournamentDefault extends Model
 
     public function game(): BelongsTo
     {
-        return $this->belongsTo(Game::class);
+        return $this->belongsTo(Game::class)->withTrashed();
     }
 
     public function defaultPlatform(): BelongsTo
     {
-        return $this->belongsTo(Platform::class, 'default_platform_id');
+        return $this->belongsTo(Platform::class, 'default_platform_id')->withTrashed();
     }
 }

@@ -77,32 +77,32 @@ class HeadToHeadMatch extends Model
 
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'creator_user_id');
+        return $this->belongsTo(User::class, 'creator_user_id')->withTrashed();
     }
 
     public function opponent(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'opponent_user_id');
+        return $this->belongsTo(User::class, 'opponent_user_id')->withTrashed();
     }
 
     public function winner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'winner_user_id');
+        return $this->belongsTo(User::class, 'winner_user_id')->withTrashed();
     }
 
     public function resultSubmitter(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'result_submitted_by');
+        return $this->belongsTo(User::class, 'result_submitted_by')->withTrashed();
     }
 
     public function disputer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'disputed_by');
+        return $this->belongsTo(User::class, 'disputed_by')->withTrashed();
     }
 
     public function disputeResolver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'dispute_resolved_by');
+        return $this->belongsTo(User::class, 'dispute_resolved_by')->withTrashed();
     }
 
     public function game(): BelongsTo
@@ -112,6 +112,6 @@ class HeadToHeadMatch extends Model
 
     public function platform(): BelongsTo
     {
-        return $this->belongsTo(Platform::class);
+        return $this->belongsTo(Platform::class)->withTrashed();
     }
 }

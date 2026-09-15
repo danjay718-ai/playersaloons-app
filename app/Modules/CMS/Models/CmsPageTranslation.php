@@ -27,6 +27,6 @@ class CmsPageTranslation extends Model
      */
     public function page(): BelongsTo
     {
-        return $this->belongsTo(CmsPage::class, 'page_id');
+        return $this->belongsTo(CmsPage::class, 'page_id')->withTrashed();
     }
 }

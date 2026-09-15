@@ -4,10 +4,13 @@ namespace App\Modules\Compliance\Models;
 
 use App\Modules\Identity\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BlockedCountry extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'country_code',
         'country_name',
@@ -17,6 +20,6 @@ class BlockedCountry extends Model
 
     public function updatedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'updated_by');
+        return $this->belongsTo(User::class, 'updated_by')->withTrashed();
     }
 }

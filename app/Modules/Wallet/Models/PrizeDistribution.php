@@ -93,7 +93,7 @@ class PrizeDistribution extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     /**
@@ -103,6 +103,6 @@ class PrizeDistribution extends Model
      */
     public function tournament(): BelongsTo
     {
-        return $this->belongsTo(Tournament::class);
+        return $this->belongsTo(Tournament::class)->withTrashed();
     }
 }

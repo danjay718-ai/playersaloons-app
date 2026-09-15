@@ -114,13 +114,7 @@
 
             {{-- Delete stream (SUPER_ADMIN / ADMIN only) --}}
             @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN', 'ADMIN']))
-                <button
-                    wire:click="deleteStream"
-                    wire:confirm="Permanently DELETE this stream? This cannot be undone."
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/30 border border-red-700/40 text-red-400 hover:bg-red-700 hover:text-white text-[10px] font-black uppercase tracking-wide transition-all duration-150"
-                >
-                    <i data-lucide="trash-2" class="w-3 h-3"></i> Delete
-                </button>
+                <livewire:admin.recoverable-delete resource="streams" :record-id="$streamChannel->id" />
             @endif
         </div>
     </div>

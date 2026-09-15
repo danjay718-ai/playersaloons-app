@@ -62,7 +62,7 @@ class Withdrawal extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     /**
@@ -72,6 +72,6 @@ class Withdrawal extends Model
      */
     public function reviewer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'reviewed_by');
+        return $this->belongsTo(User::class, 'reviewed_by')->withTrashed();
     }
 }

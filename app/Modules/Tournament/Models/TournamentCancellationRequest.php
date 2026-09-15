@@ -30,7 +30,7 @@ final class TournamentCancellationRequest extends Model
 
     public function tournament(): BelongsTo
     {
-        return $this->belongsTo(Tournament::class);
+        return $this->belongsTo(Tournament::class)->withTrashed();
     }
 
     public function registration(): BelongsTo
@@ -40,7 +40,7 @@ final class TournamentCancellationRequest extends Model
 
     public function requester(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'requested_by');
+        return $this->belongsTo(User::class, 'requested_by')->withTrashed();
     }
 
     public function votes(): HasMany

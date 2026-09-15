@@ -88,6 +88,12 @@ class TournamentStateMachine extends AbstractStateMachine
      */
     public function guardCanPublish(Tournament $tournament): void
     {
+        if ($tournament->game_id && $tournament->game?->trashed()) {
+            throw new LogicException('Select an available game before publishing this tournament.');
+        }
+        if (\App\Modules\Tournament\Support\CompetitionPlatforms::hasDeleted(['platform_ids' => $tournament->supportedPlatformIds()])) {
+            throw new LogicException('Select available platforms before publishing this tournament.');
+        }
         if (empty($tournament->name)) {
             throw new LogicException('Tournament must have a name before publishing.');
         }

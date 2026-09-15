@@ -6,7 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Modules\Identity\Models\User;
 use Illuminate\Support\Carbon;
-use Spatie\Activitylog\Models\Activity;
+use App\Modules\Operations\Models\Activity;
 
 class StaffActivityDashboard extends AdminComponent
 {

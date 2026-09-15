@@ -59,6 +59,6 @@ class TournamentTemplatePrize extends Model
      */
     public function template(): BelongsTo
     {
-        return $this->belongsTo(TournamentTemplate::class, 'template_id');
+        return $this->belongsTo(TournamentTemplate::class, 'template_id')->withTrashed();
     }
 }

@@ -16,7 +16,7 @@
             </h3>
             <p class="text-xs text-slate-400 leading-relaxed">
                 @if($confirmAction === 'delete')
-                    This will permanently remove the broadcast. This action cannot be undone.
+                    This hides the broadcast from all lists. Its content and previously delivered notifications remain stored.
                 @else
                     This will set the end time to now, immediately stopping the broadcast.
                 @endif

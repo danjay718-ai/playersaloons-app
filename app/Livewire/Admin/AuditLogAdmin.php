@@ -6,7 +6,7 @@ namespace App\Livewire\Admin;
 
 use Illuminate\Support\Facades\DB;
 use Livewire\WithPagination;
-use Spatie\Activitylog\Models\Activity;
+use App\Modules\Operations\Models\Activity;
 
 class AuditLogAdmin extends AdminComponent
 {

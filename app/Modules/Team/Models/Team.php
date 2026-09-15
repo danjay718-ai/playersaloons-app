@@ -81,6 +81,6 @@ class Team extends Model implements HasMedia
      */
     public function captain(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'captain_user_id');
+        return $this->belongsTo(User::class, 'captain_user_id')->withTrashed();
     }
 }

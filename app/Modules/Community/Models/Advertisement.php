@@ -6,9 +6,12 @@ namespace App\Modules\Community\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Advertisement extends Model
 {
+    use SoftDeletes;
+
     /** @var list<string> */
     protected $fillable = ['uuid', 'title', 'description', 'image_url', 'target_url', 'cta_label', 'is_active', 'starts_at', 'ends_at', 'impressions', 'clicks', 'created_by'];
 

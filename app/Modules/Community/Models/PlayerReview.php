@@ -6,10 +6,13 @@ namespace App\Modules\Community\Models;
 
 use App\Modules\Identity\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PlayerReview extends Model
 {
+    use SoftDeletes;
+
     /** @var list<string> */
     protected $fillable = ['uuid', 'user_id', 'rating', 'review', 'status', 'moderated_by', 'moderated_at', 'moderation_notes'];
 
@@ -21,11 +24,11 @@ class PlayerReview extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function moderator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'moderated_by');
+        return $this->belongsTo(User::class, 'moderated_by')->withTrashed();
     }
 }

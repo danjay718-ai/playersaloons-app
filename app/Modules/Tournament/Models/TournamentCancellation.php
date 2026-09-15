@@ -65,7 +65,7 @@ class TournamentCancellation extends Model
      */
     public function tournament(): BelongsTo
     {
-        return $this->belongsTo(Tournament::class);
+        return $this->belongsTo(Tournament::class)->withTrashed();
     }
 
     /**
@@ -75,6 +75,6 @@ class TournamentCancellation extends Model
      */
     public function cancelledBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'cancelled_by');
+        return $this->belongsTo(User::class, 'cancelled_by')->withTrashed();
     }
 }

@@ -108,7 +108,7 @@ class MatchResultSubmission extends Model
      */
     public function submittedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'submitted_by');
+        return $this->belongsTo(User::class, 'submitted_by')->withTrashed();
     }
 
     /**

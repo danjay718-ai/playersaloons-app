@@ -199,7 +199,7 @@ class AdminPanelTest extends TestCase
         }
     }
 
-    public function test_game_management_filters_active_and_archived_games(): void
+    public function test_game_management_hides_deleted_games_even_when_archived_tab_is_requested(): void
     {
         $archived = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
@@ -221,8 +221,8 @@ class AdminPanelTest extends TestCase
             ->assertSee('Test Game')
             ->call('clearGameFilters')
             ->call('setGameRecordTab', 'archived')
-            ->assertSee('Archived Racer')
-            ->assertDontSee('Test Game');
+            ->assertDontSee('Archived Racer')
+            ->assertSee('Test Game');
     }
 
     /**

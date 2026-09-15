@@ -35,7 +35,7 @@ final class GameHeadToHeadDefaultController extends Controller
         abort_unless(config('features.tournament_v2.enabled'), 404);
         abort_unless($request->user()?->can('tournaments.manage'), 403);
         $data = $request->validate([
-            'default_platform_id' => ['required', 'integer', 'exists:platforms,id'],
+            'default_platform_id' => ['required', 'integer', 'exists:platforms,id,deleted_at,NULL'],
             'description' => ['nullable', 'string', 'max:10000'],
             'rules' => ['nullable', 'string', 'max:20000'],
             'head_to_head_banner' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096'],

@@ -142,7 +142,7 @@ final class TranslationAdmin extends AdminComponent
 
     public function deleteKey(TranslationCatalogService $catalog, string $key): void
     {
-        abort_unless($this->actor()->can('translations.manage'), 403);
+        abort_unless($this->actor()->can('translations.delete'), 403);
         $catalog->deleteKey($key);
         $catalog->exportJsonFiles();
 

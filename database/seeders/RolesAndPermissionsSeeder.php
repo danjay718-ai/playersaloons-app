@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use App\Modules\Identity\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
@@ -16,6 +16,12 @@ class RolesAndPermissionsSeeder extends Seeder
      * @var array<int, string>
      */
     private array $permissions = [
+        // Recoverable management deletion
+        'games.delete', 'platforms.delete', 'tournaments.delete', 'policies.delete',
+        'cms.delete', 'navigation.delete', 'advertisements.delete', 'broadcast_messages.delete',
+        'contact_inquiries.delete', 'newsletters.delete', 'player_reviews.delete',
+        'error_incidents.delete', 'streams.delete', 'roles.delete', 'translations.delete', 'geo_blocking.delete',
+
         // Users
         'users.view',
         'users.create',

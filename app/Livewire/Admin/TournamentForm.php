@@ -252,7 +252,7 @@ class TournamentForm extends AdminComponent
             $this->platform_ids = [$this->platform_id];
         }
         if ($this->isLocked || ! Game::query()->whereKey($this->game_id)->whereHas('platforms')->exists()) {
-            return ['platform_ids' => ['required', 'array', 'min:1'], 'platform_ids.*' => ['integer', 'distinct', 'exists:platforms,id']];
+            return ['platform_ids' => ['required', 'array', 'min:1'], 'platform_ids.*' => ['integer', 'distinct', ($this->isLocked ? 'exists:platforms,id' : 'exists:platforms,id,deleted_at,NULL')]];
         }
 
         return CompetitionPlatforms::rules($this->game_id);
@@ -263,7 +263,7 @@ class TournamentForm extends AdminComponent
         $rules = match ($step) {
             1 => [
                 'name' => 'required|string|max:255',
-                'game_id' => 'required|exists:games,id',
+                'game_id' => $this->isLocked ? 'required|exists:games,id' : 'required|exists:games,id,deleted_at,NULL',
                 'competition_type' => 'required|in:tournament,head_to_head',
                 ...$this->platformRules(),
                 'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
@@ -332,7 +332,7 @@ class TournamentForm extends AdminComponent
 
         $this->validate([
             'name' => 'required|string|max:255',
-            'game_id' => 'required|exists:games,id',
+            'game_id' => $this->isLocked ? 'required|exists:games,id' : 'required|exists:games,id,deleted_at,NULL',
             'competition_type' => 'required|in:tournament,head_to_head',
             'max_participants' => 'required|integer|min:2',
             'min_participants' => 'required|integer|min:2|lte:max_participants',
@@ -581,7 +581,9 @@ class TournamentForm extends AdminComponent
 
     public function render()
     {
-        $games = Game::query()->withTrashed()
+        $historicalGame = $this->game_id > 0 ? Game::withTrashed()->find($this->game_id) : null;
+        $historicalPlatformNames = $this->isLocked ? Platform::withTrashed()->whereIn('id', $this->platform_ids)->orderBy('name')->pluck('name')->implode(', ') : '';
+        $games = Game::query()
             ->with('translations')
             ->where(fn ($query) => $query->where('is_active', true)->when($this->game_id > 0, fn ($games) => $games->orWhere('id', $this->game_id)))
             ->get();
@@ -598,6 +600,8 @@ class TournamentForm extends AdminComponent
 
         return view('livewire.admin.tournament-form', [
             'games' => $games,
+            'historicalGame' => $historicalGame,
+            'historicalPlatformNames' => $historicalPlatformNames,
             'platforms' => $platforms,
             'timezones' => DateTimeZone::listIdentifiers(),
         ])->layout('components.layouts.admin', [

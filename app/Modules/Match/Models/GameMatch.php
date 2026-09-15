@@ -129,7 +129,7 @@ class GameMatch extends Model
      */
     public function tournament(): BelongsTo
     {
-        return $this->belongsTo(Tournament::class);
+        return $this->belongsTo(Tournament::class)->withTrashed();
     }
 
     /**

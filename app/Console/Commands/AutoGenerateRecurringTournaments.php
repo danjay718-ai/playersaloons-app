@@ -31,7 +31,7 @@ final class AutoGenerateRecurringTournaments extends Command
         }
 
         $maxLeadMinutes = (int) TournamentTemplate::query()
-            ->where('is_recurring', true)
+            ->where('is_recurring', true)->whereNull('tournament_templates.deleted_at')->whereHas('game', fn ($games) => $games->whereNull('games.deleted_at'))
             ->max('generation_lead_minutes');
         $candidateCutoff = now()->addMinutes(max(0, $maxLeadMinutes));
         $created = 0;
@@ -39,7 +39,7 @@ final class AutoGenerateRecurringTournaments extends Command
         if (config('features.tournament_v2.enabled')) {
             TournamentScheduleSlot::query()
                 ->where('is_active', true)
-                ->whereHas('template', fn ($templates) => $templates->where('workflow_version', 2)->where('is_recurring', true))
+                ->whereHas('template', fn ($templates) => $templates->where('workflow_version', 2)->where('is_recurring', true)->whereNull('tournament_templates.deleted_at')->whereHas('game', fn ($games) => $games->whereNull('games.deleted_at')))
                 ->orderBy('id')
                 ->chunkById(100, function ($slots) use ($creator, $materialize, &$created): void {
                     foreach ($slots as $slot) {
@@ -55,7 +55,7 @@ final class AutoGenerateRecurringTournaments extends Command
         }
 
         TournamentTemplate::query()
-            ->where('is_recurring', true)
+            ->where('is_recurring', true)->whereNull('tournament_templates.deleted_at')->whereHas('game', fn ($games) => $games->whereNull('games.deleted_at'))
             ->where('workflow_version', 1)
             ->whereNotNull('next_run_at')
             ->where('next_run_at', '<=', $candidateCutoff)

@@ -20,7 +20,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\WithPagination;
-use Spatie\Permission\Models\Role;
+use App\Modules\Identity\Models\Role;
 
 class UserAdmin extends AdminComponent
 {
@@ -444,7 +444,7 @@ class UserAdmin extends AdminComponent
             return;
         }
 
-        $user->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('users', [$user->id], $actor);
         $this->showDeleteModal = false;
         $this->selectedUserId = null;
         session()->flash('success', 'User account deleted successfully.');

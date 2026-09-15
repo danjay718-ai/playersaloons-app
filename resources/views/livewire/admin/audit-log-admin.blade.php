@@ -200,7 +200,7 @@
                         <i data-lucide="triangle-alert" class="h-6 w-6"></i>
                     </div>
                     <h3 class="text-base font-black text-slate-100">Clear all audit logs?</h3>
-                    <p class="mt-2 text-sm leading-relaxed text-slate-400">This permanently removes the current audit history. A new record identifying who cleared it and how many entries were removed will remain.</p>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-400">This hides the current audit history from normal lists for every role. All entries remain stored for recovery. A new record identifying who cleared it and how many entries were removed will remain.</p>
                 </div>
                 <div class="flex justify-end gap-3 px-6 py-4">
                     <button type="button" wire:click="$set('showClearModal', false)" class="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2.5 text-xs font-bold uppercase text-slate-300 hover:bg-slate-700">

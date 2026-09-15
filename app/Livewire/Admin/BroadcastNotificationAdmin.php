@@ -127,7 +127,7 @@ class BroadcastNotificationAdmin extends AdminComponent
             session()->flash('success', 'Broadcast expired.');
         } elseif ($this->confirmAction === 'delete') {
             $this->guardSuperAdmin();
-            $broadcast->delete();
+            app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('broadcasts', [$broadcast->id], $this->actor());
             session()->flash('success', 'Broadcast deleted.');
         }
 

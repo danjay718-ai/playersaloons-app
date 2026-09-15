@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Url;
 use Livewire\Component;
-use Spatie\Activitylog\Models\Activity;
+use App\Modules\Operations\Models\Activity;
 
 class TournamentDetail extends Component
 {

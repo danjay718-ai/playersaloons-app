@@ -91,10 +91,13 @@ final class TranslationCatalogService
         $key = trim($key);
 
         foreach (array_keys($this->supportedLanguages()) as $locale) {
-            TranslationString::query()->firstOrCreate(
+            $row = TranslationString::withTrashed()->firstOrCreate(
                 ['key' => $key, 'locale' => $locale],
                 ['text' => $locale === 'en' ? $key : null],
             );
+            if ($row->trashed()) {
+                $row->restore();
+            }
         }
     }
 

@@ -307,7 +307,7 @@ class TournamentAdmin extends AdminComponent
             return;
         }
 
-        $tournament->delete();
+        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('tournaments', [$tournament->id], $this->actor());
         session()->flash('success', 'Tournament deleted successfully.');
         $this->closeDeleteModal();
     }

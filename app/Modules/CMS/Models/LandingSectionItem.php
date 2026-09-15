@@ -41,6 +41,6 @@ class LandingSectionItem extends Model
      */
     public function section(): BelongsTo
     {
-        return $this->belongsTo(LandingSection::class, 'landing_section_id');
+        return $this->belongsTo(LandingSection::class, 'landing_section_id')->withTrashed();
     }
 }

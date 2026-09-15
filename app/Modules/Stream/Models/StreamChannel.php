@@ -8,6 +8,7 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -41,6 +42,8 @@ use Illuminate\Support\Facades\Auth;
  */
 class StreamChannel extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'user_id',
         'tournament_id',
@@ -122,7 +125,7 @@ class StreamChannel extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     /**
@@ -130,7 +133,7 @@ class StreamChannel extends Model
      */
     public function tournament(): BelongsTo
     {
-        return $this->belongsTo(Tournament::class);
+        return $this->belongsTo(Tournament::class)->withTrashed();
     }
 
     /**
@@ -146,7 +149,7 @@ class StreamChannel extends Model
      */
     public function takenDownBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'taken_down_by');
+        return $this->belongsTo(User::class, 'taken_down_by')->withTrashed();
     }
 
     /**

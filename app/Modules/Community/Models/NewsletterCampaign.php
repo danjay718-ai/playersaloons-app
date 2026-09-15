@@ -6,6 +6,7 @@ namespace App\Modules\Community\Models;
 
 use App\Modules\Identity\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -24,6 +25,8 @@ use Illuminate\Support\Carbon;
  */
 class NewsletterCampaign extends Model
 {
+    use SoftDeletes;
+
     /** @var list<string> */
     protected $fillable = [
         'uuid',
@@ -46,6 +49,6 @@ class NewsletterCampaign extends Model
     /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 }

@@ -22,7 +22,7 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
     {
         return [
             'competition_type' => ['nullable', 'in:tournament,head_to_head'],
-            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'game_id' => ['required', 'integer', 'exists:games,id,deleted_at,NULL'],
             ...CompetitionPlatforms::rules($this->integer('game_id')),
             'name' => ['required', 'string', 'max:191'],
             'description' => ['nullable', 'string', 'max:10000'],
@@ -45,7 +45,7 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
             'slots.*.schedule_end_at' => ['required', 'date', 'after:slots.*.schedule_start_at'],
             'slots.*.day_of_week' => ['nullable', 'integer', 'between:0,6'],
             'slots.*.day_of_month' => ['nullable', 'integer', 'between:1,31'],
-            'slots.*.platform_id' => ['nullable', 'integer', 'exists:platforms,id'],
+            'slots.*.platform_id' => ['nullable', 'integer', 'exists:platforms,id,deleted_at,NULL'],
             'slots.*.name' => ['nullable', 'string', 'max:191'],
             'slots.*.max_teams' => ['nullable', 'integer', 'min:2', 'max:128'],
             'slots.*.entry_fee' => ['nullable', 'regex:/^\d+(?:\.\d{1,2})?$/'],

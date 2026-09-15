@@ -26,6 +26,6 @@ final class TournamentCancellationVote extends Model
 
     public function voter(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'voter_id');
+        return $this->belongsTo(User::class, 'voter_id')->withTrashed();
     }
 }

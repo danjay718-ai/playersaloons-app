@@ -84,7 +84,7 @@ class MatchDispute extends Model implements HasMedia
      */
     public function openedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'opened_by');
+        return $this->belongsTo(User::class, 'opened_by')->withTrashed();
     }
 
     /**
@@ -94,7 +94,7 @@ class MatchDispute extends Model implements HasMedia
      */
     public function resolvedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'resolved_by');
+        return $this->belongsTo(User::class, 'resolved_by')->withTrashed();
     }
 
     /**

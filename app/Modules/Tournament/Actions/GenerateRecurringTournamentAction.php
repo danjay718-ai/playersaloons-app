@@ -33,11 +33,18 @@ final class GenerateRecurringTournamentAction
             /** @var TournamentTemplate $locked */
             $locked = TournamentTemplate::query()->lockForUpdate()->findOrFail($template->getKey());
 
+            if ($locked->game === null || $locked->game->trashed()) {
+                return null;
+            }
+
             if (! $locked->is_recurring || $locked->recurrence_frequency === null || $locked->next_run_at === null) {
                 return null;
             }
 
             $settings = $locked->settings_json ?? [];
+            if (\App\Modules\Tournament\Support\CompetitionPlatforms::hasDeleted($settings)) {
+                return null;
+            }
             $nextRun = CarbonImmutable::instance($locked->next_run_at);
 
             // Do not backfill already-missed events after downtime. Advancing to

@@ -29,6 +29,9 @@ final class MaterializeV2OccurrenceAction
                 ->lockForUpdate()
                 ->findOrFail($slot->id);
             $template = $lockedSlot->template;
+            if ($template === null || $template->trashed() || $template->game === null || $template->game->trashed()) {
+                return null;
+            }
             if ((int) $template->workflow_version !== 2 || ! $lockedSlot->is_active) {
                 throw new LogicException('This V2 schedule slot is not active.');
             }
@@ -73,6 +76,9 @@ final class MaterializeV2OccurrenceAction
             $settings = array_replace($template->settings_json ?? [], $lockedSlot->overrides_json ?? []);
             if (isset($lockedSlot->overrides_json['platform_id']) && ! isset($lockedSlot->overrides_json['platform_ids'])) {
                 $settings['platform_ids'] = [(int) $lockedSlot->overrides_json['platform_id']];
+            }
+            if (CompetitionPlatforms::hasDeleted($settings)) {
+                return null;
             }
             // Tournament and platform H2H defaults deliberately remain
             // separate. The occurrence receives a snapshot either way.

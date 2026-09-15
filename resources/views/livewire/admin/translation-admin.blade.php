@@ -1,4 +1,6 @@
 <div class="space-y-6">
+    <livewire:admin.recoverable-delete resource="translations" />
+
     @unless($this->translationTableReady)
         <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200">
             <h2 class="text-sm font-extrabold uppercase tracking-widest">Translation table is not installed</h2>
@@ -118,9 +120,7 @@
                                 <button type="button" wire:click="editKey(@js($keyRow->key))" class="rounded-lg border border-indigo-900/50 bg-indigo-950/40 p-1.5 text-indigo-400 hover:text-white" title="Edit translations">
                                     <i data-lucide="edit" class="h-4 w-4"></i>
                                 </button>
-                                <button type="button" wire:click="deleteKey(@js($keyRow->key))" wire:confirm="Delete this translation key from every language?" class="ml-1 rounded-lg border border-red-900/50 bg-red-950/40 p-1.5 text-red-400 hover:text-white" title="Delete key">
-                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
-                                </button>
+                                <livewire:admin.recoverable-delete resource="translations" :record-id="\App\Modules\Localization\Models\TranslationString::where('key', $keyRow->key)->where('locale', 'en')->value('id')" :key="'delete-translation-'.$keyRow->key" />
                             </td>
                         </tr>
                     @empty

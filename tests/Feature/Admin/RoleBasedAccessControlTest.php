@@ -155,7 +155,8 @@ class RoleBasedAccessControlTest extends TestCase
             ->call('confirmDeleteRole')
             ->assertHasNoErrors();
 
-        $this->assertDatabaseMissing('roles', ['name' => 'LEAD_COORDINATOR']);
+        $this->assertSoftDeleted('roles', ['name' => 'LEAD_COORDINATOR']);
+        $this->assertNull(\App\Modules\Identity\Models\Role::where('name', 'LEAD_COORDINATOR')->first());
     }
 
     public function test_protected_roles_cannot_be_renamed_or_deleted(): void

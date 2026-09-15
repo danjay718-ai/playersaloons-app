@@ -154,7 +154,8 @@ class BroadcastNotificationAdminTest extends TestCase
             ->call('confirmDelete', $broadcast->id)
             ->call('executeConfirm');
 
-        $this->assertDatabaseMissing('broadcast_messages', ['id' => $broadcast->id]);
+        $this->assertSoftDeleted('broadcast_messages', ['id' => $broadcast->id]);
+        $this->assertNull(BroadcastMessage::find($broadcast->id));
     }
 
     public function test_admin_cannot_delete_broadcast(): void

@@ -2,6 +2,9 @@
     showDetail: @entangle('showDetailModal'), 
     showCancel: @entangle('showCancelModal') 
 }">
+    <livewire:admin.recoverable-delete resource="tournaments" />
+    <livewire:admin.recoverable-delete resource="tournament_schedules" />
+
     <!-- Top Action Bar -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <!-- Search -->
@@ -311,7 +314,7 @@
                                     </div>
                                     
                                     <div class="py-1">
-                                        @if($tournament->template)
+                                        @if($tournament->template && !$tournament->template->trashed())
                                             <button @click="open = false" wire:click="setRecurringScheduleState({{ $tournament->template->id }}, {{ $tournament->template->is_recurring ? 'false' : 'true' }})" class="w-full flex items-center px-4 py-2 text-xs text-cyan-300 hover:bg-slate-800 hover:text-cyan-200 text-left">
                                                 <i data-lucide="{{ $tournament->template->is_recurring ? 'pause' : 'play' }}" class="w-3.5 h-3.5 mr-2"></i>
                                                 {{ $tournament->template->is_recurring ? 'Pause Recurrence' : 'Resume Recurrence' }}
@@ -343,10 +346,7 @@
                                         
                                         <!-- Delete -->
                                         @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT && $tournament->registrations_count == 0)
-                                            <button @click="open = false" wire:click="openDeleteModal({{ $tournament->id }})" class="w-full flex items-center px-4 py-2 text-xs text-red-400 hover:bg-slate-800 hover:text-red-300 text-left">
-                                                <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-2"></i>
-                                                Delete Permanently
-                                            </button>
+                                            <livewire:admin.recoverable-delete resource="tournaments" :record-id="$tournament->id" :key="'delete-tournaments-'.$tournament->id" />
                                         @endif
                                     </div>
                                 </x-admin.action-dropdown>
@@ -366,7 +366,7 @@
     <x-admin.delete-modal 
         show="showDeleteModal" 
         title="Delete Tournament?" 
-        message="Are you sure you want to permanently delete this draft tournament? This action cannot be undone." 
+        message="Are you sure you want to delete this draft tournament? The record will be hidden and its history will remain stored."
         action="deleteTournament" 
     />
 

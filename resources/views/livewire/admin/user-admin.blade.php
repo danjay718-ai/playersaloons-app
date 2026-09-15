@@ -54,6 +54,8 @@ x-on:user-suspended.window="suspendModal.open = false"
 x-on:user-role-updated.window="roleModal.open = false"
 x-on:super-admin-transferred.window="transferModal.open = false"
 x-on:keydown.escape.window="closeAll()">
+    <livewire:admin.recoverable-delete resource="users" />
+
     <!-- Tabs -->
     <div class="flex space-x-1 border-b border-slate-800 mb-6 relative">
         <div wire:loading wire:target="setTab" class="absolute top-0 right-0 p-3">
@@ -231,9 +233,7 @@ x-on:keydown.escape.window="closeAll()">
                                         @endcan
                                         @can('delete', $usr)
                                             @if(! $usr->hasRole('SUPER_ADMIN') && $usr->id !== auth()->id())
-                                                <button type="button" @click.stop="$dispatch('open-delete', { id: {{ $usr->id }}, username: @js($usr->username) }); open = false" class="block w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-red-400 transition-colors hover:bg-red-950/40 hover:text-red-300">
-                                                    Delete User
-                                                </button>
+                                                <livewire:admin.recoverable-delete resource="users" :record-id="$usr->id" :key="'delete-users-'.$usr->id" />
                                             @endif
                                         @endcan
                                         @if(auth()->user()?->hasRole('SUPER_ADMIN') && $usr->id !== auth()->id() && ! $usr->hasRole('SUPER_ADMIN'))
