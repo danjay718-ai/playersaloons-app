@@ -1,5 +1,4 @@
 <div x-data="{ showDetail: @entangle('showDetailModal') }">
-    <livewire:admin.recoverable-delete resource="errors" />
 
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -147,4 +146,5 @@
             </section>
         @endif
     </div>
+    <x-admin.deletion-actions resource="errors" />
 </div>

@@ -1,5 +1,4 @@
 <div class="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-    <livewire:admin.recoverable-delete resource="content" />
 
     <aside class="space-y-4">
         <div class="rounded-xl border border-slate-800 bg-[#0f172a] p-4">
@@ -238,6 +237,7 @@
             </div>
         </form>
     </section>
+    <x-admin.deletion-actions resource="content" />
 </div>
 
 <style>

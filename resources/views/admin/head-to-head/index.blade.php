@@ -1,5 +1,4 @@
 <x-layouts.admin title="Head-to-Head Management" admin_title="Head-to-Head Management">
-    <livewire:admin.recoverable-delete resource="head_to_head_schedules" />
     @php
         $filterUrl = static fn (array $overrides = []) => route('admin.h2h.index', array_merge(request()->except('page'), $overrides));
         $statusCards = [
@@ -50,4 +49,5 @@
             @if($templates->hasPages())<div class="border-t border-slate-800 px-4 py-3">{{ $templates->links('vendor.livewire.custom-pagination') }}</div>@endif
         </div>
     </div>
+    <x-admin.deletion-actions resource="head_to_head_schedules" />
 </x-layouts.admin>

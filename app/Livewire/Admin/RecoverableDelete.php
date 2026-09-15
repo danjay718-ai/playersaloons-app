@@ -22,6 +22,9 @@ class RecoverableDelete extends AdminComponent
     public ?int $recordId = null;
 
     #[Locked]
+    public bool $menuItem = false;
+
+    #[Locked]
     public array $reviewedIds = [];
 
     public bool $showModal = false;
@@ -33,12 +36,13 @@ class RecoverableDelete extends AdminComponent
     #[Locked]
     public bool $confirming = false;
 
-    public function mount(string $resource, ?int $parentId = null, ?int $recordId = null): void
+    public function mount(string $resource, ?int $parentId = null, ?int $recordId = null, bool $menuItem = false): void
     {
         app(AdminDeletionService::class)->definition($resource);
         $this->resource = $resource;
         $this->parentId = $parentId;
         $this->recordId = $recordId;
+        $this->menuItem = $menuItem;
     }
 
     private function authorizeDeletion(): void
@@ -49,7 +53,7 @@ class RecoverableDelete extends AdminComponent
     public function open(): void
     {
         $this->authorizeDeletion();
-        $this->reset(['selectedIds', 'search', 'confirming']);
+        $this->reset(['selectedIds', 'reviewedIds', 'search', 'confirming']);
         $this->resetValidation();
         $this->resetPage('deletePage');
         $this->showModal = true;
@@ -77,9 +81,11 @@ class RecoverableDelete extends AdminComponent
         $this->reviewedIds = $this->selectedIds;
     }
 
-    public function back(): void
+    public function cancel(): void
     {
-        $this->confirming = false;
+        $this->reset(['showModal', 'selectedIds', 'reviewedIds', 'search', 'confirming']);
+        $this->resetValidation();
+        $this->resetPage('deletePage');
     }
 
     public function deleteSelected(): void
@@ -101,6 +107,7 @@ class RecoverableDelete extends AdminComponent
         $allowed = $this->actor()->can($definition[1]);
         $records = null;
         $selected = collect();
+        $blockedReasons = [];
         if ($allowed && $this->showModal) {
             $query = $service->query($this->resource, $this->parentId);
             if ($this->search !== '') {
@@ -109,9 +116,14 @@ class RecoverableDelete extends AdminComponent
             $records = $query->orderByDesc('id')->paginate(15, ['*'], 'deletePage');
             if ($this->confirming) {
                 $selected = $service->query($this->resource, $this->parentId)->whereKey(array_slice($this->selectedIds, 0, 100))->get();
+                foreach ($selected as $record) {
+                    if ($reason = $service->blockedReason($record, $this->actor())) {
+                        $blockedReasons[$record->id] = $reason;
+                    }
+                }
             }
         }
 
-        return view('livewire.admin.recoverable-delete', compact('allowed', 'definition', 'records', 'selected', 'service'));
+        return view('livewire.admin.recoverable-delete', compact('allowed', 'definition', 'records', 'selected', 'service', 'blockedReasons'));
     }
 }

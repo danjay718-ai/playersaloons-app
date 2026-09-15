@@ -17,7 +17,7 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     private array $permissions = [
         // Recoverable management deletion
-        'games.delete', 'platforms.delete', 'tournaments.delete', 'policies.delete',
+        'games.delete', 'games.restore', 'games.force_delete', 'platforms.delete', 'tournaments.delete', 'policies.delete',
         'cms.delete', 'navigation.delete', 'advertisements.delete', 'broadcast_messages.delete',
         'contact_inquiries.delete', 'newsletters.delete', 'player_reviews.delete',
         'error_incidents.delete', 'streams.delete', 'roles.delete', 'translations.delete', 'geo_blocking.delete',

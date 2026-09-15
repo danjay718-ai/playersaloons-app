@@ -1,5 +1,4 @@
 <div>
-    <livewire:admin.recoverable-delete resource="broadcasts" />
 
     {{-- Top Bar --}}
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -37,4 +36,5 @@
     {{-- Modals --}}
     @include('livewire.admin.partials.broadcast._form-modal')
     @include('livewire.admin.partials.broadcast._confirm-modal')
+    <x-admin.deletion-actions resource="broadcasts" />
 </div>

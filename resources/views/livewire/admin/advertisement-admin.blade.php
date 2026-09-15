@@ -1,5 +1,4 @@
 <div class="grid gap-6 xl:grid-cols-[420px_1fr]">
-    <livewire:admin.recoverable-delete resource="advertisements" />
 
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
         @if(session('success'))<div class="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">{{ session('success') }}</div>@endif
@@ -21,4 +20,5 @@
             <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4"><div class="flex justify-between gap-4"><div><div class="flex items-center gap-2"><h3 class="font-bold text-white">{{ $ad->title }}</h3><span class="rounded-full px-2 py-0.5 text-[10px] font-bold {{ $ad->is_active ? 'bg-emerald-500/10 text-emerald-300' : 'bg-slate-800 text-slate-500' }}">{{ $ad->is_active ? 'ACTIVE' : 'INACTIVE' }}</span></div><p class="mt-2 text-xs text-slate-500">{{ $ad->description }}</p><p class="mt-2 text-[11px] text-slate-600">{{ $ad->starts_at?->format('M d, Y H:i') ?? 'Immediately' }} → {{ $ad->ends_at?->format('M d, Y H:i') ?? 'No end date' }} · {{ $ad->clicks }} clicks</p></div><div class="flex gap-2"><button wire:click="edit({{ $ad->id }})" class="text-xs text-indigo-300">Edit</button><livewire:admin.recoverable-delete resource="advertisements" :record-id="$ad->id" :key="'delete-advertisements-'.$ad->id" /></div></div></div>
         @empty<p class="rounded-xl border border-slate-800 p-8 text-center text-sm text-slate-500">No advertisements or promotions yet.</p>@endforelse
     </section>
+    <x-admin.deletion-actions resource="advertisements" />
 </div>

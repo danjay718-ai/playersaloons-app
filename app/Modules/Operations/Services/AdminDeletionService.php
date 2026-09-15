@@ -130,10 +130,22 @@ final class AdminDeletionService
                 $competitions->where(fn ($query) => $query->where('platform_id', $record->id)->orWhereJsonContains('platform_ids', (int) $record->id));
             }
             $column = $record instanceof Game ? 'game_id' : 'platform_id';
-            if ($competitions->exists()
-                || DB::table('head_to_head_matches')->where($column, $record->id)->whereNotIn('status', ['completed', 'cancelled', 'expired'])->exists()
-                || DB::table('head_to_head_challenges')->where($column, $record->id)->where('status', 'waiting')->exists()) {
-                return 'Finish or cancel active competitions using this catalog entry before deleting it.';
+            $tournamentCount = $competitions->count();
+            $matchCount = DB::table('head_to_head_matches')->where($column, $record->id)->whereNotIn('status', ['completed', 'cancelled', 'expired'])->count();
+            $challengeCount = DB::table('head_to_head_challenges')->where($column, $record->id)->where('status', 'waiting')->count();
+            $dependencies = [];
+            if ($tournamentCount > 0) {
+                $names = $competitions->orderBy('id')->limit(3)->pluck('name')->implode(', ');
+                $dependencies[] = $tournamentCount.' active tournament(s): '.$names.($tournamentCount > 3 ? ' and others' : '');
+            }
+            if ($matchCount > 0) {
+                $dependencies[] = $matchCount.' active Head-to-Head match(es)';
+            }
+            if ($challengeCount > 0) {
+                $dependencies[] = $challengeCount.' waiting Head-to-Head challenge(s)';
+            }
+            if ($dependencies !== []) {
+                return 'This catalog entry is used by '.implode('; ', $dependencies).'. Finish or cancel these competitions before deleting it.';
             }
         }
         if ($record instanceof Tournament && ($record->status->value !== 'DRAFT' || $record->registrations()->exists())) {

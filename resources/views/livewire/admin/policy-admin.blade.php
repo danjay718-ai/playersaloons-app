@@ -1,5 +1,4 @@
 <div class="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-    <livewire:admin.recoverable-delete resource="policies" />
 
     <aside class="space-y-3">
         @foreach($policies as $policy)
@@ -154,4 +153,5 @@
             font-size: 0.875rem !important;
         }
     </style>
+    <x-admin.deletion-actions resource="policies" />
 </div>

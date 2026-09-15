@@ -2,8 +2,6 @@
     showDetail: @entangle('showDetailModal'), 
     showCancel: @entangle('showCancelModal') 
 }">
-    <livewire:admin.recoverable-delete resource="tournaments" />
-    <livewire:admin.recoverable-delete resource="tournament_schedules" />
 
     <!-- Top Action Bar -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -161,7 +159,27 @@
     @if($v2Templates)
         <div class="mb-6 overflow-hidden rounded-xl border border-indigo-900/50 bg-[#0f172a] shadow-sm">
             <div class="flex flex-col gap-2 border-b border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 class="text-sm font-bold text-white">Tournament List</h2><p class="mt-1 text-xs text-slate-500">One row per tournament schedule. Open slots to manage individual occurrences.</p></div><span class="rounded border border-indigo-800/60 bg-indigo-950/50 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-indigo-300">Grouped view</span></div>
-            <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="border-b border-slate-800 text-[10px] font-bold uppercase text-slate-400"><th class="p-4">Schedule</th><th class="p-4">Game</th><th class="p-4">Frequency</th><th class="p-4">Slots</th><th class="p-4">Schedule window</th><th class="p-4 text-right">Actions</th></tr></thead><tbody class="divide-y divide-slate-800/50">@forelse($v2Templates as $template)<tr class="hover:bg-slate-900/40" wire:key="v2-template-{{ $template->id }}"><td class="p-4"><span class="font-semibold text-slate-200">{{ $template->name }}</span><span class="mt-1 block text-[10px] text-slate-500">{{ $template->uuid }}</span></td><td class="p-4 text-slate-300">{{ $template->game?->translations->first()?->name ?? $template->game?->slug }}</td><td class="p-4 text-slate-300">{{ $template->recurrence_frequency?->value ?? 'one-time' }}</td><td class="p-4 text-slate-300">{{ $template->slots_count }}</td><td class="p-4"><x-admin.v2-schedule-window :template="$template" /></td><td class="p-4 text-right"><a href="{{ route('admin.tournaments.v2.templates.slots', $template) }}" class="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white hover:bg-indigo-500"><i data-lucide="list-tree" class="mr-1.5 h-3.5 w-3.5"></i>View slots</a></td></tr>@empty<tr><td colspan="6" class="p-8 text-center text-slate-500">No V2 tournament schedules match the filters.</td></tr>@endforelse</tbody></table></div>
+            <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="border-b border-slate-800 text-[10px] font-bold uppercase text-slate-400"><th class="p-4">Schedule</th><th class="p-4">Game</th><th class="p-4">Frequency</th><th class="p-4">Slots</th><th class="p-4">Schedule window</th><th class="p-4 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <span>Actions</span>
+                                @can('tournaments.delete')
+                                    <x-admin.action-dropdown>
+                                        <div class="py-1 font-normal normal-case">
+                                            <livewire:admin.recoverable-delete resource="tournament_schedules" :menu-item="true" :key="'bulk-delete-tournament_schedules'" />
+                                        </div>
+                                    </x-admin.action-dropdown>
+                                @endcan
+                            </div>
+                        </th></tr></thead><tbody class="divide-y divide-slate-800/50">@forelse($v2Templates as $template)<tr class="hover:bg-slate-900/40" wire:key="v2-template-{{ $template->id }}"><td class="p-4"><span class="font-semibold text-slate-200">{{ $template->name }}</span><span class="mt-1 block text-[10px] text-slate-500">{{ $template->uuid }}</span></td><td class="p-4 text-slate-300">{{ $template->game?->translations->first()?->name ?? $template->game?->slug }}</td><td class="p-4 text-slate-300">{{ $template->recurrence_frequency?->value ?? 'one-time' }}</td><td class="p-4 text-slate-300">{{ $template->slots_count }}</td><td class="p-4"><x-admin.v2-schedule-window :template="$template" /></td><td class="p-4 text-right">
+                <x-admin.action-dropdown>
+                    <div class="py-1">
+                        <a href="{{ route('admin.tournaments.v2.templates.slots', $template) }}" class="group flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white">
+                            <i data-lucide="list-tree" class="mr-2 h-3.5 w-3.5 text-slate-500 group-hover:text-indigo-400"></i>View slots
+                        </a>
+                        <livewire:admin.recoverable-delete resource="tournament_schedules" :menu-item="true" :record-id="$template->id" :key="'delete-tournament-schedule-'.$template->id" />
+                    </div>
+                </x-admin.action-dropdown>
+            </td></tr>@empty<tr><td colspan="6" class="p-8 text-center text-slate-500">No V2 tournament schedules match the filters.</td></tr>@endforelse</tbody></table></div>
             @if($v2Templates->hasPages())<div class="border-t border-slate-800 px-4 py-3">{{ $v2Templates->links('vendor.livewire.custom-pagination') }}</div>@endif
         </div>
     @endif
@@ -180,7 +198,18 @@
                         <th class="p-4">Players</th>
                         <th class="p-4">Status</th>
                         <th class="p-4">Start At</th>
-                        <th class="p-4 text-right">Actions</th>
+                        <th class="p-4 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <span>Actions</span>
+                                @can('tournaments.delete')
+                                    <x-admin.action-dropdown>
+                                        <div class="py-1 font-normal normal-case">
+                                            <livewire:admin.recoverable-delete resource="tournaments" :menu-item="true" :key="'bulk-delete-tournaments'" />
+                                        </div>
+                                    </x-admin.action-dropdown>
+                                @endcan
+                            </div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/50">
@@ -346,7 +375,7 @@
                                         
                                         <!-- Delete -->
                                         @if($tournament->status == \App\Shared\Enums\TournamentStatus::DRAFT && $tournament->registrations_count == 0)
-                                            <livewire:admin.recoverable-delete resource="tournaments" :record-id="$tournament->id" :key="'delete-tournaments-'.$tournament->id" />
+                                            <livewire:admin.recoverable-delete resource="tournaments" :menu-item="true" :record-id="$tournament->id" :key="'delete-tournaments-'.$tournament->id" />
                                         @endif
                                     </div>
                                 </x-admin.action-dropdown>

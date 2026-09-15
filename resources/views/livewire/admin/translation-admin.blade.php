@@ -1,5 +1,4 @@
 <div class="space-y-6">
-    <livewire:admin.recoverable-delete resource="translations" />
 
     @unless($this->translationTableReady)
         <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200">
@@ -171,4 +170,5 @@
         </div>
     @endif
     @endunless
+    <x-admin.deletion-actions resource="translations" />
 </div>

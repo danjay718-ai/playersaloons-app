@@ -1,5 +1,4 @@
 <div class="space-y-6">
-    <livewire:admin.recoverable-delete resource="campaigns" />
 
     @if(session('success'))
         <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{{ session('success') }}</div>
@@ -78,4 +77,5 @@
             </section>
         </div>
     </div>
+    <x-admin.deletion-actions resource="campaigns" />
 </div>

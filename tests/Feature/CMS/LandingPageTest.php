@@ -180,9 +180,10 @@ class LandingPageTest extends TestCase
         $this->assertNull($game->banner_path);
     }
 
-    public function test_archiving_a_game_previews_impact_and_preserves_tournament_history(): void
+    public function test_soft_deleting_a_game_previews_impact_and_preserves_tournament_history(): void
     {
         $admin = $this->adminUser();
+        $admin->givePermissionTo('games.delete');
         $player = User::factory()->create(['status' => UserStatus::ACTIVE]);
         $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'legacy-arena', 'is_active' => true]);
         $game->translations()->create(['locale' => 'en', 'name' => 'Legacy Arena']);

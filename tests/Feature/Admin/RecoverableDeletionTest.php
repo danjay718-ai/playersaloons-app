@@ -70,6 +70,44 @@ class RecoverableDeletionTest extends TestCase
         app(AdminDeletionService::class)->delete($resource, $ids, $this->superAdmin, $parentId);
     }
 
+    public function test_cancel_closes_single_record_confirmation_without_opening_selection(): void
+    {
+        Livewire::test(RecoverableDelete::class, ['resource' => 'games', 'recordId' => $this->game->id, 'menuItem' => true])
+            ->call('open')
+            ->assertSet('confirming', true)
+            ->assertSee('Cancel')
+            ->call('cancel')
+            ->assertSet('showModal', false)
+            ->assertSet('confirming', false)
+            ->assertSet('selectedIds', [])
+            ->assertSet('reviewedIds', [])
+            ->assertDontSee('Select one or more records to delete.')
+            ->call('deleteSelected')
+            ->assertStatus(422);
+
+        $this->assertNull($this->game->fresh()->deleted_at);
+    }
+
+    public function test_cancel_clears_bulk_review_and_reopening_starts_with_empty_selection(): void
+    {
+        Livewire::test(RecoverableDelete::class, ['resource' => 'games', 'menuItem' => true])
+            ->call('open')
+            ->set('selectedIds', [$this->game->id])
+            ->call('preview')
+            ->assertSet('confirming', true)
+            ->call('cancel')
+            ->assertSet('showModal', false)
+            ->assertSet('reviewedIds', [])
+            ->assertDontSee('Select one or more records to delete.')
+            ->call('open')
+            ->assertSet('showModal', true)
+            ->assertSet('confirming', false)
+            ->assertSet('selectedIds', [])
+            ->assertSee('Select one or more records to delete.');
+
+        $this->assertNull($this->game->fresh()->deleted_at);
+    }
+
     public function test_deleting_game_preserves_tournaments_accounts_streams_and_historical_names(): void
     {
         $tournament = $this->tournament('COMPLETED');
@@ -282,7 +320,13 @@ class RecoverableDeletionTest extends TestCase
     public function test_game_deletion_is_blocked_while_competition_is_active(): void
     {
         $this->tournament('ONGOING');
-        Livewire::test(RecoverableDelete::class, ['resource' => 'games', 'recordId' => $this->game->id])->call('open')->assertSee('Blocked:')->call('deleteSelected')->assertHasErrors('selectedIds');
+        Livewire::test(RecoverableDelete::class, ['resource' => 'games', 'recordId' => $this->game->id])
+            ->call('open')
+            ->assertSee('Deletion blocked')
+            ->assertSee('Blocked:')
+            ->assertSee('1 active tournament(s): Preserved Cup')
+            ->assertSee('Finish or cancel these competitions before deleting it.')
+            ->call('deleteSelected')->assertHasErrors('selectedIds');
         $this->assertNull($this->game->fresh()->deleted_at);
     }
 

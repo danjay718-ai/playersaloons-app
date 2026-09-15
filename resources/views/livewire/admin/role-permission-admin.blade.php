@@ -21,7 +21,6 @@ x-on:role-created.window="createModal.open = false"
 x-on:role-updated.window="editModal.open = false"
 x-on:role-deleted.window="deleteModal.open = false"
 x-on:keydown.escape.window="closeAll()">
-    <livewire:admin.recoverable-delete resource="roles" />
 
 
     <!-- Feedback Alerts -->
@@ -272,4 +271,5 @@ x-on:keydown.escape.window="closeAll()">
             </div>
         </div>
     </div>
+    <x-admin.deletion-actions resource="roles" />
 </div>

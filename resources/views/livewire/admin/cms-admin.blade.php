@@ -1,8 +1,5 @@
 <div class="admin-game-management" x-data="gameManagementUi($wire)">
-    @if($tab === 'games')<livewire:admin.recoverable-delete resource="games" :key="'delete-games'" />
-    @elseif($tab === 'platforms')<livewire:admin.recoverable-delete resource="platforms" :key="'delete-platforms'" />
-    @elseif($tab === 'navigation')<livewire:admin.recoverable-delete resource="navigation" :key="'delete-navigation'" />
-    @elseif($tab === 'landing')<livewire:admin.recoverable-delete resource="landing_items" :key="'delete-landing'" />@endif
+
 
     <!-- Feedback Alerts -->
     @if(session()->has('success'))
@@ -15,18 +12,24 @@
     <!-- Games Tab Content -->
     @if($tab === 'games')
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div><h2 class="text-lg font-black text-white">Game Management</h2><p class="mt-1 text-xs text-slate-500">Create games, assign platforms, manage artwork, tournament templates, or safely archive catalog entries.</p></div>
+            <div><h2 class="text-lg font-black text-white">Game Management</h2><p class="mt-1 text-xs text-slate-500">Create games, assign platforms, manage artwork, tournament templates, or soft delete catalog entries while preserving connected history.</p></div>
             <button type="button" x-on:click="openCreateGame()" class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500">
                 <i data-lucide="plus" class="h-4 w-4"></i><span>Add New Game</span>
             </button>
         </div>
         <div class="mb-5 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                <div class="flex items-center gap-2">
+                    <button type="button" wire:click="setGameRecordTab('active')" class="rounded-lg px-3 py-2 text-xs font-semibold {{ $gameRecordTab !== 'deleted' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">Games</button>
+                    @if($this->canViewDeletedGames())
+                        <button type="button" wire:click="setGameRecordTab('deleted')" class="rounded-lg px-3 py-2 text-xs font-semibold {{ $gameRecordTab === 'deleted' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">Deleted Games</button>
+                    @endif
+                </div>
                 <button type="button" wire:click="clearGameFilters" class="text-left text-xs font-bold text-slate-400 hover:text-white">Clear filters</button>
             </div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 <label class="xl:col-span-2"><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Search</span><div class="relative"><i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600"></i><input type="search" wire:model.live.debounce.350ms="gameSearch" placeholder="Name, slug, description, or platform" class="w-full rounded-lg border border-slate-800 bg-slate-950 py-2 pl-9 pr-3 text-xs text-slate-200 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"></div></label>
-                <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Catalog status</span><select wire:model.live="gameCatalogFilter" class="game-filter-field"><option value="">All statuses</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></label>
+                @if($gameRecordTab !== 'deleted')<label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Catalog status</span><select wire:model.live="gameCatalogFilter" class="game-filter-field"><option value="">All statuses</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option></select></label>@endif
                 <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Platform</span><select wire:model.live="gamePlatformFilter" class="game-filter-field"><option value="">All platforms</option>@foreach($gamePlatforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select></label>
                 <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Tournament template</span><select wire:model.live="gameTemplateFilter" class="game-filter-field"><option value="">All templates</option><option value="configured">Configured</option><option value="missing">Not configured</option></select></label>
                 <label><span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Artwork</span><select wire:model.live="gameArtworkFilter" class="game-filter-field"><option value="">All artwork</option><option value="complete">Card + banner present</option><option value="missing_card">Missing card image</option><option value="missing_banner">Missing banner</option></select></label>
@@ -84,7 +87,7 @@
                                 </td>
                                 <td class="p-4">
                                     @if($game->trashed())
-                                        <span class="inline-flex rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-300">Archived</span>
+                                        <span class="inline-flex rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-300">Deleted</span>
                                     @else
                                     <button wire:click="toggleGameActive({{ $game->id }})"
                                             class="inline-flex items-center px-2 py-0.5 rounded border text-[9px] font-bold uppercase transition-colors
@@ -97,12 +100,16 @@
                                 </td>
                                 <td class="p-4 text-right">
                                     @if($game->trashed())
-                                    <div class="relative inline-block text-left" x-data="{ open: false }" x-on:click.outside="open = false">
-                                        <button type="button" x-on:click="open = !open" x-bind:aria-expanded="open" aria-label="Archived game actions" class="rounded-lg border border-slate-700 bg-slate-900 p-2 text-slate-400 hover:border-slate-600 hover:text-white"><i data-lucide="ellipsis-vertical" class="h-4 w-4"></i></button>
-                                        <div x-cloak x-show="open" x-transition.origin.top.right class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 py-1 text-left shadow-2xl shadow-black/40">
-                                            <button type="button" x-on:click="open = false" wire:click="restoreGame({{ $game->id }})" class="game-action-item"><i data-lucide="archive-restore" class="h-4 w-4 text-emerald-400"></i>Restore game</button>
+                                    <x-admin.action-dropdown>
+                                        <div class="py-1">
+                                            @can('games.restore')
+                                                <button type="button" x-on:click="open = false" wire:click="restoreGame({{ $game->id }})" class="game-action-item"><i data-lucide="rotate-ccw" class="h-4 w-4 text-emerald-400"></i>Restore</button>
+                                            @endcan
+                                            @can('games.force_delete')
+                                                <button type="button" x-on:click="open = false" wire:click="confirmPermanentDeleteGame({{ $game->id }})" class="game-action-item text-red-300"><i data-lucide="trash-2" class="h-4 w-4"></i>Permanent Delete</button>
+                                            @endcan
                                         </div>
-                                    </div>
+                                    </x-admin.action-dropdown>
                                     @else
                                     <div class="relative inline-block text-left" x-data="{ open: false }" x-on:click.outside="open = false">
                                         <button type="button" x-on:click="open = !open" x-bind:aria-expanded="open" aria-label="Game actions" class="rounded-lg border border-slate-700 bg-slate-900 p-2 text-slate-400 hover:border-slate-600 hover:text-white"><i data-lucide="ellipsis-vertical" class="h-4 w-4"></i></button>
@@ -122,7 +129,7 @@
                                                 <a href="{{ route('admin.games.head-to-head-defaults.edit', $game) }}" class="game-action-item"><i data-lucide="swords" class="h-4 w-4 text-fuchsia-300"></i>Head-to-Head template</a>
                                             @endif
                                             <div class="my-1 border-t border-slate-800"></div>
-                                            <livewire:admin.recoverable-delete resource="games" :record-id="$game->id" :key="'delete-games-'.$game->id" />
+                                            <livewire:admin.recoverable-delete resource="games" :menu-item="true" :record-id="$game->id" :key="'delete-games-'.$game->id" />
                                         </div>
                                     </div>
                                     @endif
@@ -697,7 +704,7 @@
                     <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
                         <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-200 mb-2" x-text="$wire.deleteTargetType === 'game' ? 'Delete Game' : 'Confirm Deletion'"></h3>
+                    <h3 class="text-lg font-bold text-slate-200 mb-2" x-text="$wire.deleteTargetType === 'game' ? 'Soft Delete Game' : 'Confirm Deletion'"></h3>
                     <div wire:loading wire:target="confirmDelete" class="mb-6 space-y-3">
                         <div class="mx-auto h-3 w-4/5 animate-pulse rounded bg-slate-800"></div>
                         <div class="grid grid-cols-2 gap-3"><div class="h-16 animate-pulse rounded-lg bg-slate-900"></div><div class="h-16 animate-pulse rounded-lg bg-slate-900"></div></div>
@@ -725,7 +732,7 @@
                         </button>
                         <button type="button" wire:click="executeDelete" wire:loading.attr="disabled" wire:target="confirmDelete,executeDelete"
                                 class="bg-red-600 hover:bg-red-500 text-white font-bold text-sm px-6 py-2.5 rounded-lg shadow-[0_4px_12px_rgba(220,38,38,0.2)] transition-colors">
-                            {{ $deleteTargetType === 'game' ? 'Delete Game' : 'Yes, Delete' }}
+                            {{ $deleteTargetType === 'game' ? 'Soft Delete Game' : 'Yes, Delete' }}
                         </button>
                     </div>
                 </div>
@@ -770,6 +777,41 @@
                 </div>
             </form>
         </div>
+    @endif
+    @if(in_array($tab, ['games', 'platforms', 'navigation', 'landing'], true) && !($tab === 'games' && $gameRecordTab === 'deleted'))
+        <x-admin.deletion-actions :resource="$tab === 'landing' ? 'landing_items' : $tab" />
+    @endif
+    @if($permanentDeleteGameId !== null)
+        @teleport('body')
+            <div class="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="permanent-delete-game-title" x-on:keydown.escape.window="$wire.cancelPermanentDeleteGame()">
+                <button type="button" wire:click="cancelPermanentDeleteGame" class="absolute inset-0 bg-black/70" aria-label="Close permanent deletion dialog"></button>
+                <div class="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900 p-5 text-slate-200 shadow-xl">
+                    <h2 id="permanent-delete-game-title" class="text-lg font-semibold">Permanently delete {{ $permanentDeleteGameName }}?</h2>
+                    <p class="mt-3 text-sm leading-6 text-amber-300">This permanently removes the game, its catalog translations, and its platform assignments. It cannot be restored. Uploaded files and audit records are retained.</p>
+                    @if($permanentDeleteReferences)
+                        <div role="alert" class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm leading-6 text-red-300">
+                            <p class="font-semibold">Blocked: connected data must be preserved.</p>
+                            <p>These records still reference this game. Permanently removing it could delete connected records or break their history, so permanent deletion is disabled.</p>
+                        </div>
+                        <ul class="mt-2 space-y-1 text-sm text-slate-400">
+                            @foreach($permanentDeleteReferences as $table => $count)
+                                <li>{{ ucwords(str_replace('_', ' ', $table)) }}: {{ $count }} record(s)</li>
+                            @endforeach
+                        </ul>
+                        <p class="mt-3 text-sm text-slate-400">Keep this game soft deleted or restore it. Connected records, including deleted history, will not be removed.</p>
+                    @else
+                        <label class="mt-4 block text-sm text-slate-400">Type DELETE to confirm
+                            <input type="text" wire:model="permanentDeleteConfirmation" autocomplete="off" class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200">
+                        </label>
+                    @endif
+                    @error('permanentDeleteConfirmation')<p role="alert" class="mt-3 text-sm text-red-400">{{ $message }}</p>@enderror
+                    <div class="mt-5 flex justify-end gap-3">
+                        <button type="button" wire:click="cancelPermanentDeleteGame" class="rounded-lg border border-slate-700 px-4 py-2 text-sm">Cancel</button>
+                        <button type="button" wire:click="permanentlyDeleteGame" wire:loading.attr="disabled" @disabled(count($permanentDeleteReferences) > 0) class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Permanent Delete</button>
+                    </div>
+                </div>
+            </div>
+        @endteleport
     @endif
 </div>
 

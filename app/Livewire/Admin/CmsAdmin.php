@@ -12,11 +12,13 @@ use App\Modules\CMS\Models\Platform;
 use App\Modules\CMS\Models\PublicNavigationItem;
 use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Operations\Services\GameDeletionService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Url;
+use Livewire\Attributes\Locked;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
@@ -106,6 +108,17 @@ class CmsAdmin extends AdminComponent
 
     /** @var array<string, mixed> */
     public array $gameDeleteImpact = [];
+
+    #[Locked]
+    public ?int $permanentDeleteGameId = null;
+
+    #[Locked]
+    public string $permanentDeleteGameName = '';
+
+    #[Locked]
+    public array $permanentDeleteReferences = [];
+
+    public string $permanentDeleteConfirmation = '';
 
     // Platform modals / forms
     public bool $showPlatformModal = false;
@@ -215,8 +228,13 @@ class CmsAdmin extends AdminComponent
 
     public function setGameRecordTab(string $tab): void
     {
-        if (! in_array($tab, ['active', 'archived'], true)) {
+        if (! in_array($tab, ['active', 'deleted'], true)) {
             return;
+        }
+
+        if ($tab === 'deleted') {
+            abort_unless($this->canViewDeletedGames(), 403);
+            $this->gameCatalogFilter = '';
         }
 
         $this->gameRecordTab = $tab;
@@ -552,15 +570,46 @@ class CmsAdmin extends AdminComponent
         $game = Game::query()->findOrFail($gameId);
         app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('games', [$gameId], $this->actor());
 
-        session()->flash('success', 'Game archived. Historical tournaments and player records were preserved.');
+        session()->flash('success', 'Game soft deleted. Historical tournaments and player records were preserved.');
     }
 
     public function restoreGame(int $gameId): void
     {
-        abort_unless($this->actor()->can('games.delete'), 403);
-        Game::onlyTrashed()->findOrFail($gameId)->restore();
+        app(GameDeletionService::class)->restore($gameId, $this->actor());
 
         session()->flash('success', 'Game restored as disabled. Activate it when it is ready for display.');
+    }
+
+    public function canViewDeletedGames(): bool
+    {
+        return $this->actor()->can('games.delete') || $this->actor()->can('games.restore') || $this->actor()->can('games.force_delete');
+    }
+
+    public function confirmPermanentDeleteGame(int $gameId): void
+    {
+        abort_unless($this->actor()->can('games.force_delete'), 403);
+        $game = Game::onlyTrashed()->findOrFail($gameId);
+        $this->permanentDeleteGameId = $gameId;
+        $this->permanentDeleteGameName = $game->localizedName('en');
+        $this->permanentDeleteReferences = app(GameDeletionService::class)->references($game);
+        $this->permanentDeleteConfirmation = '';
+        $this->resetValidation('permanentDeleteConfirmation');
+    }
+
+    public function cancelPermanentDeleteGame(): void
+    {
+        $this->reset(['permanentDeleteGameId', 'permanentDeleteGameName', 'permanentDeleteReferences', 'permanentDeleteConfirmation']);
+        $this->resetValidation('permanentDeleteConfirmation');
+    }
+
+    public function permanentlyDeleteGame(): void
+    {
+        abort_unless($this->actor()->can('games.force_delete'), 403);
+        abort_unless($this->permanentDeleteGameId !== null, 422);
+        $this->validate(['permanentDeleteConfirmation' => 'required|in:DELETE']);
+        app(GameDeletionService::class)->permanentlyDelete($this->permanentDeleteGameId, $this->actor());
+        $this->cancelPermanentDeleteGame();
+        session()->flash('success', 'Game permanently deleted. This cannot be restored.');
     }
 
     private function loadGameDeleteImpact(int $gameId): void
@@ -871,7 +920,7 @@ class CmsAdmin extends AdminComponent
             'about' => [],
             default => [
                 'games' => Game::query()
-                    ->withoutTrashed()
+                    ->when($this->gameRecordTab === 'deleted' && $this->canViewDeletedGames(), fn ($query) => $query->onlyTrashed(), fn ($query) => $query->withoutTrashed())
                     ->with([
                         'translations:id,game_id,locale,name,description',
                         'platforms:id,name',

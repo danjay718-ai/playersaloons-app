@@ -54,7 +54,6 @@ x-on:user-suspended.window="suspendModal.open = false"
 x-on:user-role-updated.window="roleModal.open = false"
 x-on:super-admin-transferred.window="transferModal.open = false"
 x-on:keydown.escape.window="closeAll()">
-    <livewire:admin.recoverable-delete resource="users" />
 
     <!-- Tabs -->
     <div class="flex space-x-1 border-b border-slate-800 mb-6 relative">
@@ -233,7 +232,7 @@ x-on:keydown.escape.window="closeAll()">
                                         @endcan
                                         @can('delete', $usr)
                                             @if(! $usr->hasRole('SUPER_ADMIN') && $usr->id !== auth()->id())
-                                                <livewire:admin.recoverable-delete resource="users" :record-id="$usr->id" :key="'delete-users-'.$usr->id" />
+                                                <livewire:admin.recoverable-delete resource="users" :menu-item="true" :record-id="$usr->id" :key="'delete-users-'.$usr->id" />
                                             @endif
                                         @endcan
                                         @if(auth()->user()?->hasRole('SUPER_ADMIN') && $usr->id !== auth()->id() && ! $usr->hasRole('SUPER_ADMIN'))
@@ -802,6 +801,7 @@ x-on:keydown.escape.window="closeAll()">
             </form>
         </div>
     </div>
+    <x-admin.deletion-actions resource="users" />
 </div>
 
 
