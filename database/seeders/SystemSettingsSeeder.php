@@ -78,13 +78,15 @@ class SystemSettingsSeeder extends Seeder
             ['key' => 'deposit_fee.percentage', 'value' => '0.00', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'language_switcher.show_guest', 'value' => 'false', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'language_switcher.show_admin', 'value' => 'false', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'platform.commission_percentage', 'value' => '10.00', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'h2h.commission_percentage', 'value' => '10.00', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'tournament.timezone', 'value' => config('app.tournament_timezone', 'UTC'), 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'auth.login_max_attempts', 'value' => '5', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'auth.login_lockout_minutes', 'value' => '15', 'created_at' => now(), 'updated_at' => now()],
         ];
 
         foreach ($settings as $setting) {
-            DB::table('system_settings')->updateOrInsert(
-                ['key' => $setting['key']],
+            DB::table('system_settings')->insertOrIgnore(
                 $setting
             );
         }

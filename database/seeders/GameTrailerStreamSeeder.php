@@ -13,6 +13,10 @@ class GameTrailerStreamSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \LogicException('Demo seeding is available only in local or testing environments.');
+        }
+
         $trailers = [
             'mobile-legends-bang-bang' => [
                 'title' => 'Mobile Legends: Bang Bang Sample Trailer',

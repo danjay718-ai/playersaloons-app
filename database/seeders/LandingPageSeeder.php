@@ -197,11 +197,7 @@ class LandingPageSeeder extends Seeder
                 'subtitle' => 'Community signal',
                 'body' => 'Editable testimonials from players and organizers.',
                 'sort_order' => 7,
-                'items' => [
-                    ['item_key' => 'review-1', 'title' => 'Bracket flow feels fast.', 'subtitle' => 'Tournament Player', 'body' => 'The match pages make it clear where to go next after every result.', 'icon' => 'quote'],
-                    ['item_key' => 'review-2', 'title' => 'H2H makes casual nights competitive.', 'subtitle' => 'Duel Player', 'body' => 'Stake locking and proof upload make direct matches feel structured.', 'icon' => 'quote'],
-                    ['item_key' => 'review-3', 'title' => 'Admin review is straightforward.', 'subtitle' => 'Organizer', 'body' => 'Disputes, KYC, and tournament operations are easy to monitor.', 'icon' => 'quote'],
-                ],
+                'items' => [],
             ],
             [
                 'key' => 'footer',

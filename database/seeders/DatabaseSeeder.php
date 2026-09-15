@@ -14,21 +14,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Run core system seeders
-        $this->call([
-            RolesAndPermissionsSeeder::class,
-            PlatformSystemUserSeeder::class,
-            AdminUserSeeder::class,
-            PlatformSeeder::class,
-            GamesTableSeeder::class,
-            GameTrailerStreamSeeder::class,
-            PolicyPageSeeder::class,
-            LandingPageSeeder::class,
-            PublicNavigationSeeder::class,
-            TranslationStringSeeder::class,
-            SystemSettingsSeeder::class,
-            TournamentsTableSeeder::class,
-            PlayerAccountSeeder::class,
-        ]);
+        $this->call(FreshInstallationSeeder::class);
     }
 }

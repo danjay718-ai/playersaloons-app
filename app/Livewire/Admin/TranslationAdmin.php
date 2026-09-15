@@ -39,17 +39,10 @@ final class TranslationAdmin extends AdminComponent
 
     protected $paginationTheme = 'tailwind';
 
-    public function mount(TranslationCatalogService $catalog): void
+    public function mount(): void
     {
         $this->translationTableReady = Schema::hasTable('translation_strings');
 
-        if (! $this->translationTableReady) {
-            return;
-        }
-
-        if (TranslationString::query()->doesntExist()) {
-            $catalog->syncFromJsonFiles();
-        }
     }
 
     public function updatedSearch(): void

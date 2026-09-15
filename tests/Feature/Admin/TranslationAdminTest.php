@@ -35,12 +35,19 @@ final class TranslationAdminTest extends TestCase
         $this->admin = $this->createUserWithRole('ADMIN', 'translations-admin@example.com');
     }
 
-    public function test_admin_can_open_translation_manager_and_sync_json_keys(): void
+    public function test_translation_manager_starts_empty_and_syncs_only_when_requested(): void
     {
         $this->actingAs($this->admin)
             ->get('/admin/translations')
             ->assertOk()
             ->assertSee('Translation Manager');
+
+        $this->assertDatabaseCount('translation_strings', 0);
+
+        Livewire::actingAs($this->admin)
+            ->test(TranslationAdmin::class)
+            ->call('syncFromJson')
+            ->assertHasNoErrors();
 
         $this->assertDatabaseHas('translation_strings', [
             'key' => 'Dashboard',

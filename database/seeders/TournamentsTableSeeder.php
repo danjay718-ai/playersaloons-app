@@ -27,6 +27,10 @@ class TournamentsTableSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \LogicException('Demo seeding is available only in local or testing environments.');
+        }
+
         // 1. Create a default player user if not exists
         $playerUser = User::query()->where('email', 'player@playersaloons.com')->first();
         if (! $playerUser) {

@@ -18,6 +18,10 @@ class PlayerAccountSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \LogicException('Demo seeding is available only in local or testing environments.');
+        }
+
         // Ensure the PLAYER role exists
         $role = Role::firstOrCreate(['name' => 'PLAYER', 'guard_name' => 'web']);
 

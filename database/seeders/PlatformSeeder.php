@@ -11,6 +11,10 @@ final class PlatformSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \LogicException('Demo seeding is available only in local or testing environments.');
+        }
+
         foreach ($this->platforms() as $platform) {
             Platform::query()->updateOrCreate(
                 ['slug' => $platform['slug']],

@@ -68,6 +68,14 @@ class LandingPageContentService
                 ->sum('amount'), 2),
             'active_players' => (string) DB::table('users')->whereNull('deleted_at')
                 ->where('status', UserStatus::ACTIVE->value)
+                ->whereExists(function ($query): void {
+                    $query->selectRaw('1')->from('model_has_roles')
+                        ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                        ->whereColumn('model_has_roles.model_id', 'users.id')
+                        ->where('model_has_roles.model_type', \App\Modules\Identity\Models\User::class)
+                        ->whereIn('roles.name', ['PLAYER', 'TEAM_CAPTAIN'])
+                        ->whereNull('roles.deleted_at');
+                })
                 ->count(),
             'active_games' => (string) Game::query()
                 ->where('is_active', true)
