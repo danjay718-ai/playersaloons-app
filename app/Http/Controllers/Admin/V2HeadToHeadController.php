@@ -35,6 +35,7 @@ final class V2HeadToHeadController extends Controller
         abort_unless(in_array($statusTab, ['active', 'completed', 'cancelled', 'all'], true), 404);
 
         $templates = TournamentTemplate::query()
+            ->whereHas('game', fn ($games) => $games->availableInCatalog())
             ->where('workflow_version', 2)
             ->where('competition_type', CompetitionType::HEAD_TO_HEAD)
             ->with(['game.translations', 'scheduleSlots:id,tournament_template_id,schedule_start_at,schedule_end_at,day_of_week,day_of_month'])
@@ -87,6 +88,7 @@ final class V2HeadToHeadController extends Controller
         $platforms = Platform::query()->where('is_active', true)->orderBy('name')->get();
 
         $countBase = TournamentTemplate::query()
+            ->whereHas('game', fn ($games) => $games->availableInCatalog())
             ->where('workflow_version', 2)
             ->where('competition_type', CompetitionType::HEAD_TO_HEAD)
             ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))

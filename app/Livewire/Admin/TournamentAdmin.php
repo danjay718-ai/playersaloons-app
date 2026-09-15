@@ -380,7 +380,7 @@ class TournamentAdmin extends AdminComponent
         $countAll = (clone $baseCount)->count();
 
         $tournaments = $query->paginate($this->perPage);
-        $games = Game::with('translations')->get();
+        $games = Game::availableInCatalog()->with('translations')->get();
         $platforms = Platform::where('is_active', true)->get();
 
         $selectedTournament = ($this->showDetailModal || $this->showCancelModal) && $this->selectedTournamentId
@@ -409,6 +409,7 @@ class TournamentAdmin extends AdminComponent
 
     private function applyFilters($query, bool $includeStatus): void
     {
+        $query->whereHas('game', fn ($games) => $games->availableInCatalog());
         if ($this->search) {
             $query->where('name', 'like', '%'.$this->search.'%');
         }

@@ -4,6 +4,7 @@ namespace App\Modules\CMS\Models;
 
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Tournament\Models\Tournament;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -24,6 +25,11 @@ use Illuminate\Support\Str;
 class Game extends Model
 {
     use SoftDeletes;
+
+    public function scopeAvailableInCatalog(Builder $query): Builder
+    {
+        return $query->withoutTrashed()->where('games.is_active', true);
+    }
 
     /**
      * The attributes that are mass assignable.

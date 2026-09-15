@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tournament;
 
+use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Game\GameShow;
 use App\Livewire\Tournament\MyTournamentsList;
 use App\Livewire\Tournament\PlayerTournamentList;
@@ -415,6 +416,38 @@ class PlayerTournamentComponentsTest extends TestCase
         ]);
 
         return $game;
+    }
+
+    public function test_disabled_and_deleted_games_hide_discovery_and_admin_lists_but_preserve_history(): void
+    {
+        $upcoming = $this->makeTournament('Visible Upcoming Cup', TournamentStatus::REGISTRATION_OPEN);
+        $upcoming->update(['is_featured' => true, 'start_at' => now()->addDay()]);
+        $past = $this->makeTournament('Visible Historical Cup', TournamentStatus::COMPLETED);
+        Livewire::actingAs($this->player)->test(PlayerTournamentList::class)
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 1);
+
+        $this->game->update(['is_active' => false]);
+        foreach (['upcoming', 'past'] as $tab) {
+            Livewire::actingAs($this->player)->test(PlayerTournamentList::class)
+                ->set('activeTab', $tab)
+                ->set('gameId', (string) $this->game->id)
+                ->assertViewHas('tournaments', fn ($items) => $items->total() === 0)
+                ->assertViewHas('featuredTournaments', fn ($items) => $items->isEmpty())
+                ->assertViewHas('games', fn ($items) => $items->isEmpty());
+        }
+        Livewire::actingAs($this->admin)->test(TournamentAdmin::class)
+            ->set('statusTab', 'all')
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 0)
+            ->assertViewHas('games', fn ($items) => $items->isEmpty())
+            ->assertViewHas('countAll', 0);
+
+        $this->game->update(['is_active' => true]);
+        $this->game->delete();
+        Livewire::actingAs($this->player)->test(PlayerTournamentList::class)
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 0)
+            ->assertViewHas('featuredTournaments', fn ($items) => $items->isEmpty());
+        $this->assertSame('Arena', $past->fresh()->game->localizedName('en'));
+        $this->assertDatabaseHas('tournaments', ['id' => $past->id]);
     }
 
     private function makeTournament(

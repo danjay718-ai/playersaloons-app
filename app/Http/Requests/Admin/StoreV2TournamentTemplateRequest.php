@@ -22,7 +22,7 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
     {
         return [
             'competition_type' => ['nullable', 'in:tournament,head_to_head'],
-            'game_id' => ['required', 'integer', 'exists:games,id,deleted_at,NULL'],
+            'game_id' => ['required', 'integer', 'exists:games,id,deleted_at,NULL,is_active,1'],
             ...CompetitionPlatforms::rules($this->integer('game_id')),
             'name' => ['required', 'string', 'max:191'],
             'description' => ['nullable', 'string', 'max:10000'],

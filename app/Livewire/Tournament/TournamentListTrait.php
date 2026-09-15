@@ -84,6 +84,7 @@ trait TournamentListTrait
     protected function getTournamentQuery()
     {
         $query = Tournament::query()
+            ->whereHas('game', fn ($games) => $games->availableInCatalog())
             ->with(['game.translations', 'platform'])
             ->withCount(['registrations' => function ($q) {
                 $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
@@ -152,6 +153,7 @@ trait TournamentListTrait
     protected function getFeaturedTournaments()
     {
         $query = Tournament::query()
+            ->whereHas('game', fn ($games) => $games->availableInCatalog())
             ->with(['game.translations', 'platform'])
             ->withCount(['registrations' => fn ($query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])])
             ->where('is_featured', true)
@@ -167,6 +169,7 @@ trait TournamentListTrait
     protected function featuredTournamentCount(): int
     {
         $query = Tournament::query()
+            ->whereHas('game', fn ($games) => $games->availableInCatalog())
             ->where('is_featured', true)
             ->whereIn('status', array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing')))
             ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency));

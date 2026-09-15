@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tournament;
 
+use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Match\MatchDetail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameHeadToHeadDefault;
@@ -793,6 +794,35 @@ final class TournamentV2WorkflowTest extends TestCase
         app(V2TournamentLifecycle::class)->reconcile($tournament->fresh());
 
         return [GameMatch::query()->where('tournament_id', $tournament->id)->firstOrFail(), $p1, $p2];
+    }
+
+    public function test_disabled_and_deleted_games_hide_v2_discovery_and_admin_groups(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-12 10:00:00', 'UTC'));
+        $template = $this->template('daily', 4, '23:59');
+        $occurrence = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        $discovery = app(V2TournamentDiscoveryService::class);
+        self::assertSame(1, $discovery->paginate('upcoming', [])->total());
+
+        $this->game->update(['is_active' => false]);
+        self::assertSame(0, $discovery->paginate('upcoming', ['game_id' => (string) $this->game->id])->total());
+        Livewire::actingAs($this->admin)->test(TournamentAdmin::class)
+            ->assertViewHas('v2Templates', fn ($items) => $items->total() === 0)
+            ->assertViewHas('countAll', 0);
+        $template->update(['competition_type' => CompetitionType::HEAD_TO_HEAD, 'name' => 'Unavailable H2H Schedule']);
+        $occurrence->update(['competition_type' => CompetitionType::HEAD_TO_HEAD]);
+        $this->actingAs($this->admin)->get(route('admin.h2h.index'))
+            ->assertOk()
+            ->assertDontSee('Unavailable H2H Schedule');
+
+        $this->game->update(['is_active' => true]);
+        self::assertSame(1, $discovery->paginate('upcoming', ['competition_type' => 'head_to_head'])->total());
+        $this->game->delete();
+        self::assertSame(0, $discovery->paginate('upcoming', [])->total());
+        $occurrence->update(['status' => TournamentStatus::COMPLETED]);
+        self::assertSame(0, $discovery->paginate('past', [])->total());
+        self::assertSame($this->game->id, $occurrence->fresh()->game->id);
+        $this->assertDatabaseHas('tournaments', ['id' => $occurrence->id]);
     }
 
     private function template(string $frequency, int $maximum, string $time, array $slot = [])

@@ -27,6 +27,7 @@ final class V2TournamentDiscoveryService
         $occurrences = $this->occurrenceQuery($tab, $filters, $featuredOnly);
 
         $templates = TournamentTemplate::query()
+            ->whereHas('game', fn (Builder $games) => $games->availableInCatalog())
             ->with(['game.translations'])
             ->where('workflow_version', 2)
             ->whereHas('scheduleSlots.occurrences', fn (Builder $query) => $this->applyOccurrenceConstraints($query, $tab, $filters, $featuredOnly))
@@ -70,7 +71,8 @@ final class V2TournamentDiscoveryService
             default => ['REGISTRATION_OPEN'],
         };
 
-        $query->whereIn('status', $statuses);
+        $query->whereHas('game', fn (Builder $games) => $games->availableInCatalog())
+            ->whereIn('status', $statuses);
         if ($featuredOnly) {
             $query->where('is_featured', true);
         }

@@ -263,7 +263,7 @@ class TournamentForm extends AdminComponent
         $rules = match ($step) {
             1 => [
                 'name' => 'required|string|max:255',
-                'game_id' => $this->isLocked ? 'required|exists:games,id' : 'required|exists:games,id,deleted_at,NULL',
+                'game_id' => $this->isLocked ? 'required|exists:games,id' : 'required|exists:games,id,deleted_at,NULL,is_active,1',
                 'competition_type' => 'required|in:tournament,head_to_head',
                 ...$this->platformRules(),
                 'frequency' => 'required|string|in:daily,weekly,monthly,one-time',
@@ -332,7 +332,7 @@ class TournamentForm extends AdminComponent
 
         $this->validate([
             'name' => 'required|string|max:255',
-            'game_id' => $this->isLocked ? 'required|exists:games,id' : 'required|exists:games,id,deleted_at,NULL',
+            'game_id' => $this->isLocked ? 'required|exists:games,id' : 'required|exists:games,id,deleted_at,NULL,is_active,1',
             'competition_type' => 'required|in:tournament,head_to_head',
             'max_participants' => 'required|integer|min:2',
             'min_participants' => 'required|integer|min:2|lte:max_participants',
