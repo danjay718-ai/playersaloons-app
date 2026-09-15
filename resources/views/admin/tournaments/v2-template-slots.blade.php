@@ -6,9 +6,9 @@
 @endphp
 
 <x-layouts.admin :admin-title="$isHeadToHead ? 'Head-to-Head Slots' : 'Tournament Slots'">
-    <div class="mx-auto max-w-6xl space-y-6" x-data="{ addOpen: @js($errors->any() || session('open_add_slot')) }">
+    <div class="w-full space-y-6" x-data="{ addOpen: @js($errors->any() || session('open_add_slot')) }">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div><a href="{{ $backRoute }}" class="text-xs font-semibold text-indigo-300 hover:text-white">← Back to schedules</a><p class="mt-4 text-[10px] font-black uppercase tracking-[.25em] text-indigo-400">{{ $isHeadToHead ? 'Platform H2H schedule' : 'Tournament schedule' }}</p><h1 class="mt-2 text-xl font-black text-white">{{ $template->name }}</h1><p class="mt-2 text-sm text-slate-400">Each row is a real immutable occurrence. Add and edit future empty slots without leaving this page.</p></div>
+            <div><a href="{{ $backRoute }}" class="text-xs font-semibold text-indigo-300 hover:text-white">← Back to schedules</a><p class="mt-2 text-[10px] font-black uppercase tracking-[.25em] text-indigo-400">{{ $isHeadToHead ? 'Platform H2H schedule' : 'Tournament schedule' }}</p><h1 class="mt-1 text-xl font-black text-white">{{ $template->name }}</h1><p class="mt-1 text-sm text-slate-400">Each row is a real immutable occurrence. Add and edit future empty slots without leaving this page.</p></div>
             @can('tournaments.manage')<button type="button" @click="addOpen = true" class="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500">Add slot</button>@endcan
         </div>
 
