@@ -61,6 +61,37 @@ class PlayerTournamentComponentsTest extends TestCase
         $this->game = $this->makeGame('arena', 'Arena');
     }
 
+    public function test_paid_tournament_join_shows_insufficient_balance_without_registering_or_charging(): void
+    {
+        $tournament = $this->makeTournament('Paid Cup', TournamentStatus::REGISTRATION_OPEN);
+        $tournament->update(['entry_fee' => '50.00']);
+
+        foreach (['0.00', '10.00'] as $index => $balance) {
+            $player = $this->makeUser('PLAYER', "insufficient{$index}@example.com");
+            $wallet = Wallet::query()->create([
+                'uuid' => Str::uuid()->toString(),
+                'user_id' => $player->id,
+                'status' => 'active',
+                'cached_balance' => $balance,
+            ]);
+
+            Livewire::actingAs($player)
+                ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+                ->set('gameIdValue', "InsufficientPlayer{$index}")
+                ->call('register')
+                ->assertHasNoErrors()
+                ->assertSee('Insufficient balance. Please top up your wallet to pay the entrance fee.')
+                ->assertDontSee('Unable to register for this tournament.')
+                ->assertDontSee('Successfully joined the tournament!');
+
+            $this->assertSame($balance, $wallet->fresh()->cached_balance);
+        }
+
+        $this->assertDatabaseCount('tournament_registrations', 0);
+        $this->assertDatabaseCount('ledger_entries', 0);
+        $this->assertDatabaseCount('error_incidents', 0);
+    }
+
     public function test_successful_cancellation_closes_the_player_dialog(): void
     {
         $tournament = $this->makeTournament('Cancellation Cup', TournamentStatus::REGISTRATION_OPEN);

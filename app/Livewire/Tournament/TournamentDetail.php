@@ -24,6 +24,7 @@ use App\Modules\Tournament\Models\TournamentTeam;
 use App\Modules\Tournament\Models\TournamentTeamSearchEntry;
 use App\Modules\Tournament\Services\PrizeCalculationService;
 use App\Modules\Tournament\Services\V2PrizePolicy;
+use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
@@ -169,6 +170,8 @@ class TournamentDetail extends Component
                 $action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam, $this->selectedPlatformId);
             }
             session()->flash('message', ($tournament->team_size ?? 1) > 1 ? 'Tournament team registered successfully!' : 'Successfully joined the tournament!');
+        } catch (InsufficientBalanceException $e) {
+            session()->flash('error', 'Insufficient balance. Please top up your wallet to pay the entrance fee.');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to register for this tournament.'));
         }

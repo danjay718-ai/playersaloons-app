@@ -578,6 +578,34 @@ final class TournamentV2WorkflowTest extends TestCase
         $submit->execute($match->fresh(), $p2->id, MatchOutcome::LOSS);
     }
 
+    public function test_paid_v2_join_shows_insufficient_balance_without_registering_or_charging(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $template = $this->template('daily', 8, '23:59');
+        $template->update(['entry_fee' => '50.00']);
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
+
+        foreach (['0.00', '10.00'] as $index => $balance) {
+            $player = $this->user("v2-insufficient{$index}@example.com", "v2insufficient{$index}", 'PLAYER');
+            $wallet = $this->walletFor($player, $balance);
+
+            Livewire::actingAs($player)
+                ->test(\App\Livewire\Tournament\TournamentDetail::class, ['uuid' => $tournament->uuid])
+                ->set('gameIdValue', "V2InsufficientPlayer{$index}")
+                ->call('register')
+                ->assertHasNoErrors()
+                ->assertSee('Insufficient balance. Please top up your wallet to pay the entrance fee.')
+                ->assertDontSee('Unable to register for this tournament.')
+                ->assertDontSee('Successfully joined the tournament!');
+
+            self::assertSame($balance, $wallet->fresh()->cached_balance);
+        }
+
+        $this->assertDatabaseCount('tournament_registrations', 0);
+        $this->assertDatabaseCount('ledger_entries', 0);
+        $this->assertDatabaseCount('error_incidents', 0);
+    }
+
     public function test_player_cancellation_dialog_closes_after_a_v2_request_is_created(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
