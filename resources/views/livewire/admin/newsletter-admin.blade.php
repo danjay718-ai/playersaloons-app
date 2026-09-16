@@ -59,7 +59,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="border-t border-slate-800 p-4">{{ $subscribers->links() }}</div>
+                <div class="border-t border-slate-800 p-4">{{ $subscribers->links('vendor.livewire.custom-pagination') }}</div>
             </section>
 
             <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-5">

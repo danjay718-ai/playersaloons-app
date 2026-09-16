@@ -118,7 +118,7 @@
 
     <!-- Pagination -->
     <div>
-        {{ $logs->links() }}
+        {{ $logs->links('vendor.livewire.custom-pagination') }}
     </div>
 
     <!-- Detail Modal -->

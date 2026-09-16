@@ -76,4 +76,4 @@
     </div>
 </div>
 
-{{ $broadcasts->links() }}
+{{ $broadcasts->links('vendor.livewire.custom-pagination') }}

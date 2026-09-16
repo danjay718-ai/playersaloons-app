@@ -77,7 +77,7 @@
             @endforelse
         </div>
 
-        <div>{{ $pages->links() }}</div>
+        <div>{{ $pages->links('vendor.livewire.custom-pagination') }}</div>
     </aside>
 
     <section class="rounded-xl border border-slate-800 bg-[#0f172a]">

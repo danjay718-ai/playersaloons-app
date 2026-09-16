@@ -103,7 +103,7 @@
 
     <!-- Pagination -->
     <div>
-        {{ $withdrawals->links() }}
+        {{ $withdrawals->links('vendor.livewire.custom-pagination') }}
     </div>
 
     <!-- Detail Modal -->

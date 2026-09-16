@@ -50,7 +50,7 @@
             </table>
         </div>
     </div>
-    {{ $blocks->links() }}
+    {{ $blocks->links('vendor.livewire.custom-pagination') }}
 
     @if($showApplyModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">

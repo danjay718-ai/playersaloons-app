@@ -1,38 +1,48 @@
+@php
+    $livewire = $livewire ?? true;
+    $pageName = $paginator->getPageName();
+@endphp
 @if ($paginator->hasPages())
     <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-between">
         <div class="flex flex-1 justify-between sm:hidden">
             @if ($paginator->onFirstPage())
-                <span class="relative inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500">Previous</span>
+                <span aria-disabled="true" class="relative inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500">Previous</span>
             @else
-                <button wire:click="previousPage" wire:loading.attr="disabled" class="relative inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700">Previous</button>
+                <a href="{{ $paginator->previousPageUrl() }}" rel="prev" @if($livewire) wire:click.prevent="previousPage('{{ $pageName }}')" wire:loading.class="pointer-events-none opacity-50" @endif class="relative inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700">Previous</a>
             @endif
 
             @if ($paginator->hasMorePages())
-                <button wire:click="nextPage" wire:loading.attr="disabled" class="relative ml-3 inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700">Next</button>
+                <a href="{{ $paginator->nextPageUrl() }}" rel="next" @if($livewire) wire:click.prevent="nextPage('{{ $pageName }}')" wire:loading.class="pointer-events-none opacity-50" @endif class="relative ml-3 inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700">Next</a>
             @else
-                <span class="relative ml-3 inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500">Next</span>
+                <span aria-disabled="true" class="relative ml-3 inline-flex items-center rounded-md border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-500">Next</span>
             @endif
         </div>
 
-        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-end gap-2">
+        <div class="hidden sm:flex sm:flex-1 sm:flex-wrap sm:items-center sm:justify-end gap-2">
             @if (!$paginator->onFirstPage())
-                <button wire:click="previousPage" wire:loading.attr="disabled" class="relative inline-flex items-center rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-indigo-950 hover:border-indigo-700 transition-colors">
-                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                </button>
+                <a href="{{ $paginator->previousPageUrl() }}" rel="prev" aria-label="Previous page" @if($livewire) wire:click.prevent="previousPage('{{ $pageName }}')" wire:loading.class="pointer-events-none opacity-50" @endif class="relative inline-flex items-center rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-indigo-950 hover:border-indigo-700 transition-colors">
+                    <i data-lucide="chevron-left" class="w-4 h-4" aria-hidden="true"></i>
+                </a>
             @endif
 
-            @foreach ($paginator->links()->elements[0] as $page => $url)
+            @foreach ($elements ?? [] as $element)
+                @if (is_string($element))
+                    <span aria-disabled="true" class="px-2 text-sm text-slate-500">{{ $element }}</span>
+                @elseif (is_array($element))
+                @foreach ($element as $page => $url)
                 @if ($page == $paginator->currentPage())
-                    <span class="relative inline-flex items-center rounded-lg border border-indigo-700 bg-indigo-900 px-4 py-2 text-sm font-medium text-white">{{ $page }}</span>
+                    <span aria-current="page" class="relative inline-flex items-center rounded-lg border border-indigo-700 bg-indigo-900 px-4 py-2 text-sm font-medium text-white">{{ $page }}</span>
                 @else
-                    <button wire:click="gotoPage({{ $page }})" class="relative inline-flex items-center rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 transition-colors">{{ $page }}</button>
+                    <a href="{{ $url }}" aria-label="{{ __('Go to page :page', ['page' => $page]) }}" @if($livewire) wire:click.prevent="gotoPage({{ $page }}, '{{ $pageName }}')" wire:loading.class="pointer-events-none opacity-50" @endif class="relative inline-flex items-center rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 transition-colors">{{ $page }}</a>
+                @endif
+                @endforeach
                 @endif
             @endforeach
 
             @if ($paginator->hasMorePages())
-                <button wire:click="nextPage" wire:loading.attr="disabled" class="relative inline-flex items-center rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-indigo-950 hover:border-indigo-700 transition-colors">
-                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                </button>
+                <a href="{{ $paginator->nextPageUrl() }}" rel="next" aria-label="Next page" @if($livewire) wire:click.prevent="nextPage('{{ $pageName }}')" wire:loading.class="pointer-events-none opacity-50" @endif class="relative inline-flex items-center rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-indigo-950 hover:border-indigo-700 transition-colors">
+                    <i data-lucide="chevron-right" class="w-4 h-4" aria-hidden="true"></i>
+                </a>
             @endif
         </div>
     </nav>

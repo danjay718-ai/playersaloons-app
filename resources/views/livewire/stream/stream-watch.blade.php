@@ -6,10 +6,11 @@
         showChat: true,
         messages: @js($recentMessages),
         viewerCount: {{ $viewerCount }},
+        heartbeatTimer: null,
 
         init() {
             // Heartbeat every 30s to update viewer presence
-            setInterval(() => {
+            this.heartbeatTimer = setInterval(() => {
                 $wire.heartbeat();
             }, 30000);
             this.$nextTick(() => this.scrollChat());
@@ -29,6 +30,10 @@
                         this.viewerCount = e.viewerCount;
                     });
             }
+        },
+        destroy() {
+            clearInterval(this.heartbeatTimer);
+            window.Echo?.leave('stream.{{ $streamChannel->id }}');
         },
         scrollChat() {
             const el = this.$refs.chatBox;
@@ -114,7 +119,7 @@
 
             {{-- Delete stream (SUPER_ADMIN / ADMIN only) --}}
             @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN', 'ADMIN']))
-                <livewire:admin.recoverable-delete resource="streams" :record-id="$streamChannel->id" />
+                <livewire:admin.recoverable-delete resource="streams" :record-id="$streamChannel->id" :redirect-to="$isAdminView ? route('admin.streams') : route('streams')" />
             @endif
         </div>
     </div>

@@ -1,6 +1,33 @@
-<div>
+<div x-data="{ activeTab: 'tournament' }">
+    <div class="mb-6 inline-flex max-w-full gap-1 rounded-xl border border-slate-800 bg-slate-900/70 p-1" role="tablist" aria-label="Match type">
+        <button type="button" id="tournament-matches-tab" x-ref="tournamentTab"
+                role="tab" aria-controls="tournament-matches-panel"
+                :aria-selected="activeTab === 'tournament'"
+                :tabindex="activeTab === 'tournament' ? 0 : -1"
+                @click="activeTab = 'tournament'"
+                @keydown.arrow-right.prevent="activeTab = 'h2h'; $refs.h2hTab.focus()"
+                @keydown.arrow-left.prevent="activeTab = 'h2h'; $refs.h2hTab.focus()"
+                :class="activeTab === 'tournament' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30 shadow-sm' : 'border-transparent text-slate-400 hover:bg-slate-800 hover:text-slate-200'"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400">
+            <i data-lucide="trophy" class="h-4 w-4 shrink-0" aria-hidden="true"></i>
+            {{ __('Tournament') }}
+        </button>
+        <button type="button" id="h2h-matches-tab" x-ref="h2hTab"
+                role="tab" aria-controls="h2h-matches-panel"
+                :aria-selected="activeTab === 'h2h'"
+                :tabindex="activeTab === 'h2h' ? 0 : -1"
+                @click="activeTab = 'h2h'"
+                @keydown.arrow-right.prevent="activeTab = 'tournament'; $refs.tournamentTab.focus()"
+                @keydown.arrow-left.prevent="activeTab = 'tournament'; $refs.tournamentTab.focus()"
+                :class="activeTab === 'h2h' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30 shadow-sm' : 'border-transparent text-slate-400 hover:bg-slate-800 hover:text-slate-200'"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400">
+            <i data-lucide="swords" class="h-4 w-4 shrink-0" aria-hidden="true"></i>
+            {{ __('Head-to-Head') }}
+        </button>
+    </div>
+
     {{-- ─── Top Filter Bar ───────────────────────────────────────────────────── --}}
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+    <div x-show="activeTab === 'tournament'" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
         <div class="flex flex-wrap items-center gap-2 w-full">
             {{-- Search (debounced 400ms so it doesn't fire on every keystroke) --}}
             <div class="relative">
@@ -61,6 +88,7 @@
     @endif
 
     {{-- ─── Matches Table ────────────────────────────────────────────────────── --}}
+    <section id="tournament-matches-panel" role="tabpanel" aria-labelledby="tournament-matches-tab" tabindex="0" x-show="activeTab === 'tournament'">
     <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6 relative">
         {{-- Table loading overlay --}}
         <div wire:loading.flex wire:target="search,statusFilter,gameFilter,disputeFilter,perPage,gotoPage,previousPage,nextPage"
@@ -178,10 +206,12 @@
     </div>
 
     {{-- Pagination --}}
-    <div>{{ $matches->links() }}</div>
+    <div>{{ $matches->links('vendor.livewire.custom-pagination') }}</div>
+    </section>
 
     {{-- ─── H2H Dispute Queue ───────────────────────────────────────────────── --}}
-    <div class="mt-8 bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+    <section id="h2h-matches-panel" role="tabpanel" aria-labelledby="h2h-matches-tab" tabindex="0" x-show="activeTab === 'h2h'" x-cloak>
+    <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm">
         <div class="px-4 py-3 border-b border-slate-800 bg-[#0b0f19] flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <i data-lucide="swords" class="w-4 h-4 text-red-400"></i>
@@ -254,6 +284,8 @@
             </table>
         </div>
     </div>
+
+    </section>
 
     {{-- ─── Detail Modal ─────────────────────────────────────────────────────── --}}
     @if($showDetailModal && $this->selectedMatch)

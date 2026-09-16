@@ -100,7 +100,7 @@
 
             <!-- Pagination -->
             <div class="mt-4">
-                {{ $submissions->links() }}
+                {{ $submissions->links('vendor.livewire.custom-pagination') }}
             </div>
         </div>
 

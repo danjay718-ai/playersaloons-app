@@ -49,6 +49,27 @@ class WalletDashboardTest extends TestCase
         $this->assertSame('25.00', $user->wallet()->first()?->cached_balance);
     }
 
+    public function test_unconfigured_deposits_show_a_friendly_notice_and_keep_balance_unchanged(): void
+    {
+        config()->set('services.stripe.secret', '');
+        $user = $this->createPlayerWithWallet('25.00');
+
+        Livewire::actingAs($user)
+            ->test(WalletDashboard::class)
+            ->set('depositAmount', '50')
+            ->call('deposit')
+            ->assertSee('Deposits are temporarily unavailable. Please try again later.')
+            ->assertDontSee('Stripe secret key is not configured.')
+            ->assertDontSee('Reference: ERR-');
+
+        $this->assertSame('Deposits are temporarily unavailable. Please try again later.', session('info'));
+        $this->assertFalse(session()->has('error'));
+        $this->assertSame('25.00', $user->wallet()->first()?->cached_balance);
+        $this->assertDatabaseHas('error_incidents', [
+            'message' => 'Stripe secret key is not configured.',
+        ]);
+    }
+
     private function createPlayerWithWallet(string $balance): User
     {
         $user = User::query()->create([

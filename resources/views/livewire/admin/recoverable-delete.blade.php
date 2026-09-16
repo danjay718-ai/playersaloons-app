@@ -31,7 +31,7 @@
                             @endforeach
                             @if($records->isEmpty())<p class="py-6 text-center text-sm text-slate-400">No records available.</p>@endif
                         </div>
-                        <div class="mt-3">{{ $records->links() }}</div>
+                        <div class="mt-3">{{ $records->links('vendor.livewire.custom-pagination') }}</div>
                         <div class="mt-4 flex justify-end gap-3">
                             <button type="button" wire:click="cancel" class="rounded-lg border border-slate-700 px-4 py-2 text-sm">Cancel</button>
                             <button type="button" wire:click="preview" wire:loading.attr="disabled" @disabled(count($selectedIds) === 0) class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Review deletion ({{ count($selectedIds) }})</button>

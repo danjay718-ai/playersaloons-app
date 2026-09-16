@@ -25,6 +25,9 @@ class RecoverableDelete extends AdminComponent
     public bool $menuItem = false;
 
     #[Locked]
+    public ?string $redirectTo = null;
+
+    #[Locked]
     public array $reviewedIds = [];
 
     public bool $showModal = false;
@@ -36,13 +39,14 @@ class RecoverableDelete extends AdminComponent
     #[Locked]
     public bool $confirming = false;
 
-    public function mount(string $resource, ?int $parentId = null, ?int $recordId = null, bool $menuItem = false): void
+    public function mount(string $resource, ?int $parentId = null, ?int $recordId = null, bool $menuItem = false, ?string $redirectTo = null): void
     {
         app(AdminDeletionService::class)->definition($resource);
         $this->resource = $resource;
         $this->parentId = $parentId;
         $this->recordId = $recordId;
         $this->menuItem = $menuItem;
+        $this->redirectTo = $redirectTo;
     }
 
     private function authorizeDeletion(): void
@@ -97,6 +101,11 @@ class RecoverableDelete extends AdminComponent
         $this->showModal = false;
         $this->reset('selectedIds', 'confirming');
         session()->flash('success', $count.' record(s) deleted. Connected records were preserved.');
+        if ($count > 0 && $this->redirectTo !== null) {
+            $this->redirect($this->redirectTo, navigate: true);
+
+            return;
+        }
         $this->dispatch('admin-records-deleted');
     }
 

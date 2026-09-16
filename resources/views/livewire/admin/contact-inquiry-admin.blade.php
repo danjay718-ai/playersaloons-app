@@ -70,7 +70,7 @@
             </div>
 
             <div class="border-t border-slate-800 p-4">
-                {{ $inquiries->links() }}
+                {{ $inquiries->links('vendor.livewire.custom-pagination') }}
             </div>
         </section>
 

@@ -59,7 +59,8 @@ class WalletDashboard extends Component
 
             return redirect()->away($checkoutUrl);
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to create the deposit request.'));
+            report($e);
+            session()->flash('info', __('Deposits are temporarily unavailable. Please try again later.'));
         }
     }
 

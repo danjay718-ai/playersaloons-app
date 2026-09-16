@@ -145,7 +145,7 @@
             </div>
         </div>
         <div>
-            {{ $games->links() }}
+            {{ $games->links('vendor.livewire.custom-pagination') }}
         </div>
     @endif
 
@@ -205,7 +205,7 @@
             </div>
         </div>
         <div>
-            {{ $platforms->links() }}
+            {{ $platforms->links('vendor.livewire.custom-pagination') }}
         </div>
     @endif
 

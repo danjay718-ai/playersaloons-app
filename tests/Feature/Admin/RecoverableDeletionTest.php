@@ -70,6 +70,29 @@ class RecoverableDeletionTest extends TestCase
         app(AdminDeletionService::class)->delete($resource, $ids, $this->superAdmin, $parentId);
     }
 
+    public function test_stream_viewer_delete_redirects_to_stream_list_without_reloading_deleted_stream(): void
+    {
+        $stream = StreamChannel::create([
+            'user_id' => $this->superAdmin->id,
+            'title' => 'Delete from viewer',
+            'provider' => 'youtube',
+            'source_url' => 'https://youtu.be/XN3xNJvWXsc',
+            'is_public' => true,
+        ]);
+
+        Livewire::test(RecoverableDelete::class, [
+            'resource' => 'streams',
+            'recordId' => $stream->id,
+            'redirectTo' => route('admin.streams'),
+        ])
+            ->call('open')
+            ->call('deleteSelected')
+            ->assertRedirect(route('admin.streams'))
+            ->assertNotDispatched('admin-records-deleted');
+
+        $this->assertSoftDeleted($stream);
+    }
+
     public function test_cancel_closes_single_record_confirmation_without_opening_selection(): void
     {
         Livewire::test(RecoverableDelete::class, ['resource' => 'games', 'recordId' => $this->game->id, 'menuItem' => true])
