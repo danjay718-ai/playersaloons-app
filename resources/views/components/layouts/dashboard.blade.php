@@ -120,14 +120,40 @@
     </div>
 
     <!-- Main Outer Container -->
-    <div class="relative z-10 flex min-h-screen w-full">
+    <div class="player-dashboard-shell relative z-10 flex min-h-screen w-full"
+         x-data="{
+             sidebarExpanded: false,
+             sidebarTooltip: null,
+             showSidebarTooltip(target) {
+                 const item = target.closest('[data-sidebar-tooltip]');
+                 if (this.sidebarExpanded || !item) {
+                     this.sidebarTooltip = null;
+                     return;
+                 }
+                 const rect = item.getBoundingClientRect();
+                 this.sidebarTooltip = {
+                     label: item.dataset.sidebarTooltip,
+                     top: rect.top + rect.height / 2,
+                     left: this.$refs.sidebar.getBoundingClientRect().right + 12,
+                 };
+             }
+         }"
+         :data-sidebar-expanded="sidebarExpanded ? 'true' : 'false'">
 
         <!-- Desktop Sidebar Panel (Hidden on mobile, sticky on desktop) -->
-        <aside id="desktop-sidebar" class="theme-sidebar group/sidebar hidden md:flex fixed top-0 left-0 h-screen border-r backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden">
+        <aside id="desktop-sidebar" x-ref="sidebar"
+               @mouseover="showSidebarTooltip($event.target)"
+               @mouseleave="sidebarTooltip = null"
+               @focusin="showSidebarTooltip($event.target)"
+               @focusout="sidebarTooltip = null"
+               @scroll.capture="sidebarTooltip = null"
+               @click="sidebarTooltip = null"
+               @keydown.escape="sidebarTooltip = null"
+               class="theme-sidebar group/sidebar hidden md:flex fixed top-0 left-0 h-screen border-r backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden">
             
             <!-- Sidebar Header / Logo -->
             <div class="px-4 flex items-center justify-center">
-                <a href="/dashboard" wire:navigate class="flex items-center justify-center w-full">
+                <a href="/dashboard" wire:navigate data-sidebar-tooltip="{{ __('Dashboard') }}" aria-label="{{ __('Dashboard') }}" class="flex items-center justify-center w-full">
                     <div class="theme-sidebar-logo-shell relative flex-shrink-0 w-12 h-12 rounded-xl p-[1px] transition-transform duration-500 group-hover/sidebar:rotate-[360deg]">
                         <div class="theme-sidebar-logo-inner w-full h-full rounded-xl flex items-center justify-center">
                             <img src="/playersaloons_logo.webp" alt="Logo" class="w-9 h-9 object-contain">
@@ -174,7 +200,7 @@
 
             <nav class="my-5 min-h-0 flex-grow space-y-1.5 overflow-y-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @foreach($navItems as $item)
-                    <a href="{{ $item['url'] }}" wire:navigate 
+                    <a href="{{ $item['url'] }}" wire:navigate data-sidebar-tooltip="{{ $item['label'] }}"
                        class="theme-nav-item flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
                        {{ $item['active'] 
                           ? 'theme-nav-active bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
@@ -192,7 +218,7 @@
             <!-- Sidebar Bottom Action -->
             <div class="px-3">
                 @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
-                <a href="/admin" wire:navigate
+                <a href="/admin" wire:navigate data-sidebar-tooltip="{{ __('Admin Panel') }}"
                    class="w-full flex items-center h-12 px-3 mb-2 rounded-lg border border-amber-500/30 bg-amber-950/20 text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 hover:border-amber-400/50 transition-all duration-200">
                     <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                         <i data-lucide="shield" class="w-5 h-5"></i>
@@ -204,7 +230,7 @@
                 @endif
                 <form method="POST" action="{{ route('logout') }}" class="m-0">
                     @csrf
-                    <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()" 
+                    <button type="button" data-sidebar-tooltip="{{ __('Logout') }}" onclick="document.getElementById('logout-confirmation')?.showModal()"
                             class="w-full flex items-center h-12 px-3 rounded-lg border border-transparent text-zinc-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all duration-200">
                         <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
@@ -217,8 +243,17 @@
             </div>
         </aside>
 
+        {{-- Outside the sidebar so the scroll container cannot clip the tooltip. --}}
+        <div x-show="sidebarTooltip && !sidebarExpanded"
+             x-cloak
+             x-transition.opacity.duration.100ms
+             x-text="sidebarTooltip?.label"
+             :style="sidebarTooltip ? { top: sidebarTooltip.top + 'px', left: sidebarTooltip.left + 'px' } : {}"
+             class="player-sidebar-tooltip fixed z-[60] hidden md:block pointer-events-none"
+             aria-hidden="true"></div>
+
         <!-- Right Side: Header + Content Pane -->
-        <div class="flex-1 flex flex-col min-w-0 relative md:pl-20">
+        <div class="player-dashboard-pane flex-1 flex flex-col min-w-0 relative">
             
             <!-- Topbar sticky header -->
             <header class="theme-header sticky top-0 z-40 h-16 md:h-20 border-b border-purple-500/15 bg-[#0a0718]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
@@ -238,6 +273,24 @@
 
                     <!-- Desktop section title -->
                     <div class="hidden md:flex items-center space-x-3">
+                        <button type="button"
+                                class="player-sidebar-toggle inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border focus-visible:outline-2 focus-visible:outline-offset-2"
+                                :class="{ 'is-expanded': sidebarExpanded }"
+                                @click="sidebarExpanded = !sidebarExpanded; sidebarTooltip = null"
+                                aria-controls="desktop-sidebar"
+                                aria-expanded="false"
+                                aria-label="{{ __('Expand sidebar') }}"
+                                :aria-expanded="sidebarExpanded"
+                                :aria-label="sidebarExpanded ? @js(__('Collapse sidebar')) : @js(__('Expand sidebar'))"
+                                :title="sidebarExpanded ? @js(__('Collapse sidebar')) : @js(__('Expand sidebar'))">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="4" width="18" height="16" rx="3" />
+                                <path d="M9 4v16" />
+                                <rect x="4.5" y="5.5" width="3" height="13" rx="1" fill="currentColor" stroke="none" :opacity="sidebarExpanded ? '0.45' : '0.15'" />
+                                <path d="M12 12h6" />
+                                <polyline points="15,9 18,12 15,15" :points="sidebarExpanded ? '15,9 12,12 15,15' : '15,9 18,12 15,15'" />
+                            </svg>
+                        </button>
                         <span class="theme-title-marker hidden xs:block w-2 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)]"></span>
                         <h1 class="theme-page-title text-xs sm:text-sm md:text-base font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple truncate max-w-[150px] sm:max-w-none">
                             @yield('dashboard_title', __('DASHBOARD'))
