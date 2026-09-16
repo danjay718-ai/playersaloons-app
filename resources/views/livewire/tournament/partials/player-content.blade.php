@@ -536,7 +536,7 @@
                     <div class="decorated-card tournament-overview-card bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
                         <i data-lucide="scroll-text" aria-hidden="true" class="ui-card-watermark"></i>
                         @if($tournament->rules)
-                            <x-ui.collapsible-rich-text :content="$tournament->rules" :threshold="900" :preview-height="420" />
+                            <x-ui.collapsible-rich-text :content="$tournament->rules" :preview-height="420" :scrollable="true" scroll-label="Tournament rules" />
                         @else
                             <!-- Default rules when none specified -->
                             <ul class="space-y-4">

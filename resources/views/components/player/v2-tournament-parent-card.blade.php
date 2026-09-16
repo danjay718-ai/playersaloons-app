@@ -18,7 +18,15 @@
     $viewQuery = $publicView ? '?view=guest' : '';
 @endphp
 
-<article x-data="{ open: false }" class="player-tournament-card group overflow-hidden">
+<article x-data="tournamentSlotPicker(@js(now()->getTimestampMs()), @js([
+    'startsIn' => __('Starts in'),
+    'ongoing' => __('In progress'),
+    'completed' => __('Completed'),
+    'cancelled' => __('Cancelled'),
+    'refunded' => __('Refunded'),
+    'pending' => __('Start time pending'),
+    'reached' => __('Start time reached'),
+]))" class="player-tournament-card group overflow-hidden">
     <div class="relative h-32 overflow-hidden sm:h-36">
         <img src="{{ $banner }}" alt="{{ $template->name }}" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
         <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/15 to-black/20"></div>
@@ -55,7 +63,14 @@
                 <div class="space-y-3">
                     @foreach($occurrences as $occurrence)
                         <div class="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-                            <div class="min-w-0"><p class="font-orbitron text-xs font-black uppercase text-white">{{ $occurrence->start_at?->timezone($occurrence->timezone)->format('D, M j · g:i A') }}</p><p class="mt-1 text-xs text-zinc-500">{{ str_replace('_', ' ', $occurrence->status->value ?? $occurrence->status) }} · {{ $occurrence->registrations_count }}/{{ $occurrence->max_participants }} {{ $isHeadToHead ? 'players' : 'teams' }}</p></div>
+                            <div class="min-w-0">
+                                <p class="font-orbitron text-xs font-black uppercase text-white">{{ $occurrence->start_at?->timezone($occurrence->timezone)->format('D, M j · g:i A') }} <span class="font-sans text-[10px] font-medium normal-case text-zinc-500">{{ $occurrence->timezone }}</span></p>
+                                <p class="mt-2 inline-flex items-center gap-1.5 rounded-md border border-cyan-500/20 bg-cyan-500/5 px-2 py-1 text-xs font-semibold tabular-nums text-cyan-300">
+                                    <i data-lucide="timer" class="h-3.5 w-3.5 shrink-0" aria-hidden="true"></i>
+                                    <span x-text="countdown(@js($occurrence->start_at?->getTimestampMs()), @js($occurrence->status->value ?? $occurrence->status))"></span>
+                                </p>
+                                <p class="mt-1 text-xs text-zinc-500">{{ str_replace('_', ' ', $occurrence->status->value ?? $occurrence->status) }} · {{ $occurrence->registrations_count }}/{{ $occurrence->max_participants }} {{ $isHeadToHead ? 'players' : 'teams' }}</p>
+                            </div>
                             <div class="flex items-center justify-between gap-4 sm:justify-end"><span class="font-orbitron text-sm font-black text-violet-300">{{ (float) $occurrence->entry_fee > 0 ? '$'.number_format((float) $occurrence->entry_fee, 2) : 'Free' }}</span><a href="/tournaments/{{ $occurrence->uuid }}/view{{ $viewQuery }}" wire:navigate class="rounded-lg bg-violet-600 px-4 py-2 text-center text-[10px] font-black uppercase tracking-wider text-white hover:bg-violet-500">{{ $tab === 'upcoming' ? 'Select slot' : 'View' }}</a></div>
                         </div>
                     @endforeach

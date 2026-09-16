@@ -47,11 +47,11 @@
                             @endphp
                             <i data-lucide="{{ $icon }}" class="w-3.5 h-3.5"></i>
                         </div>
-                        <div class="min-w-0">
-                            <p class="text-xs font-semibold {{ is_null($notification->read_at) ? 'text-zinc-200' : 'text-zinc-400' }} truncate">
+                        <div class="min-w-0 flex-1">
+                            <p class="whitespace-normal [overflow-wrap:anywhere] text-xs leading-relaxed font-semibold {{ is_null($notification->read_at) ? 'text-zinc-200' : 'text-zinc-400' }}">
                                 {{ $notification->title }}
                             </p>
-                            <p class="text-[10px] text-zinc-500 mt-0.5 line-clamp-2">{{ $notification->message }}</p>
+                            <p class="whitespace-pre-line [overflow-wrap:anywhere] text-[10px] leading-relaxed text-zinc-500 mt-0.5">{{ $notification->message }}</p>
                             <p class="text-[9px] text-zinc-600 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
                             @if($notification->action_url)
                                 <p class="mt-1 text-[9px] font-black uppercase tracking-wider text-purple-400">Open details →</p>

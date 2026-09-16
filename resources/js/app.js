@@ -3,6 +3,9 @@
  */
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import { tournamentSlotPicker } from './slot-picker';
+
+window.tournamentSlotPicker = tournamentSlotPicker;
 
 window.Pusher = Pusher;
 
