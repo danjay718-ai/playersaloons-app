@@ -1,5 +1,5 @@
 @extends('emails.auth.layout', [
-    'title' => 'Reset your PlayerSaloons password',
+    'title' => 'Reset your GamersRival password',
     'appName' => $appName,
     'logoUrl' => $logoUrl,
 ])
@@ -8,7 +8,7 @@
     <h1 style="margin:0 0 12px;font-size:24px;line-height:32px;color:#ffffff;">Reset your password</h1>
 
     <p style="margin:0 0 18px;font-size:15px;line-height:24px;color:#d4d4d8;">
-        We received a request to reset your PlayerSaloons password. Use the secure link below to choose a new password.
+        We received a request to reset your GamersRival password. Use the secure link below to choose a new password.
     </p>
 
     <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0;">

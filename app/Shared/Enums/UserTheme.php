@@ -23,7 +23,7 @@ enum UserTheme: string
     {
         return match ($this) {
             self::PURPLE_DARK => 'The original neon purple arena.',
-            self::BLUE_DARK => 'A dark navy arena matched to the PlayerSaloons logo.',
+            self::BLUE_DARK => 'A dark navy arena matched to the GamersRival logo.',
             self::LIGHT => 'A bright, cool interface with blue brand accents.',
         };
     }

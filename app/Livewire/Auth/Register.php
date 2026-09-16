@@ -90,6 +90,6 @@ class Register extends Component
         return view('livewire.auth.register', [
             'countries' => app(CountryEligibilityService::class)->selectableCountries(),
         ])
-            ->layout('components.layouts.app', ['title' => 'Register | PlayerSaloons']);
+            ->layout('components.layouts.app', ['title' => 'Register | GamersRival']);
     }
 }

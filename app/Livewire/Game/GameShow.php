@@ -131,8 +131,8 @@ class GameShow extends Component
         ]);
 
         return Auth::check() && $this->viewMode !== 'guest'
-            ? $view->layout('components.layouts.dashboard', ['title' => $this->game->localizedName().' | PlayerSaloons', 'dashboard_title' => 'GAME HUB'])
-            : $view->layout('components.layouts.app', ['title' => $this->game->localizedName().' | PlayerSaloons']);
+            ? $view->layout('components.layouts.dashboard', ['title' => $this->game->localizedName().' | GamersRival', 'dashboard_title' => 'GAME HUB'])
+            : $view->layout('components.layouts.app', ['title' => $this->game->localizedName().' | GamersRival']);
     }
 
     /** @return array<string, string> */

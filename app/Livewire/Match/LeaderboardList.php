@@ -17,7 +17,7 @@ class LeaderboardList extends Component
         return view('livewire.match.leaderboard-list', [
             'topPlayers' => $this->topPlayers(),
         ])->layout('components.layouts.dashboard', [
-            'title' => 'Leaderboards | PlayerSaloons',
+            'title' => 'Leaderboards | GamersRival',
             'dashboard_title' => 'GLOBAL LEADERBOARDS',
         ]);
     }

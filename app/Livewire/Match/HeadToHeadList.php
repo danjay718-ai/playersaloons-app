@@ -238,7 +238,7 @@ class HeadToHeadList extends Component
             'activeMatches' => $activeMatches,
             'historyMatches' => $historyMatches,
         ])->layout('components.layouts.dashboard', [
-            'title' => 'Head-to-Head | PlayerSaloons',
+            'title' => 'Head-to-Head | GamersRival',
             'dashboard_title' => 'HEAD-TO-HEAD DUELS',
         ]);
     }

@@ -1,6 +1,8 @@
 const CACHE_NAME = 'playersaloons-__PWA_RELEASE__';
 const STATIC_ASSETS = [
-    '/playersaloons_logo.webp',
+    '/gamersrival-logo.webp',
+    '/gamersrival-icon.png',
+    '/favicon.ico',
     '/icon-192.png',
     '/icon-512.png',
     '/manifest.json',

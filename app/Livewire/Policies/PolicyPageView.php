@@ -27,7 +27,7 @@ class PolicyPageView extends Component
         return view('livewire.policies.policy-page-view', [
             'policy' => $policy,
         ])->layout('components.layouts.landing', [
-            'title' => $policy->title.' | PlayerSaloons',
+            'title' => $policy->title.' | GamersRival',
         ]);
     }
 }

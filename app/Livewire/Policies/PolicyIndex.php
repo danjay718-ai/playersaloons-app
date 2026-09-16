@@ -21,7 +21,7 @@ class PolicyIndex extends Component
         return view('livewire.policies.policy-index', [
             'policies' => $policies,
         ])->layout('components.layouts.landing', [
-            'title' => 'Policies | PlayerSaloons',
+            'title' => 'Policies | GamersRival',
         ]);
     }
 }

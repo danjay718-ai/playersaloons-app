@@ -24,7 +24,7 @@ class PublicTournamentList extends Component
             'platforms' => $this->getPlatforms(),
             'listingType' => $this->competitionType === 'head_to_head' ? 'head_to_head' : 'tournament',
             'allowCompetitionSwitch' => true,
-        ])->layout('components.layouts.app', ['title' => 'Tournaments | PlayerSaloons']);
+        ])->layout('components.layouts.app', ['title' => 'Tournaments | GamersRival']);
     }
 
     /** @return array<string, string> */

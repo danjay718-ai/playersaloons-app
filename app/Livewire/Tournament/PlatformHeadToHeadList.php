@@ -48,7 +48,7 @@ final class PlatformHeadToHeadList extends Component
             'platforms' => $this->getPlatforms(),
             'publicView' => $isPublicView,
         ])->layout($layout, [
-            'title' => 'Head-to-Head | PlayerSaloons',
+            'title' => 'Head-to-Head | GamersRival',
             'dashboard_title' => 'HEAD-TO-HEAD',
         ]);
     }

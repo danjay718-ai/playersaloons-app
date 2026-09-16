@@ -12,7 +12,7 @@
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#18181b;border:1px solid #27272a;border-radius:14px;overflow:hidden;">
                     <tr>
                         <td style="padding:26px 26px 18px;text-align:center;background:#0f0f12;border-bottom:1px solid #27272a;">
-                            <img src="{{ $logoUrl }}" width="54" height="54" alt="{{ $appName }}" style="display:block;margin:0 auto 12px;border-radius:12px;">
+                            <img src="{{ $logoUrl }}" width="64" height="48" alt="GamersRival logo" style="display:block;width:64px;height:48px;object-fit:contain;margin:0 auto 12px;">
                             <div style="font-size:18px;line-height:24px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#ffffff;">
                                 {{ $appName }}
                             </div>

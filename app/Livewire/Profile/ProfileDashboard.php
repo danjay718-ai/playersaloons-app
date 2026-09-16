@@ -380,7 +380,7 @@ class ProfileDashboard extends Component
             'timezoneOptions' => $this->timezoneOptions(),
             'countries' => app(CountryEligibilityService::class)->selectableCountries(),
         ])->layout('components.layouts.dashboard', [
-            'title' => 'My Profile | PlayerSaloons',
+            'title' => 'My Profile | GamersRival',
             'dashboard_title' => 'USER PROFILE',
         ]);
     }

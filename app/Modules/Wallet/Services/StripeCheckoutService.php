@@ -36,7 +36,7 @@ class StripeCheckoutService
                     'price_data' => [
                         'currency' => 'usd',
                         'product_data' => [
-                            'name' => 'PlayerSaloons Wallet Deposit',
+                            'name' => 'GamersRival Wallet Deposit',
                         ],
                         'unit_amount' => (int) round((float) $breakdown['total'] * 100),
                     ],

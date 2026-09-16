@@ -475,6 +475,6 @@ class TournamentDetail extends Component
             'isSearchingForTeam' => $isSearchingForTeam,
             'userSquad' => $userSquad,
             'pendingCancellationRequest' => $pendingCancellationRequest,
-        ])->layout($this->layout, ['title' => $tournament->name.' | PlayerSaloons', 'dashboard_title' => 'TOURNAMENT DETAILS']);
+        ])->layout($this->layout, ['title' => $tournament->name.' | GamersRival', 'dashboard_title' => 'TOURNAMENT DETAILS']);
     }
 }

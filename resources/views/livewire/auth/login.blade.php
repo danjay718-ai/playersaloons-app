@@ -86,7 +86,7 @@
         </form>
 
         <div class="text-center mt-6">
-            <span class="text-xs text-zinc-500">New to PlayerSaloons?</span>
+            <span class="text-xs text-zinc-500">New to GamersRival?</span>
             <a href="/register" wire:navigate class="text-xs font-bold text-violet-400 hover:text-violet-300 ml-1 transition-colors">
                 Create Account
             </a>

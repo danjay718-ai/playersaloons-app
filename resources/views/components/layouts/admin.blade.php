@@ -4,10 +4,11 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $accountTheme->value }}">
 <head>
+    <x-brand-icons />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="{{ $accountTheme->metaColor() }}">
-    <title>{{ $title ?? __('Admin Panel | PlayerSaloons') }}</title>
+    <title>{{ $title ?? __('Admin Panel | GamersRival') }}</title>
 
     <!-- Google Fonts for Professional Aesthetic (Inter only, no Orbitron for admin) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,7 +33,7 @@
     <header class="theme-header md:hidden flex items-center justify-between bg-[#0f172a] border-b border-slate-800 px-4 py-3 sticky top-0 z-50">
         <div class="flex items-center space-x-3">
             <span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
-            <span class="font-bold text-sm tracking-wider uppercase text-slate-200">{{ __('PS ADMIN') }}</span>
+            <span class="font-bold text-sm tracking-wider uppercase text-slate-200">{{ __('GR ADMIN') }}</span>
         </div>
         <div class="flex items-center space-x-2">
             <livewire:identity.theme-switcher key="admin-mobile-theme" />
@@ -54,11 +55,11 @@
             <!-- Logo Section -->
             <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-[#0b0f19]">
                 <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-[0_0_10px_rgba(79,70,229,0.3)]">
-                        PS
+                    <div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center">
+                        <img src="/gamersrival-logo.webp" alt="GamersRival logo" width="32" height="32" style="width:32px;height:32px;object-fit:contain" class="object-contain">
                     </div>
                     <div>
-                        <h1 class="text-xs font-extrabold tracking-widest text-slate-200 uppercase">PlayerSaloons</h1>
+                        <h1 class="text-xs font-extrabold tracking-widest text-slate-200 uppercase">GamersRival</h1>
                         <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">{{ __('Control Terminal') }}</p>
                     </div>
                 </div>
@@ -264,8 +265,10 @@
         <div class="theme-sidebar relative flex-1 flex flex-col max-w-xs w-full bg-[#0f172a] border-r border-slate-800 pt-5 pb-4">
             <div class="px-6 flex items-center justify-between pb-4 border-b border-slate-800">
                 <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white">PS</div>
-                    <span class="font-extrabold tracking-widest text-slate-200 uppercase text-xs">PlayerSaloons</span>
+                    <div class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center">
+                        <img src="/gamersrival-logo.webp" alt="GamersRival logo" width="32" height="32" style="width:32px;height:32px;object-fit:contain" class="object-contain">
+                    </div>
+                    <span class="font-extrabold tracking-widest text-slate-200 uppercase text-xs">GamersRival</span>
                 </div>
                 <button id="mobile-menu-close" class="p-2 text-slate-400 hover:text-white">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

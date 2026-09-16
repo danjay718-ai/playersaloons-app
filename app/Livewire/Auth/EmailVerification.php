@@ -38,6 +38,6 @@ class EmailVerification extends Component
     public function render()
     {
         return view('livewire.auth.email-verification')
-            ->layout('components.layouts.app', ['title' => 'Verify Email | PlayerSaloons']);
+            ->layout('components.layouts.app', ['title' => 'Verify Email | GamersRival']);
     }
 }

@@ -1,7 +1,7 @@
 <main class="landing-page-root min-h-screen bg-[#050311] pt-28 text-zinc-100">
     <section class="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6 lg:px-8">
         <div class="mb-10">
-            <p class="landing-section-kicker">PlayerSaloons {{ strtolower($label) }}</p>
+            <p class="landing-section-kicker">GamersRival {{ strtolower($label) }}</p>
             <h1 class="mt-3 font-orbitron text-4xl font-black uppercase text-white sm:text-5xl">{{ $title }}</h1>
             <p class="mt-4 max-w-3xl text-sm leading-7 text-zinc-400 sm:text-base">{{ $intro }}</p>
         </div>

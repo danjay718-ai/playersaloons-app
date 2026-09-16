@@ -24,9 +24,9 @@ class NewsIndex extends Component
             'type' => 'news',
             'label' => 'News',
             'title' => 'News',
-            'intro' => 'Official announcements, release notes, and operational updates for the PlayerSaloons platform.',
+            'intro' => 'Official announcements, release notes, and operational updates for the GamersRival platform.',
         ])->layout('components.layouts.landing', [
-            'title' => 'News | PlayerSaloons',
+            'title' => 'News | GamersRival',
         ]);
     }
 }

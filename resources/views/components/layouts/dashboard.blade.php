@@ -4,14 +4,14 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $accountTheme->value }}">
 <head>
+    <x-brand-icons />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>{{ $title ?? __('Gamer Terminal | PlayerSaloons') }}</title>
+    <title>{{ $title ?? __('Gamer Terminal | GamersRival') }}</title>
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="{{ $accountTheme->metaColor() }}">
-    <link rel="apple-touch-icon" href="/playersaloons_logo.webp">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -152,13 +152,9 @@
                class="theme-sidebar group/sidebar hidden md:flex fixed top-0 left-0 h-screen border-r backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden">
             
             <!-- Sidebar Header / Logo -->
-            <div class="px-4 flex items-center justify-center">
+            <div class="h-20 px-2 flex shrink-0 items-center justify-center">
                 <a href="/dashboard" wire:navigate data-sidebar-tooltip="{{ __('Dashboard') }}" aria-label="{{ __('Dashboard') }}" class="flex items-center justify-center w-full">
-                    <div class="theme-sidebar-logo-shell relative flex-shrink-0 w-12 h-12 rounded-xl p-[1px] transition-transform duration-500 group-hover/sidebar:rotate-[360deg]">
-                        <div class="theme-sidebar-logo-inner w-full h-full rounded-xl flex items-center justify-center">
-                            <img src="/playersaloons_logo.webp" alt="Logo" class="w-9 h-9 object-contain">
-                        </div>
-                    </div>
+                    <img src="/gamersrival-logo.webp" alt="GamersRival logo" width="64" height="48" class="player-sidebar-brand-logo object-contain">
                 </a>
             </div>
 
@@ -260,10 +256,8 @@
                 <!-- Left: Logo (mobile only) + Desktop section title -->
                 <div class="flex items-center space-x-3">
                     <!-- Mobile Logo -->
-                    <a href="/dashboard" wire:navigate class="theme-sidebar-logo-shell md:hidden flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-purple-600 to-fuchsia-600 p-[1px] shadow-[0_0_12px_rgba(168,85,247,0.4)]">
-                        <div class="theme-sidebar-logo-inner w-full h-full bg-[#0a0718] rounded-md flex items-center justify-center">
-                            <img src="/playersaloons_logo.webp" alt="Logo" class="w-6 h-6 object-contain">
-                        </div>
+                    <a href="/dashboard" wire:navigate class="md:hidden flex shrink-0 items-center justify-center">
+                        <img src="/gamersrival-logo.webp" alt="GamersRival logo" width="48" height="36" style="width:48px;height:36px;object-fit:contain">
                     </a>
 
                     <!-- Mobile Page Title -->

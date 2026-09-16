@@ -46,7 +46,7 @@ class TotpService
 
     public function provisioningUri(string $secret, string $email): string
     {
-        $issuer = rawurlencode((string) config('app.name', 'PlayerSaloons'));
+        $issuer = rawurlencode((string) config('app.name', 'GamersRival'));
         $label = $issuer.':'.rawurlencode($email);
 
         return "otpauth://totp/{$label}?secret={$secret}&issuer={$issuer}&algorithm=SHA1&digits=6&period=30";

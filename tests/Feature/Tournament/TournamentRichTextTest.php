@@ -34,7 +34,7 @@ final class TournamentRichTextTest extends TestCase
             ['content' => $rules],
         )
             ->assertSee('View more')
-            ->assertSee('PlayerSaloons General Tournament &amp; Head-to-Head Competition Rules', false)
+            ->assertSee('GamersRival General Tournament &amp; Head-to-Head Competition Rules', false)
             ->assertDontSee('&lt;h2&gt;', false);
     }
 }

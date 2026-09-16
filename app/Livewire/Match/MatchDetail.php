@@ -405,6 +405,6 @@ class MatchDetail extends Component
             'activeDispute' => $activeDispute,
             'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,
             'activeAttempt' => $activeAttempt,
-        ])->layout($layout, ['title' => 'Match Room | PlayerSaloons', 'dashboard_title' => 'MATCH ROOM']);
+        ])->layout($layout, ['title' => 'Match Room | GamersRival', 'dashboard_title' => 'MATCH ROOM']);
     }
 }

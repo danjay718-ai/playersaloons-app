@@ -89,6 +89,6 @@ class PasswordReset extends Component
     public function render()
     {
         return view('livewire.auth.password-reset')
-            ->layout('components.layouts.app', ['title' => 'Reset Password | PlayerSaloons']);
+            ->layout('components.layouts.app', ['title' => 'Reset Password | GamersRival']);
     }
 }

@@ -49,7 +49,7 @@
                         <i data-lucide="swords" class="h-5 w-5"></i>
                     </div>
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.24em] text-violet-300">PlayerSaloons</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.24em] text-violet-300">GamersRival</p>
                         <h1 class="font-orbitron text-2xl font-black uppercase tracking-wide text-white">Join Now</h1>
                     </div>
                 </div>

@@ -31,7 +31,7 @@ class BlogArticleView extends Component
             'label' => 'Blog',
             'indexUrl' => '/blog',
         ])->layout('components.layouts.landing', [
-            'title' => $article->localizedTitle().' | PlayerSaloons Blog',
+            'title' => $article->localizedTitle().' | GamersRival Blog',
         ]);
     }
 }

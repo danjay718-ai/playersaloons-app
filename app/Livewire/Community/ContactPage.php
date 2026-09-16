@@ -100,12 +100,12 @@ class ContactPage extends Component
 
         if ($user && $user->hasVerifiedEmail()) {
             return $view->layout('components.layouts.dashboard', [
-                'title' => 'Contact Support | PlayerSaloons',
+                'title' => 'Contact Support | GamersRival',
             ]);
         }
 
         return $view->layout('components.layouts.app', [
-            'title' => 'Contact Support | PlayerSaloons',
+            'title' => 'Contact Support | GamersRival',
         ]);
     }
 }

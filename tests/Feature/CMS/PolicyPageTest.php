@@ -41,12 +41,12 @@ class PolicyPageTest extends TestCase
             ->assertOk()
             ->assertSee('Privacy Policy')
             ->assertSee('What information we collect')
-            ->assertSee('PlayerSaloons collects account');
+            ->assertSee('GamersRival collects account');
 
         $this->get('/policies/terms-and-conditions')
             ->assertOk()
             ->assertSee('Terms and Conditions')
-            ->assertSee('The rules for accessing and using PlayerSaloons services');
+            ->assertSee('The rules for accessing and using GamersRival services');
     }
 
     public function test_inactive_or_unpublished_policy_page_returns_not_found(): void

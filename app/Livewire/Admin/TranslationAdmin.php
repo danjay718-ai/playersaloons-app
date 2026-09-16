@@ -153,7 +153,7 @@ final class TranslationAdmin extends AdminComponent
                 'languages' => config('localization.supported', []),
                 'missingCounts' => [],
             ])->layout('components.layouts.admin', [
-                'title' => 'Translations | PlayerSaloons',
+                'title' => 'Translations | GamersRival',
                 'admin_title' => 'Translations',
             ]);
         }
@@ -203,7 +203,7 @@ final class TranslationAdmin extends AdminComponent
             'languages' => config('localization.supported', []),
             'missingCounts' => $missingCounts,
         ])->layout('components.layouts.admin', [
-            'title' => 'Translations | PlayerSaloons',
+            'title' => 'Translations | GamersRival',
             'admin_title' => 'Translations',
         ]);
     }

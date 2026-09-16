@@ -80,6 +80,6 @@ class TwoFactorChallenge extends Component
     public function render()
     {
         return view('livewire.auth.two-factor-challenge')
-            ->layout('components.layouts.app', ['title' => 'Two-Factor Authentication | PlayerSaloons']);
+            ->layout('components.layouts.app', ['title' => 'Two-Factor Authentication | GamersRival']);
     }
 }

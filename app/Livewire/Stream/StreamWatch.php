@@ -349,7 +349,7 @@ class StreamWatch extends Component
                 'admin_title' => 'Stream Viewer',
             ]
             : [
-                'title' => ($this->streamChannel->title ?? 'Stream').' | PlayerSaloons',
+                'title' => ($this->streamChannel->title ?? 'Stream').' | GamersRival',
                 'dashboard_title' => 'LIVE STREAM',
             ];
 

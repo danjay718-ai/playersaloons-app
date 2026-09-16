@@ -28,9 +28,8 @@
     <div class="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
 
         {{-- Logo ─────────────────────────────── --}}
-        <a href="/" class="flex shrink-0 items-center group">
-            <img src="/playersaloons_logo.webp" alt="PlayerSaloons Logo"
-                class="h-7 w-auto object-contain transition-all duration-500 group-hover:brightness-125 sm:h-10">
+        <a href="/" class="flex shrink-0 items-center group" aria-label="Gamers Rival home">
+            <x-public-brand />
         </a>
 
         {{-- Desktop centre nav (md+) ─────────── --}}
@@ -122,7 +121,7 @@
                        backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-950/80
                        hover:text-white hover:shadow-[inset_0_0_18px_rgba(34,211,238,0.2),0_0_25px_rgba(34,211,238,0.38)] focus-visible:outline-none focus-visible:ring-2
                        focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
-                data-pwa-install-desktop aria-label="{{ __('Show PlayerSaloons install options') }}">
+                data-pwa-install-desktop aria-label="{{ __('Show GamersRival install options') }}">
                 <i data-lucide="download" data-pwa-install-icon="ready" class="h-3.5 w-3.5 text-cyan-300"></i>
                 <i data-lucide="badge-check" data-pwa-install-icon="installed" class="hidden h-3.5 w-3.5 text-emerald-300"></i>
                 <i data-lucide="circle-help" data-pwa-install-icon="manual" class="hidden h-3.5 w-3.5 text-cyan-300"></i>
@@ -207,7 +206,7 @@
                        hover:shadow-[inset_0_0_24px_rgba(34,211,238,0.2),0_0_28px_rgba(34,211,238,0.4)]
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2
                        focus-visible:ring-offset-zinc-950"
-                data-pwa-install-mobile aria-label="{{ __('Show PlayerSaloons install options') }}">
+                data-pwa-install-mobile aria-label="{{ __('Show GamersRival install options') }}">
                 <i data-lucide="download" data-pwa-install-icon="ready" class="h-4 w-4 text-cyan-300"></i>
                 <i data-lucide="badge-check" data-pwa-install-icon="installed" class="hidden h-4 w-4 text-emerald-300"></i>
                 <i data-lucide="circle-help" data-pwa-install-icon="manual" class="hidden h-4 w-4 text-cyan-300"></i>

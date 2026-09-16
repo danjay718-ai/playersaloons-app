@@ -195,7 +195,7 @@ class MyTournamentsList extends Component
             'matchLosses' => $matchLosses,
             'activeMatchRooms' => $activeMatchRooms,
             'activeHeadToHeadMatches' => $activeHeadToHeadMatches,
-        ])->layout('components.layouts.dashboard', ['title' => 'My Games | PlayerSaloons', 'dashboard_title' => 'MY GAMES']);
+        ])->layout('components.layouts.dashboard', ['title' => 'My Games | GamersRival', 'dashboard_title' => 'MY GAMES']);
     }
 
     /** Count completed matches without hydrating tournament graphs. */

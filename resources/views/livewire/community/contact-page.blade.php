@@ -6,7 +6,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Support</p>
-                <h1 class="font-orbitron text-2xl font-black uppercase tracking-wide text-white">Contact PlayerSaloons</h1>
+                <h1 class="font-orbitron text-2xl font-black uppercase tracking-wide text-white">Contact GamersRival</h1>
             </div>
         </div>
 

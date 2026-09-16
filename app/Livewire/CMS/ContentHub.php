@@ -12,7 +12,7 @@ class ContentHub extends Component
     {
         return view('livewire.cms.content-hub')
             ->layout('components.layouts.landing', [
-                'title' => 'Updates | PlayerSaloons',
+                'title' => 'Updates | GamersRival',
             ]);
     }
 }

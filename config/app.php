@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => str_ireplace('PlayerSaloons', 'GamersRival', env('APP_NAME', 'GamersRival')),
 
     /*
     |--------------------------------------------------------------------------

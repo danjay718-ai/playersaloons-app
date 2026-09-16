@@ -1,10 +1,10 @@
 <main class="landing-page-root min-h-screen bg-[#050311] pt-28 text-zinc-100">
     <section class="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6 lg:px-8">
         <div class="mb-10">
-            <p class="landing-section-kicker">PlayerSaloons updates</p>
+            <p class="landing-section-kicker">GamersRival updates</p>
             <h1 class="mt-3 font-orbitron text-4xl font-black uppercase text-white sm:text-5xl">Blog &amp; News</h1>
             <p class="mt-4 max-w-3xl text-sm leading-7 text-zinc-400 sm:text-base">
-                Choose what you want to explore: guides and stories from the community, or official PlayerSaloons announcements.
+                Choose what you want to explore: guides and stories from the community, or official GamersRival announcements.
             </p>
         </div>
 
@@ -19,7 +19,7 @@
                 </div>
                 <p class="relative mt-8 text-[10px] font-black uppercase tracking-widest text-cyan-300">Explore</p>
                 <h2 class="relative mt-2 text-2xl font-black text-white">Blog</h2>
-                <p class="relative mt-4 text-sm leading-6 text-zinc-400">Competitive guides, platform stories, and behind-the-scenes notes from PlayerSaloons.</p>
+                <p class="relative mt-4 text-sm leading-6 text-zinc-400">Competitive guides, platform stories, and behind-the-scenes notes from GamersRival.</p>
                 <p class="relative mt-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">Read the blog →</p>
             </a>
 

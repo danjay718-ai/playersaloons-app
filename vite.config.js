@@ -15,7 +15,7 @@ function pwaReleasePlugin() {
         name: 'playersaloons-pwa-release',
         apply: 'build',
         writeBundle(_options, bundle) {
-            const staticAssets = ['manifest.json', 'playersaloons_logo.webp', 'icon-192.png', 'icon-512.png'];
+            const staticAssets = ['manifest.json', 'gamersrival-logo.webp', 'gamersrival-icon.png', 'favicon.ico', 'icon-192.png', 'icon-512.png'];
             const releaseHash = createHash('sha256');
 
             releaseHash.update(Object.keys(bundle).sort().join('|'));

@@ -39,7 +39,7 @@ class PlayerTournamentList extends Component
             'allowCompetitionSwitch' => false,
             'fixedFrequency' => true,
         ])->layout('components.layouts.dashboard', [
-            'title' => $frequencyLabel.' | PlayerSaloons',
+            'title' => $frequencyLabel.' | GamersRival',
             'dashboard_title' => strtoupper($frequencyLabel),
         ]);
     }

@@ -137,7 +137,7 @@
         </section>
 
         <section data-step="2" x-show="step === 2" x-cloak class="space-y-6 p-5 md:p-8">
-            <div><h2 class="text-lg font-black text-white">Description & Rules</h2><p class="mt-1 text-sm text-slate-500">Both are optional. PlayerSaloons shows the standard fallback when either is left blank.</p></div>
+            <div><h2 class="text-lg font-black text-white">Description & Rules</h2><p class="mt-1 text-sm text-slate-500">Both are optional. GamersRival shows the standard fallback when either is left blank.</p></div>
             @foreach ([['description', 'Description (Optional)', 'Explain the tournament format and what players can expect.'], ['rules', 'Tournament Rules (Optional)', 'Add rules specific to this tournament.']] as [$property, $label, $placeholder])
                 <div wire:ignore
                     x-data="{ editor: null, booted: false }"
@@ -193,7 +193,7 @@
                 <div class="xl:col-span-4"><label class="field-label">Play XP *</label><input wire:model="play_xp" required type="number" min="0" max="1000000" class="form-field"><p class="field-help">For players who actually compete.</p>@error('play_xp')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div class="xl:col-span-4"><label class="field-label">Winner Bonus XP *</label><input wire:model="winner_bonus_xp" required type="number" min="0" max="1000000" class="form-field"><p class="field-help">Added to the champion's Play XP.</p>@error('winner_bonus_xp')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div class="md:col-span-2 xl:col-span-12 flex items-start gap-3 rounded-xl border border-emerald-800/40 bg-emerald-950/15 p-4"><i data-lucide="shield-check" class="mt-0.5 h-4 w-4 text-emerald-400"></i><span><span class="block text-xs font-black uppercase text-emerald-200">Automatic Player Protection</span><span class="mt-1 block text-xs text-slate-500">The system first uses Extra Registration Time. If the minimum is still not reached, it cancels the tournament and refunds paid entries automatically.</span></span></div>
-                <div class="md:col-span-2 xl:col-span-12 mt-2 border-t border-slate-800 pt-5"><h3 class="font-bold text-white">Live Stream Links</h3><p class="mt-1 text-xs text-slate-500">Optional tournament broadcasts shown inside PlayerSaloons.</p></div>
+                <div class="md:col-span-2 xl:col-span-12 mt-2 border-t border-slate-800 pt-5"><h3 class="font-bold text-white">Live Stream Links</h3><p class="mt-1 text-xs text-slate-500">Optional tournament broadcasts shown inside GamersRival.</p></div>
                 <div class="xl:col-span-4"><label class="field-label">YouTube</label><input wire:model="youtube_stream_url" type="url" placeholder="https://youtube.com/..." class="form-field">@error('youtube_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div class="xl:col-span-4"><label class="field-label">Twitch</label><input wire:model="twitch_stream_url" type="url" placeholder="https://twitch.tv/..." class="form-field">@error('twitch_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div class="xl:col-span-4"><label class="field-label">Facebook</label><input wire:model="facebook_stream_url" type="url" placeholder="https://facebook.com/..." class="form-field">@error('facebook_stream_url')<p class="field-error">{{ $message }}</p>@enderror</div>

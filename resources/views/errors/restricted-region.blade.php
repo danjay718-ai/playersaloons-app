@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
 <head>
+    <x-brand-icons />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Region Restricted | PlayerSaloons</title>
+    <title>Region Restricted | GamersRival</title>
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased flex flex-col items-center justify-center relative cyber-grid">
@@ -22,7 +23,7 @@
             Detected Region: {{ $countryName }} ({{ $countryCode }})
         </p>
         <div class="mt-10">
-            <a href="mailto:support@playersaloons.com" class="text-sm text-cyan-400 hover:text-cyan-300 underline underline-offset-4">Contact Support</a>
+            <a href="mailto:support@gamersrival.com" class="text-sm text-cyan-400 hover:text-cyan-300 underline underline-offset-4">Contact Support</a>
         </div>
     </div>
 </body>

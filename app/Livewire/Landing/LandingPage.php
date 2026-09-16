@@ -16,7 +16,7 @@ class LandingPage extends Component
             'playerReviews' => PlayerReview::query()->with('user.profile')->where('status', 'approved')->latest('moderated_at')->limit(6)->get(),
         ]))
             ->layout('components.layouts.landing', [
-                'title' => 'PlayerSaloons | Play. Win. Cash.',
+                'title' => 'GamersRival | Play. Win. Cash.',
             ]);
     }
 }

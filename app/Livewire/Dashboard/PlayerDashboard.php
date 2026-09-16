@@ -50,7 +50,7 @@ class PlayerDashboard extends Component
                 'navItems' => $navItems,
             ],
         ))->layout('components.layouts.dashboard', [
-            'title' => 'Gamer Terminal | PlayerSaloons',
+            'title' => 'Gamer Terminal | GamersRival',
             'dashboard_title' => 'PLAYER COMMAND CENTER',
         ]);
     }

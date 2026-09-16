@@ -396,7 +396,7 @@ class StreamList extends Component
             'canModerateStreams' => $canModerate,
             'isAdminView' => $isAdminView,
         ])->layout($isAdminView ? 'components.layouts.admin' : 'components.layouts.dashboard', [
-            'title' => 'Streams | PlayerSaloons',
+            'title' => 'Streams | GamersRival',
             'dashboard_title' => 'LIVE STREAMS',
             'admin_title' => 'Stream Moderation',
         ]);

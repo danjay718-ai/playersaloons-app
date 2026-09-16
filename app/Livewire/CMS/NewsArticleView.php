@@ -31,7 +31,7 @@ class NewsArticleView extends Component
             'label' => 'News',
             'indexUrl' => '/news',
         ])->layout('components.layouts.landing', [
-            'title' => $article->localizedTitle().' | PlayerSaloons News',
+            'title' => $article->localizedTitle().' | GamersRival News',
         ]);
     }
 }

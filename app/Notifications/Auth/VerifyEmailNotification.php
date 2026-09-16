@@ -15,12 +15,12 @@ class VerifyEmailNotification extends VerifyEmail
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Verify your PlayerSaloons email')
+            ->subject('Verify your GamersRival email')
             ->view('emails.auth.verify-email', [
                 'user' => $notifiable,
                 'url' => $this->verificationUrl($notifiable),
-                'logoUrl' => asset('icon-192.png'),
-                'appName' => config('app.name', 'PlayerSaloons'),
+                'logoUrl' => asset('gamersrival-logo.webp'),
+                'appName' => config('app.name', 'GamersRival'),
             ]);
     }
 }

@@ -24,9 +24,9 @@ class BlogIndex extends Component
             'type' => 'blog',
             'label' => 'Blog',
             'title' => 'Blog',
-            'intro' => 'Platform updates, competitive guides, and behind-the-scenes notes from PlayerSaloons.',
+            'intro' => 'Platform updates, competitive guides, and behind-the-scenes notes from GamersRival.',
         ])->layout('components.layouts.landing', [
-            'title' => 'Blog | PlayerSaloons',
+            'title' => 'Blog | GamersRival',
         ]);
     }
 }

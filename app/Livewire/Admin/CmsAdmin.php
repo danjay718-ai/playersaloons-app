@@ -279,9 +279,9 @@ class CmsAdmin extends AdminComponent
     private function loadAboutSettings(): void
     {
         $settings = SystemSetting::query()->whereIn('key', ['about.title', 'about.subtitle', 'about.body'])->pluck('value', 'key');
-        $this->aboutTitle = $settings['about.title'] ?? 'About PlayerSaloons';
+        $this->aboutTitle = $settings['about.title'] ?? 'About GamersRival';
         $this->aboutSubtitle = $settings['about.subtitle'] ?? 'Our mission is to revolutionize competitive gaming.';
-        $this->aboutBody = $settings['about.body'] ?? '<p>Welcome to PlayerSaloons.</p>';
+        $this->aboutBody = $settings['about.body'] ?? '<p>Welcome to GamersRival.</p>';
     }
 
     public function saveAboutSettings(): void

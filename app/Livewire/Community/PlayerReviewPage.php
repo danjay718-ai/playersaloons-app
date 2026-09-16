@@ -33,6 +33,6 @@ class PlayerReviewPage extends Component
 
     public function render()
     {
-        return view('livewire.community.player-review-page', ['existing' => PlayerReview::query()->where('user_id', Auth::id())->first()])->layout('components.layouts.dashboard', ['title' => 'Review PlayerSaloons', 'dashboard_title' => 'PLAYER REVIEW']);
+        return view('livewire.community.player-review-page', ['existing' => PlayerReview::query()->where('user_id', Auth::id())->first()])->layout('components.layouts.dashboard', ['title' => 'Review GamersRival', 'dashboard_title' => 'PLAYER REVIEW']);
     }
 }

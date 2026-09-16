@@ -15,14 +15,14 @@ class AboutPage extends Component
             ->whereIn('key', ['about.title', 'about.subtitle', 'about.body'])
             ->pluck('value', 'key');
 
-        $title = $settings['about.title'] ?? 'About PlayerSaloons';
+        $title = $settings['about.title'] ?? 'About GamersRival';
         $subtitle = $settings['about.subtitle'] ?? 'Our mission is to revolutionize competitive gaming.';
-        $body = $settings['about.body'] ?? '<p>Welcome to PlayerSaloons.</p>';
+        $body = $settings['about.body'] ?? '<p>Welcome to GamersRival.</p>';
 
         return view('livewire.about-page', [
             'title' => $title,
             'subtitle' => $subtitle,
             'body' => $body,
-        ])->layout('components.layouts.landing', ['title' => 'About Us - PlayerSaloons']);
+        ])->layout('components.layouts.landing', ['title' => 'About Us - GamersRival']);
     }
 }

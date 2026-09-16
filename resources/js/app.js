@@ -1,5 +1,5 @@
 /**
- * PlayerSaloons Global Scripts
+ * GamersRival Global Scripts
  */
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
@@ -796,6 +796,7 @@ function initPublicNav() {
     if (!hero) {
         // On non-landing pages always show solid nav
         nav.classList.remove('nav-transparent');
+        nav.classList.remove('nav-scrolled');
         nav.classList.add('nav-solid');
         return;
     }
@@ -809,6 +810,7 @@ function initPublicNav() {
     function updateNav() {
         const scrolled = window.scrollY > THRESHOLD;
         nav.classList.toggle('nav-solid', scrolled);
+        nav.classList.toggle('nav-scrolled', scrolled);
         nav.classList.toggle('nav-transparent', !scrolled);
     }
 
@@ -1111,9 +1113,9 @@ function initPublicPwaInstall() {
             manual: 'Install App',
         };
         const ariaLabels = {
-            ready: 'Install PlayerSaloons app',
-            installed: 'PlayerSaloons is installed. Show reinstall instructions',
-            manual: 'Show PlayerSaloons install options',
+            ready: 'Install GamersRival app',
+            installed: 'GamersRival is installed. Show reinstall instructions',
+            manual: 'Show GamersRival install options',
         };
 
         button.dataset.pwaState = state;
@@ -1178,14 +1180,14 @@ function initPublicPwaInstall() {
             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
         if (isStandalone() || window.__playerSaloonsPwaJustInstalled) {
-            return 'PlayerSaloons is already installed. To reinstall it, remove the existing app from your device first, then return here and install again.';
+            return 'GamersRival is already installed. To reinstall it, remove the existing app from your device first, then return here and install again.';
         }
 
         if (isIos) {
-            return 'To install on iPhone or iPad, tap Share, then Add to Home Screen. If it is already installed, open PlayerSaloons from your Home Screen.';
+            return 'To install on iPhone or iPad, tap Share, then Add to Home Screen. If it is already installed, open GamersRival from your Home Screen.';
         }
 
-        return 'Use your browser menu and choose Install app. If PlayerSaloons is already installed, open it from your desktop or app launcher.';
+        return 'Use your browser menu and choose Install app. If GamersRival is already installed, open it from your desktop or app launcher.';
     };
 
     getInstallButtons().forEach(button => {

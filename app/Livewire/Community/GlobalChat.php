@@ -11,7 +11,7 @@ class GlobalChat extends Component
     public function render()
     {
         return view('livewire.community.global-chat')->layout('components.layouts.dashboard', [
-            'title' => 'Comms Hub | PlayerSaloons',
+            'title' => 'Comms Hub | GamersRival',
             'dashboard_title' => 'COMMS HUB',
         ]);
     }

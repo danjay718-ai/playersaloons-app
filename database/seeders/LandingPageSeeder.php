@@ -201,8 +201,8 @@ class LandingPageSeeder extends Seeder
             ],
             [
                 'key' => 'footer',
-                'title' => 'PlayerSaloons',
-                'body' => 'ALL RIGHTS RESERVED. OPERATED BY PLAYERSALOONS SYSTEMS.',
+                'title' => 'GamersRival',
+                'body' => 'ALL RIGHTS RESERVED. OPERATED BY GAMERSRIVAL SYSTEMS.',
                 'sort_order' => 8,
             ],
         ];

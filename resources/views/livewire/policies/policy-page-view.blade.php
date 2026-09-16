@@ -6,7 +6,7 @@
         </a>
 
         <header class="border-b border-zinc-900 pb-8">
-            <p class="landing-section-kicker">PlayerSaloons policy</p>
+            <p class="landing-section-kicker">GamersRival policy</p>
             <h1 class="mt-3 font-orbitron text-4xl font-black uppercase text-white sm:text-5xl">{{ $policy->title }}</h1>
             @if($policy->summary)
                 <p class="mt-4 text-base leading-7 text-zinc-400">{{ $policy->summary }}</p>

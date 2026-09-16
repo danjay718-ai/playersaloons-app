@@ -4,9 +4,10 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
+    <x-brand-icons />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Account Restricted | PlayerSaloons</title>
+    <title>Account Restricted | GamersRival</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="flex min-h-screen items-center justify-center bg-[#05030c] p-5 font-sans text-zinc-100">

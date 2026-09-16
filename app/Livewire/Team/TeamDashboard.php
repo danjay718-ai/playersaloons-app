@@ -503,7 +503,7 @@ class TeamDashboard extends Component
         ]);
 
         return $this->resolveView($view)->layout('components.layouts.dashboard', [
-            'title' => 'Squads & Teams | PlayerSaloons',
+            'title' => 'Squads & Teams | GamersRival',
             'dashboard_title' => 'SQUADS & TEAMS',
         ]);
     }

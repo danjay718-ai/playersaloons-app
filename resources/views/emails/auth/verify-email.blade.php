@@ -1,5 +1,5 @@
 @extends('emails.auth.layout', [
-    'title' => 'Verify your PlayerSaloons email',
+    'title' => 'Verify your GamersRival email',
     'appName' => $appName,
     'logoUrl' => $logoUrl,
 ])
@@ -8,7 +8,7 @@
     <h1 style="margin:0 0 12px;font-size:24px;line-height:32px;color:#ffffff;">Verify your email</h1>
 
     <p style="margin:0 0 18px;font-size:15px;line-height:24px;color:#d4d4d8;">
-        Welcome to PlayerSaloons. Confirm this email address to unlock your player dashboard, tournaments, wallet, teams, and match access.
+        Welcome to GamersRival. Confirm this email address to unlock your player dashboard, tournaments, wallet, teams, and match access.
     </p>
 
     <table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0;">
@@ -29,6 +29,6 @@
     </p>
 
     <p style="margin:22px 0 0;font-size:13px;line-height:21px;color:#71717a;">
-        If you did not create a PlayerSaloons account, you can ignore this email.
+        If you did not create a GamersRival account, you can ignore this email.
     </p>
 @endsection

@@ -106,7 +106,7 @@ class WalletDashboard extends Component
             'depositBreakdown' => $feeCalculator->calculate(is_numeric($this->depositAmount) ? (float) $this->depositAmount : 0),
             'emailVerified' => $user->hasVerifiedEmail(),
         ])->layout('components.layouts.dashboard', [
-            'title' => 'Financial Terminal | PlayerSaloons',
+            'title' => 'Financial Terminal | GamersRival',
             'dashboard_title' => 'FINANCIAL TERMINAL',
         ]);
     }
