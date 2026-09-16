@@ -6,8 +6,8 @@ if [ "$SERVICE_TYPE" = "web" ]; then
     php artisan migrate --force
     php artisan db:seed --class=RolesAndPermissionsSeeder --force
     php artisan db:seed --class=PlatformSystemUserSeeder --force
-    php artisan db:seed --class=PlatformSeeder --force
-    php artisan db:seed --class=GamesTableSeeder --force
+    # Demo platforms and games must be seeded explicitly in local/testing only.
+    # Their seeders reject production and would stop startup before nginx runs.
     php artisan db:seed --class=PolicyPageSeeder --force
     php artisan db:seed --class=LandingPageSeeder --force
     php artisan db:seed --class=PublicNavigationSeeder --force
