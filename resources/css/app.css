@@ -281,6 +281,11 @@ html[data-theme='light'] {
         background-image: linear-gradient(180deg, #0079d1 0%, #16aaff 32%, #82d5ff 50%, #16aaff 65%, #0079d1 100%);
     }
 }
+@media (max-width: 639px) {
+    .public-brand-mobile-icon-only .public-brand-wordmark {
+        display: none;
+    }
+}
 @media (min-width: 640px) {
     .public-brand-icon {
         width: 48px;

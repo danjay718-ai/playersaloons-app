@@ -29,7 +29,7 @@
 
         {{-- Logo ─────────────────────────────── --}}
         <a href="/" class="flex shrink-0 items-center group" aria-label="Gamers Rival home">
-            <x-public-brand />
+            <x-public-brand :mobile-icon-only="true" />
         </a>
 
         {{-- Desktop centre nav (md+) ─────────── --}}
