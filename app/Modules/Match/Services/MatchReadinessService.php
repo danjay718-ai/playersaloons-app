@@ -8,6 +8,7 @@ use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\ForfeitMatchAction;
 use App\Modules\Match\Actions\StartMatchAction;
+use App\Modules\Match\Events\BroadcastMatchReadinessUpdated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Shared\Enums\MatchStatus;
@@ -23,23 +24,25 @@ final class MatchReadinessService
         private readonly NotificationService $notifications,
     ) {}
 
-    /** Initialize the Get Ready timer and apply each registration's saved preference. */
+    /** Start filled matches automatically once the tournament is ongoing. */
     public function prepare(GameMatch $match): void
     {
         $match->loadMissing(['tournament', 'playerARegistration', 'playerBRegistration']);
-        if ($match->status !== MatchStatus::READY || $match->ready_started_at !== null) {
+        if ($match->status !== MatchStatus::READY) {
             return;
         }
 
         $now = now();
-        $readyDeadline = $now->copy()->addMinutes(max(1, (int) $match->tournament->match_ready_minutes));
-        $match->forceFill([
-            'ready_started_at' => $now,
-            'ready_deadline_at' => $readyDeadline,
-            'scheduled_at' => $readyDeadline,
-            'player_a_ready_at' => $match->playerARegistration?->ready_mode === 'auto' ? $now : null,
-            'player_b_ready_at' => $match->playerBRegistration?->ready_mode === 'auto' ? $now : null,
-        ])->save();
+        if ($match->ready_started_at === null) {
+            $readyDeadline = $now->copy()->addMinutes(max(1, (int) $match->tournament->match_ready_minutes));
+            $match->ready_started_at = $now;
+            $match->ready_deadline_at = $readyDeadline;
+            $match->scheduled_at ??= $match->tournament->start_at ?? $now;
+        }
+        $this->applyAutomaticReadiness($match);
+        if ($match->isDirty()) {
+            $match->save();
+        }
 
         if ($this->startDueTournament($match)) {
             return;
@@ -68,6 +71,7 @@ final class MatchReadinessService
             } else {
                 throw new \LogicException('You are not a player in this match.');
             }
+            $this->applyAutomaticReadiness($locked);
             $locked->save();
 
             if ($this->startDueTournament($locked)) {
@@ -78,6 +82,14 @@ final class MatchReadinessService
                 $this->startMatch->execute($locked);
             }
         });
+
+        // The check-in is already committed; realtime is best-effort because
+        // the room also polls when Reverb is unavailable.
+        try {
+            broadcast(new BroadcastMatchReadinessUpdated($match->uuid));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function reportOpponentAbsent(GameMatch $match, int $userId): void
@@ -114,6 +126,21 @@ final class MatchReadinessService
             ])->findOrFail($match->getKey());
             if ($locked->status !== MatchStatus::READY) {
                 return;
+            }
+
+            if ($locked->ready_started_at === null && (
+                (int) $locked->tournament->workflow_version !== 2
+                || $locked->tournament->status === TournamentStatus::ONGOING
+            )) {
+                $now = now();
+                $deadline = $now->copy()->addMinutes(max(1, (int) $locked->tournament->match_ready_minutes));
+                $locked->ready_started_at = $now;
+                $locked->ready_deadline_at = $deadline;
+                $locked->scheduled_at ??= $locked->tournament->start_at ?? $now;
+            }
+            $this->applyAutomaticReadiness($locked);
+            if ($locked->isDirty()) {
+                $locked->save();
             }
 
             if ($this->startDueTournament($locked)) {
@@ -203,6 +230,16 @@ final class MatchReadinessService
     private function bothReady(GameMatch $match): bool
     {
         return $match->player_a_ready_at !== null && $match->player_b_ready_at !== null;
+    }
+
+    private function applyAutomaticReadiness(GameMatch $match): void
+    {
+        if ($match->playerARegistration !== null) {
+            $match->player_a_ready_at ??= now();
+        }
+        if ($match->playerBRegistration !== null) {
+            $match->player_b_ready_at ??= now();
+        }
     }
 
     private function readyRegistrationId(GameMatch $match): ?int

@@ -39,6 +39,7 @@ window.matchRoomRealtime = function (wire, matchUuid) {
             if (!this.echo) return;
 
             this.echo.private(this.channelName)
+                .listen('.match.readiness.updated', () => wire.$refresh())
                 .listen('.match.result.submitted', () => wire.$refresh())
                 .listen('.match.rematch.created', (event) => {
                     if (!event.same_match && event.rematch_uuid) {

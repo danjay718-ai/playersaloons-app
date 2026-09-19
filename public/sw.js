@@ -1,4 +1,4 @@
-const CACHE_NAME = 'playersaloons-a7dfa08bae51';
+const CACHE_NAME = 'playersaloons-e8963c9eea0c';
 const STATIC_ASSETS = [
     '/gamersrival-logo.webp',
     '/gamersrival-icon.png',

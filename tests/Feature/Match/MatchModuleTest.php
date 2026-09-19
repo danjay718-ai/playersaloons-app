@@ -167,6 +167,25 @@ class MatchModuleTest extends TestCase
         return $user;
     }
 
+    public function test_ready_match_opens_results_when_both_players_are_ready(): void
+    {
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
+        $match->forceFill([
+            'status' => MatchStatus::READY,
+            'started_at' => null,
+            'player_a_ready_at' => null,
+            'player_b_ready_at' => null,
+        ])->save();
+
+        Livewire::actingAs($this->playerA)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->assertSee('The match starts automatically.')
+            ->call('refreshMatchStatus')
+            ->assertSee('Submit Match Results');
+
+        $this->assertSame(MatchStatus::IN_PROGRESS, $match->fresh()->status);
+    }
+
     /**
      * Test the successful lifecycle from READY -> IN_PROGRESS -> WAITING_FOR_CONFIRMATION -> COMPLETED.
      */
@@ -420,7 +439,7 @@ class MatchModuleTest extends TestCase
         // Verify rematch match was created in DB
         $this->assertDatabaseHas('matches', [
             'tournament_id' => $match->tournament_id,
-            'status' => MatchStatus::READY->value,
+            'status' => MatchStatus::IN_PROGRESS->value,
             'player_a_registration_id' => $match->player_a_registration_id,
             'player_b_registration_id' => $match->player_b_registration_id,
             'resolution_reason' => 'admin_rematch',
@@ -451,7 +470,7 @@ class MatchModuleTest extends TestCase
         $this->assertNotNull($rematch);
         $this->assertSame(MatchStatus::COMPLETED, $match->fresh()->status);
         $this->assertNull($match->fresh()->winner_registration_id);
-        $this->assertSame(MatchStatus::READY, $rematch->status);
+        $this->assertSame(MatchStatus::IN_PROGRESS, $rematch->fresh()->status);
     }
 
     /**
@@ -469,15 +488,15 @@ class MatchModuleTest extends TestCase
 
         // Find the rematch match
         $rematch = GameMatch::query()->where('id', '!=', $match->id)->firstOrFail();
-        $this->assertEquals(MatchStatus::READY, $rematch->status);
+        $this->assertEquals(MatchStatus::IN_PROGRESS, $rematch->status);
 
-        // Dispatch job: Player B opened dispute, so Player B's registration is forfeited if timeout occurs
+        // The old ready-up timeout must not forfeit an automatically started rematch.
         $job = new RematchTimeoutJob($rematch->id, $this->regB->id);
         $job->handle(app(ForfeitMatchAction::class));
 
         $rematch->refresh();
-        $this->assertEquals(MatchStatus::FORFEITED, $rematch->status);
-        $this->assertEquals($this->regA->id, $rematch->winner_registration_id); // Player A wins because Player B forfeited
+        $this->assertEquals(MatchStatus::IN_PROGRESS, $rematch->status);
+        $this->assertNull($rematch->winner_registration_id);
     }
 
     /**

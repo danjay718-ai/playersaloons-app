@@ -134,6 +134,29 @@ class MatchDetail extends Component
         }
     }
 
+    public function refreshMatchStatus(MatchReadinessService $readiness): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        $match = GameMatch::query()
+            ->where('uuid', $this->uuid)
+            ->with(['playerARegistration', 'playerBRegistration'])
+            ->first();
+
+        if ($match === null || (
+            ! $match->playerARegistration?->includesUser((int) Auth::id())
+            && ! $match->playerBRegistration?->includesUser((int) Auth::id())
+        )) {
+            return;
+        }
+
+        if ($match->status === MatchStatus::READY) {
+            $readiness->reconcile($match);
+        }
+    }
+
     public function reportOpponentNotHere(MatchReadinessService $readiness): void
     {
         if (! Auth::check()) {
@@ -203,7 +226,13 @@ class MatchDetail extends Component
                     $this->notes,
                     $this->submissionProof,
                 );
-                session()->flash('message', 'Result submitted. Your opponent has five minutes from the first submission to respond.');
+                $updatedMatch = $match->fresh();
+                $responseMinutes = max(1, (int) ($updatedMatch->tournament->waiting_result_time ?: 5));
+                session()->flash('message', match ($updatedMatch->status) {
+                    MatchStatus::DISPUTED => 'Conflicting results were reported. Submit your dispute reason and proof for admin review.',
+                    MatchStatus::COMPLETED => 'Both results agree. The match is complete.',
+                    default => "Result submitted. Your opponent has {$responseMinutes} minutes from the first submission to respond.",
+                });
                 $this->reset(['resultOutcome', 'notes', 'submissionProof']);
             } catch (\Exception $e) {
                 session()->flash('error', $this->safeError($e, 'Unable to submit the match result.'));
@@ -269,7 +298,6 @@ class MatchDetail extends Component
                 ? 'Dispute and proof submitted successfully.'
                 : 'Dispute opened successfully. You may add proof below.');
             $this->reset(['disputeReason', 'evidenceFile']);
-            $this->dispatch('match-dispute-opened');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to open the match dispute.'));
         }
@@ -327,6 +355,46 @@ class MatchDetail extends Component
         }
     }
 
+    public function submitDisputeStatement(SubmitEvidenceAction $action): void
+    {
+        if (! Auth::check()) {
+            session()->flash('error', 'You must be logged in to submit dispute details.');
+
+            return;
+        }
+
+        $match = GameMatch::query()
+            ->where('uuid', $this->uuid)
+            ->with(['playerARegistration', 'playerBRegistration'])
+            ->firstOrFail();
+
+        if ($match->status !== MatchStatus::DISPUTED || $match->resolution_reason !== 'conflicting_submissions') {
+            session()->flash('error', 'There is no result conflict to explain.');
+
+            return;
+        }
+
+        $dispute = $match->disputes()->where('status', '!=', DisputeStatus::RESOLVED->value)->first();
+        if ($dispute === null) {
+            session()->flash('error', 'There is no active dispute for this match.');
+
+            return;
+        }
+
+        $this->validate([
+            'disputeReason' => ['required', 'string', 'min:10', 'max:2000'],
+            'evidenceFile' => ['required', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
+        ]);
+
+        try {
+            $action->execute($dispute, (int) Auth::id(), $this->evidenceFile, $this->disputeReason);
+            $this->reset(['disputeReason', 'evidenceFile']);
+            session()->flash('message', 'Your dispute reason and proof were submitted for admin review.');
+        } catch (\Exception $e) {
+            session()->flash('error', $this->safeError($e, 'Unable to submit your dispute details.'));
+        }
+    }
+
     public function render()
     {
         $match = GameMatch::query()
@@ -335,10 +403,12 @@ class MatchDetail extends Component
                 'round',
                 'playerARegistration.user.profile',
                 'playerARegistration.team',
+                'playerARegistration.platform',
                 'playerARegistration.rosterMembers',
                 'playerARegistration.tournamentTeam.members.user:id,username',
                 'playerBRegistration.user.profile',
                 'playerBRegistration.team',
+                'playerBRegistration.platform',
                 'playerBRegistration.rosterMembers',
                 'playerBRegistration.tournamentTeam.members.user:id,username',
                 'tournament.game.translations',
@@ -385,6 +455,8 @@ class MatchDetail extends Component
         $activeDispute = $match->disputes->first(fn ($dispute) => $dispute->status !== DisputeStatus::RESOLVED);
         $hasSubmittedDisputeEvidence = $activeDispute !== null && $user !== null
             && $activeDispute->evidence->contains('uploaded_by', $user->id);
+        $isResultConflict = $match->status === MatchStatus::DISPUTED
+            && $match->resolution_reason === 'conflicting_submissions';
 
         $latestSubmission = $match->resultSubmissions->first();
         $activeAttempt = $match->attempts->firstWhere('attempt_number', $match->active_attempt_number);
@@ -404,6 +476,7 @@ class MatchDetail extends Component
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
             'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,
+            'isResultConflict' => $isResultConflict,
             'activeAttempt' => $activeAttempt,
         ])->layout($layout, ['title' => 'Match Room | GamersRival', 'dashboard_title' => 'MATCH ROOM']);
     }

@@ -149,6 +149,7 @@ class EventServiceProvider extends ServiceProvider
             NotifyAdminsOfDisputeListener::class,
         ],
         MatchRematchCreated::class => [
+            PrepareMatchRoomListener::class,
             BroadcastBracketUpdateListener::class,
             NotifyParticipantsListener::class,
         ],
