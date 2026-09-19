@@ -2,6 +2,7 @@
 
 namespace App\Modules\Tournament\Models;
 
+use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Modules\Team\Models\Team;
 use App\Shared\Enums\PaymentStatus;
@@ -38,6 +39,7 @@ class TournamentRegistration extends Model
         'tournament_id',
         'user_id',
         'team_id',
+        'platform_id',
         'tournament_team_id',
         'game_id_value',
         'ready_mode',
@@ -95,6 +97,11 @@ class TournamentRegistration extends Model
     public function tournamentTeam(): BelongsTo
     {
         return $this->belongsTo(TournamentTeam::class);
+    }
+
+    public function platform(): BelongsTo
+    {
+        return $this->belongsTo(Platform::class)->withTrashed();
     }
 
     public function rosterMembers(): HasMany

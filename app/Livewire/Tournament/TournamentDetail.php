@@ -7,8 +7,8 @@ namespace App\Livewire\Tournament;
 use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\PlayerExperienceAward;
-use App\Modules\Identity\Models\UserGameAccount;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Operations\Models\Activity;
 use App\Modules\Stream\Support\StreamEmbedService;
 use App\Modules\Team\Models\Team;
 use App\Modules\Tournament\Actions\CancelRegistrationAction;
@@ -33,7 +33,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Url;
 use Livewire\Component;
-use App\Modules\Operations\Models\Activity;
 
 class TournamentDetail extends Component
 {
@@ -57,8 +56,6 @@ class TournamentDetail extends Component
 
     public ?int $selectedPlatformId = null;
 
-    public string $readyMode = 'auto';
-
     public string $cancellationError = '';
 
     public function mount(string $uuid): void
@@ -76,26 +73,22 @@ class TournamentDetail extends Component
         }
 
         if ($user) {
-            $tournament = $this->getTournamentQuery()->where('uuid', $uuid)->first(['game_id', 'platform_id']);
-            if ($tournament?->platform_id !== null) {
-                $this->selectedPlatformId = (int) $tournament->platform_id;
-                $this->gameIdValue = (string) (UserGameAccount::query()
-                    ->where('user_id', $user->getKey())
-                    ->where('game_id', $tournament->game_id)
-                    ->where('platform_id', $tournament->platform_id)
-                    ->value('game_id_value') ?? '');
-            }
+            $tournament = $this->getTournamentQuery()->where('uuid', $uuid)->first(['platform_id', 'platform_ids']);
+            $this->selectedPlatformId = $tournament?->platform_id ?? $tournament?->supportedPlatformIds()[0] ?? null;
         }
     }
 
     public function updatedSelectedPlatformId(): void
     {
+        $this->gameIdValue = '';
+    }
+
+    public function prepareRegistrationPrompt(): void
+    {
         $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
-        $this->gameIdValue = (string) (UserGameAccount::query()
-            ->where('user_id', Auth::id())
-            ->where('game_id', $tournament->game_id)
-            ->where('platform_id', $this->selectedPlatformId)
-            ->value('game_id_value') ?? '');
+        $this->resetValidation();
+        $this->gameIdValue = '';
+        $this->selectedPlatformId = $tournament->platform_id ?? $tournament->supportedPlatformIds()[0] ?? null;
     }
 
     private function getTournamentQuery()
@@ -140,7 +133,6 @@ class TournamentDetail extends Component
         $this->validate([
             'selectedPlatformId' => ['nullable', 'integer', Rule::in($tournament->supportedPlatformIds())],
             'gameIdValue' => 'required|string|max:191',
-            'readyMode' => 'required|in:auto,confirm_each_match',
         ]);
 
         try {
@@ -155,21 +147,23 @@ class TournamentDetail extends Component
                 $squad = Team::query()->where('captain_user_id', $user->id)->where('status', 'active')->first();
 
                 if ($tournamentTeam === null && $squad === null) {
-                    $formed = $findTeam->execute($tournament, $user, $this->gameIdValue, $this->readyMode, $this->selectedPlatformId);
+                    $formed = $findTeam->execute($tournament, $user, $this->gameIdValue, 'auto', $this->selectedPlatformId);
                     session()->flash('message', $formed && (int) $formed->leader_user_id === (int) $user->id
                         ? 'Your tournament team is complete. Click Register Team to finalize the entry.'
                         : ($formed ? 'Your tournament team is complete. The Team Leader will finalize registration.' : 'You are now looking for a team. There is no charge until a full team is formed.'));
+                    $this->dispatch('tournament-registration-completed');
 
                     return;
                 }
             }
 
             if ((int) $tournament->workflow_version === 2) {
-                $v2Action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam, $this->selectedPlatformId);
+                $v2Action->execute($tournament, $user, $squad, $this->gameIdValue, 'auto', $tournamentTeam, $this->selectedPlatformId);
             } else {
-                $action->execute($tournament, $user, $squad, $this->gameIdValue, $this->readyMode, $tournamentTeam, $this->selectedPlatformId);
+                $action->execute($tournament, $user, $squad, $this->gameIdValue, 'auto', $tournamentTeam, $this->selectedPlatformId);
             }
             session()->flash('message', ($tournament->team_size ?? 1) > 1 ? 'Tournament team registered successfully!' : 'Successfully joined the tournament!');
+            $this->dispatch('tournament-registration-completed');
         } catch (InsufficientBalanceException $e) {
             session()->flash('error', 'Insufficient balance. Please top up your wallet to pay the entrance fee.');
         } catch (\Exception $e) {

@@ -177,7 +177,12 @@ class ApiEndpointsTest extends TestCase
 
         // Authenticated register
         Sanctum::actingAs($this->player);
-        $responseReg = $this->postJson(route('api.v1.tournaments.register', ['uuid' => $tournament->uuid]));
+        $this->postJson(route('api.v1.tournaments.register', ['uuid' => $tournament->uuid]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('game_id_value');
+        $responseReg = $this->postJson(route('api.v1.tournaments.register', ['uuid' => $tournament->uuid]), [
+            'game_id_value' => 'ProPlayerFreshID',
+        ]);
         $responseReg->assertStatus(201)
             ->assertJsonPath('message', 'Successfully registered for the tournament.')
             ->assertJsonStructure(['registration' => ['uuid', 'status']]);

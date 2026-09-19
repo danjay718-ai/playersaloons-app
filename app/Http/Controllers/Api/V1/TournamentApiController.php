@@ -19,6 +19,7 @@ use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TournamentApiController extends Controller
 {
@@ -76,15 +77,21 @@ class TournamentApiController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
+        $input = $request->validate([
+            'game_id_value' => ['required', 'string', 'max:191'],
+            'platform_id' => ['nullable', 'integer', Rule::in($tournament->supportedPlatformIds())],
+        ]);
+
         try {
             $registration = (int) $tournament->workflow_version === 2
                 ? $v2Action->execute(
                     $tournament,
                     $user,
                     null,
-                    $request->validate(['game_id_value' => ['required', 'string', 'max:191']])['game_id_value'],
+                    $input['game_id_value'],
+                    platformId: $input['platform_id'] ?? null,
                 )
-                : $action->execute($tournament, $user);
+                : $action->execute($tournament, $user, null, $input['game_id_value'], platformId: $input['platform_id'] ?? null);
 
             return response()->json([
                 'message' => 'Successfully registered for the tournament.',

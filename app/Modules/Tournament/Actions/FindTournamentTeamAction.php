@@ -7,7 +7,6 @@ namespace App\Modules\Tournament\Actions;
 use App\Modules\Community\Services\ChatService;
 use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\User;
-use App\Modules\Identity\Models\UserGameAccount;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTeam;
 use App\Modules\Tournament\Models\TournamentTeamMember;
@@ -98,13 +97,6 @@ final class FindTournamentTeamAction
 
             $players = User::query()->whereIn('id', $entries->pluck('user_id'))->get();
             foreach ($players as $player) {
-                UserGameAccount::query()->updateOrCreate([
-                    'user_id' => $player->id,
-                    'game_id' => $tournament->game_id,
-                    'platform_id' => $platformId,
-                ], [
-                    'game_id_value' => (string) $entries->firstWhere('user_id', $player->id)?->game_id_value,
-                ]);
                 $this->notifications->send(
                     $player,
                     'tournament_team_formed',

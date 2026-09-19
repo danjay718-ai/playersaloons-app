@@ -22,10 +22,17 @@
          acknowledgedElimination: false,
          showEliminationModal: false,
          showCancelModal: false,
+         showJoinModal: false,
          showUnderfilledNotice: false,
          bracketView: 'bracket',
          loadedSections: @js(array_keys($loadedSections ?? [])),
          loadingSection: null,
+         openJoinModal() {
+             this.$wire.prepareRegistrationPrompt().then(() => {
+                 this.showJoinModal = true;
+                 this.$nextTick(() => this.$refs.joinGameId?.focus());
+             });
+         },
          sectionFor(tab) {
              if (['participants', 'team-lobby'].includes(tab)) return 'participants';
              if (['fixtures', 'bracket'].includes(tab)) return 'bracket';
@@ -163,7 +170,7 @@
                             $currentMatchLabel = match($currentMatchStatus) {
                                 'waiting_for_confirmation' => 'Confirm Match Result',
                                 'disputed' => 'Review Match Dispute',
-                                'ready' => 'Open Match Room & Check In',
+                                'ready' => 'Open Match Room',
                                 default => 'Open Match Room & Report Result',
                             };
                         @endphp
@@ -214,28 +221,8 @@
                             @endif
                         @else
                             @if(Auth::user()->hasRole('PLAYER'))
-                                <div class="mb-3 space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 text-left">
-                                    <div>
-                                        @if($competitionPlatforms->count() > 1)
-                                            <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ __('Your platform') }}</label>
-                                            <select wire:model.live="selectedPlatformId" class="mb-3 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white">@foreach($competitionPlatforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach</select>
-                                            @error('selectedPlatformId')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
-                                        @endif
-                                        <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ $gameIdSettings['label'] ?? 'Game ID / In-Game Name' }}</label>
-                                        <input wire:model="gameIdValue" type="text" maxlength="191" placeholder="{{ $gameIdSettings['example'] ?? 'Enter the ID opponents can find' }}" class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-600">
-                                        @error('gameIdValue')<p class="mt-1 text-[10px] text-red-400">{{ $message }}</p>@enderror
-                                        @if(!empty($gameIdSettings['instructions']))<p class="mt-1.5 text-[10px] leading-relaxed text-zinc-600">{{ $gameIdSettings['instructions'] }}</p>@endif
-                                    </div>
-                                    <div>
-                                        <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-zinc-500">Before Each Match</label>
-                                        <select wire:model="readyMode" class="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-600">
-                                            <option value="auto">Auto Ready — less steps</option>
-                                            <option value="confirm_each_match">I'll Confirm Every Match</option>
-                                        </select>
-                                    </div>
-                                </div>
                                 @if(($tournament->team_size ?? 1) > 1)
-                                    <button wire:click="register" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
+                                    <button type="button" @click="openJoinModal()" wire:loading.attr="disabled" wire:target="prepareRegistrationPrompt" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
                                         <i data-lucide="{{ $userTournamentTeam || $userSquad ? 'users' : 'user-plus' }}" class="w-5 h-5"></i>
                                         <span>{{ $userTournamentTeam && (int) $userTournamentTeam->leader_user_id === (int) Auth::id() ? 'Register Team' : ($userSquad ? 'Create Team From Squad' : ($isSearchingForTeam ? 'Still Finding a Team' : 'Find a Team')) }}</span>
                                     </button>
@@ -248,7 +235,7 @@
                                         <p class="text-center text-[10px] text-zinc-500 font-medium">Players are grouped for this tournament only. No charge until the team is complete.</p>
                                     @endif
                                 @else
-                                    <button wire:click="register" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
+                                    <button type="button" @click="openJoinModal()" wire:loading.attr="disabled" wire:target="prepareRegistrationPrompt" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
                                         <i data-lucide="plus-circle" class="w-5 h-5"></i>
                                         <span>Join Tournament</span>
                                     </button>
@@ -1107,6 +1094,58 @@
             </button>
         </div>
     </div>
+
+    @if(Auth::check() && Auth::user()->hasRole('PLAYER') && ! $isRegistered && $tournament->status->value === 'REGISTRATION_OPEN')
+        <template x-teleport="body">
+            <div x-show="showJoinModal"
+                 @tournament-registration-completed.window="showJoinModal = false"
+                 @keydown.escape.window="showJoinModal = false"
+                 @click.self="showJoinModal = false"
+                 role="dialog" aria-modal="true" aria-labelledby="join-tournament-title"
+                 class="theme-player fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/85 p-4 backdrop-blur-md"
+                 x-transition.opacity x-cloak>
+                <div class="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-cyan-500/30 bg-zinc-900 p-6 shadow-[0_0_50px_rgba(34,211,238,0.12)] sm:p-8">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400">Registration details</p>
+                            <h2 id="join-tournament-title" class="mt-1 font-orbitron text-xl font-black text-white">Join {{ $tournament->name }}</h2>
+                        </div>
+                        <button type="button" @click="showJoinModal = false" aria-label="Close registration" class="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white">✕</button>
+                    </div>
+                    <p class="mt-3 text-xs leading-relaxed text-zinc-400">Enter the Game ID you want to use for this entry. You will enter it again for each new tournament or H2H join.</p>
+
+                    @if(session('error'))
+                        <p role="alert" class="mt-4 rounded-xl border border-red-500/40 bg-red-950/30 px-3 py-2 text-xs text-red-300">{{ session('error') }}</p>
+                    @endif
+
+                    <form wire:submit.prevent="register" class="mt-6 space-y-5">
+                        @if($competitionPlatforms->count() > 1)
+                            <div>
+                                <label for="join-platform" class="mb-2 block text-xs font-bold text-zinc-300">Your platform</label>
+                                <select id="join-platform" wire:model.live="selectedPlatformId" class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none">
+                                    @foreach($competitionPlatforms as $platform)<option value="{{ $platform->id }}">{{ $platform->name }}</option>@endforeach
+                                </select>
+                                @error('selectedPlatformId')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                            </div>
+                        @elseif($competitionPlatforms->isNotEmpty())
+                            <p class="rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2.5 text-xs text-zinc-300">Platform: <strong class="text-white">{{ $competitionPlatforms->first()->name }}</strong></p>
+                        @endif
+                        <div>
+                            <label for="join-game-id" class="mb-2 block text-xs font-bold text-zinc-300">{{ $gameIdSettings['label'] ?? 'Game ID / In-Game Name' }}</label>
+                            <input id="join-game-id" x-ref="joinGameId" wire:model="gameIdValue" type="text" maxlength="191" autocomplete="off" placeholder="{{ $gameIdSettings['example'] ?? 'Enter the ID opponents can find' }}" class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none" required>
+                            @error('gameIdValue')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                            @if(!empty($gameIdSettings['instructions']))<p class="mt-2 text-xs leading-relaxed text-zinc-500">{{ $gameIdSettings['instructions'] }}</p>@endif
+                        </div>
+                        <p class="text-xs leading-relaxed text-zinc-500">Your match starts automatically when the tournament begins. Open the Match Room to play and submit your result.</p>
+                        <div class="flex gap-3 pt-2">
+                            <button type="button" @click="showJoinModal = false" class="flex-1 rounded-xl border border-zinc-700 px-4 py-3 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800">Cancel</button>
+                            <button type="submit" wire:loading.attr="disabled" wire:target="register" class="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 disabled:opacity-60">{{ ($tournament->team_size ?? 1) > 1 ? ($userTournamentTeam || $userSquad ? 'Register Team' : 'Find a Team') : 'Join Tournament' }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </template>
+    @endif
 
     <!-- Cancel Registration Modal -->
     <template x-teleport="body">

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\Tournament\Actions;
 
 use App\Modules\Identity\Models\User;
-use App\Modules\Identity\Models\UserGameAccount;
 use App\Modules\Team\Models\Team;
 use App\Modules\Tournament\Events\TournamentFilled;
 use App\Modules\Tournament\Events\TournamentSeatReserved;
@@ -17,6 +16,7 @@ use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentRegistrationMember;
 use App\Modules\Tournament\Models\TournamentTeam;
 use App\Modules\Tournament\Models\TournamentTeamMember;
+use App\Modules\Tournament\Models\TournamentTeamSearchEntry;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\WalletService;
@@ -160,6 +160,7 @@ class RegisterForTournamentAction
                 'tournament_id' => $locked->getKey(),
                 'user_id' => $user->getKey(),
                 'team_id' => $team?->getKey(),
+                'platform_id' => $platformId,
                 'tournament_team_id' => $tournamentTeam?->getKey(),
                 'game_id_value' => $gameIdValue,
                 'ready_mode' => $tournamentTeam?->members->every(fn ($member) => $member->ready_mode === 'auto') ? 'auto' : $readyMode,
@@ -181,16 +182,6 @@ class RegisterForTournamentAction
                 $registration = TournamentRegistration::query()->create([
                     'uuid' => Str::uuid()->toString(),
                     ...$registrationValues,
-                ]);
-            }
-
-            if ($platformId !== null) {
-                UserGameAccount::query()->updateOrCreate([
-                    'user_id' => $user->getKey(),
-                    'game_id' => $locked->game_id,
-                    'platform_id' => $platformId,
-                ], [
-                    'game_id_value' => $gameIdValue,
                 ]);
             }
 
@@ -232,9 +223,9 @@ class RegisterForTournamentAction
             ->limit((int) $tournament->team_size)
             ->get();
 
-        $accountIds = UserGameAccount::query()
+        $currentEntryIds = TournamentTeamSearchEntry::query()
+            ->where('tournament_id', $tournament->getKey())
             ->whereIn('user_id', $members->pluck('user_id'))
-            ->where('game_id', $tournament->game_id)
             ->where('platform_id', $platformId)
             ->pluck('game_id_value', 'user_id');
 
@@ -254,7 +245,7 @@ class RegisterForTournamentAction
             'role' => (int) $member->user_id === (int) $leader->getKey() ? 'leader' : 'member',
             'game_id_value' => (int) $member->user_id === (int) $leader->getKey()
                 ? $leaderGameId
-                : (string) ($accountIds[$member->user_id] ?? $member->user?->username ?? ''),
+                : (string) ($currentEntryIds[$member->user_id] ?? $member->user?->username ?? ''),
             'ready_mode' => (int) $member->user_id === (int) $leader->getKey() ? $leaderReadyMode : 'auto',
             'created_at' => now(),
             'updated_at' => now(),
