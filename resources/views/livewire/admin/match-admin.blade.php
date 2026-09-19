@@ -183,7 +183,7 @@
                                     </button>
 
                                     {{-- Quick dispute badge (opens detail modal) --}}
-                                    @if(isset($match->disputes) && $match->disputes->where('status', \App\Shared\Enums\DisputeStatus::OPEN)->first())
+                                    @if(isset($match->disputes) && $match->disputes->whereIn('status', [\App\Shared\Enums\DisputeStatus::OPEN, \App\Shared\Enums\DisputeStatus::UNDER_REVIEW])->first())
                                         <button wire:click="selectMatch({{ $match->id }})"
                                                 class="p-1.5 text-red-400 hover:text-white bg-red-950/40 hover:bg-red-900/60 border border-red-900/50 rounded-lg transition-colors"
                                                 title="View Dispute">
@@ -386,7 +386,7 @@
                                         {{-- Player's note --}}
                                         @if($disp->reason)
                                             <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-3 py-2.5">
-                                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Player's Note</span>
+                                                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">{{ $disp->reason === 'V2 result submissions conflict.' ? 'Result Conflict' : "Player's Note" }}</span>
                                                 <p class="text-slate-300 leading-relaxed">{{ $disp->reason }}</p>
                                             </div>
                                         @endif
@@ -399,17 +399,15 @@
                                                 </span>
                                                 <div class="grid grid-cols-2 gap-2">
                                                     @foreach($disp->evidence as $ev)
-                                                        <a href="/storage/{{ $ev->file_path }}" target="_blank"
-                                                           class="group relative block rounded-lg overflow-hidden border border-slate-800 bg-slate-950 hover:border-indigo-500/50 transition-colors">
-                                                            <img src="/storage/{{ $ev->file_path }}"
-                                                                 alt="Evidence"
-                                                                 class="w-full h-28 object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                                                                 onerror="this.closest('a').innerHTML='<div class=\'flex items-center justify-center h-28 text-slate-600\'><svg xmlns=\'http://www.w3.org/2000/svg\' class=\'w-6 h-6\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\'/></svg></div>'">
-                                                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                                                                <span class="text-[10px] text-white font-semibold truncate">{{ $ev->uploadedBy->username }}</span>
-                                                                <i data-lucide="external-link" class="w-3 h-3 text-white ml-auto shrink-0"></i>
-                                                            </div>
-                                                        </a>
+                                                        <div class="rounded-lg border border-slate-800 bg-slate-950 p-2">
+                                                            <a href="/storage/{{ $ev->file_path }}" target="_blank" class="group relative block overflow-hidden rounded-md">
+                                                                <img src="/storage/{{ $ev->file_path }}" alt="Evidence from {{ $ev->uploadedBy?->username ?? 'player' }}" class="h-28 w-full object-cover opacity-80 transition-opacity group-hover:opacity-100">
+                                                            </a>
+                                                            <p class="mt-2 text-[10px] font-semibold text-slate-300">{{ $ev->uploadedBy?->username ?? 'Player' }}</p>
+                                                            @if($ev->reason)
+                                                                <p class="mt-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-400">{{ $ev->reason }}</p>
+                                                            @endif
+                                                        </div>
                                                     @endforeach
                                                 </div>
                                             </div>
@@ -566,7 +564,7 @@
                             <div class="bg-slate-900/70 border border-slate-800 rounded-lg px-4 py-3">
                                 <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">
                                     <i data-lucide="message-square" class="w-3 h-3 inline mr-1 align-text-bottom"></i>
-                                    Player's Note
+                                    {{ $resolveDispute->reason === 'V2 result submissions conflict.' ? 'Result Conflict' : "Player's Note" }}
                                 </span>
                                 <p class="text-slate-300 text-xs leading-relaxed">{{ $resolveDispute->reason }}</p>
                             </div>
@@ -581,6 +579,7 @@
                                 </span>
                                 <div class="grid grid-cols-2 gap-2">
                                     @foreach($resolveDispute->evidence as $ev)
+                                        <div class="min-w-0">
                                         <a href="/storage/{{ $ev->file_path }}" target="_blank"
                                            class="group relative block rounded-xl overflow-hidden border border-slate-800 bg-slate-950 hover:border-indigo-500/60 transition-all">
                                             <img src="/storage/{{ $ev->file_path }}"
@@ -592,6 +591,10 @@
                                                 <i data-lucide="zoom-in" class="w-4 h-4 text-white shrink-0"></i>
                                             </div>
                                         </a>
+                                        @if($ev->reason)
+                                            <p class="mt-2 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-300"><span class="font-bold">{{ $ev->uploadedBy?->username ?? 'Player' }}:</span> {{ $ev->reason }}</p>
+                                        @endif
+                                        </div>
                                     @endforeach
                                 </div>
                             </div>

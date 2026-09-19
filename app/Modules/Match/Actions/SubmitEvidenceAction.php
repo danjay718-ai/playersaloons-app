@@ -30,9 +30,13 @@ class SubmitEvidenceAction
     /**
      * Submit evidence for a match dispute.
      */
-    public function execute(MatchDispute $dispute, int $uploadedByUserId, UploadedFile $file): MatchEvidence
+    public function execute(MatchDispute $dispute, int $uploadedByUserId, UploadedFile $file, ?string $reason = null): MatchEvidence
     {
-        return DB::transaction(function () use ($dispute, $uploadedByUserId, $file): MatchEvidence {
+        if ($reason !== null && (mb_strlen(trim($reason)) < 10 || mb_strlen($reason) > 2000)) {
+            throw new InvalidArgumentException('A dispute reason must be between 10 and 2000 characters.');
+        }
+
+        return DB::transaction(function () use ($dispute, $uploadedByUserId, $file, $reason): MatchEvidence {
             $dispute = MatchDispute::query()
                 ->with('match.playerARegistration', 'match.playerBRegistration')
                 ->lockForUpdate()
@@ -89,6 +93,7 @@ class SubmitEvidenceAction
                 'dispute_id' => $dispute->id,
                 'uploaded_by' => $uploadedByUserId,
                 'file_path' => $path,
+                'reason' => $reason !== null ? trim($reason) : null,
                 'created_at' => Carbon::now(),
             ]);
         });

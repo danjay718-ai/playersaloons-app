@@ -191,7 +191,7 @@ class MatchAdmin extends AdminComponent
             DB::transaction(function () use ($match, $stateMachine) {
                 if ($match->status === MatchStatus::DISPUTED) {
                     $dispute = MatchDispute::where('match_id', $match->id)
-                        ->where('status', DisputeStatus::OPEN)
+                        ->whereIn('status', [DisputeStatus::OPEN, DisputeStatus::UNDER_REVIEW])
                         ->first();
                     if ($dispute) {
                         $dispute->status = DisputeStatus::RESOLVED;

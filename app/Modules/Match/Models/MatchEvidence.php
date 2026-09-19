@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
  * @property int $dispute_id
  * @property int $uploaded_by
  * @property string $file_path
+ * @property string|null $reason
  * @property Carbon|null $created_at
  * @property-read MatchDispute $dispute
  * @property-read User $uploadedBy
@@ -36,6 +37,7 @@ class MatchEvidence extends Model
         'dispute_id',
         'uploaded_by',
         'file_path',
+        'reason',
         'created_at',
     ];
 
