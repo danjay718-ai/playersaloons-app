@@ -1037,26 +1037,43 @@ function attachPublicPwaInstallEvents() {
     });
 }
 
+function syncPwaUpdatePrompt() {
+    document.querySelectorAll('[data-pwa-update-prompt]').forEach(prompt => {
+        prompt.classList.toggle('hidden', window.__playerSaloonsPwaUpdateReady !== true);
+    });
+}
+
+function attachPwaUpdatePromptEvents() {
+    if (window.__playerSaloonsPwaUpdateListenerAttached) return;
+
+    window.__playerSaloonsPwaUpdateListenerAttached = true;
+    document.addEventListener('click', event => {
+        if (event.target.closest('[data-pwa-update-now]')) {
+            window.dispatchEvent(new CustomEvent('pwa-apply-update'));
+
+            return;
+        }
+
+        if (event.target.closest('[data-pwa-update-later]')) {
+            window.__playerSaloonsPwaUpdateReady = false;
+            syncPwaUpdatePrompt();
+        }
+    });
+}
+
 function initPublicPwaInstall() {
+    attachPwaUpdatePromptEvents();
+    syncPwaUpdatePrompt();
+
     if ('serviceWorker' in navigator && !window.__playerSaloonsServiceWorkerRegistered) {
         window.__playerSaloonsServiceWorkerRegistered = true;
         let refreshingForServiceWorker = false;
         let serviceWorkerRegistration = null;
         const notifyUpdateReady = () => {
+            window.__playerSaloonsPwaUpdateReady = true;
             window.dispatchEvent(new CustomEvent('pwa-update-ready'));
-            document.querySelectorAll('[data-pwa-update-prompt]').forEach(prompt => prompt.classList.remove('hidden'));
+            syncPwaUpdatePrompt();
         };
-
-        document.querySelectorAll('[data-pwa-update-prompt]').forEach(prompt => {
-            if (prompt.dataset.bound === 'true') return;
-            prompt.dataset.bound = 'true';
-            prompt.querySelector('[data-pwa-update-now]')?.addEventListener('click', () => {
-                window.dispatchEvent(new CustomEvent('pwa-apply-update'));
-            });
-            prompt.querySelector('[data-pwa-update-later]')?.addEventListener('click', () => {
-                prompt.classList.add('hidden');
-            });
-        });
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (refreshingForServiceWorker) return;
