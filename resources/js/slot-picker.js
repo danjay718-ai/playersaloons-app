@@ -48,3 +48,29 @@ export function tournamentSlotPicker(serverNow, labels) {
         },
     };
 }
+
+export function tournamentCountdown(serverNow, labels) {
+    const clockStartedAt = performance.now();
+
+    return {
+        now: serverNow,
+        clockTimer: null,
+
+        init() {
+            this.updateClock();
+            this.clockTimer = setInterval(() => this.updateClock(), 1000);
+        },
+
+        updateClock() {
+            this.now = serverNow + performance.now() - clockStartedAt;
+        },
+
+        countdown(startAt, status) {
+            return formatSlotCountdown(startAt, status, this.now, labels);
+        },
+
+        destroy() {
+            clearInterval(this.clockTimer);
+        },
+    };
+}

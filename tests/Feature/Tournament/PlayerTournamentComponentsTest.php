@@ -436,6 +436,8 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertViewHas('popularGames', fn ($games) => $games->first()->is($this->game))
             ->assertSee('Previous games')
             ->assertSee('Next games')
+            ->assertSee('Click a game card to view its available tournaments.')
+            ->assertSee('View Game')
             ->assertSee(route('games.show', $this->game), escape: false);
 
         Livewire::test(GameShow::class, ['game' => $this->game])

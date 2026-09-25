@@ -22,7 +22,13 @@
 <div class="player-tournament-discovery space-y-12" x-data>
     <section class="space-y-5">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div><p class="text-[10px] font-black uppercase tracking-[0.3em] text-violet-400">Discover your next arena</p><h1 class="mt-2 font-orbitron text-2xl font-black uppercase tracking-tight text-white sm:text-3xl">Popular Games</h1></div>
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-violet-400">Discover your next arena</p>
+                <h1 class="mt-2 font-orbitron text-2xl font-black uppercase tracking-tight text-white sm:text-3xl">Popular Games</h1>
+                <p class="mt-2 max-w-xl text-xs leading-relaxed text-zinc-500">
+                    {{ $isHeadToHeadListing ? 'Click a game card to view its available head-to-head matches.' : 'Click a game card to view its available tournaments.' }}
+                </p>
+            </div>
             <label class="relative block w-full sm:max-w-xs"><span class="sr-only">Search game</span><i data-lucide="search" class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"></i><input wire:model.live.debounce.250ms="gameSearch" type="search" placeholder="Search game" class="player-filter-field w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-3 pl-10 pr-4 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/10"></label>
         </div>
         <div class="relative">
@@ -32,8 +38,14 @@
             <div x-ref="gamesRail" class="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @forelse($popularGames as $game)
                     <a href="{{ route('games.show', ['game' => $game, ...$gameContext]) }}" wire:navigate wire:key="game-{{ $game->slug }}" class="player-game-card group/game relative min-w-[180px] snap-start overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 sm:min-w-[220px]">
-                        <div class="aspect-[4/3] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.35),transparent_45%),linear-gradient(135deg,#18181b,#09090b)]"></div>@endif</div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent"></div><div class="absolute inset-x-0 bottom-0 p-4"><h2 class="font-orbitron text-sm font-black uppercase text-white">{{ $game->localizedName() }}</h2></div>
+                        <div class="aspect-[4/3] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105 group-hover/game:blur-[2px] group-focus-visible/game:scale-105 group-focus-visible/game:blur-[2px]">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.35),transparent_45%),linear-gradient(135deg,#18181b,#09090b)] transition duration-500 group-hover/game:scale-105 group-hover/game:blur-[2px] group-focus-visible/game:scale-105 group-focus-visible/game:blur-[2px]"></div>@endif</div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent transition duration-300 group-hover/game:bg-black/45 group-focus-visible/game:bg-black/45"></div>
+                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center font-orbitron text-xs font-black uppercase tracking-[0.22em] text-white opacity-0 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] transition duration-300 group-hover/game:opacity-100 group-focus-visible/game:opacity-100">
+                            View Game
+                        </span>
+                        <div class="absolute inset-x-0 bottom-0 p-4">
+                            <h2 class="font-orbitron text-sm font-black uppercase text-white">{{ $game->localizedName() }}</h2>
+                        </div>
                     </a>
                 @empty
                     <div class="w-full rounded-2xl border border-dashed border-zinc-800 p-10 text-center text-sm text-zinc-500">No games match your search.</div>
@@ -51,7 +63,7 @@
             @if($featuredGroups)
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($featuredGroups as $template)<div wire:key="featured-template-{{ $template->uuid }}"><x-player.v2-tournament-parent-card :template="$template" :public-view="$publicView" /></div>@endforeach</div>
             @else
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($featuredTournaments as $tournament)<div wire:key="featured-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" action-label="View Tournament" class="min-w-0" /></div>@endforeach</div>
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($featuredTournaments as $tournament)<div wire:key="featured-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" action-label="Join" :public-view="$publicView" class="min-w-0" /></div>@endforeach</div>
             @endif
             @if($hasMoreFeatured)<div class="text-center"><button wire:click="loadMoreFeatured" wire:loading.attr="disabled" class="rounded-xl border border-violet-500/30 bg-violet-500/10 px-6 py-3 font-orbitron text-[10px] font-black uppercase tracking-widest text-violet-200 transition hover:bg-violet-500/20 disabled:opacity-50"><span wire:loading.remove wire:target="loadMoreFeatured">View More</span><span wire:loading wire:target="loadMoreFeatured">Loading...</span></button></div>@endif
         @else
@@ -84,7 +96,7 @@
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($tournamentGroups as $template)<div wire:key="browse-template-{{ $template->uuid }}"><x-player.v2-tournament-parent-card :template="$template" :tab="$activeTab" :public-view="$publicView" /></div>@endforeach</div>
                 <div class="border-t border-zinc-900/60 pt-6">{{ $tournamentGroups->links('vendor.livewire.custom-pagination') }}</div>
             @else
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($tournaments as $tournament)<div wire:key="browse-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" :action-label="$activeTab === 'past' ? 'View Results' : 'View Tournament'" /></div>@endforeach</div>
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($tournaments as $tournament)<div wire:key="browse-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" :action-label="match ($activeTab) { 'upcoming' => 'Join', 'past' => 'View Results', default => 'View Tournament' }" :public-view="$publicView" /></div>@endforeach</div>
                 <div class="border-t border-zinc-900/60 pt-6">{{ $tournaments->links('vendor.livewire.custom-pagination') }}</div>
             @endif
         @else

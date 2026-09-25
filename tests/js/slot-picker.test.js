@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { formatSlotCountdown, tournamentSlotPicker } from '../../resources/js/slot-picker.js';
+import { formatSlotCountdown, tournamentCountdown, tournamentSlotPicker } from '../../resources/js/slot-picker.js';
 
 const labels = {
     startsIn: 'Starts in', ongoing: 'In progress', completed: 'Completed',
@@ -41,4 +41,12 @@ test('clock runs only while modal is open and is cleaned up on navigation', () =
     assert.equal(picker.clockTimer, null);
     onOpen(true);
     picker.destroy();
+});
+
+test('card countdown starts immediately and is cleaned up on navigation', () => {
+    const countdown = tournamentCountdown(1000, labels);
+    countdown.init();
+    assert.notEqual(countdown.clockTimer, null);
+    assert.ok(countdown.now >= 1000);
+    countdown.destroy();
 });

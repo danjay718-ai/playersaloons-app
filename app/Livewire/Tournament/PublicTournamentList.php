@@ -12,18 +12,30 @@ class PublicTournamentList extends Component
     public function render(V2TournamentDiscoveryService $discovery)
     {
         $usesV2Discovery = (bool) config('features.tournament_v2.enabled');
+        $isHeadToHeadListing = $this->competitionType === 'head_to_head';
+        $usesGroupedDiscovery = $usesV2Discovery && $isHeadToHeadListing;
+        $featuredTournaments = $usesV2Discovery && ! $isHeadToHeadListing
+            ? $discovery->paginateOccurrences('upcoming', ['competition_type' => 'tournament'], $this->featuredLimit, true, 'featuredPage')
+            : ($usesV2Discovery ? collect() : $this->getFeaturedTournaments());
 
         return view('livewire.tournament.player-tournament-list', [
-            'tournaments' => $usesV2Discovery ? null : $this->getTournamentQuery()->paginate(12),
-            'tournamentGroups' => $usesV2Discovery ? $discovery->paginate($this->activeTab, $this->discoveryFilters()) : null,
-            'featuredGroups' => $usesV2Discovery ? $discovery->paginate('upcoming', ['competition_type' => $this->competitionType ?: 'tournament'], $this->featuredLimit, true) : null,
+            'tournaments' => $usesV2Discovery
+                ? ($usesGroupedDiscovery ? null : $discovery->paginateOccurrences($this->activeTab, $this->discoveryFilters()))
+                : $this->getTournamentQuery()->paginate(12),
+            'tournamentGroups' => $usesGroupedDiscovery ? $discovery->paginate($this->activeTab, $this->discoveryFilters()) : null,
+            'featuredGroups' => $usesGroupedDiscovery
+                ? $discovery->paginate('upcoming', ['competition_type' => 'head_to_head'], $this->featuredLimit, true)
+                : null,
             'games' => $this->getGames(),
             'popularGames' => $this->getPopularGames(),
-            'featuredTournaments' => $usesV2Discovery ? collect() : $this->getFeaturedTournaments(),
-            'hasMoreFeatured' => ! $usesV2Discovery && $this->featuredTournamentCount() > $this->featuredLimit,
+            'featuredTournaments' => $featuredTournaments,
+            'hasMoreFeatured' => $usesV2Discovery
+                ? (! $usesGroupedDiscovery && $featuredTournaments->total() > $featuredTournaments->count())
+                : $this->featuredTournamentCount() > $this->featuredLimit,
             'platforms' => $this->getPlatforms(),
-            'listingType' => $this->competitionType === 'head_to_head' ? 'head_to_head' : 'tournament',
+            'listingType' => $isHeadToHeadListing ? 'head_to_head' : 'tournament',
             'allowCompetitionSwitch' => true,
+            'publicView' => true,
         ])->layout('components.layouts.app', ['title' => 'Tournaments | GamersRival']);
     }
 

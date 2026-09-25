@@ -22,18 +22,25 @@ class PlayerTournamentList extends Component
     {
         $usesV2Discovery = (bool) config('features.tournament_v2.enabled');
         $frequencyLabel = ucfirst($this->frequency).' Tournaments';
-
-        return view('livewire.tournament.player-tournament-list', [
-            'tournaments' => $usesV2Discovery ? null : $this->getTournamentQuery()->paginate(12),
-            'tournamentGroups' => $usesV2Discovery ? $discovery->paginate($this->activeTab, $this->discoveryFilters()) : null,
-            'featuredGroups' => $usesV2Discovery ? $discovery->paginate('upcoming', [
+        $featuredTournaments = $usesV2Discovery
+            ? $discovery->paginateOccurrences('upcoming', [
                 'competition_type' => 'tournament',
                 'frequency' => $this->frequency,
-            ], $this->featuredLimit, true) : null,
+            ], $this->featuredLimit, true, 'featuredPage')
+            : $this->getFeaturedTournaments();
+
+        return view('livewire.tournament.player-tournament-list', [
+            'tournaments' => $usesV2Discovery
+                ? $discovery->paginateOccurrences($this->activeTab, $this->discoveryFilters())
+                : $this->getTournamentQuery()->paginate(12),
+            'tournamentGroups' => null,
+            'featuredGroups' => null,
             'games' => $this->getGames(),
             'popularGames' => $this->getPopularGames(),
-            'featuredTournaments' => $usesV2Discovery ? collect() : $this->getFeaturedTournaments(),
-            'hasMoreFeatured' => ! $usesV2Discovery && $this->featuredTournamentCount() > $this->featuredLimit,
+            'featuredTournaments' => $featuredTournaments,
+            'hasMoreFeatured' => $usesV2Discovery
+                ? $featuredTournaments->total() > $featuredTournaments->count()
+                : $this->featuredTournamentCount() > $this->featuredLimit,
             'platforms' => $this->getPlatforms(),
             'listingType' => 'tournament',
             'allowCompetitionSwitch' => false,

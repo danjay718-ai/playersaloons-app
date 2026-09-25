@@ -6,6 +6,9 @@ namespace Tests\Feature\Tournament;
 
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Match\MatchDetail;
+use App\Livewire\Tournament\PlatformHeadToHeadList;
+use App\Livewire\Tournament\PlayerTournamentList;
+use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameHeadToHeadDefault;
@@ -111,6 +114,58 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame($this->platform->id, $first->platform_id);
         self::assertTrue($first->registration_close_at->equalTo($first->start_at));
         self::assertTrue($first->join_closes_at->equalTo($first->start_at));
+    }
+
+    public function test_player_and_guest_tournament_lists_render_each_v2_occurrence_without_slot_picker(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-26 10:00:00', 'UTC'));
+        $template = app(CreateV2TournamentTemplateAction::class)->execute([
+            'game_id' => $this->game->id,
+            'platform_id' => $this->platform->id,
+            'name' => 'Direct Instance Cup',
+            'frequency' => 'daily',
+            'timezone' => 'UTC',
+            'max_teams' => 4,
+            'entry_fee' => '5.00',
+            'full_first_bps' => 9000,
+            'full_second_bps' => 0,
+            'slots' => [
+                ['label' => 'First', 'local_start_time' => '20:00'],
+                ['label' => 'Second', 'local_start_time' => '21:00'],
+            ],
+        ]);
+        $first = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots[0], $this->admin);
+        $second = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots[1], $this->admin);
+        $player = $this->user('instance-list@example.com', 'instancelist', 'PLAYER');
+
+        $occurrences = app(V2TournamentDiscoveryService::class)->paginateOccurrences('upcoming', [
+            'competition_type' => 'tournament',
+            'frequency' => 'daily',
+        ]);
+        self::assertSame(2, $occurrences->total());
+
+        Livewire::actingAs($player)
+            ->test(PlayerTournamentList::class)
+            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$first->id, $second->id])
+            ->assertViewHas('tournamentGroups', null)
+            ->assertSee('/tournaments/'.$first->uuid.'/view', false)
+            ->assertSee('/tournaments/'.$second->uuid.'/view', false)
+            ->assertSee('Starts in')
+            ->assertSee('Joined players')
+            ->assertSee('Max teams')
+            ->assertSee('Platforms')
+            ->assertDontSee('View Available Slots')
+            ->assertDontSee('Choose a currently available tournament slot');
+
+        Livewire::test(PublicTournamentList::class)
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 2)
+            ->assertViewHas('tournamentGroups', null)
+            ->assertSee('/tournaments/'.$first->uuid.'/view?view=guest', false)
+            ->assertDontSee('View Available Slots');
+
+        Livewire::test(PlatformHeadToHeadList::class)
+            ->assertSee('Click a game card to view its available head-to-head matches.')
+            ->assertSee('View Game');
     }
 
     public function test_local_testing_reset_removes_tournament_records_and_rebuilds_linked_wallet_and_xp_data(): void

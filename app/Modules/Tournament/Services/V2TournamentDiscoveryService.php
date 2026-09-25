@@ -14,11 +14,35 @@ use Illuminate\Database\Eloquent\Builder;
  * Read model for the V2 discovery UI.
  *
  * V2 keeps immutable Tournament occurrences for money, brackets, and audit
- * history. This service deliberately groups those occurrences by their
- * template only at the presentation boundary; it never changes V1 queries.
+ * history. Tournament discovery exposes each occurrence directly, while
+ * consumers that still need schedule grouping can use the template paginator.
+ * This service never changes V1 queries.
  */
 final class V2TournamentDiscoveryService
 {
+    /**
+     * @param  array{search?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,team_format?: string,start_date?: string}  $filters
+     */
+    public function paginateOccurrences(
+        string $tab,
+        array $filters,
+        int $perPage = 12,
+        bool $featuredOnly = false,
+        string $pageName = 'page',
+    ): LengthAwarePaginator {
+        $query = $this->occurrenceQuery($tab, $filters, $featuredOnly)
+            ->with(['game.translations', 'platform'])
+            ->withCount(['registrations' => fn (Builder $query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])]);
+
+        if ($tab === 'past') {
+            $query->orderByDesc('completed_at');
+        } else {
+            $query->orderBy('start_at');
+        }
+
+        return $query->paginate($perPage, ['*'], $pageName);
+    }
+
     /**
      * @param  array{search?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,team_format?: string,start_date?: string}  $filters
      */
