@@ -22,6 +22,11 @@ class ForfeitMatchAction
     public function execute(GameMatch $match, int $forfeitedByRegistrationId): void
     {
         DB::transaction(function () use ($match, $forfeitedByRegistrationId) {
+            $match->loadMissing('tournament');
+            if ((int) $match->tournament->workflow_version === 2) {
+                throw new LogicException('Forfeits are currently disabled for V2 matches.');
+            }
+
             if ($forfeitedByRegistrationId !== $match->player_a_registration_id && $forfeitedByRegistrationId !== $match->player_b_registration_id) {
                 throw new InvalidArgumentException('Forfeiting player must be one of the match participants.');
             }

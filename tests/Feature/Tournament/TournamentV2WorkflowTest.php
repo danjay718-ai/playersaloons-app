@@ -14,6 +14,7 @@ use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\PlayerProgression;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserGameAccount;
+use App\Modules\Match\Actions\ForfeitMatchAction;
 use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
@@ -525,6 +526,61 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(TournamentStatus::ONGOING, $tournament->fresh()->status);
         self::assertSame(3, GameMatch::query()->where('tournament_id', $tournament->id)->count());
         self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->whereNull('player_b_registration_id')->where('status', MatchStatus::COMPLETED)->count());
+        self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::IN_PROGRESS)->count());
+        self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::PENDING)->whereNotNull('player_b_registration_id')->count());
+    }
+
+    public function test_full_tournament_starts_matches_as_soon_as_registration_locks(): void
+    {
+        $template = $this->template('daily', 4, '23:59');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        self::assertTrue($tournament->start_at->isFuture());
+
+        $register = app(RegisterForV2TournamentAction::class);
+        for ($i = 1; $i <= 4; $i++) {
+            $register->execute(
+                $tournament->fresh(),
+                $this->user("full{$i}-v2@example.com", "full{$i}v2", 'PLAYER'),
+                null,
+                "full{$i}",
+            );
+        }
+
+        self::assertSame(TournamentStatus::ONGOING, $tournament->fresh()->status);
+        self::assertSame(2, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::IN_PROGRESS)->count());
+        self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::PENDING)->count());
+    }
+
+    public function test_expired_v2_match_timer_does_not_forfeit_current_or_future_match(): void
+    {
+        $template = $this->template('daily', 4, '23:59');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        $register = app(RegisterForV2TournamentAction::class);
+        for ($i = 1; $i <= 4; $i++) {
+            $register->execute(
+                $tournament->fresh(),
+                $this->user("timer{$i}-v2@example.com", "timer{$i}v2", 'PLAYER'),
+                null,
+                "timer{$i}",
+            );
+        }
+
+        $roundOneMatch = GameMatch::query()
+            ->where('tournament_id', $tournament->id)
+            ->whereHas('round', fn ($round) => $round->where('round_number', 1))
+            ->firstOrFail();
+        $roundOneMatch->forceFill(['stalled_deadline_at' => now()->subSecond()])->save();
+
+        app(V2StalledMatchService::class)->expire($roundOneMatch->id);
+
+        self::assertSame(MatchStatus::IN_PROGRESS, $roundOneMatch->fresh()->status);
+        self::assertNull($roundOneMatch->fresh()->stalled_deadline_at);
+        self::assertSame(0, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::FORFEITED)->count());
+        self::assertSame(1, GameMatch::query()
+            ->where('tournament_id', $tournament->id)
+            ->whereHas('round', fn ($round) => $round->where('round_number', 2))
+            ->where('status', MatchStatus::PENDING)
+            ->count());
     }
 
     public function test_empty_occurrence_is_cancelled_at_start_and_can_be_purged_at_end(): void
@@ -588,6 +644,16 @@ final class TournamentV2WorkflowTest extends TestCase
         $submit->execute($match->fresh(), $p2->id, MatchOutcome::LOSS);
         self::assertSame(MatchStatus::COMPLETED, $match->fresh()->status);
         self::assertSame(2, $match->attempts()->count());
+    }
+
+    public function test_v2_matches_cannot_be_forfeited(): void
+    {
+        [$match] = $this->activeTwoPlayerMatch();
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Forfeits are currently disabled for V2 matches.');
+
+        app(ForfeitMatchAction::class)->execute($match, (int) $match->player_a_registration_id);
     }
 
     public function test_conflicting_v2_results_create_a_dispute_for_admin_review(): void
@@ -836,6 +902,7 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(MatchStatus::DISPUTED, $held->fresh()->status);
 
         app(ResolveDisputeAction::class)->execute($dispute, $this->admin, DisputeResolution::NO_CHAMPION);
+        self::assertSame(MatchStatus::COMPLETED, $held->fresh()->status);
         app(AwardV2PrizesAction::class)->execute($tournament->fresh());
         app(AwardV2PrizesAction::class)->execute($tournament->fresh());
 

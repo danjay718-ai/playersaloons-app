@@ -90,7 +90,7 @@ class ResolveDisputeAction
                 }
 
                 $match->forceFill([
-                    'status' => MatchStatus::FORFEITED,
+                    'status' => MatchStatus::COMPLETED,
                     'winner_registration_id' => null,
                     'completed_at' => now(),
                     'stalled_deadline_at' => null,

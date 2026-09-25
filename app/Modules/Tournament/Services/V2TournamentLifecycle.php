@@ -95,7 +95,11 @@ final class V2TournamentLifecycle
                 $locked->refresh();
             }
 
-            if ($startReached && $locked->status === TournamentStatus::BRACKET_GENERATED) {
+            // Reaching this state means registration has been locked: either
+            // the occurrence filled early or its scheduled join window ended.
+            // V2 has no player check-in/readiness gate, so playable matches
+            // should start as soon as the bracket is generated.
+            if ($locked->status === TournamentStatus::BRACKET_GENERATED) {
                 return $this->startTournament->execute($locked);
             }
 

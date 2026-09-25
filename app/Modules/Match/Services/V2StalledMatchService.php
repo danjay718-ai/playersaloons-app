@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\Match\Services;
 
 use App\Modules\Community\Services\NotificationService;
-use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Events\MatchDisputed;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchAttempt;
@@ -98,14 +97,7 @@ final class V2StalledMatchService
                 return;
             }
 
-            $match->forceFill([
-                'status' => MatchStatus::FORFEITED,
-                'completed_at' => now(),
-                'winner_registration_id' => null,
-                'resolution_reason' => 'double_no_show',
-            ])->save();
-            $attempt?->update(['status' => 'expired', 'resolution' => 'double_no_show', 'resolved_at' => now()]);
-            $this->advanceSurvivingBranch($match);
+            $this->keepUnresolvedMatchOpen($match, $attempt);
         }, 3);
     }
 
@@ -168,16 +160,7 @@ final class V2StalledMatchService
                 return;
             }
 
-            $match->forceFill([
-                'status' => MatchStatus::FORFEITED,
-                'completed_at' => now(),
-                'winner_registration_id' => null,
-                'round_deadline_at' => null,
-                'stalled_deadline_at' => null,
-                'resolution_reason' => 'round_duration_double_no_show',
-            ])->save();
-            $attempt?->update(['status' => 'expired', 'resolution' => 'round_duration_double_no_show', 'resolved_at' => now()]);
-            $this->advanceSurvivingBranch($match);
+            $this->keepUnresolvedMatchOpen($match, $attempt);
         }, 3);
     }
 
@@ -233,32 +216,15 @@ final class V2StalledMatchService
         }
     }
 
-    private function advanceSurvivingBranch(GameMatch $match): void
+    private function keepUnresolvedMatchOpen(GameMatch $match, ?MatchAttempt $attempt): void
     {
-        $roundMatches = $match->round->matches()->orderBy('id')->pluck('id')->values();
-        $position = $roundMatches->search($match->id);
-        $nextRound = Round::query()->where('bracket_id', $match->round->bracket_id)
-            ->where('round_number', $match->round->round_number + 1)->first();
-        if ($position === false || $nextRound === null) {
-            return;
-        }
-        $next = $nextRound->matches()->orderBy('id')->get()->get(intdiv((int) $position, 2));
-        if ($next === null) {
-            return;
-        }
-        $survivor = $next->player_a_registration_id ?? $next->player_b_registration_id;
-        if ($survivor === null) {
-            $next->forceFill(['status' => MatchStatus::FORFEITED, 'completed_at' => now(), 'resolution_reason' => 'empty_bracket_branch'])->save();
-            $this->advanceSurvivingBranch($next->fresh(['round']));
-
-            return;
-        }
-        $next->forceFill([
-            'winner_registration_id' => $survivor,
-            'status' => MatchStatus::COMPLETED,
-            'completed_at' => now(),
-            'resolution_reason' => 'opponent_double_no_show',
+        // V2 currently has no automatic no-show/forfeit rule. Expired
+        // operational timers stop here and the match remains playable until
+        // the participants submit a result or an administrator resolves it.
+        $match->forceFill([
+            'stalled_deadline_at' => null,
+            'round_deadline_at' => null,
         ])->save();
-        MatchCompleted::dispatch($next->id, $next->tournament_id, (int) $survivor);
+        $attempt?->update(['stalled_deadline_at' => null]);
     }
 }
