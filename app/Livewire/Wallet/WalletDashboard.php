@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Wallet;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
+use App\Modules\Operations\Services\ErrorIncidentReporter;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
 use App\Modules\Wallet\Services\DepositFeeCalculator;
 use App\Modules\Wallet\Services\StripeCheckoutService;
@@ -59,6 +60,10 @@ class WalletDashboard extends Component
 
             return redirect()->away($checkoutUrl);
         } catch (\Exception $e) {
+            app(ErrorIncidentReporter::class)->capture($e, [
+                'operation' => 'wallet_deposit_checkout',
+                'user_id' => $user->getKey(),
+            ]);
             report($e);
             session()->flash('info', __('Deposits are temporarily unavailable. Please try again later.'));
         }

@@ -18,7 +18,7 @@ class PruneErrorIncidents extends Command
         $days = max(7, min(3650, (int) $this->option('days')));
         $deleted = ErrorIncident::query()
             ->where('last_seen_at', '<', now()->subDays($days))
-            ->delete();
+            ->forceDelete();
 
         $this->info("Pruned {$deleted} error incident(s) older than {$days} days.");
 

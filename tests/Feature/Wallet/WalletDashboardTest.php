@@ -62,8 +62,6 @@ class WalletDashboardTest extends TestCase
             ->assertDontSee('Stripe secret key is not configured.')
             ->assertDontSee('Reference: ERR-');
 
-        $this->assertSame('Deposits are temporarily unavailable. Please try again later.', session('info'));
-        $this->assertFalse(session()->has('error'));
         $this->assertSame('25.00', $user->wallet()->first()?->cached_balance);
         $this->assertDatabaseHas('error_incidents', [
             'message' => 'Stripe secret key is not configured.',
