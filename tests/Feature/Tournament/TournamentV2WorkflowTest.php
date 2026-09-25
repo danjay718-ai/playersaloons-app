@@ -14,6 +14,7 @@ use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\PlayerProgression;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserGameAccount;
+use App\Modules\Identity\Services\PlayerProgressionService;
 use App\Modules\Match\Actions\ForfeitMatchAction;
 use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
@@ -131,9 +132,9 @@ final class TournamentV2WorkflowTest extends TestCase
         ]);
         DB::table('player_experience_awards')->insert([
             'uuid' => (string) Str::uuid(), 'user_id' => $player->id, 'source_type' => 'tournament', 'source_id' => $tournament->id,
-            'reason' => 'participation', 'amount' => 10, 'metadata' => json_encode(['version' => 2]), 'created_at' => now(), 'updated_at' => now(),
+            'reason' => 'participation', 'amount' => 4, 'metadata' => json_encode(['version' => 2]), 'created_at' => now(), 'updated_at' => now(),
         ]);
-        PlayerProgression::query()->create(['user_id' => $player->id, 'experience_points' => 10, 'level' => 1, 'tournaments_completed' => 1]);
+        PlayerProgression::query()->create(['user_id' => $player->id, 'experience_points' => 4, 'level' => 1, 'tournaments_completed' => 1]);
 
         $summary = app(ResetTournamentTestingDataAction::class)->execute();
 
@@ -144,6 +145,33 @@ final class TournamentV2WorkflowTest extends TestCase
         $this->assertDatabaseMissing('wallet_transactions', ['ledger_entry_id' => $ledgerId]);
         $this->assertDatabaseHas('wallets', ['id' => $wallet->id, 'cached_balance' => '0.00']);
         $this->assertDatabaseHas('player_progressions', ['user_id' => $player->id, 'experience_points' => 0, 'tournaments_completed' => 0]);
+    }
+
+    public function test_v2_participation_awards_four_xp_once(): void
+    {
+        $template = $this->template('daily', 4, '23:59');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        $player = $this->user('participation-xp@example.com', 'participationxp', 'PLAYER');
+        $progression = app(PlayerProgressionService::class);
+
+        $progression->awardV2TournamentParticipation($player->id, $tournament->id);
+        $progression->awardV2TournamentParticipation($player->id, $tournament->id);
+
+        $this->assertDatabaseHas('player_experience_awards', [
+            'user_id' => $player->id,
+            'source_id' => $tournament->id,
+            'reason' => 'participation',
+            'amount' => 4,
+        ]);
+        $this->assertDatabaseHas('player_progressions', [
+            'user_id' => $player->id,
+            'experience_points' => 4,
+            'tournaments_completed' => 1,
+        ]);
+        self::assertSame(1, DB::table('player_experience_awards')
+            ->where('user_id', $player->id)
+            ->where('reason', 'participation')
+            ->count());
     }
 
     public function test_platform_head_to_head_template_is_fixed_to_one_versus_one_and_snapshots_the_type(): void

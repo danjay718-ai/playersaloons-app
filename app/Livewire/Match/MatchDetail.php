@@ -6,7 +6,6 @@ namespace App\Livewire\Match;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\Identity\Models\PlayerDisputeStrike;
-use App\Modules\Identity\Models\PlayerExperienceAward;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
@@ -471,13 +470,6 @@ class MatchDetail extends Component
             && in_array($match->status, [MatchStatus::COMPLETED, MatchStatus::FORFEITED], true)
             && $match->winner_registration_id !== null
             && (int) $match->winner_registration_id !== (int) $viewerRegistration->id;
-        $defeatXp = $isDefeated
-            ? (int) PlayerExperienceAward::query()
-                ->where('user_id', $user->id)
-                ->where('source_type', 'tournament')
-                ->where('source_id', $match->tournament_id)
-                ->sum('amount')
-            : 0;
         $defeatMessage = null;
         if ($isDefeated && $viewerRegistration !== null) {
             $responseMinutes = max(1, (int) ($match->tournament->waiting_result_time ?: 5));
@@ -527,7 +519,6 @@ class MatchDetail extends Component
             'match' => $match,
             'isParticipant' => $isParticipant,
             'isDefeated' => $isDefeated,
-            'defeatXp' => $defeatXp,
             'defeatMessage' => $defeatMessage,
             'isSubmitter' => $isSubmitter,
             'submissionUnavailableMessage' => $submissionUnavailableMessage,

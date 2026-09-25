@@ -125,7 +125,7 @@ class PlayerTournamentComponentsTest extends TestCase
         $this->assertSame('confirmed', $registration->fresh()->status->value);
     }
 
-    public function test_lost_match_shows_inline_defeat_summary_without_modal(): void
+    public function test_lost_match_shows_inline_defeat_summary_without_modal_or_participation_points(): void
     {
         $tournament = $this->makeTournament('Elimination Cup', TournamentStatus::ONGOING);
         [$playerRegistration, $opponentRegistration] = $this->registerPlayers($tournament);
@@ -136,13 +136,14 @@ class PlayerTournamentComponentsTest extends TestCase
             'source_type' => 'tournament',
             'source_id' => $tournament->id,
             'reason' => 'participation',
-            'amount' => 10,
+            'amount' => 4,
         ]);
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
             ->assertSee('Defeated')
-            ->assertSee('+10 XP earned')
+            ->assertDontSee('+4 XP earned')
+            ->assertDontSee('Your XP award is being processed.')
             ->assertDontSee('You have been knocked out of this tournament')
             ->assertDontSeeHtml('showEliminationModal')
             ->assertDontSee('Reservation Confirmed')

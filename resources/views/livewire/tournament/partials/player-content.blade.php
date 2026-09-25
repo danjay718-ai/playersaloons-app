@@ -187,11 +187,6 @@
                                 <i data-lucide="shield-x" class="h-5 w-5"></i>
                                 <span class="text-xs font-black uppercase tracking-[0.2em]">Defeated</span>
                             </div>
-                            @if($defeatXp > 0)
-                                <p class="mt-2 text-sm font-bold text-amber-300">+{{ number_format($defeatXp) }} XP earned</p>
-                            @else
-                                <p class="mt-2 text-xs font-semibold text-zinc-400">Your XP award is being processed.</p>
-                            @endif
                         </div>
                     @elseif((int) $tournament->workflow_version === 2 && $isRegistered)
                         <div class="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-8 py-5 text-center text-xs font-black uppercase tracking-[0.2em] text-emerald-400"><span>Reservation Confirmed</span></div>
@@ -623,7 +618,7 @@
                         @endif
                         @if((int) $tournament->workflow_version === 2)
                             <div class="flex items-center justify-between text-sm"><span class="text-zinc-600 font-medium">Round Duration</span><span class="text-zinc-300 font-bold">{{ $tournament->round_duration_seconds ? \Carbon\CarbonInterval::seconds($tournament->round_duration_seconds)->cascade()->forHumans(['short' => true]) : 'No timer' }}</span></div>
-                            <div class="flex items-center justify-between text-sm"><span class="text-zinc-600 font-medium">Participation XP</span><span class="text-zinc-300 font-bold">10 XP after elimination</span></div>
+                            <div class="flex items-center justify-between text-sm"><span class="text-zinc-600 font-medium">Participation XP</span><span class="text-zinc-300 font-bold">4 XP after elimination</span></div>
                         @endif
                     </div>
                 </section>

@@ -57,7 +57,7 @@
             </section>
 
             <section class="v2-card">
-                <div class="v2-section-heading"><div><h2>Rules and prizes</h2><p>Minimum participants is fixed at 2, team size at 1 account, and participation XP at 10.</p></div></div>
+                <div class="v2-section-heading"><div><h2>Rules and prizes</h2><p>Minimum participants is fixed at 2, team size at 1 account, and participation XP at 4.</p></div></div>
                 <div class="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-100/85">Final prize uses actual paid entries. Full tournaments use a 10% platform commission. Underfilled tournaments use 15%; only First Place is paid. A full 4-team tournament pays First Place only.</div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div><label class="v2-field-label">{{ ($h2h ?? false) ? 'Player slots' : 'Maximum teams' }}</label><input type="hidden" name="max_teams" :value="maxTeams">@if($h2h ?? false)<input value="2 players (1v1)" disabled class="v2-field opacity-60">@else<select x-model="maxTeamsChoice" @change="selectMaxTeams" class="v2-field">@foreach ([4, 8, 16, 32, 64] as $size)<option value="{{ $size }}">{{ $size }}</option>@endforeach<option value="custom">Custom</option></select><input x-show="maxTeamsChoice === 'custom'" x-model.number="maxTeams" @input="normalizePrize" type="number" min="2" max="128" step="2" placeholder="Even number: 2–128" class="v2-field mt-2"><p x-show="maxTeamsChoice === 'custom'" class="v2-field-help">Only even numbers from 2 to 128 are allowed.</p>@endif</div>

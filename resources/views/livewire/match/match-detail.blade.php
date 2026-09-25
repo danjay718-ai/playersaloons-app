@@ -9,11 +9,6 @@
             <div>
                 <p class="text-xs font-black uppercase tracking-wider text-rose-200">Defeated</p>
                 <p class="mt-1 text-sm leading-relaxed">{{ $defeatMessage ?? 'You were defeated in this match.' }}</p>
-                @if($defeatXp > 0)
-                    <p class="mt-2 text-sm font-bold text-amber-300">+{{ number_format($defeatXp) }} XP earned</p>
-                @else
-                    <p class="mt-2 text-xs font-semibold text-rose-200/70">Your XP award is being processed.</p>
-                @endif
             </div>
         </div>
     @endif

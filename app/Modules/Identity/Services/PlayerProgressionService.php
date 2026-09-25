@@ -22,7 +22,7 @@ final class PlayerProgressionService
 {
     public const TOURNAMENT_COMPLETION_XP = 100;
 
-    public const V2_PARTICIPATION_XP = 10;
+    public const V2_PARTICIPATION_XP = 4;
 
     public function __construct(private readonly NotificationService $notifications) {}
 

@@ -6,7 +6,6 @@ namespace App\Livewire\Tournament;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\CMS\Models\Platform;
-use App\Modules\Identity\Models\PlayerExperienceAward;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Operations\Models\Activity;
 use App\Modules\Stream\Support\StreamEmbedService;
@@ -391,7 +390,6 @@ class TournamentDetail extends Component
         }
 
         $hasLost = false;
-        $defeatXp = 0;
         $currentMatch = null;
         $displayMatch = null;
         if ($user && $userRegistration) {
@@ -441,13 +439,6 @@ class TournamentDetail extends Component
                 ->where('winner_registration_id', '!=', $userRegistration->id)
                 ->exists();
 
-            if ($hasLost) {
-                $defeatXp = (int) PlayerExperienceAward::query()
-                    ->where('user_id', $user->id)
-                    ->where('source_type', 'tournament')
-                    ->where('source_id', $tournament->id)
-                    ->sum('amount');
-            }
         }
 
         // Reuse the already eager-loaded bracket graph for both tabs. The old
@@ -512,7 +503,6 @@ class TournamentDetail extends Component
             'allMatches' => $allMatches,
             'activityLogs' => $activityLogs,
             'hasLost' => $hasLost,
-            'defeatXp' => $defeatXp,
             'currentMatch' => $currentMatch,
             'displayMatch' => $displayMatch,
             'streamService' => $streamService,
