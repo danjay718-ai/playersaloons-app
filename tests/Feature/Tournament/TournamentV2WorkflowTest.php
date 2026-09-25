@@ -696,6 +696,52 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertSeeHtml('result-deadline-timer');
     }
 
+    public function test_returning_player_self_heals_an_expired_result_timeout_and_sees_the_reason(): void
+    {
+        [$match, $firstPlayer, $latePlayer] = $this->activeTwoPlayerMatch();
+        app(SubmitV2MatchResultAction::class)->execute($match, $firstPlayer->id, MatchOutcome::WIN);
+        $this->travelTo($match->attempts()->firstOrFail()->result_deadline_at->addSecond());
+
+        Livewire::actingAs($latePlayer)
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee('You lost because you did not report your result within 5 minutes after your opponent submitted.')
+            ->assertSee('Result submission is closed because the 5-minute response deadline expired.')
+            ->assertDontSee('Submit Match Results');
+
+        self::assertSame(MatchStatus::COMPLETED, $match->fresh()->status);
+        self::assertSame('opponent_submission_timeout', $match->fresh()->resolution_reason);
+    }
+
+    public function test_first_submitter_is_told_why_the_result_form_is_no_longer_available(): void
+    {
+        [$match, $firstPlayer] = $this->activeTwoPlayerMatch();
+        app(SubmitV2MatchResultAction::class)->execute($match, $firstPlayer->id, MatchOutcome::WIN);
+
+        Livewire::actingAs($firstPlayer)
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee('Waiting for opponent result')
+            ->assertSee('Your result has already been submitted. Waiting for your opponent to report their result.')
+            ->assertDontSee('Submit Match Results');
+    }
+
+    public function test_admin_resolved_match_explains_why_result_submission_is_closed(): void
+    {
+        [$match, $firstPlayer, $secondPlayer] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $firstPlayer->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $secondPlayer->id, MatchOutcome::WIN);
+        $match->refresh();
+        $winnerResolution = $match->playerARegistration->includesUser($firstPlayer->id)
+            ? DisputeResolution::PLAYER_A
+            : DisputeResolution::PLAYER_B;
+        app(ResolveDisputeAction::class)->execute($match->disputes()->firstOrFail(), $this->admin, $winnerResolution);
+
+        Livewire::actingAs($secondPlayer)
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee('Result submission is closed because an admin reviewed and resolved a dispute for this match.')
+            ->assertDontSee('Submit Match Results');
+    }
+
     public function test_v2_matches_cannot_be_forfeited(): void
     {
         [$match] = $this->activeTwoPlayerMatch();

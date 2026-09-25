@@ -49,7 +49,7 @@
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($activeMatchRooms as $match)
                         <a href="{{ (int) $match->tournament->workflow_version === 2 ? '/tournaments/'.$match->tournament->uuid.'/view?activeTab=submit-results&match='.$match->uuid : '/matches/'.$match->uuid }}" wire:navigate wire:key="match-room-{{ $match->uuid }}" class="player-match-room-link flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3 transition hover:border-cyan-500/40">
-                            <div class="min-w-0"><p class="truncate text-xs font-bold text-zinc-100">{{ $match->tournament->name }}</p><p class="mt-1 text-[9px] font-black uppercase tracking-wider text-cyan-400">{{ str_replace('_', ' ', $match->status->value) }}</p></div>
+                            <div class="min-w-0"><p class="truncate text-xs font-bold text-zinc-100">{{ $match->tournament->name }}</p><p class="mt-1 text-[9px] font-black uppercase tracking-wider text-cyan-400">{{ (int) $match->tournament->workflow_version === 2 && $match->status->value === 'waiting_for_confirmation' ? 'Waiting for opponent result' : str_replace('_', ' ', $match->status->value) }}</p></div>
                             <span class="shrink-0 text-[9px] font-black uppercase text-cyan-300">{{ (int) $match->tournament->workflow_version === 2 ? 'Submit Result' : 'Open' }} →</span>
                         </a>
                     @endforeach

@@ -161,10 +161,13 @@
                         @php
                             $currentMatchStatus = $currentMatch->status->value ?? (string) $currentMatch->status;
                             $currentMatchLabel = match($currentMatchStatus) {
-                                'waiting_for_confirmation' => 'Report Your Result',
+                                'waiting_for_confirmation' => 'View Result Status',
                                 'disputed' => 'Review Match Dispute',
                                 default => 'Submit Result',
                             };
+                            $currentMatchStatusLabel = (int) $tournament->workflow_version === 2 && $currentMatchStatus === 'waiting_for_confirmation'
+                                ? 'Waiting for opponent result'
+                                : str_replace('_', ' ', $currentMatchStatus);
                         @endphp
                         @if((int) $tournament->workflow_version === 2)
                             <button type="button" wire:click="openMatch('{{ $currentMatch->uuid }}')" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
@@ -177,7 +180,7 @@
                                 <span>Open Match Room &amp; Report Result</span>
                             </a>
                         @endif
-                        <p class="text-center text-[10px] font-bold uppercase tracking-wider text-cyan-400">Round {{ $currentMatch->round?->round_number ?? '—' }} · {{ str_replace('_', ' ', $currentMatchStatus) }}</p>
+                        <p class="text-center text-[10px] font-bold uppercase tracking-wider text-cyan-400">Round {{ $currentMatch->round?->round_number ?? '—' }} · {{ $currentMatchStatusLabel }}</p>
                     @elseif($hasLost)
                         <div role="alert" class="w-full rounded-2xl border border-rose-500/40 bg-rose-500/10 px-6 py-5 text-center shadow-[0_0_20px_rgba(244,63,94,0.12)]">
                             <div class="flex items-center justify-center gap-2 text-rose-300">

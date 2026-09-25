@@ -11,6 +11,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
+use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
@@ -445,6 +446,18 @@ class MatchDetail extends Component
             $match->refresh();
         }
 
+        // The queued timeout remains the primary resolver, but an expired V2
+        // response window must also self-heal when either participant returns.
+        // This prevents a match from staying stuck if a worker was unavailable.
+        if ((int) $match->tournament->workflow_version === 2
+            && $match->status === MatchStatus::WAITING_FOR_CONFIRMATION) {
+            $timeoutAttempt = $match->attempts->firstWhere('attempt_number', $match->active_attempt_number);
+            if ($timeoutAttempt?->result_deadline_at?->isPast()
+                && app(ResolveV2ResultTimeoutAction::class)->execute((int) $timeoutAttempt->id)) {
+                $match->refresh();
+            }
+        }
+
         /** @var User|null $user */
         $user = Auth::user();
         $isParticipant = $user && (
@@ -492,6 +505,20 @@ class MatchDetail extends Component
         $isSubmitter = $user && ((int) $match->tournament->workflow_version === 2
             ? $activeAttempt?->submissions->contains('submitted_by', $user->id)
             : $latestSubmission && $user->id === $latestSubmission->submitted_by);
+        $submissionUnavailableMessage = null;
+        if ((int) $match->tournament->workflow_version === 2 && $isParticipant) {
+            $responseMinutes = max(1, (int) ($match->tournament->waiting_result_time ?: 5));
+            $submissionUnavailableMessage = match (true) {
+                $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'opponent_submission_timeout' => "Result submission is closed because the {$responseMinutes}-minute response deadline expired.",
+                $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'admin_resolution' => 'Result submission is closed because an admin reviewed and resolved a dispute for this match.',
+                $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'confirmed_submissions' => 'Result submission is closed because both players submitted matching results.',
+                in_array($match->status, [MatchStatus::IN_PROGRESS, MatchStatus::WAITING_FOR_CONFIRMATION], true) && $isSubmitter => 'Your result has already been submitted. Waiting for your opponent to report their result.',
+                $activeAttempt?->result_deadline_at?->isPast() => 'Your response deadline has expired. Result submission is closed while the match is finalized.',
+                $match->status === MatchStatus::DISPUTED => 'Result submission is closed while an admin reviews the dispute.',
+                $match->status === MatchStatus::COMPLETED => 'Result submission is closed because this match has already been completed.',
+                default => null,
+            };
+        }
 
         $isAdmin = Auth::check() && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
         $layout = $isAdmin ? 'components.layouts.admin' : 'components.layouts.dashboard';
@@ -503,6 +530,7 @@ class MatchDetail extends Component
             'defeatXp' => $defeatXp,
             'defeatMessage' => $defeatMessage,
             'isSubmitter' => $isSubmitter,
+            'submissionUnavailableMessage' => $submissionUnavailableMessage,
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
             'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,

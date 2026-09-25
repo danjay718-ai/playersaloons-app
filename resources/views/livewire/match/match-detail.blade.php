@@ -53,7 +53,11 @@
                     $colorClass = $statusColors[$match->status->value ?? $match->status] ?? 'bg-zinc-800 text-zinc-400 border-zinc-700';
                 @endphp
                 <span class="text-xs font-bold uppercase tracking-widest border rounded-full px-4 py-1.5 {{ $colorClass }}">
-                    {{ $match->status->value === 'ready' ? ($match->tournament->status === \App\Shared\Enums\TournamentStatus::ONGOING ? 'Starting' : 'Scheduled') : str_replace('_', ' ', $match->status->value ?? $match->status) }}
+                    @if((int) $match->tournament->workflow_version === 2 && $match->status->value === 'waiting_for_confirmation')
+                        Waiting for opponent result
+                    @else
+                        {{ $match->status->value === 'ready' ? ($match->tournament->status === \App\Shared\Enums\TournamentStatus::ONGOING ? 'Starting' : 'Scheduled') : str_replace('_', ' ', $match->status->value ?? $match->status) }}
+                    @endif
                 </span>
             </div>
         </div>
@@ -436,7 +440,9 @@
                 @else
                     <div class="bg-zinc-950/40 border border-zinc-800 rounded-xl p-6 text-center text-zinc-500">
                         <i data-lucide="lock" class="w-6 h-6 mx-auto text-zinc-650 mb-2"></i>
-                        @if($statusVal === 'ready' && $isParticipant)
+                        @if($submissionUnavailableMessage)
+                            <p class="text-xs font-semibold text-zinc-300">{{ $submissionUnavailableMessage }}</p>
+                        @elseif($statusVal === 'ready' && $isParticipant)
                             <p class="text-xs font-semibold text-zinc-300">The match starts automatically.</p>
                             <p class="mt-1 text-[11px]">Result submission opens when the tournament starts.</p>
                         @else

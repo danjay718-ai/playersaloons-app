@@ -106,7 +106,9 @@ final class PlayerDashboardService
                     'workflow_version' => (int) $match->tournament->workflow_version,
                     'tournament' => $match->tournament->name,
                     'game' => $match->tournament->game?->localizedName() ?? 'Game',
-                    'status' => str_replace('_', ' ', $status),
+                    'status' => (int) $match->tournament->workflow_version === 2 && $status === MatchStatus::WAITING_FOR_CONFIRMATION->value
+                        ? 'waiting for opponent result'
+                        : str_replace('_', ' ', $status),
                     'outcome' => $outcome,
                     'updated_at' => $match->updated_at?->diffForHumans(),
                 ];
