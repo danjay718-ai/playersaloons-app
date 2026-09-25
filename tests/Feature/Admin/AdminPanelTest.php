@@ -10,6 +10,7 @@ use App\Livewire\Admin\KycAdmin;
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\PolicyAdmin;
 use App\Livewire\Admin\StaffActivityDashboard;
+use App\Livewire\Admin\SystemSettingsAdmin;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Admin\TournamentForm;
 use App\Livewire\Admin\UserAdmin;
@@ -197,6 +198,29 @@ class AdminPanelTest extends TestCase
             $response->assertSee('Admin Panel'); // Sidebar should be visible
             $response->assertStatus(200);
         }
+    }
+
+    public function test_admin_can_update_dispute_notification_mailbox_in_system_settings(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(SystemSettingsAdmin::class)
+            ->assertSet('disputeNotificationEmail', 'info@playersaloons.com')
+            ->set('disputeNotificationEmail', 'disputes@example.com')
+            ->set('disputeNotificationName', 'Dispute Review Team')
+            ->call('saveDisputeNotificationSettings')
+            ->assertHasNoErrors()
+            ->assertSee('Dispute notification settings updated.');
+
+        $this->assertDatabaseHas('system_settings', [
+            'key' => 'notifications.dispute_email',
+            'value' => 'disputes@example.com',
+            'updated_by' => $this->admin->id,
+        ]);
+        $this->assertDatabaseHas('system_settings', [
+            'key' => 'notifications.dispute_name',
+            'value' => 'Dispute Review Team',
+            'updated_by' => $this->admin->id,
+        ]);
     }
 
     public function test_game_management_hides_deleted_games_even_when_archived_tab_is_requested(): void

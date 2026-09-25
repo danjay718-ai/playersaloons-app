@@ -85,6 +85,16 @@ class MatchAdmin extends AdminComponent
         if (request()->query('filter') === 'disputes') {
             $this->disputeFilter = true;
         }
+
+        $matchId = request()->integer('match');
+        if ($matchId > 0 && GameMatch::query()->whereKey($matchId)->exists()) {
+            $this->selectMatch($matchId);
+        }
+
+        $headToHeadMatchId = request()->integer('h2h_match');
+        if ($headToHeadMatchId > 0 && HeadToHeadMatch::query()->whereKey($headToHeadMatchId)->exists()) {
+            $this->openH2HDisputeModal($headToHeadMatchId);
+        }
     }
 
     // ─── Reset page on filter changes ────────────────────────────────────────

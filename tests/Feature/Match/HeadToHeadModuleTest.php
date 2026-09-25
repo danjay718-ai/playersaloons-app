@@ -7,6 +7,7 @@ namespace Tests\Feature\Match;
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Match\HeadToHeadDuelPrompt;
 use App\Livewire\Match\HeadToHeadList;
+use App\Mail\SystemNotificationMail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\Identity\Models\User;
@@ -25,6 +26,7 @@ use App\Modules\Match\Models\HeadToHeadRating;
 use App\Modules\Match\Services\HeadToHeadMatchmakerService;
 use App\Modules\Match\Services\HeadToHeadRatingService;
 use App\Modules\Match\StateMachines\HeadToHeadMatchStateMachine;
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\HeadToHeadChallengeStatus;
 use App\Shared\Enums\HeadToHeadDisputeResolution;
@@ -33,6 +35,7 @@ use App\Shared\Enums\LedgerType;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -407,6 +410,37 @@ class HeadToHeadModuleTest extends TestCase
         $this->assertNotNull($match->dispute_proof_path);
         Storage::disk('public')->assertExists($match->result_proof_path);
         Storage::disk('public')->assertExists($match->dispute_proof_path);
+    }
+
+    public function test_h2h_dispute_can_be_opened_without_notes_or_proof_and_emails_admin(): void
+    {
+        Mail::fake();
+        SystemSetting::query()->updateOrCreate(
+            ['key' => 'notifications.dispute_email'],
+            ['value' => 'future-disputes@example.com'],
+        );
+        $challenge = $this->createChallenge();
+        $match = app(AcceptHeadToHeadChallengeAction::class)->execute($challenge, $this->playerB, 'PlayerB#222');
+        app(SubmitHeadToHeadResultAction::class)->execute($match, $this->playerA, $this->playerA->id);
+
+        app(DisputeHeadToHeadResultAction::class)->execute($match->fresh(), $this->playerB);
+
+        $match->refresh();
+        self::assertSame(HeadToHeadMatchStatus::DISPUTED, $match->status);
+        self::assertNull($match->dispute_notes);
+        self::assertNull($match->dispute_proof_path);
+        Mail::assertQueued(SystemNotificationMail::class, function (SystemNotificationMail $mail) use ($match): bool {
+            return $mail->hasTo('future-disputes@example.com')
+                && $mail->actionUrl === "/admin/matches?h2h_match={$match->id}"
+                && $mail->actionLabel === 'Review disputed match';
+        });
+
+        $this->actingAs($this->admin);
+        Livewire::withQueryParams(['h2h_match' => $match->id])
+            ->test(MatchAdmin::class)
+            ->assertSet('selectedH2HMatchId', $match->id)
+            ->assertSet('showH2HDisputeModal', true)
+            ->assertSee('border-red-500', false);
     }
 
     public function test_admin_can_resolve_h2h_dispute_to_winner_and_release_payout(): void

@@ -109,7 +109,7 @@ class NotifyParticipantsListener
             }
         } elseif ($event instanceof MatchDisputed) {
             foreach ($playerAUsers->merge($playerBUsers)->unique('id') as $recipient) {
-                $this->notificationService->send($recipient, 'match_disputed', 'Match Disputed', "A dispute has been opened for your match in tournament '{$tournament->name}'. Please upload your evidence.", $matchUrl);
+                $this->notificationService->send($recipient, 'match_disputed', 'Match Disputed', "A dispute has been opened for your match in tournament '{$tournament->name}'. You may add supporting evidence if available.", $matchUrl);
             }
         }
     }

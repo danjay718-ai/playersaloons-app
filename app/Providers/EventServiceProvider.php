@@ -10,6 +10,7 @@ use App\Modules\Identity\Events\UserSuspended;
 use App\Modules\Identity\Events\UserUnsuspended;
 use App\Modules\Identity\Listeners\NotifyAdminsOfKycSubmissionListener;
 use App\Modules\Identity\Listeners\QualifyReferralOnDepositListener;
+use App\Modules\Match\Events\HeadToHeadMatchDisputed;
 use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Events\MatchDisputed;
@@ -146,6 +147,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         MatchDisputed::class => [
             NotifyParticipantsListener::class,
+            NotifyAdminsOfDisputeListener::class,
+        ],
+        HeadToHeadMatchDisputed::class => [
             NotifyAdminsOfDisputeListener::class,
         ],
         MatchRematchCreated::class => [

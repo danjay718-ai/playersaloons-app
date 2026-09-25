@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Match\Actions;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Match\Events\HeadToHeadMatchDisputed;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Match\StateMachines\HeadToHeadMatchStateMachine;
 use App\Shared\Enums\HeadToHeadMatchStatus;
@@ -39,6 +40,7 @@ class DisputeHeadToHeadResultAction
             $lockedMatch->save();
 
             $this->stateMachine->transition($lockedMatch, HeadToHeadMatchStatus::DISPUTED);
+            HeadToHeadMatchDisputed::dispatch((int) $lockedMatch->getKey(), (int) $actor->getKey());
         });
     }
 }

@@ -7,7 +7,7 @@
             <p style="margin:0 0 8px;color:#22d3ee;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">GamersRival</p>
             <h1 style="margin:0 0 16px;color:#fff;font-size:24px">{{ $notificationTitle }}</h1>
             <p style="margin:0;color:#a1a1aa;font-size:15px;line-height:1.65">{{ $notificationMessage }}</p>
-            <a href="{{ $actionUrl ? url($actionUrl) : config('app.url') }}" style="display:inline-block;margin-top:24px;border-radius:10px;background:#4f46e5;padding:12px 18px;color:#fff;text-decoration:none;font-size:13px;font-weight:700">Open GamersRival</a>
+            <a href="{{ $actionUrl ? url($actionUrl) : config('app.url') }}" style="display:inline-block;margin-top:24px;border-radius:10px;background:#4f46e5;padding:12px 18px;color:#fff;text-decoration:none;font-size:13px;font-weight:700">{{ $actionLabel }}</a>
         </div>
     </div>
 </body>

@@ -23,6 +23,24 @@
         </form>
     </section>
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-red-300">Notifications</p>
+        <h2 class="mt-1 text-xl font-bold text-white">Dispute alerts</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-500">Tournament and head-to-head dispute alerts are sent to this mailbox. The email button opens the exact disputed match for administrator review.</p>
+        <form wire:submit="saveDisputeNotificationSettings" class="mt-6 space-y-5">
+            <div>
+                <label for="disputeNotificationEmail" class="text-xs font-bold uppercase tracking-wider text-slate-400">Recipient email</label>
+                <input id="disputeNotificationEmail" wire:model="disputeNotificationEmail" type="email" required class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white" placeholder="info@playersaloons.com">
+                @error('disputeNotificationEmail')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label for="disputeNotificationName" class="text-xs font-bold uppercase tracking-wider text-slate-400">Recipient name</label>
+                <input id="disputeNotificationName" wire:model="disputeNotificationName" type="text" maxlength="100" required class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white" placeholder="PlayerSaloons Disputes">
+                @error('disputeNotificationName')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+            </div>
+            <button type="submit" class="rounded-lg bg-red-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-500">Save dispute notifications</button>
+        </form>
+    </section>
+    <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <p class="text-[11px] font-bold uppercase tracking-wider text-cyan-300">Tournaments</p>
         <h2 class="mt-1 text-xl font-bold text-white">Result confirmation timeout</h2>
         <p class="mt-2 text-sm text-slate-500">New tournaments inherit this value. Organizers can override it on each tournament.</p>

@@ -361,7 +361,7 @@
                                     <div class="h-px flex-grow bg-zinc-800"></div>
                                 </div>
                                 
-                                <textarea wire:model="disputeReason" rows="2" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-red-500/50" placeholder="Explain what happened (at least 10 characters)..."></textarea>
+                                <textarea wire:model="disputeReason" rows="2" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-red-500/50" placeholder="Explain what happened (optional)"></textarea>
                                 @error('disputeReason') <span class="text-[10px] text-red-500 block">{{ $message }}</span> @enderror
                                 <label class="relative flex cursor-pointer items-center gap-3 rounded-lg border border-red-900/40 bg-zinc-950 px-3 py-2.5 text-xs text-zinc-400 hover:border-red-700/60">
                                     <input wire:model="evidenceFile" type="file" accept="image/png,image/jpeg,image/webp" class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
@@ -401,8 +401,8 @@
                         </p>
                         
                         <div class="space-y-2">
-                            <label for="disputeReason" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">WANT TO DISPUTE INSTEAD? (REASON REQUIRED)</label>
-                            <textarea wire:model="disputeReason" id="disputeReason" rows="2" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs text-zinc-200 focus:outline-none focus:border-red-500" placeholder="Describe the issue..."></textarea>
+                            <label for="disputeReason" class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Want to dispute instead? (Reason optional)</label>
+                            <textarea wire:model="disputeReason" id="disputeReason" rows="2" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs text-zinc-200 focus:outline-none focus:border-red-500" placeholder="Describe the issue (optional)"></textarea>
                             @error('disputeReason') <span class="text-[10px] text-red-500 block">{{ $message }}</span> @enderror
                             <label class="relative flex cursor-pointer items-center gap-3 rounded-xl border border-red-900/40 bg-zinc-950 px-4 py-3 text-xs text-zinc-400 hover:border-red-700/60">
                                 <input wire:model="evidenceFile" type="file" accept="image/png,image/jpeg,image/webp" class="absolute inset-0 h-full w-full cursor-pointer opacity-0">

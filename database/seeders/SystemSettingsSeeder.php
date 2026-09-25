@@ -83,6 +83,8 @@ class SystemSettingsSeeder extends Seeder
             ['key' => 'tournament.timezone', 'value' => config('app.tournament_timezone', 'UTC'), 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'auth.login_max_attempts', 'value' => '5', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'auth.login_lockout_minutes', 'value' => '15', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'notifications.dispute_email', 'value' => 'info@playersaloons.com', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'notifications.dispute_name', 'value' => 'PlayerSaloons Disputes', 'created_at' => now(), 'updated_at' => now()],
         ];
 
         foreach ($settings as $setting) {

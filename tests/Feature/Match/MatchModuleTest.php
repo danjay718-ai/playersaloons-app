@@ -6,6 +6,7 @@ namespace Tests\Feature\Match;
 
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Match\MatchDetail;
+use App\Mail\SystemNotificationMail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\Identity\Models\User;
@@ -19,6 +20,7 @@ use App\Modules\Match\Actions\VoteForRematchAction;
 use App\Modules\Match\Events\TournamentBracketUpdated;
 use App\Modules\Match\Jobs\RematchTimeoutJob;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\CloseCheckinAction;
 use App\Modules\Tournament\Actions\CloseRegistrationAction;
@@ -42,6 +44,7 @@ use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -372,7 +375,7 @@ class MatchModuleTest extends TestCase
         Livewire::actingAs($this->playerA)
             ->test(MatchDetail::class, ['uuid' => $match->uuid])
             ->assertSee('Return to Tournament')
-            ->assertSee('Ready confirmed — play now')
+            ->assertSee('Match in progress — play now')
             ->set('disputeReason', 'The submitted match information is not accurate.')
             ->set('evidenceFile', $proof)
             ->call('openDispute')
@@ -382,6 +385,46 @@ class MatchModuleTest extends TestCase
         $this->assertEquals(DisputeStatus::UNDER_REVIEW, $dispute->status);
         $this->assertCount(1, $dispute->evidence);
         Storage::disk('public')->assertExists($dispute->evidence->first()->file_path);
+    }
+
+    public function test_player_can_open_dispute_without_reason_or_proof(): void
+    {
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
+
+        Livewire::actingAs($this->playerA)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->call('openDispute')
+            ->assertHasNoErrors();
+
+        $dispute = $match->disputes()->firstOrFail();
+        self::assertSame('', $dispute->reason);
+        self::assertCount(0, $dispute->evidence);
+    }
+
+    public function test_dispute_email_and_admin_link_target_the_specific_match(): void
+    {
+        Mail::fake();
+        SystemSetting::query()->updateOrCreate(
+            ['key' => 'notifications.dispute_email'],
+            ['value' => 'future-disputes@example.com'],
+        );
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
+
+        app(OpenDisputeAction::class)->execute($match, $this->playerA->id);
+
+        Mail::assertQueued(SystemNotificationMail::class, function (SystemNotificationMail $mail) use ($match): bool {
+            return $mail->hasTo('future-disputes@example.com')
+                && $mail->actionUrl === "/admin/matches?filter=disputes&match={$match->id}"
+                && $mail->actionLabel === 'Review disputed match';
+        });
+
+        $this->actingAs($this->adminUser);
+        Livewire::withQueryParams(['filter' => 'disputes', 'match' => $match->id])
+            ->test(MatchAdmin::class)
+            ->assertSet('disputeFilter', true)
+            ->assertSet('selectedMatchId', $match->id)
+            ->assertSet('showDetailModal', true)
+            ->assertSee('border-red-500', false);
     }
 
     public function test_admin_can_apply_timed_compliance_ban_when_resolving_false_proof(): void
@@ -448,8 +491,8 @@ class MatchModuleTest extends TestCase
         $rematch = GameMatch::query()->where('id', '!=', $match->id)->latest('id')->firstOrFail();
         Livewire::actingAs($this->playerA)
             ->test(MatchDetail::class, ['uuid' => $rematch->uuid])
-            ->assertSee('Rematch required')
-            ->assertSee('Play again and submit a new result.');
+            ->assertSee('This is a rematch — play again')
+            ->assertSee('Play this rematch and submit a new result.');
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerA->id,
             'title' => 'Rematch Required',

@@ -283,7 +283,7 @@ class MatchDetail extends Component
         }
 
         $this->validate([
-            'disputeReason' => 'required|string|min:10',
+            'disputeReason' => 'nullable|string|max:1000',
             'evidenceFile' => ['nullable', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
         ]);
 

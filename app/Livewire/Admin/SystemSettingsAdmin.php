@@ -37,6 +37,10 @@ class SystemSettingsAdmin extends AdminComponent
 
     public int $loginLockoutMinutes = 15;
 
+    public string $disputeNotificationEmail = 'info@playersaloons.com';
+
+    public string $disputeNotificationName = 'PlayerSaloons Disputes';
+
     public bool $showTournamentResetModal = false;
 
     public string $tournamentResetConfirmation = '';
@@ -74,6 +78,10 @@ class SystemSettingsAdmin extends AdminComponent
         $authSettings = SystemSetting::query()->whereIn('key', ['auth.login_max_attempts', 'auth.login_lockout_minutes'])->pluck('value', 'key');
         $this->loginMaxAttempts = (int) ($authSettings['auth.login_max_attempts'] ?? 5);
         $this->loginLockoutMinutes = (int) ($authSettings['auth.login_lockout_minutes'] ?? 15);
+
+        $notificationSettings = SystemSetting::query()->whereIn('key', ['notifications.dispute_email', 'notifications.dispute_name'])->pluck('value', 'key');
+        $this->disputeNotificationEmail = (string) ($notificationSettings['notifications.dispute_email'] ?? 'info@playersaloons.com');
+        $this->disputeNotificationName = (string) ($notificationSettings['notifications.dispute_name'] ?? 'PlayerSaloons Disputes');
     }
 
     public function saveTournamentSettings(): void
@@ -183,6 +191,24 @@ class SystemSettingsAdmin extends AdminComponent
         }
 
         session()->flash('success', 'Authentication security settings updated.');
+    }
+
+    public function saveDisputeNotificationSettings(): void
+    {
+        $this->authorizeManagement();
+        $this->validate([
+            'disputeNotificationEmail' => ['required', 'email:rfc', 'max:254'],
+            'disputeNotificationName' => ['required', 'string', 'max:100'],
+        ]);
+
+        foreach ([
+            'notifications.dispute_email' => strtolower(trim($this->disputeNotificationEmail)),
+            'notifications.dispute_name' => trim($this->disputeNotificationName),
+        ] as $key => $value) {
+            SystemSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'updated_by' => Auth::id()]);
+        }
+
+        session()->flash('success', 'Dispute notification settings updated.');
     }
 
     public function openTournamentTestingReset(): void

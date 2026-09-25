@@ -117,7 +117,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-800/50">
                     @forelse($matches as $match)
-                        <tr class="hover:bg-slate-900/40 transition-colors" wire:key="match-{{ $match->id }}">
+                        <tr class="{{ $match->status->value === 'disputed' ? 'bg-red-950/25 hover:bg-red-950/40 border-l-2 border-red-500' : 'hover:bg-slate-900/40 border-l-2 border-transparent' }} transition-colors" wire:key="match-{{ $match->id }}">
                             <td class="p-4">
                                 <span class="block font-semibold text-slate-200 hover:text-indigo-400 cursor-pointer transition-colors"
                                       wire:click="selectMatch({{ $match->id }})">
@@ -237,7 +237,7 @@
                         @php
                             $h2hGameName = $h2h->game->translations->first()?->name ?? $h2h->game->slug;
                         @endphp
-                        <tr class="hover:bg-slate-900/40 transition-colors" wire:key="h2h-dispute-{{ $h2h->id }}">
+                        <tr class="bg-red-950/25 hover:bg-red-950/40 border-l-2 border-red-500 transition-colors" wire:key="h2h-dispute-{{ $h2h->id }}">
                             <td class="p-4">
                                 <span class="block font-semibold text-slate-200">{{ $h2hGameName }}</span>
                                 <span class="block text-[10px] text-emerald-400 mt-0.5">${{ number_format((float) $h2h->stake_amount, 2) }} each</span>

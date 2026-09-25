@@ -21,7 +21,7 @@ class OpenDisputeAction
     /**
      * Open a dispute on the match.
      */
-    public function execute(GameMatch $match, int $openedByUserId, string $reason = 'No reason provided.'): MatchDispute
+    public function execute(GameMatch $match, int $openedByUserId, string $reason = ''): MatchDispute
     {
         return DB::transaction(function () use ($match, $openedByUserId, $reason): MatchDispute {
             if (! $match->playerARegistration?->includesUser($openedByUserId) && ! $match->playerBRegistration?->includesUser($openedByUserId)) {
@@ -35,7 +35,7 @@ class OpenDisputeAction
                 'match_id' => $match->id,
                 'opened_by' => $openedByUserId,
                 'status' => DisputeStatus::OPEN,
-                'reason' => $reason,
+                'reason' => trim($reason),
             ]);
 
             MatchDisputed::dispatch($match->id, $dispute->id, $openedByUserId);

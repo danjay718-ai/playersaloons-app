@@ -19,6 +19,7 @@ final class SystemNotificationMail extends Mailable implements ShouldQueue
         public readonly string $notificationTitle,
         public readonly string $notificationMessage,
         public readonly ?string $actionUrl = null,
+        public readonly string $actionLabel = 'Open GamersRival',
     ) {}
 
     public function envelope(): Envelope

@@ -94,7 +94,7 @@
                             
                             <div class="mt-4 space-y-3 rounded-xl border border-red-900/30 bg-red-950/10 p-3">
                                 <p class="text-[9px] font-bold uppercase tracking-wider text-red-400">Dispute this result</p>
-                                <textarea wire:model="disputeNotes" rows="2" placeholder="Why is this incorrect?" class="w-full rounded-lg border border-red-900/50 bg-black/50 px-3 py-2 text-xs text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:outline-none"></textarea>
+                                <textarea wire:model="disputeNotes" rows="2" placeholder="Why is this incorrect? (optional)" class="w-full rounded-lg border border-red-900/50 bg-black/50 px-3 py-2 text-xs text-zinc-200 placeholder-zinc-600 focus:border-red-500 focus:outline-none"></textarea>
                                 <input wire:model="disputeProof" type="file" accept="image/*" class="w-full text-[10px] text-zinc-400 file:mr-2 file:rounded-lg file:border-0 file:bg-red-900/30 file:px-2 file:py-1 file:text-[10px] file:font-bold file:text-red-300">
                                 @error('disputeProof') <p class="text-xs text-red-400">{{ $message }}</p> @enderror
                                 <button wire:click="disputeResult({{ $match->id }})" wire:loading.attr="disabled" class="w-full rounded-lg border border-red-500/30 bg-red-900/40 px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-red-200 hover:bg-red-800 disabled:opacity-50">
