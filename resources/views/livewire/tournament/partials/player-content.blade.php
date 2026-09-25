@@ -16,11 +16,8 @@
 @endphp
 <div class="player-tournament-detail space-y-10"
      x-data="{ 
-         activeTab: localStorage.getItem('tournament_tab_{{ $tournament->id }}') || 'overview', 
+         activeTab: @entangle('activeTab').live,
          canViewRestricted: @json($canViewRestricted),
-         hasLost: @json($hasLost ?? false),
-         acknowledgedElimination: false,
-         showEliminationModal: false,
          showCancelModal: false,
          showJoinModal: false,
          showUnderfilledNotice: false,
@@ -35,7 +32,7 @@
          },
          sectionFor(tab) {
              if (['participants', 'team-lobby'].includes(tab)) return 'participants';
-             if (['fixtures', 'bracket'].includes(tab)) return 'bracket';
+             if (tab === 'matches') return 'bracket';
              if (tab === 'activity') return 'activity';
              return null;
          },
@@ -60,12 +57,6 @@
              showUnderfilledNotice = true;
              localStorage.setItem(underfilledNoticeKey, 'shown');
          }
-         $watch('activeTab', value => { 
-             localStorage.setItem('tournament_tab_{{ $tournament->id }}', value);
-             if (value === 'bracket' && hasLost && !acknowledgedElimination) {
-                 showEliminationModal = true;
-             }
-         })
      ">
     <x-ui.toasts />
 
@@ -74,6 +65,8 @@
         <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i>
         <span>Return</span>
     </button>
+
+    <div id="tournament-top-timer" wire:ignore></div>
 
     <!-- Auto-Cancel Notice -->
     @if($tournament->is_auto_cancel_underfilled)
@@ -168,16 +161,22 @@
                         @php
                             $currentMatchStatus = $currentMatch->status->value ?? (string) $currentMatch->status;
                             $currentMatchLabel = match($currentMatchStatus) {
-                                'waiting_for_confirmation' => 'Confirm Match Result',
+                                'waiting_for_confirmation' => 'Report Your Result',
                                 'disputed' => 'Review Match Dispute',
-                                'ready' => 'Open Match Room',
-                                default => 'Open Match Room & Report Result',
+                                default => 'Submit Result',
                             };
                         @endphp
-                        <a href="/matches/{{ $currentMatch->uuid }}" wire:navigate class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
-                            <i data-lucide="swords" class="w-5 h-5"></i>
-                            <span>{{ $currentMatchLabel }}</span>
-                        </a>
+                        @if((int) $tournament->workflow_version === 2)
+                            <button type="button" wire:click="openMatch('{{ $currentMatch->uuid }}')" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
+                                <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                                <span>{{ $currentMatchLabel }}</span>
+                            </button>
+                        @else
+                            <a href="/matches/{{ $currentMatch->uuid }}" wire:navigate class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
+                                <i data-lucide="swords" class="w-5 h-5"></i>
+                                <span>Open Match Room &amp; Report Result</span>
+                            </a>
+                        @endif
                         <p class="text-center text-[10px] font-bold uppercase tracking-wider text-cyan-400">Round {{ $currentMatch->round?->round_number ?? '—' }} · {{ str_replace('_', ' ', $currentMatchStatus) }}</p>
                     @elseif($hasLost)
                         <div role="alert" class="w-full rounded-2xl border border-rose-500/40 bg-rose-500/10 px-6 py-5 text-center shadow-[0_0_20px_rgba(244,63,94,0.12)]">
@@ -290,6 +289,7 @@
     @endphp
 
     @if($timerLabel && $timerTarget && $timerTarget > $now)
+        <template x-teleport="#tournament-top-timer">
         <div class="bg-amber-950/35 backdrop-blur-xl border border-amber-500/50 rounded-2xl px-5 py-7 sm:p-7 flex flex-col sm:flex-row items-center gap-5 sm:gap-6 shadow-[0_12px_35px_-18px_rgba(245,158,11,0.45)]"
              x-data="countdownTimer('{{ $timerTarget->toIso8601String() }}')"
              x-init="start()">
@@ -334,6 +334,7 @@
                 </template>
             </div>
         </div>
+        </template>
     @endif
 
     <!-- Navigation Tabs -->
@@ -341,11 +342,13 @@
         @php
             $tabs = [
                 ['id' => 'overview', 'label' => 'Overview', 'icon' => 'layout-dashboard'],
-                ['id' => 'participants', 'label' => 'Players (' . $tournament->registrations_count . ')', 'icon' => 'users'],
-                ['id' => 'fixtures', 'label' => 'Fixtures', 'icon' => 'list-ordered'],
-                ['id' => 'bracket', 'label' => 'Bracket', 'icon' => 'git-branch'],
-                ['id' => 'activity', 'label' => 'Activity', 'icon' => 'activity'],
             ];
+            if ((int) $tournament->workflow_version === 2 && $isRegistered) {
+                $tabs[] = ['id' => 'submit-results', 'label' => 'Submit Result', 'icon' => 'clipboard-check'];
+            }
+            $tabs[] = ['id' => 'participants', 'label' => 'Players (' . $tournament->registrations_count . ')', 'icon' => 'users'];
+            $tabs[] = ['id' => 'matches', 'label' => 'Fixtures & Bracket', 'icon' => 'git-branch'];
+            $tabs[] = ['id' => 'activity', 'label' => 'Activity', 'icon' => 'activity'];
             // Add team lobby tab for team tournaments with open registration
             $isTeamTournament = ($tournament->team_size ?? 1) > 1;
             $streamItems = $streamService->streamsForTournament($tournament);
@@ -358,15 +361,15 @@
         @endphp
 
         @foreach($tabs as $tab)
-            @php $isRestrictedTab = in_array($tab['id'], ['participants', 'team-lobby', 'fixtures', 'bracket', 'activity'], true); @endphp
+            @php $isRestrictedTab = in_array($tab['id'], ['submit-results', 'participants', 'team-lobby', 'matches', 'activity'], true); @endphp
             <button
                 @if(!$isRestrictedTab || $canViewRestricted)
                     @click="selectTab('{{ $tab['id'] }}')"
-                    :class="activeTab === '{{ $tab['id'] }}' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'"
+                    :class="activeTab === '{{ $tab['id'] }}' ? 'border-violet-400 bg-violet-600 text-white shadow-[0_0_22px_rgba(124,58,237,.35)]' : 'border-transparent text-zinc-500 hover:border-zinc-700 hover:bg-zinc-900 hover:text-zinc-200'"
                 @else
                     disabled title="Only competition participants can view this section"
                 @endif
-                class="flex items-center space-x-1.5 px-4 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap {{ $isRestrictedTab && !$canViewRestricted ? 'opacity-40 cursor-not-allowed text-zinc-600' : '' }}">
+                class="flex items-center space-x-1.5 border px-4 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap {{ $isRestrictedTab && !$canViewRestricted ? 'opacity-40 cursor-not-allowed text-zinc-600' : '' }}">
                 <i data-lucide="{{ $tab['icon'] }}" class="w-3.5 h-3.5"></i>
                 <span>{{ $tab['label'] }}</span>
             </button>
@@ -624,6 +627,25 @@
             </div>
         </div>
 
+        @if((int) $tournament->workflow_version === 2 && $isRegistered)
+            <!-- ===== SUBMIT RESULT TAB ===== -->
+            <div x-show="activeTab === 'submit-results'" x-cloak style="display: none;" class="space-y-6">
+                @if($displayMatch)
+                    <livewire:match.match-detail
+                        :uuid="$displayMatch->uuid"
+                        :embedded="true"
+                        :key="'tournament-match-'.$displayMatch->uuid"
+                    />
+                @else
+                    <div class="rounded-[2rem] border border-zinc-800 bg-zinc-900/40 p-10 text-center">
+                        <i data-lucide="hourglass" class="mx-auto h-10 w-10 text-zinc-700"></i>
+                        <h2 class="mt-4 font-orbitron text-lg font-black uppercase tracking-widest text-white">Waiting for your match</h2>
+                        <p class="mt-2 text-sm text-zinc-500">Your opponent and result form will appear here as soon as your fixture is ready.</p>
+                    </div>
+                @endif
+            </div>
+        @endif
+
         @if($canViewRestricted)
         <!-- ===== PLAYERS TAB ===== -->
         <div x-show="activeTab === 'participants'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
@@ -722,8 +744,19 @@
         </div>
         @endif
 
-        <!-- ===== FIXTURES TAB ===== -->
-        <div x-show="activeTab === 'fixtures'" x-cloak style="display:none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+        <!-- ===== FIXTURES & BRACKET TAB ===== -->
+        <div x-show="activeTab === 'matches'" x-cloak style="display:none;" class="rounded-2xl border border-zinc-800/70 bg-zinc-900/30 p-2">
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" @click="bracketView = 'bracket'" :class="bracketView === 'bracket' ? 'bg-violet-600 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white'" class="rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition">
+                    Bracket
+                </button>
+                <button type="button" @click="bracketView = 'fixtures'" :class="bracketView === 'fixtures' ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white'" class="rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition">
+                    Fixtures
+                </button>
+            </div>
+        </div>
+
+        <div x-show="activeTab === 'matches' && bracketView === 'fixtures'" x-cloak style="display:none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
             <div class="flex items-center justify-between">
                 <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
                     <span class="w-1.5 h-8 bg-indigo-500 rounded-full"></span>
@@ -762,10 +795,14 @@
                                         $playerB = $match->playerBRegistration?->user;
                                         $winnerA = $match->winner_registration_id && $match->winner_registration_id === $match->player_a_registration_id;
                                         $winnerB = $match->winner_registration_id && $match->winner_registration_id === $match->player_b_registration_id;
-                                        $isOngoing = in_array($mStatus, ['ONGOING', 'READY']);
-                                        $isCompleted = in_array($mStatus, ['COMPLETED', 'FORFEITED']);
+                                        $isOngoing = in_array($mStatus, ['in_progress', 'ready', 'result_submitted', 'waiting_for_confirmation', 'disputed']);
+                                        $isCompleted = in_array($mStatus, ['completed', 'forfeited']);
+                                        $viewerIsA = $userRegistration && (int) $match->player_a_registration_id === (int) $userRegistration->id;
+                                        $viewerIsB = $userRegistration && (int) $match->player_b_registration_id === (int) $userRegistration->id;
+                                        $isViewerMatch = $viewerIsA || $viewerIsB;
+                                        $viewerLostThisMatch = $isCompleted && $isViewerMatch && $match->winner_registration_id && (int) $match->winner_registration_id !== (int) $userRegistration->id;
                                     @endphp
-                                    <div class="bg-zinc-900/40 backdrop-blur-md border {{ $isOngoing ? 'border-cyan-500/40 shadow-[0_0_20px_rgba(34,211,238,0.08)]' : ($isCompleted ? 'border-zinc-800/40' : 'border-zinc-800/60') }} rounded-2xl p-5 transition-all duration-300 hover:border-zinc-700">
+                                    <div class="bg-zinc-900/40 backdrop-blur-md border {{ $viewerLostThisMatch ? 'border-rose-500/50 shadow-[0_0_22px_rgba(244,63,94,.12)]' : ($isOngoing ? 'border-cyan-500/40 shadow-[0_0_20px_rgba(34,211,238,0.08)]' : ($isCompleted ? 'border-zinc-800/40' : 'border-zinc-800/60')) }} rounded-2xl p-5 transition-all duration-300 hover:border-zinc-700">
                                         <div class="flex items-center gap-4">
                                             <!-- Match ID & Status -->
                                             <div class="hidden sm:flex flex-col items-center w-16 shrink-0 text-center">
@@ -788,6 +825,8 @@
                                                     @if($winnerA)
                                                         <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Winner</span>
                                                     @endif
+                                                    @if($viewerIsA)<span class="ml-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">You</span>@endif
+                                                    @if($viewerLostThisMatch && $viewerIsA)<span class="ml-1 text-[9px] font-black uppercase tracking-widest text-rose-400">Lost</span>@endif
                                                 </div>
                                                 @if($winnerA)
                                                     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 ml-auto shrink-0"></i>
@@ -811,6 +850,8 @@
                                                     @if($winnerB)
                                                         <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Winner</span>
                                                     @endif
+                                                    @if($viewerIsB)<span class="ml-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">You</span>@endif
+                                                    @if($viewerLostThisMatch && $viewerIsB)<span class="ml-1 text-[9px] font-black uppercase tracking-widest text-rose-400">Lost</span>@endif
                                                 </div>
                                                 <div class="w-9 h-9 bg-zinc-950 rounded-xl border {{ $winnerB ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0">
                                                     <i data-lucide="user" class="w-4 h-4 {{ $winnerB ? 'text-emerald-400' : 'text-zinc-600' }}"></i>
@@ -818,7 +859,11 @@
                                             </div>
 
                                             <!-- Match Link -->
-                                            @if($match->player_a_registration_id || $match->player_b_registration_id)
+                                            @if((int) $tournament->workflow_version === 2 && $isViewerMatch)
+                                                <button type="button" wire:click="openMatch('{{ $match->uuid }}')" aria-label="Open Submit Result" title="Open Submit Result" class="shrink-0 w-9 h-9 flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-cyan-500/40 rounded-xl text-zinc-600 hover:text-cyan-400 transition-all duration-300">
+                                                    <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+                                                </button>
+                                            @elseif((int) $tournament->workflow_version !== 2 && ($match->player_a_registration_id || $match->player_b_registration_id))
                                                 <a href="/matches/{{ $match->uuid }}" wire:navigate aria-label="Open Match Room" title="Open Match Room" class="shrink-0 w-9 h-9 flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-cyan-500/40 rounded-xl text-zinc-600 hover:text-cyan-400 transition-all duration-300">
                                                     <i data-lucide="external-link" class="w-4 h-4"></i>
                                                 </a>
@@ -839,8 +884,7 @@
             @endif
         </div>
 
-        <!-- ===== BRACKET TAB ===== -->
-        <div x-show="activeTab === 'bracket'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="w-full space-y-6">
+        <div x-show="activeTab === 'matches' && bracketView === 'bracket'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="w-full space-y-6">
             @if($rounds->isNotEmpty())
                 <div class="flex items-center justify-between">
                     <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
@@ -888,6 +932,10 @@
                                             $playerBUser = $match->playerBRegistration?->user;
                                             $isPlayerAWinner = $match->winner_registration_id && $match->winner_registration_id === $match->player_a_registration_id;
                                             $isPlayerBWinner = $match->winner_registration_id && $match->winner_registration_id === $match->player_b_registration_id;
+                                            $viewerIsA = $userRegistration && (int) $match->player_a_registration_id === (int) $userRegistration->id;
+                                            $viewerIsB = $userRegistration && (int) $match->player_b_registration_id === (int) $userRegistration->id;
+                                            $isViewerMatch = $viewerIsA || $viewerIsB;
+                                            $viewerLostThisMatch = $isMatchCompleted && $isViewerMatch && $match->winner_registration_id && (int) $match->winner_registration_id !== (int) $userRegistration->id;
                                         @endphp
 
                                         <!-- Match card wrapper for vertical spacing -->
@@ -907,7 +955,7 @@
 
                                             <!-- Match Card -->
                                             <div class="mx-3 w-full">
-                                                <div class="bg-zinc-900/80 backdrop-blur-md border {{ $isMatchOngoing ? 'border-cyan-500/50 shadow-[0_0_20px_rgba(34,211,238,0.12)]' : ($isMatchCompleted ? 'border-zinc-800/50' : 'border-zinc-800') }} rounded-2xl overflow-hidden transition-all duration-300 hover:border-zinc-600 hover:shadow-lg group">
+                                                <div class="bg-zinc-900/80 backdrop-blur-md border {{ $viewerLostThisMatch ? 'border-rose-500/60 shadow-[0_0_24px_rgba(244,63,94,.16)]' : ($isMatchOngoing ? 'border-cyan-500/50 shadow-[0_0_20px_rgba(34,211,238,0.12)]' : ($isMatchCompleted ? 'border-zinc-800/50' : 'border-zinc-800')) }} rounded-2xl overflow-hidden transition-all duration-300 hover:border-zinc-600 hover:shadow-lg group">
                                                     <!-- Match header -->
                                                     <div class="flex items-center justify-between px-3 py-2 border-b border-zinc-800/50 bg-zinc-950/50">
                                                         <span class="text-[8px] font-black text-zinc-700 uppercase tracking-widest">#{{ $match->id }}</span>
@@ -925,6 +973,8 @@
                                                             <span class="text-xs font-bold truncate {{ $isPlayerAWinner ? 'text-emerald-400' : ($playerAUser ? 'text-zinc-200' : 'text-zinc-600 italic') }}" style="max-width: 120px;">
                                                                 {{ $playerAUser?->username ?? 'Waiting...' }}
                                                             </span>
+                                                            @if($viewerIsA)<span class="text-[8px] font-black uppercase text-cyan-400">You</span>@endif
+                                                            @if($viewerLostThisMatch && $viewerIsA)<span class="text-[8px] font-black uppercase text-rose-400">Lost</span>@endif
                                                         </div>
                                                         @if($isPlayerAWinner)
                                                             <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
@@ -945,6 +995,8 @@
                                                             <span class="text-xs font-bold truncate {{ $isPlayerBWinner ? 'text-emerald-400' : ($playerBUser ? 'text-zinc-200' : 'text-zinc-600 italic') }}" style="max-width: 120px;">
                                                                 {{ $playerBUser?->username ?? 'Waiting...' }}
                                                             </span>
+                                                            @if($viewerIsB)<span class="text-[8px] font-black uppercase text-cyan-400">You</span>@endif
+                                                            @if($viewerLostThisMatch && $viewerIsB)<span class="text-[8px] font-black uppercase text-rose-400">Lost</span>@endif
                                                         </div>
                                                         @if($isPlayerBWinner)
                                                             <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
@@ -952,7 +1004,12 @@
                                                     </div>
 
                                                     <!-- Match link -->
-                                                    @if($match->player_a_registration_id || $match->player_b_registration_id)
+                                                    @if((int) $tournament->workflow_version === 2 && $isViewerMatch)
+                                                        <button type="button" wire:click="openMatch('{{ $match->uuid }}')" class="flex w-full items-center justify-center gap-1.5 border-t border-zinc-800/50 bg-zinc-950/40 px-3 py-2 text-[8px] font-black uppercase tracking-widest text-cyan-500 transition hover:bg-zinc-900 hover:text-cyan-300">
+                                                            <span>Submit Result</span>
+                                                            <i data-lucide="clipboard-check" class="w-2.5 h-2.5"></i>
+                                                        </button>
+                                                    @elseif((int) $tournament->workflow_version !== 2 && ($match->player_a_registration_id || $match->player_b_registration_id))
                                                         <a href="/matches/{{ $match->uuid }}" wire:navigate class="flex items-center justify-center gap-1.5 py-2 px-3 bg-zinc-950/40 hover:bg-zinc-900 border-t border-zinc-800/50 text-[8px] font-black text-zinc-600 hover:text-cyan-400 uppercase tracking-widest transition-all duration-200">
                                                             <span>Match Room</span>
                                                             <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
@@ -981,7 +1038,7 @@
                     <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-indigo-950/10 pointer-events-none"></div>
                     <i data-lucide="git-branch" class="w-16 h-16 mx-auto text-zinc-800 mb-6"></i>
                     <h3 class="text-xl font-black text-zinc-400 font-orbitron tracking-widest uppercase">Bracket Not Generated</h3>
-                    <p class="text-sm font-medium text-zinc-600 mt-4 max-w-sm mx-auto leading-relaxed">Brackets and Match Rooms appear automatically after tournament entries lock.</p>
+                    <p class="text-sm font-medium text-zinc-600 mt-4 max-w-sm mx-auto leading-relaxed">Brackets and result submission become available automatically after tournament entries lock.</p>
                 </div>
             @endif
         </div>
@@ -1136,7 +1193,7 @@
                             @error('gameIdValue')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
                             @if(!empty($gameIdSettings['instructions']))<p class="mt-2 text-xs leading-relaxed text-zinc-500">{{ $gameIdSettings['instructions'] }}</p>@endif
                         </div>
-                        <p class="text-xs leading-relaxed text-zinc-500">Your match starts automatically when the tournament begins. Open the Match Room to play and submit your result.</p>
+                        <p class="text-xs leading-relaxed text-zinc-500">Your match starts automatically when the tournament begins. {{ (int) $tournament->workflow_version === 2 ? 'Open Submit Result to play and report your result.' : 'Open the Match Room to play and submit your result.' }}</p>
                         <div class="flex gap-3 pt-2">
                             <button type="button" @click="showJoinModal = false" class="flex-1 rounded-xl border border-zinc-700 px-4 py-3 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800">Cancel</button>
                             <button type="submit" wire:loading.attr="disabled" wire:target="register" class="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 disabled:opacity-60">{{ ($tournament->team_size ?? 1) > 1 ? ($userTournamentTeam || $userSquad ? 'Register Team' : 'Find a Team') : 'Join Tournament' }}</button>
@@ -1206,44 +1263,6 @@
 
     </template>
 
-    <!-- Elimination Modal -->
-    <div x-show="showEliminationModal" 
-         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         x-cloak>
-        <div class="relative bg-zinc-900 border border-red-500/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(239,68,68,0.2)] space-y-6"
-             x-transition:enter="transition ease-out duration-300 transform"
-             x-transition:enter-start="scale-95 translate-y-4"
-             x-transition:enter-end="scale-100 translate-y-0">
-            
-            <div class="mx-auto w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 animate-pulse">
-                <i data-lucide="skull" class="w-8 h-8"></i>
-            </div>
-
-            <div class="text-center space-y-2">
-                <h3 class="text-2xl font-black font-orbitron tracking-widest text-white uppercase">Eliminated</h3>
-                <p class="text-zinc-400 text-sm font-medium leading-relaxed">
-                    You have been knocked out of this tournament. Would you still like to proceed to view the matches and bracket?
-                </p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                <button @click="activeTab = 'overview'; showEliminationModal = false;" 
-                        class="flex-1 py-3 rounded-xl border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-widest transition-all duration-300">
-                    Go Back
-                </button>
-                <button @click="acknowledgedElimination = true; showEliminationModal = false;" 
-                        class="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-[10px] font-black text-white uppercase tracking-widest shadow-[0_10px_20px_-5px_rgba(239,68,68,0.3)] transition-all duration-300">
-                    Continue
-                </button>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>

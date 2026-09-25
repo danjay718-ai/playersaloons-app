@@ -58,7 +58,9 @@ class NotifyParticipantsListener
         $playerBUser = $match->playerBRegistration?->user;
         $playerAUsers = $this->registrationUsers($match->playerARegistration);
         $playerBUsers = $this->registrationUsers($match->playerBRegistration);
-        $matchUrl = "/matches/{$match->uuid}";
+        $matchUrl = (int) $tournament->workflow_version === 2
+            ? "/tournaments/{$tournament->uuid}/view?activeTab=submit-results&match={$match->uuid}"
+            : "/matches/{$match->uuid}";
 
         if ($event instanceof MatchCreated) {
             // Match Ready notification
@@ -73,13 +75,13 @@ class NotifyParticipantsListener
         } elseif ($event instanceof MatchRematchCreated) {
             $message = $event->originalMatchId === $event->rematchMatchId
                 ? "Your match in tournament '{$tournament->name}' has been reset for a rematch. Play again and submit a new result."
-                : "A rematch has been scheduled in tournament '{$tournament->name}'. Open the new Match Room, play again, and submit a new result.";
+                : "A rematch has been scheduled in tournament '{$tournament->name}'. Open Submit Result, play again, and report a new result.";
             foreach ($playerAUsers->merge($playerBUsers)->unique('id') as $recipient) {
                 $this->notificationService->send($recipient, 'match_rematch', 'Rematch Required', $message, $matchUrl);
             }
         } elseif ($event instanceof MatchStarted) {
             foreach ($playerAUsers->merge($playerBUsers)->unique('id') as $recipient) {
-                $this->notificationService->send($recipient, 'match_started', 'Match Started', "Your match in tournament '{$tournament->name}' has started. Open the Match Room now.", $matchUrl);
+                $this->notificationService->send($recipient, 'match_started', 'Match Started', "Your match in tournament '{$tournament->name}' has started. Open Submit Result now.", $matchUrl);
             }
         } elseif ($event instanceof MatchResultSubmitted) {
             $opponents = $match->playerARegistration?->includesUser($event->submittedByUserId) ? $playerBUsers : $playerAUsers;

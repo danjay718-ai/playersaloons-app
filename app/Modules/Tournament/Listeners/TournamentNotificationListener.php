@@ -81,12 +81,15 @@ class TournamentNotificationListener
 
         // The legacy check-in state now represents automatic entry locking.
         foreach ($this->registeredUsers($tournament) as $user) {
+            $isV2 = (int) $tournament->workflow_version === 2;
             $this->notificationService->send(
                 $user,
                 'tournament_entries_locked',
                 'Tournament Entry Locked',
-                "Your entry for '{$tournament->name}' is secured. Match Rooms are now being prepared.",
-                "/tournaments/{$tournament->uuid}/view",
+                $isV2
+                    ? "Your entry for '{$tournament->name}' is secured. Your Submit Result view is being prepared."
+                    : "Your entry for '{$tournament->name}' is secured. Match Rooms are now being prepared.",
+                "/tournaments/{$tournament->uuid}/view".($isV2 ? '?activeTab=submit-results' : ''),
             );
         }
     }
@@ -103,12 +106,15 @@ class TournamentNotificationListener
 
         // Send started notification to all participants/registered users
         foreach ($this->registeredUsers($tournament) as $user) {
+            $isV2 = (int) $tournament->workflow_version === 2;
             $this->notificationService->send(
                 $user,
                 'tournament_started',
                 'Tournament Started',
-                "Tournament '{$tournament->name}' has started. Open your Match Room for current instructions.",
-                "/tournaments/{$tournament->uuid}/view",
+                $isV2
+                    ? "Tournament '{$tournament->name}' has started. Open Submit Result for your current match."
+                    : "Tournament '{$tournament->name}' has started. Open your Match Room for current instructions.",
+                "/tournaments/{$tournament->uuid}/view".($isV2 ? '?activeTab=submit-results' : ''),
             );
         }
     }

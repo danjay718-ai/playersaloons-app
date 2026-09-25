@@ -54,7 +54,7 @@ final class V2StalledMatchService
 
             foreach ([$match->playerARegistration?->user, $match->playerBRegistration?->user] as $user) {
                 if ($user !== null) {
-                    $this->notifications->send($user, 'last_match_timer', 'Final unresolved match timer', 'This is the final unresolved match in the round. Submit a valid result within 30 minutes.', "/matches/{$match->uuid}");
+                    $this->notifications->send($user, 'last_match_timer', 'Final unresolved match timer', 'This is the final unresolved match in the round. Submit a valid result within 30 minutes.', "/tournaments/{$match->tournament->uuid}/view?activeTab=submit-results&match={$match->uuid}");
                 }
             }
 
@@ -211,7 +211,7 @@ final class V2StalledMatchService
 
         foreach ([$match->playerARegistration?->user, $match->playerBRegistration?->user] as $user) {
             if ($user !== null) {
-                $this->notifications->send($user, 'final_awaiting_results', 'Final remains ongoing', 'The final remains open for valid result submissions. If unresolved 24 hours after the occurrence ends, an administrator must resolve it.', "/matches/{$match->uuid}");
+                $this->notifications->send($user, 'final_awaiting_results', 'Final remains ongoing', 'The final remains open for valid result submissions. If unresolved 24 hours after the occurrence ends, an administrator must resolve it.', "/tournaments/{$match->tournament->uuid}/view?activeTab=submit-results&match={$match->uuid}");
             }
         }
     }

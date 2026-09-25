@@ -6,7 +6,7 @@
                 MY GAMES
             </h1>
             <p class="text-sm text-zinc-400 mt-2 font-medium">
-                Track your tournaments, head-to-head matches, Match Rooms, and completed results.
+                Track your tournaments, head-to-head matches, result submissions, and completed results.
             </p>
         </div>
     </div>
@@ -45,12 +45,12 @@
     @if($tSubTab === 'active')
         @if($activeMatchRooms->isNotEmpty() || $activeHeadToHeadMatches->isNotEmpty())
             <section class="player-match-rooms rounded-2xl border border-cyan-500/25 bg-cyan-500/5 p-4 sm:p-5">
-                <div class="mb-3 flex items-center gap-2"><i data-lucide="swords" class="h-4 w-4 text-cyan-300"></i><h2 class="text-xs font-black uppercase tracking-widest text-white">Your Match Rooms</h2></div>
+                <div class="mb-3 flex items-center gap-2"><i data-lucide="swords" class="h-4 w-4 text-cyan-300"></i><h2 class="text-xs font-black uppercase tracking-widest text-white">Your Matches</h2></div>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach($activeMatchRooms as $match)
-                        <a href="/matches/{{ $match->uuid }}" wire:navigate wire:key="match-room-{{ $match->uuid }}" class="player-match-room-link flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3 transition hover:border-cyan-500/40">
+                        <a href="{{ (int) $match->tournament->workflow_version === 2 ? '/tournaments/'.$match->tournament->uuid.'/view?activeTab=submit-results&match='.$match->uuid : '/matches/'.$match->uuid }}" wire:navigate wire:key="match-room-{{ $match->uuid }}" class="player-match-room-link flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3 transition hover:border-cyan-500/40">
                             <div class="min-w-0"><p class="truncate text-xs font-bold text-zinc-100">{{ $match->tournament->name }}</p><p class="mt-1 text-[9px] font-black uppercase tracking-wider text-cyan-400">{{ str_replace('_', ' ', $match->status->value) }}</p></div>
-                            <span class="shrink-0 text-[9px] font-black uppercase text-cyan-300">Open →</span>
+                            <span class="shrink-0 text-[9px] font-black uppercase text-cyan-300">{{ (int) $match->tournament->workflow_version === 2 ? 'Submit Result' : 'Open' }} →</span>
                         </a>
                     @endforeach
                     @foreach($activeHeadToHeadMatches as $match)

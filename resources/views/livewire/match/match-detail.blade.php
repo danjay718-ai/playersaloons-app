@@ -8,7 +8,7 @@
             </span>
             <div>
                 <p class="text-xs font-black uppercase tracking-wider text-rose-200">Defeated</p>
-                <p class="mt-1 text-sm leading-relaxed">You were defeated in this match. Your tournament progress and earned XP are available on the tournament overview.</p>
+                <p class="mt-1 text-sm leading-relaxed">{{ $defeatMessage ?? 'You were defeated in this match.' }}</p>
                 @if($defeatXp > 0)
                     <p class="mt-2 text-sm font-bold text-amber-300">+{{ number_format($defeatXp) }} XP earned</p>
                 @else
@@ -23,13 +23,15 @@
         <i data-lucide="gamepad-2" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <a href="/tournaments/{{ $match->tournament->uuid }}/view" wire:navigate class="inline-flex items-center gap-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs font-bold text-violet-300 transition-colors hover:bg-violet-500/20 uppercase tracking-wider">
-                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-                    <span>Return to Tournament</span>
-                </a>
+                @unless($embedded)
+                    <a href="/tournaments/{{ $match->tournament->uuid }}/view" wire:navigate class="inline-flex items-center gap-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs font-bold text-violet-300 transition-colors hover:bg-violet-500/20 uppercase tracking-wider">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                        <span>Return to Tournament</span>
+                    </a>
+                @endunless
                 <p class="mt-2 text-xs font-semibold text-zinc-400">{{ $match->tournament->name }}</p>
                 <h1 class="text-2xl md:text-3xl font-black font-orbitron tracking-wider text-white mt-1.5 uppercase">
-                    MATCH ROOM
+                    {{ $embedded ? 'SUBMIT RESULT' : 'MATCH ROOM' }}
                 </h1>
                 <p class="text-xs text-zinc-500 mt-0.5">
                     Round {{ $match->round->round_number }} • Match #{{ $match->id }}
@@ -247,13 +249,21 @@
                 @elseif(((int) $match->tournament->workflow_version === 2 && in_array($statusVal, ['in_progress', 'waiting_for_confirmation']) && !$isSubmitter) || ((int) $match->tournament->workflow_version !== 2 && $statusVal === 'in_progress'))
                     <form wire:submit.prevent="submitResult" class="space-y-4">
                         @if((int) $match->tournament->workflow_version === 2 && $statusVal === 'waiting_for_confirmation')
-                            <div role="alert" class="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100">
+                            <div role="alert" class="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100"
+                                 x-data="{
+                                     endTime: new Date('{{ $activeAttempt?->result_deadline_at?->toIso8601String() ?? '' }}').getTime(),
+                                     timeLeft: 0,
+                                     init() { this.updateTimer(); setInterval(() => this.updateTimer(), 1000); },
+                                     updateTimer() { this.timeLeft = Math.max(0, Math.ceil((this.endTime - Date.now()) / 1000)); },
+                                     formatTime(seconds) { return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; }
+                                 }">
                                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-300">
                                     <i data-lucide="triangle-alert" class="h-5 w-5"></i>
                                 </span>
-                                <div>
+                                <div class="min-w-0 flex-1">
                                     <p class="text-xs font-black uppercase tracking-wider text-amber-200">Opponent result reported</p>
-                                    <p class="mt-1 text-sm leading-relaxed">Your opponent has reported a result. Report your result on time to avoid an automatic loss.</p>
+                                    <p class="mt-1 text-sm leading-relaxed">Your opponent submitted a result. You have {{ max(1, (int) ($match->tournament->waiting_result_time ?: 5)) }} minutes to report your result.</p>
+                                <p data-testid="result-deadline-timer" class="mt-2 font-orbitron text-xl font-black text-amber-300" x-text="formatTime(timeLeft)"></p>
                                 </div>
                             </div>
                         @endif

@@ -103,6 +103,7 @@ final class PlayerDashboardService
                 return [
                     'uuid' => $match->uuid,
                     'tournament_uuid' => $match->tournament->uuid,
+                    'workflow_version' => (int) $match->tournament->workflow_version,
                     'tournament' => $match->tournament->name,
                     'game' => $match->tournament->game?->localizedName() ?? 'Game',
                     'status' => str_replace('_', ' ', $status),

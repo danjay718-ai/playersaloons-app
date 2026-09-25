@@ -324,7 +324,9 @@ class MyTournamentsList extends Component
                 'round' => $match->round?->round_number, 'status' => $match->status->value,
                 'result' => $match->winner_registration_id ? ((int) $match->winner_registration_id === (int) $userSide?->id ? 'won' : 'lost') : 'closed',
                 'date' => $match->completed_at ?? $match->updated_at,
-                'href' => '/matches/'.$match->uuid,
+                'href' => (int) $match->tournament->workflow_version === 2
+                    ? "/tournaments/{$match->tournament->uuid}/view?activeTab=submit-results&match={$match->uuid}"
+                    : '/matches/'.$match->uuid,
                 'tournament' => $match->tournament->name,
             ];
         })->filter()->values());

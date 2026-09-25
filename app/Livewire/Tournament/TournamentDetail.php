@@ -45,6 +45,9 @@ class TournamentDetail extends Component
     #[Url]
     public string $activeTab = 'overview';
 
+    #[Url(as: 'match')]
+    public string $selectedMatchUuid = '';
+
     /** Public discovery links must not unexpectedly switch into the player shell. */
     #[Url(as: 'view')]
     public string $viewMode = '';
@@ -61,6 +64,10 @@ class TournamentDetail extends Component
     public function mount(string $uuid): void
     {
         $this->uuid = $uuid;
+
+        if (in_array($this->activeTab, ['fixtures', 'bracket'], true)) {
+            $this->activeTab = 'matches';
+        }
 
         $user = Auth::user();
         if ($user && $this->viewMode !== 'guest' && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
@@ -104,7 +111,7 @@ class TournamentDetail extends Component
     {
         $section = match ($tab) {
             'participants', 'team-lobby' => 'participants',
-            'fixtures', 'bracket' => 'bracket',
+            'matches', 'fixtures', 'bracket' => 'bracket',
             'activity' => 'activity',
             default => null,
         };
@@ -112,6 +119,38 @@ class TournamentDetail extends Component
         if ($section !== null) {
             $this->loadedSections[$section] = true;
         }
+    }
+
+    public function openMatch(string $matchUuid): void
+    {
+        $user = Auth::user();
+        abort_if($user === null, 403);
+
+        $tournament = $this->getTournamentQuery()
+            ->where('uuid', $this->uuid)
+            ->firstOrFail(['id', 'workflow_version']);
+        abort_unless((int) $tournament->workflow_version === 2, 404);
+
+        $registration = TournamentRegistration::query()
+            ->where('tournament_id', $tournament->id)
+            ->where(function ($query) use ($user): void {
+                $query->where('user_id', $user->id)
+                    ->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
+            })
+            ->whereNotIn('status', [RegistrationStatus::CANCELLED, RegistrationStatus::REFUNDED])
+            ->firstOrFail(['id']);
+
+        GameMatch::query()
+            ->where('tournament_id', $tournament->id)
+            ->where('uuid', $matchUuid)
+            ->where(function ($query) use ($registration): void {
+                $query->where('player_a_registration_id', $registration->id)
+                    ->orWhere('player_b_registration_id', $registration->id);
+            })
+            ->firstOrFail(['id']);
+
+        $this->selectedMatchUuid = $matchUuid;
+        $this->activeTab = 'submit-results';
     }
 
     public function register(RegisterForTournamentAction $action, RegisterForV2TournamentAction $v2Action, FindTournamentTeamAction $findTeam)
@@ -354,10 +393,11 @@ class TournamentDetail extends Component
         $hasLost = false;
         $defeatXp = 0;
         $currentMatch = null;
+        $displayMatch = null;
         if ($user && $userRegistration) {
             // Always expose the participant's actionable match on the overview.
             // Bracket data remains lazy-loaded, so this focused indexed lookup
-            // avoids loading every round just to provide the Match Room link.
+            // avoids loading every round just to provide the result submission link.
             $currentMatch = GameMatch::query()
                 ->where('tournament_id', $tournament->id)
                 ->where(function ($query) use ($userRegistration): void {
@@ -374,6 +414,22 @@ class TournamentDetail extends Component
                 ->with('round:id,round_number')
                 ->latest('updated_at')
                 ->first(['id', 'uuid', 'round_id', 'status', 'updated_at']);
+
+            $participantMatches = GameMatch::query()
+                ->where('tournament_id', $tournament->id)
+                ->where(function ($query) use ($userRegistration): void {
+                    $query->where('player_a_registration_id', $userRegistration->id)
+                        ->orWhere('player_b_registration_id', $userRegistration->id);
+                });
+            if ($this->selectedMatchUuid !== '') {
+                $displayMatch = (clone $participantMatches)
+                    ->where('uuid', $this->selectedMatchUuid)
+                    ->first(['id', 'uuid', 'status', 'updated_at']);
+            }
+            $displayMatch ??= $currentMatch;
+            $displayMatch ??= (clone $participantMatches)
+                ->latest('updated_at')
+                ->first(['id', 'uuid', 'status', 'updated_at']);
 
             $hasLost = GameMatch::where('tournament_id', $tournament->id)
                 ->where(function ($query) use ($userRegistration) {
@@ -458,6 +514,7 @@ class TournamentDetail extends Component
             'hasLost' => $hasLost,
             'defeatXp' => $defeatXp,
             'currentMatch' => $currentMatch,
+            'displayMatch' => $displayMatch,
             'streamService' => $streamService,
             'canCancelRegistration' => $canCancelRegistration,
             'canViewRestricted' => $canViewRestricted,

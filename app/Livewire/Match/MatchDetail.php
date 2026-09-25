@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Match;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
+use App\Modules\Identity\Models\PlayerDisputeStrike;
 use App\Modules\Identity\Models\PlayerExperienceAward;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
@@ -35,6 +36,8 @@ class MatchDetail extends Component
     use WithFileUploads;
 
     public string $uuid;
+
+    public bool $embedded = false;
 
     public ?int $winnerRegistrationId = null;
 
@@ -106,13 +109,24 @@ class MatchDetail extends Component
         }
     }
 
-    public function mount(string $uuid): void
+    public function mount(string $uuid, bool $embedded = false): void
     {
         $this->uuid = $uuid;
-        $match = GameMatch::query()->where('uuid', $uuid)->with('tournament:id,workflow_version')->firstOrFail([
-            'id', 'tournament_id', 'lobby_code', 'lobby_password', 'server_region', 'lobby_instructions',
+        $this->embedded = $embedded;
+        $match = GameMatch::query()->where('uuid', $uuid)->with('tournament:id,uuid,workflow_version')->firstOrFail([
+            'id', 'uuid', 'tournament_id', 'lobby_code', 'lobby_password', 'server_region', 'lobby_instructions',
         ]);
         abort_if((int) $match->tournament->workflow_version === 2 && ! config('features.tournament_v2.enabled'), 404);
+        if (! $this->embedded && (int) $match->tournament->workflow_version === 2) {
+            $tournamentUrl = route('tournaments.view', ['uuid' => $match->tournament->uuid])
+                .'?'.http_build_query([
+                    'activeTab' => 'submit-results',
+                    'match' => $match->uuid,
+                ]);
+            $this->redirect($tournamentUrl, navigate: true);
+
+            return;
+        }
         $this->lobbyCode = (string) ($match->lobby_code ?? '');
         $this->lobbyPassword = (string) ($match->lobby_password ?? '');
         $this->serverRegion = (string) ($match->server_region ?? '');
@@ -451,6 +465,21 @@ class MatchDetail extends Component
                 ->where('source_id', $match->tournament_id)
                 ->sum('amount')
             : 0;
+        $defeatMessage = null;
+        if ($isDefeated && $viewerRegistration !== null) {
+            $responseMinutes = max(1, (int) ($match->tournament->waiting_result_time ?: 5));
+            $hasDishonestyStrike = PlayerDisputeStrike::query()
+                ->where('match_id', $match->id)
+                ->where('user_id', $user->id)
+                ->exists();
+            $defeatMessage = match (true) {
+                $match->resolution_reason === 'confirmed_submissions' => 'You lost because both submitted results confirmed your opponent as the winner.',
+                $match->resolution_reason === 'opponent_submission_timeout' => "You lost because you did not report your result within {$responseMinutes} minutes after your opponent submitted.",
+                $match->resolution_reason === 'admin_resolution' && $hasDishonestyStrike => 'You lost after an admin confirmed dishonest result information or evidence during the dispute review.',
+                $match->resolution_reason === 'admin_resolution' => 'You lost after an admin resolved the dispute in your opponent\'s favor.',
+                default => 'You lost because your opponent was confirmed as the winner of this match.',
+            };
+        }
 
         $activeDispute = $match->disputes->first(fn ($dispute) => $dispute->status !== DisputeStatus::RESOLVED);
         $hasSubmittedDisputeEvidence = $activeDispute !== null && $user !== null
@@ -467,17 +496,22 @@ class MatchDetail extends Component
         $isAdmin = Auth::check() && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
         $layout = $isAdmin ? 'components.layouts.admin' : 'components.layouts.dashboard';
 
-        return view('livewire.match.match-detail', [
+        $view = view('livewire.match.match-detail', [
             'match' => $match,
             'isParticipant' => $isParticipant,
             'isDefeated' => $isDefeated,
             'defeatXp' => $defeatXp,
+            'defeatMessage' => $defeatMessage,
             'isSubmitter' => $isSubmitter,
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
             'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,
             'isResultConflict' => $isResultConflict,
             'activeAttempt' => $activeAttempt,
-        ])->layout($layout, ['title' => 'Match Room | GamersRival', 'dashboard_title' => 'MATCH ROOM']);
+        ]);
+
+        return $this->embedded
+            ? $view
+            : $view->layout($layout, ['title' => 'Match Room | GamersRival', 'dashboard_title' => 'MATCH ROOM']);
     }
 }

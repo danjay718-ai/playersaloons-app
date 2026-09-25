@@ -125,7 +125,7 @@ class PlayerTournamentComponentsTest extends TestCase
         $this->assertSame('confirmed', $registration->fresh()->status->value);
     }
 
-    public function test_elimination_modal_shows_on_lost_match(): void
+    public function test_lost_match_shows_inline_defeat_summary_without_modal(): void
     {
         $tournament = $this->makeTournament('Elimination Cup', TournamentStatus::ONGOING);
         [$playerRegistration, $opponentRegistration] = $this->registerPlayers($tournament);
@@ -141,11 +141,10 @@ class PlayerTournamentComponentsTest extends TestCase
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
-            ->assertSeeHtml('hasLost: true')
-            ->assertSeeHtml("value === 'bracket' && hasLost && !acknowledgedElimination")
-            ->assertSee('Eliminated')
             ->assertSee('Defeated')
             ->assertSee('+10 XP earned')
+            ->assertDontSee('You have been knocked out of this tournament')
+            ->assertDontSeeHtml('showEliminationModal')
             ->assertDontSee('Reservation Confirmed')
             ->assertDontSee('Cancellation Details');
     }
@@ -167,14 +166,14 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertSee('No public streams for this game yet.');
     }
 
-    public function test_elimination_modal_does_not_show_if_not_lost(): void
+    public function test_elimination_modal_is_not_rendered_for_active_player(): void
     {
         $tournament = $this->makeTournament('Active Cup', TournamentStatus::ONGOING);
         $this->registerPlayers($tournament);
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
-            ->assertSeeHtml('hasLost: false');
+            ->assertDontSeeHtml('showEliminationModal');
     }
 
     public function test_ongoing_participant_sees_direct_match_room_action(): void
@@ -212,25 +211,38 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertDontSee('Fin.');
     }
 
-    public function test_elimination_modal_go_back_resets_tab(): void
+    public function test_combined_match_view_defaults_to_bracket(): void
     {
         $tournament = $this->makeTournament('Go Back Cup', TournamentStatus::ONGOING);
         $this->registerPlayers($tournament);
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
-            ->assertSeeHtml("@click=\"activeTab = 'overview'; showEliminationModal = false;\"");
+            ->assertSeeHtml("bracketView: 'bracket'")
+            ->assertSee('Fixtures & Bracket');
     }
 
-    public function test_elimination_modal_continue_stays_on_matches(): void
+    public function test_tournament_timer_target_is_preserved_during_tab_updates(): void
+    {
+        $tournament = $this->makeTournament('Persistent Timer Cup', TournamentStatus::REGISTRATION_OPEN);
+        $tournament->update(['registration_close_at' => now()->addHour()]);
+
+        Livewire::actingAs($this->player)
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSeeHtml('id="tournament-top-timer" wire:ignore')
+            ->set('activeTab', 'overview')
+            ->assertSeeHtml('id="tournament-top-timer" wire:ignore');
+    }
+
+    public function test_combined_match_view_has_bracket_and_fixture_controls(): void
     {
         $tournament = $this->makeTournament('Continue Cup', TournamentStatus::ONGOING);
         $this->registerPlayers($tournament);
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
-            ->assertSeeHtml('@click="acknowledgedElimination = true; showEliminationModal = false;"')
-            ->assertDontSeeHtml("acknowledgedElimination = true; activeTab = 'overview'");
+            ->assertSeeHtml("@click=\"bracketView = 'bracket'\"")
+            ->assertSeeHtml("@click=\"bracketView = 'fixtures'\"");
     }
 
     public function test_stats_banner_calculation(): void

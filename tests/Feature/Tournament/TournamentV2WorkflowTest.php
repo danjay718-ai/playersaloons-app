@@ -633,7 +633,7 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(2, $match->fresh()->active_attempt_number);
         self::assertSame(MatchStatus::IN_PROGRESS, $match->fresh()->status);
         Livewire::actingAs($p1)
-            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
             ->assertSee('This is a rematch — play again')
             ->assertSee('The previous attempt ended without a winner. Play this rematch and submit a new result.')
             ->assertDontSee('Ready confirmed — play now');
@@ -644,6 +644,56 @@ final class TournamentV2WorkflowTest extends TestCase
         $submit->execute($match->fresh(), $p2->id, MatchOutcome::LOSS);
         self::assertSame(MatchStatus::COMPLETED, $match->fresh()->status);
         self::assertSame(2, $match->attempts()->count());
+    }
+
+    public function test_standalone_v2_match_room_redirects_to_the_exact_tournament_match(): void
+    {
+        [$match, $player] = $this->activeTwoPlayerMatch();
+
+        Livewire::actingAs($player)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->assertRedirect(route('tournaments.view', ['uuid' => $match->tournament->uuid])
+                .'?'.http_build_query([
+                    'activeTab' => 'submit-results',
+                    'match' => $match->uuid,
+                ]));
+    }
+
+    public function test_v2_participant_can_submit_results_inside_the_tournament_view(): void
+    {
+        [$match, $player] = $this->activeTwoPlayerMatch();
+
+        Livewire::actingAs($player)
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee('Submit Result')
+            ->assertSee('Submit Match Results')
+            ->assertSee($match->uuid, escape: false)
+            ->assertDontSee('MATCH ROOM')
+            ->call('openMatch', $match->uuid)
+            ->assertSet('activeTab', 'submit-results')
+            ->assertSet('selectedMatchUuid', $match->uuid);
+    }
+
+    public function test_non_participant_does_not_get_the_v2_submit_result_tab(): void
+    {
+        [$match] = $this->activeTwoPlayerMatch();
+        $outsider = $this->user('result-outsider@example.com', 'resultoutsider', 'PLAYER');
+
+        Livewire::actingAs($outsider)
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertDontSeeHtml("selectTab('submit-results')")
+            ->assertDontSee('Submit Match Results');
+    }
+
+    public function test_opponent_submission_warning_and_deadline_are_visible_in_tournament_view(): void
+    {
+        [$match, $firstPlayer, $respondingPlayer] = $this->activeTwoPlayerMatch();
+        app(SubmitV2MatchResultAction::class)->execute($match, $firstPlayer->id, MatchOutcome::WIN);
+
+        Livewire::actingAs($respondingPlayer)
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee('Your opponent submitted a result. You have 5 minutes to report your result.')
+            ->assertSeeHtml('result-deadline-timer');
     }
 
     public function test_v2_matches_cannot_be_forfeited(): void
@@ -663,7 +713,7 @@ final class TournamentV2WorkflowTest extends TestCase
         $submit = app(SubmitV2MatchResultAction::class);
         $submit->execute($match, $p1->id, MatchOutcome::WIN);
         Livewire::actingAs($p2)
-            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
             ->set('resultOutcome', 'win')
             ->call('submitResult')
             ->assertHasNoErrors()
@@ -678,7 +728,7 @@ final class TournamentV2WorkflowTest extends TestCase
 
         foreach ([$p1, $p2] as $player) {
             Livewire::actingAs($player)
-                ->test(MatchDetail::class, ['uuid' => $match->uuid])
+                ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
                 ->assertSee('Result conflict detected')
                 ->assertSee('Submit dispute details')
                 ->assertDontSee('Disputes (')
@@ -726,7 +776,7 @@ final class TournamentV2WorkflowTest extends TestCase
 
     public function test_first_submitter_wins_after_five_minute_non_response_even_when_reporting_loss(): void
     {
-        [$match, $p1] = $this->activeTwoPlayerMatch();
+        [$match, $p1, $p2] = $this->activeTwoPlayerMatch();
         app(SubmitV2MatchResultAction::class)->execute($match, $p1->id, MatchOutcome::LOSS);
         $this->travelTo(now()->addMinutes(5)->addSecond());
 
@@ -737,6 +787,10 @@ final class TournamentV2WorkflowTest extends TestCase
             ? $match->player_a_registration_id
             : $match->player_b_registration_id, $match->fresh()->winner_registration_id);
         self::assertSame('opponent_submission_timeout', $match->fresh()->resolution_reason);
+
+        Livewire::actingAs($p2)
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee('You lost because you did not report your result within 5 minutes after your opponent submitted.');
     }
 
     public function test_first_submission_queues_exact_timeout_and_rejects_a_response_at_the_deadline(): void
@@ -1029,12 +1083,12 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertNotNull($match->player_b_ready_at);
 
         Livewire::actingAs($p1)
-            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
             ->assertDontSee("I'm Here")
             ->assertSee('Submit Match Results');
 
         Livewire::actingAs($p2)
-            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
             ->assertDontSee("I'm Here")
             ->assertSee('Submit Match Results');
     }
