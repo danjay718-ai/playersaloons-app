@@ -49,6 +49,12 @@ class GameShow extends Component
     #[Url]
     public string $frequency = '';
 
+    #[Url]
+    public string $maxTeams = '';
+
+    #[Url]
+    public string $customMaxTeams = '';
+
     public function mount(Game $game): void
     {
         abort_unless($game->is_active, 404);
@@ -57,7 +63,7 @@ class GameShow extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['tournamentStatus', 'search', 'startDate', 'platformId', 'competitionType', 'frequency'], true)) {
+        if (in_array($property, ['tournamentStatus', 'search', 'startDate', 'platformId', 'competitionType', 'frequency', 'maxTeams', 'customMaxTeams'], true)) {
             $this->resetPage();
         }
     }
@@ -82,19 +88,18 @@ class GameShow extends Component
                 ->limit(4)
                 ->get()
             : collect();
-        $tournaments = ! $usesV2Discovery && $this->activeTab === 'browse'
-            ? $this->filteredTournamentQuery()->paginate(12)
+        $tournaments = $this->activeTab === 'browse'
+            ? ($usesV2Discovery
+                ? $discovery->paginateOccurrences($this->tournamentStatus, $this->discoveryFilters(), 9)
+                : $this->filteredTournamentQuery()->paginate(9))
             : null;
-        $tournamentGroups = $usesV2Discovery && $this->activeTab === 'browse'
-            ? $discovery->paginate($this->tournamentStatus, $this->discoveryFilters(), 12)
-            : null;
-        $featuredGroups = $usesV2Discovery && $this->activeTab === 'browse'
-            ? $discovery->paginate('upcoming', [
+        $featured = $usesV2Discovery && $this->activeTab === 'browse'
+            ? $discovery->paginateOccurrences('upcoming', [
                 'game_id' => (string) $this->game->id,
                 'competition_type' => $this->competitionType ?: 'tournament',
                 'frequency' => $this->frequency,
-            ], 4, true)
-            : null;
+            ], 4, true, 'featuredPage')
+            : $featured;
 
         $streams = StreamChannel::query()
             ->with(['user.profile', 'tournament'])
@@ -120,9 +125,9 @@ class GameShow extends Component
 
         $view = view('livewire.game.game-show', [
             'featuredTournaments' => $featured,
-            'featuredGroups' => $featuredGroups,
+            'featuredGroups' => null,
             'tournaments' => $tournaments,
-            'tournamentGroups' => $tournamentGroups,
+            'tournamentGroups' => null,
             'streams' => $streams,
             'platforms' => $platforms,
             'publicView' => $this->viewMode === 'guest',
@@ -145,6 +150,7 @@ class GameShow extends Component
             'platform_id' => $this->platformId,
             'competition_type' => $this->competitionType ?: 'tournament',
             'frequency' => $this->frequency,
+            'max_teams' => $this->competitionType === 'head_to_head' ? '' : (string) ($this->selectedMaxTeams() ?? ''),
         ];
     }
 
@@ -157,6 +163,7 @@ class GameShow extends Component
             ->when($this->platformId !== '', fn ($query) => $query->where('platform_id', $this->platformId))
             ->where('competition_type', $this->competitionType ?: 'tournament')
             ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency))
+            ->when($this->competitionType !== 'head_to_head' && $this->selectedMaxTeams() !== null, fn ($query) => $query->where('max_participants', $this->selectedMaxTeams()))
             ->when($this->tournamentStatus === 'past', fn ($query) => $query->orderByDesc('completed_at'), fn ($query) => $query->orderBy('start_at'));
     }
 
@@ -166,6 +173,18 @@ class GameShow extends Component
             ->where('game_id', $this->game->getKey())
             ->with(['game.translations', 'platform'])
             ->withCount(['registrations' => fn ($query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])]);
+    }
+
+    private function selectedMaxTeams(): ?int
+    {
+        $value = $this->maxTeams === 'custom' ? $this->customMaxTeams : $this->maxTeams;
+        if ($value === '' || ! ctype_digit($value)) {
+            return null;
+        }
+
+        $maximum = (int) $value;
+
+        return $maximum >= 2 && $maximum <= 128 && $maximum % 2 === 0 ? $maximum : null;
     }
 
     private function activeCompetitionCount(): int

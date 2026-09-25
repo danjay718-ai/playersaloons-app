@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Builder;
 final class V2TournamentDiscoveryService
 {
     /**
-     * @param  array{search?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,team_format?: string,start_date?: string}  $filters
+     * @param  array{search?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,max_teams?: string,start_date?: string}  $filters
      */
     public function paginateOccurrences(
         string $tab,
@@ -44,7 +44,7 @@ final class V2TournamentDiscoveryService
     }
 
     /**
-     * @param  array{search?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,team_format?: string,start_date?: string}  $filters
+     * @param  array{search?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,max_teams?: string,start_date?: string}  $filters
      */
     public function paginate(string $tab, array $filters, int $perPage = 12, bool $featuredOnly = false): LengthAwarePaginator
     {
@@ -120,10 +120,8 @@ final class V2TournamentDiscoveryService
         if (($filters['platform_id'] ?? '') !== '') {
             $query->forPlatform((int) $filters['platform_id']);
         }
-        if (($filters['team_format'] ?? '') === 'solo') {
-            $query->where('team_size', 1);
-        } elseif (($filters['team_format'] ?? '') === 'team') {
-            $query->where('team_size', '>', 1);
+        if (($filters['max_teams'] ?? '') !== '') {
+            $query->where('max_participants', (int) $filters['max_teams']);
         }
 
         return $query;

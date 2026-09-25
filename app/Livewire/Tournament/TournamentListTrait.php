@@ -35,7 +35,10 @@ trait TournamentListTrait
     public string $platformId = '';
 
     #[Url]
-    public string $teamFormat = '';
+    public string $maxTeams = '';
+
+    #[Url]
+    public string $customMaxTeams = '';
 
     public string $gameSearch = '';
 
@@ -71,7 +74,12 @@ trait TournamentListTrait
         $this->resetPage();
     }
 
-    public function updatedTeamFormat(): void
+    public function updatedMaxTeams(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCustomMaxTeams(): void
     {
         $this->resetPage();
     }
@@ -112,10 +120,8 @@ trait TournamentListTrait
             $query->forPlatform((int) $this->platformId);
         }
 
-        if ($this->teamFormat === 'solo') {
-            $query->where('team_size', 1);
-        } elseif ($this->teamFormat === 'team') {
-            $query->where('team_size', '>', 1);
+        if ($this->competitionType !== 'head_to_head' && ($maxTeams = $this->selectedMaxTeams()) !== null) {
+            $query->where('max_participants', $maxTeams);
         }
 
         return $this->activeTab === 'past'
@@ -204,5 +210,17 @@ trait TournamentListTrait
         if (! config('features.tournament_v2.enabled')) {
             $query->where('workflow_version', 1);
         }
+    }
+
+    protected function selectedMaxTeams(): ?int
+    {
+        $value = $this->maxTeams === 'custom' ? $this->customMaxTeams : $this->maxTeams;
+        if ($value === '' || ! ctype_digit($value)) {
+            return null;
+        }
+
+        $maximum = (int) $value;
+
+        return $maximum >= 2 && $maximum <= 128 && $maximum % 2 === 0 ? $maximum : null;
     }
 }

@@ -3,9 +3,8 @@
  */
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
-import { tournamentCountdown, tournamentSlotPicker } from './slot-picker';
+import { tournamentCountdown } from './slot-picker';
 
-window.tournamentSlotPicker = tournamentSlotPicker;
 window.tournamentCountdown = tournamentCountdown;
 
 window.Pusher = Pusher;

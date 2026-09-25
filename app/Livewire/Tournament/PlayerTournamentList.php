@@ -31,8 +31,8 @@ class PlayerTournamentList extends Component
 
         return view('livewire.tournament.player-tournament-list', [
             'tournaments' => $usesV2Discovery
-                ? $discovery->paginateOccurrences($this->activeTab, $this->discoveryFilters())
-                : $this->getTournamentQuery()->paginate(12),
+                ? $discovery->paginateOccurrences($this->activeTab, $this->discoveryFilters(), 9)
+                : $this->getTournamentQuery()->paginate(9),
             'tournamentGroups' => null,
             'featuredGroups' => null,
             'games' => $this->getGames(),
@@ -60,7 +60,7 @@ class PlayerTournamentList extends Component
             'frequency' => $this->frequency,
             'competition_type' => 'tournament',
             'platform_id' => $this->platformId,
-            'team_format' => $this->teamFormat,
+            'max_teams' => (string) ($this->selectedMaxTeams() ?? ''),
         ];
     }
 }

@@ -13,24 +13,23 @@ class PublicTournamentList extends Component
     {
         $usesV2Discovery = (bool) config('features.tournament_v2.enabled');
         $isHeadToHeadListing = $this->competitionType === 'head_to_head';
-        $usesGroupedDiscovery = $usesV2Discovery && $isHeadToHeadListing;
-        $featuredTournaments = $usesV2Discovery && ! $isHeadToHeadListing
-            ? $discovery->paginateOccurrences('upcoming', ['competition_type' => 'tournament'], $this->featuredLimit, true, 'featuredPage')
-            : ($usesV2Discovery ? collect() : $this->getFeaturedTournaments());
+        $featuredTournaments = $usesV2Discovery
+            ? $discovery->paginateOccurrences('upcoming', [
+                'competition_type' => $this->competitionType ?: 'tournament',
+            ], $this->featuredLimit, true, 'featuredPage')
+            : $this->getFeaturedTournaments();
 
         return view('livewire.tournament.player-tournament-list', [
             'tournaments' => $usesV2Discovery
-                ? ($usesGroupedDiscovery ? null : $discovery->paginateOccurrences($this->activeTab, $this->discoveryFilters()))
-                : $this->getTournamentQuery()->paginate(12),
-            'tournamentGroups' => $usesGroupedDiscovery ? $discovery->paginate($this->activeTab, $this->discoveryFilters()) : null,
-            'featuredGroups' => $usesGroupedDiscovery
-                ? $discovery->paginate('upcoming', ['competition_type' => 'head_to_head'], $this->featuredLimit, true)
-                : null,
+                ? $discovery->paginateOccurrences($this->activeTab, $this->discoveryFilters(), 9)
+                : $this->getTournamentQuery()->paginate(9),
+            'tournamentGroups' => null,
+            'featuredGroups' => null,
             'games' => $this->getGames(),
             'popularGames' => $this->getPopularGames(),
             'featuredTournaments' => $featuredTournaments,
             'hasMoreFeatured' => $usesV2Discovery
-                ? (! $usesGroupedDiscovery && $featuredTournaments->total() > $featuredTournaments->count())
+                ? $featuredTournaments->total() > $featuredTournaments->count()
                 : $this->featuredTournamentCount() > $this->featuredLimit,
             'platforms' => $this->getPlatforms(),
             'listingType' => $isHeadToHeadListing ? 'head_to_head' : 'tournament',
@@ -50,7 +49,7 @@ class PublicTournamentList extends Component
             // dropdown choice, so the two product lists never blend together.
             'competition_type' => $this->competitionType ?: 'tournament',
             'platform_id' => $this->platformId,
-            'team_format' => $this->teamFormat,
+            'max_teams' => $this->competitionType === 'head_to_head' ? '' : (string) ($this->selectedMaxTeams() ?? ''),
         ];
     }
 }

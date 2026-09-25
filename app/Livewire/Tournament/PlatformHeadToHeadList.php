@@ -36,15 +36,22 @@ final class PlatformHeadToHeadList extends Component
         $usesV2Discovery = (bool) config('features.tournament_v2.enabled');
         $isPublicView = $this->viewMode === 'guest';
         $layout = Auth::check() && ! $isPublicView ? 'components.layouts.dashboard' : 'components.layouts.app';
+        $featuredTournaments = $usesV2Discovery
+            ? $discovery->paginateOccurrences('upcoming', $this->discoveryFilters(), $this->featuredLimit, true, 'featuredPage')
+            : $this->getFeaturedTournaments();
 
         return view('livewire.tournament.platform-head-to-head-list', [
-            'tournaments' => $usesV2Discovery ? null : $this->getTournamentQuery()->paginate(12),
-            'tournamentGroups' => $usesV2Discovery ? $discovery->paginate($this->activeTab, $this->discoveryFilters()) : null,
-            'featuredGroups' => $usesV2Discovery ? $discovery->paginate('upcoming', $this->discoveryFilters(), $this->featuredLimit, true) : null,
+            'tournaments' => $usesV2Discovery
+                ? $discovery->paginateOccurrences($this->activeTab, $this->discoveryFilters(), 9)
+                : $this->getTournamentQuery()->paginate(9),
+            'tournamentGroups' => null,
+            'featuredGroups' => null,
             'games' => $this->getGames(),
             'popularGames' => $this->getPopularGames(),
-            'featuredTournaments' => $usesV2Discovery ? collect() : $this->getFeaturedTournaments(),
-            'hasMoreFeatured' => ! $usesV2Discovery && $this->featuredTournamentCount() > $this->featuredLimit,
+            'featuredTournaments' => $featuredTournaments,
+            'hasMoreFeatured' => $usesV2Discovery
+                ? $featuredTournaments->total() > $featuredTournaments->count()
+                : $this->featuredTournamentCount() > $this->featuredLimit,
             'platforms' => $this->getPlatforms(),
             'publicView' => $isPublicView,
         ])->layout($layout, [
@@ -62,7 +69,6 @@ final class PlatformHeadToHeadList extends Component
             'frequency' => $this->frequency,
             'competition_type' => 'head_to_head',
             'platform_id' => $this->platformId,
-            'team_format' => 'solo',
         ];
     }
 }

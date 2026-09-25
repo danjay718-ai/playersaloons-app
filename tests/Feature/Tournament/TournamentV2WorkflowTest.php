@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Tournament;
 
 use App\Livewire\Admin\TournamentAdmin;
+use App\Livewire\Game\GameShow;
 use App\Livewire\Match\MatchDetail;
 use App\Livewire\Tournament\PlatformHeadToHeadList;
 use App\Livewire\Tournament\PlayerTournamentList;
@@ -119,6 +120,10 @@ final class TournamentV2WorkflowTest extends TestCase
     public function test_player_and_guest_tournament_lists_render_each_v2_occurrence_without_slot_picker(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-09-26 10:00:00', 'UTC'));
+        $slots = collect(range(12, 21))->map(fn (int $hour): array => [
+            'label' => 'Slot '.$hour,
+            'local_start_time' => sprintf('%02d:00', $hour),
+        ])->all();
         $template = app(CreateV2TournamentTemplateAction::class)->execute([
             'game_id' => $this->game->id,
             'platform_id' => $this->platform->id,
@@ -129,24 +134,43 @@ final class TournamentV2WorkflowTest extends TestCase
             'entry_fee' => '5.00',
             'full_first_bps' => 9000,
             'full_second_bps' => 0,
-            'slots' => [
-                ['label' => 'First', 'local_start_time' => '20:00'],
-                ['label' => 'Second', 'local_start_time' => '21:00'],
-            ],
+            'slots' => $slots,
         ]);
-        $first = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots[0], $this->admin);
-        $second = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots[1], $this->admin);
+        $occurrences = $template->scheduleSlots->map(
+            fn ($slot) => app(MaterializeV2OccurrenceAction::class)->execute($slot, $this->admin),
+        );
+        $first = $occurrences->first();
+        $second = $occurrences->get(1);
         $player = $this->user('instance-list@example.com', 'instancelist', 'PLAYER');
+        $headToHeadTemplate = app(CreateV2TournamentTemplateAction::class)->execute([
+            'game_id' => $this->game->id,
+            'platform_id' => $this->platform->id,
+            'name' => 'Direct H2H Instance',
+            'competition_type' => CompetitionType::HEAD_TO_HEAD->value,
+            'frequency' => 'daily',
+            'timezone' => 'UTC',
+            'max_teams' => 2,
+            'entry_fee' => '1.00',
+            'full_first_bps' => 9000,
+            'full_second_bps' => 0,
+            'slots' => [['label' => 'H2H', 'local_start_time' => '22:00']],
+        ]);
+        $headToHead = app(MaterializeV2OccurrenceAction::class)->execute(
+            $headToHeadTemplate->scheduleSlots->firstOrFail(),
+            $this->admin,
+        );
 
-        $occurrences = app(V2TournamentDiscoveryService::class)->paginateOccurrences('upcoming', [
+        $paginated = app(V2TournamentDiscoveryService::class)->paginateOccurrences('upcoming', [
             'competition_type' => 'tournament',
             'frequency' => 'daily',
-        ]);
-        self::assertSame(2, $occurrences->total());
+        ], 9);
+        self::assertSame(10, $paginated->total());
+        self::assertSame(9, $paginated->count());
+        self::assertSame(2, $paginated->lastPage());
 
-        Livewire::actingAs($player)
+        $playerList = Livewire::actingAs($player)
             ->test(PlayerTournamentList::class)
-            ->assertViewHas('tournaments', fn ($items) => $items->pluck('id')->all() === [$first->id, $second->id])
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 10 && $items->count() === 9)
             ->assertViewHas('tournamentGroups', null)
             ->assertSee('/tournaments/'.$first->uuid.'/view', false)
             ->assertSee('/tournaments/'.$second->uuid.'/view', false)
@@ -154,18 +178,49 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertSee('Joined players')
             ->assertSee('Max teams')
             ->assertSee('Platforms')
+            ->assertSee('Showing 1–9 of 10 results')
+            ->assertDontSee('Featured Daily Tournaments')
             ->assertDontSee('View Available Slots')
             ->assertDontSee('Choose a currently available tournament slot');
 
-        Livewire::test(PublicTournamentList::class)
-            ->assertViewHas('tournaments', fn ($items) => $items->total() === 2)
+        $playerList->set('maxTeams', '8')
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 0)
+            ->set('maxTeams', 'custom')
+            ->set('customMaxTeams', '4')
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 10)
+            ->call('setPage', 2, 'page')
+            ->assertViewHas('tournaments', fn ($items) => $items->currentPage() === 2 && $items->count() === 1);
+
+        $publicList = Livewire::test(PublicTournamentList::class)
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 10 && $items->count() === 9)
             ->assertViewHas('tournamentGroups', null)
             ->assertSee('/tournaments/'.$first->uuid.'/view?view=guest', false)
             ->assertDontSee('View Available Slots');
 
-        Livewire::test(PlatformHeadToHeadList::class)
+        $publicList->set('competitionType', 'head_to_head')
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 1 && $items->first()->is($headToHead))
+            ->assertViewHas('tournamentGroups', null)
+            ->assertSee('/tournaments/'.$headToHead->uuid.'/view?view=guest', false)
+            ->assertDontSee('View Slots');
+
+        Livewire::withQueryParams(['view' => 'guest'])
+            ->test(PlatformHeadToHeadList::class)
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 1 && $items->first()->is($headToHead))
+            ->assertViewHas('tournamentGroups', null)
             ->assertSee('Click a game card to view its available head-to-head matches.')
-            ->assertSee('View Game');
+            ->assertSee('View Game')
+            ->assertSee('1v1 only')
+            ->assertDontSee('All max teams')
+            ->assertDontSee('Featured Head-to-Head Matches')
+            ->assertDontSee('View Slots');
+
+        Livewire::withQueryParams(['tab' => 'browse', 'competitionType' => 'head_to_head', 'view' => 'guest'])
+            ->test(GameShow::class, ['game' => $this->game])
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 1 && $items->first()->is($headToHead))
+            ->assertViewHas('tournamentGroups', null)
+            ->assertSee('/tournaments/'.$headToHead->uuid.'/view?view=guest', false)
+            ->assertDontSee('Featured Head-to-Head')
+            ->assertDontSee('View Slots');
     }
 
     public function test_local_testing_reset_removes_tournament_records_and_rebuilds_linked_wallet_and_xp_data(): void
