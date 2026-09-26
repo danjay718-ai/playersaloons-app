@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Actions;
 
+use App\Modules\Tournament\Events\TournamentSeatReleased;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentParticipant;
 use App\Modules\Tournament\Models\TournamentRegistration;
@@ -79,6 +80,7 @@ final class CancelV2RegistrationAction
                 $locked->payment_status = PaymentStatus::REFUNDED;
             }
             $locked->save();
+            TournamentSeatReleased::dispatch((int) $tournament->id, (int) $locked->id, (int) $locked->user_id);
 
             return $locked->fresh() ?? $locked;
         }, 3);

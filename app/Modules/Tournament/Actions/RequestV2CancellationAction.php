@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Actions;
 
-use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\User;
+use App\Modules\Tournament\Events\BroadcastTournamentUpdated;
+use App\Modules\Tournament\Jobs\NotifyV2CancellationVotersJob;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentCancellationRequest;
 use App\Modules\Tournament\Models\TournamentRegistration;
@@ -16,10 +17,7 @@ use LogicException;
 
 final class RequestV2CancellationAction
 {
-    public function __construct(
-        private readonly CancelV2RegistrationAction $cancel,
-        private readonly NotificationService $notifications,
-    ) {}
+    public function __construct(private readonly CancelV2RegistrationAction $cancel) {}
 
     public function execute(TournamentRegistration $registration, User $requester): TournamentCancellationRequest
     {
@@ -63,14 +61,9 @@ final class RequestV2CancellationAction
             if ($eligible->isEmpty()) {
                 $this->cancel->execute($locked);
             } else {
-                User::query()->whereIn('id', $eligible)->each(fn (User $voter) => $this->notifications->send(
-                    $voter,
-                    'tournament_cancellation_vote',
-                    'Cancellation vote requested',
-                    "A player requested to cancel their entry in {$tournament->name}. Vote before tournament start.",
-                    "/tournaments/{$tournament->uuid}/view",
-                ));
+                NotifyV2CancellationVotersJob::dispatch($request->id)->afterCommit();
             }
+            BroadcastTournamentUpdated::dispatch((string) $tournament->uuid, 'cancellation_requested');
 
             return $request;
         }, 3);

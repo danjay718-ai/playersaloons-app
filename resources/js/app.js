@@ -10,11 +10,12 @@ window.tournamentCountdown = tournamentCountdown;
 window.Pusher = Pusher;
 
 window.ensurePlayerSaloonsEcho = function () {
-    const userUuid = document.querySelector('meta[name="user-uuid"]')?.getAttribute('content');
     const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
     const reverbHost = import.meta.env.VITE_REVERB_HOST;
 
-    if (!userUuid || !reverbKey || !reverbHost) return null;
+    // Public tournament channels are also useful to guests. Private channel
+    // authorization still applies when an authenticated-only channel is used.
+    if (!reverbKey || !reverbHost) return null;
 
     window.Echo ??= new Echo({
         broadcaster: 'reverb',
@@ -33,14 +34,22 @@ window.matchRoomRealtime = function (wire, matchUuid) {
     return {
         echo: null,
         channelName: `match.${matchUuid}`,
+        refreshTimer: null,
+
+        queueRefresh() {
+            clearTimeout(this.refreshTimer);
+            this.refreshTimer = setTimeout(() => wire.$refresh(), 100);
+        },
 
         init() {
+            if (!document.querySelector('meta[name="user-uuid"]')?.getAttribute('content')) return;
             this.echo = window.ensurePlayerSaloonsEcho?.();
             if (!this.echo) return;
 
             this.echo.private(this.channelName)
-                .listen('.match.readiness.updated', () => wire.$refresh())
-                .listen('.match.result.submitted', () => wire.$refresh())
+                .listen('.match.readiness.updated', () => this.queueRefresh())
+                .listen('.match.result.submitted', () => this.queueRefresh())
+                .listen('.match.updated', () => this.queueRefresh())
                 .listen('.match.rematch.created', (event) => {
                     if (!event.same_match && event.rematch_uuid) {
                         const url = `/matches/${event.rematch_uuid}`;
@@ -48,12 +57,13 @@ window.matchRoomRealtime = function (wire, matchUuid) {
                         return;
                     }
 
-                    wire.$refresh();
+                    this.queueRefresh();
                 })
-                .listen('.match.completed', () => wire.$refresh());
+                .listen('.match.completed', () => this.queueRefresh());
         },
 
         destroy() {
+            clearTimeout(this.refreshTimer);
             this.echo?.leave(this.channelName);
         },
     };

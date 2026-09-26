@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Actions;
 
+use App\Modules\Match\Events\BroadcastMatchUpdated;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Models\MatchEvidence;
+use App\Modules\Tournament\Events\BroadcastTournamentUpdated;
 use App\Shared\Enums\DisputeStatus;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -36,7 +38,7 @@ class SubmitEvidenceAction
             throw new InvalidArgumentException('A dispute reason must be between 10 and 2000 characters.');
         }
 
-        return DB::transaction(function () use ($dispute, $uploadedByUserId, $file, $reason): MatchEvidence {
+        $evidence = DB::transaction(function () use ($dispute, $uploadedByUserId, $file, $reason): MatchEvidence {
             $dispute = MatchDispute::query()
                 ->with('match.playerARegistration', 'match.playerBRegistration')
                 ->lockForUpdate()
@@ -97,5 +99,11 @@ class SubmitEvidenceAction
                 'created_at' => Carbon::now(),
             ]);
         });
+
+        $match = $evidence->dispute()->with('match.tournament:id,uuid')->firstOrFail()->match;
+        BroadcastMatchUpdated::dispatch((string) $match->uuid, 'dispute_evidence_submitted');
+        BroadcastTournamentUpdated::dispatch((string) $match->tournament->uuid, 'dispute_evidence_submitted', (string) $match->uuid);
+
+        return $evidence;
     }
 }

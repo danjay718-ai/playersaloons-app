@@ -16,6 +16,9 @@ use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Actions\RegisterForV2TournamentAction;
 use App\Modules\Tournament\Actions\RequestV2CancellationAction;
 use App\Modules\Tournament\Actions\VoteOnV2CancellationAction;
+use App\Modules\Tournament\Exceptions\TournamentAlreadyRegisteredException;
+use App\Modules\Tournament\Exceptions\TournamentFullException;
+use App\Modules\Tournament\Exceptions\TournamentNotOpenForRegistrationException;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentCancellationRequest;
 use App\Modules\Tournament\Models\TournamentRegistration;
@@ -32,6 +35,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use LogicException;
 
 class TournamentDetail extends Component
 {
@@ -59,8 +63,6 @@ class TournamentDetail extends Component
     public ?int $selectedPlatformId = null;
 
     public string $cancellationError = '';
-
-    public bool $showCancelModal = false;
 
     public function mount(string $uuid): void
     {
@@ -206,6 +208,14 @@ class TournamentDetail extends Component
             $this->dispatch('tournament-registration-completed');
         } catch (InsufficientBalanceException $e) {
             session()->flash('error', 'Insufficient balance. Please top up your wallet to pay the entrance fee.');
+        } catch (TournamentAlreadyRegisteredException) {
+            session()->flash('error', 'You are already registered for this tournament occurrence.');
+        } catch (TournamentFullException) {
+            session()->flash('error', 'This tournament occurrence is already full.');
+        } catch (TournamentNotOpenForRegistrationException) {
+            session()->flash('error', 'This tournament occurrence is not open for registration.');
+        } catch (LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to register for this tournament.'));
         }
@@ -246,24 +256,14 @@ class TournamentDetail extends Component
                 $action->execute($registration, $user);
                 session()->flash('message', 'Registration cancelled successfully. Any entry fee has been refunded to your wallet.');
             }
-            $this->showCancelModal = false;
             $this->dispatch('registration-cancellation-completed');
+        } catch (LogicException $e) {
+            $this->cancellationError = $e->getMessage();
+            session()->flash('error', $this->cancellationError);
         } catch (\Exception $e) {
             $this->cancellationError = $this->safeError($e, 'Unable to cancel the tournament registration.');
             session()->flash('error', $this->cancellationError);
         }
-    }
-
-    public function openCancellationDialog(): void
-    {
-        $this->cancellationError = '';
-        $this->showCancelModal = true;
-    }
-
-    public function closeCancellationDialog(): void
-    {
-        $this->cancellationError = '';
-        $this->showCancelModal = false;
     }
 
     public function voteOnCancellation(int $requestId, bool $approved, VoteOnV2CancellationAction $action): void
@@ -278,6 +278,8 @@ class TournamentDetail extends Component
                 ->findOrFail($requestId);
             $action->execute($request, Auth::user(), $approved);
             session()->flash('message', 'Your cancellation vote has been recorded and cannot be changed.');
+        } catch (LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to record the cancellation vote.'));
         }
@@ -295,7 +297,7 @@ class TournamentDetail extends Component
             DB::transaction(function () use ($user, $userId): void {
                 $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->lockForUpdate()->firstOrFail();
                 if ($tournament->status !== TournamentStatus::REGISTRATION_OPEN) {
-                    throw new \LogicException('Team leadership is locked after registration closes.');
+                    throw new LogicException('Team leadership is locked after registration closes.');
                 }
 
                 $team = TournamentTeam::query()
@@ -305,7 +307,7 @@ class TournamentDetail extends Component
                     ->lockForUpdate()
                     ->firstOrFail();
                 if (! $team->members()->where('user_id', $userId)->exists()) {
-                    throw new \LogicException('The new Team Leader must be part of this tournament team.');
+                    throw new LogicException('The new Team Leader must be part of this tournament team.');
                 }
 
                 $team->members()->where('user_id', $user->id)->update(['role' => 'member', 'updated_at' => now()]);

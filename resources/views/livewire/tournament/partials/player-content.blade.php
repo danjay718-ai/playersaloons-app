@@ -14,7 +14,7 @@
         'REFUNDED' => 'text-orange-400 border-orange-900/50 bg-orange-950/20',
     ][$statusValue] ?? 'text-zinc-500 border-zinc-800 bg-zinc-900/50';
 @endphp
-<div class="player-tournament-detail space-y-10"
+<div class="player-tournament-detail space-y-10" wire:poll.30s.visible
      x-data="{ 
          activeTab: @entangle('activeTab').live,
          canViewRestricted: @json($canViewRestricted),
@@ -23,6 +23,21 @@
          bracketView: 'bracket',
          loadedSections: @js(array_keys($loadedSections ?? [])),
          loadingSection: null,
+         realtimeChannel: null,
+         realtimeRefreshTimer: null,
+         initRealtime() {
+             const echo = window.ensurePlayerSaloonsEcho?.();
+             if (!echo) return;
+             this.realtimeChannel = `tournament.{{ $tournament->uuid }}`;
+             echo.channel(this.realtimeChannel).listen('.tournament.updated', () => {
+                 clearTimeout(this.realtimeRefreshTimer);
+                 this.realtimeRefreshTimer = setTimeout(() => this.$wire.$refresh(), 150);
+             });
+         },
+         destroy() {
+             clearTimeout(this.realtimeRefreshTimer);
+             if (this.realtimeChannel) window.ensurePlayerSaloonsEcho?.()?.leave(this.realtimeChannel);
+         },
          openJoinModal() {
              this.$wire.prepareRegistrationPrompt().then(() => {
                  this.showJoinModal = true;
@@ -47,6 +62,7 @@
          },
      }" 
      x-init="
+         initRealtime();
          if (!canViewRestricted && !['overview', 'streams'].includes(activeTab)) {
              activeTab = 'overview';
          }
@@ -190,7 +206,7 @@
                     @elseif((int) $tournament->workflow_version === 2 && $isRegistered)
                         <div class="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-8 py-5 text-center text-xs font-black uppercase tracking-[0.2em] text-emerald-400"><span>Reservation Confirmed</span></div>
                         @if($canCancelRegistration)
-                            <button type="button" wire:click="openCancellationDialog" wire:loading.attr="disabled" wire:target="openCancellationDialog" class="w-full rounded-xl border border-red-800/50 bg-red-950/30 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-red-400 transition hover:border-red-600/60 hover:text-red-300 disabled:opacity-60">Request Cancellation</button>
+                            <button type="button" @click="$dispatch('open-registration-cancellation')" class="w-full rounded-xl border border-red-800/50 bg-red-950/30 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-red-400 transition hover:border-red-600/60 hover:text-red-300">Request Cancellation</button>
                         @elseif($pendingCancellationRequest)
                             <div role="status" class="w-full rounded-xl border border-amber-700/40 bg-amber-950/20 px-6 py-3 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-amber-300">Cancellation request pending</div>
                         @else
@@ -206,7 +222,7 @@
                                 <span>Reservation Confirmed</span>
                             </div>
                             @if($canCancelRegistration)
-                                <button type="button" wire:click="openCancellationDialog" wire:loading.attr="disabled" wire:target="openCancellationDialog" class="w-full flex items-center justify-center space-x-2 bg-red-950/30 border border-red-800/50 hover:border-red-600/60 text-red-400 hover:text-red-300 font-bold py-3 px-6 rounded-xl transition-all duration-300 text-[10px] uppercase tracking-[0.2em] disabled:opacity-60">
+                                <button type="button" @click="$dispatch('open-registration-cancellation')" class="w-full flex items-center justify-center space-x-2 bg-red-950/30 border border-red-800/50 hover:border-red-600/60 text-red-400 hover:text-red-300 font-bold py-3 px-6 rounded-xl transition-all duration-300 text-[10px] uppercase tracking-[0.2em]">
                                     <i data-lucide="x-circle" class="w-4 h-4"></i>
                                     <span>Cancel Registration</span>
                                 </button>
@@ -1208,9 +1224,12 @@
     @endif
 
     <!-- Cancel Registration Modal -->
-    @if($showCancelModal)
     <template x-teleport="body">
-        <div @keydown.escape.window="$wire.closeCancellationDialog()"
+        <div x-data="{ open: false }"
+             x-show="open"
+             @open-registration-cancellation.window="open = true"
+             @registration-cancellation-completed.window="open = false"
+             @keydown.escape.window="open = false"
              role="dialog" aria-modal="true" aria-labelledby="cancel-registration-title"
              class="theme-player fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md"
              x-transition:enter="transition ease-out duration-300"
@@ -1218,7 +1237,8 @@
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0">
+             x-transition:leave-end="opacity-0"
+             x-cloak>
             <div class="relative max-h-[90dvh] overflow-y-auto bg-zinc-900 border border-red-500/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(239,68,68,0.15)] space-y-6"
                  x-transition:enter="transition ease-out duration-300 transform"
                  x-transition:enter-start="scale-95 translate-y-4"
@@ -1247,7 +1267,7 @@
                 @endif
 
                 <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                    <button type="button" wire:click="closeCancellationDialog"
+                    <button type="button" @click="open = false"
                             class="flex-1 py-3 rounded-xl border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-widest transition-all duration-300">
                         Keep Registration
                     </button>
@@ -1263,7 +1283,6 @@
         </div>
 
     </template>
-    @endif
 
 </div>
 

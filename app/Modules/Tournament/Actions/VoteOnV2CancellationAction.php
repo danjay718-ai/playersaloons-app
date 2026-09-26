@@ -6,6 +6,7 @@ namespace App\Modules\Tournament\Actions;
 
 use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\User;
+use App\Modules\Tournament\Events\BroadcastTournamentUpdated;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentCancellationRequest;
 use App\Modules\Tournament\Models\TournamentCancellationVote;
@@ -23,7 +24,7 @@ final class VoteOnV2CancellationAction
     {
         return DB::transaction(function () use ($request, $voter, $approved): TournamentCancellationRequest {
             $tournamentId = TournamentCancellationRequest::query()->whereKey($request->id)->value('tournament_id');
-            Tournament::query()->lockForUpdate()->findOrFail($tournamentId);
+            $tournament = Tournament::query()->lockForUpdate()->findOrFail($tournamentId);
             $locked = TournamentCancellationRequest::query()->lockForUpdate()->findOrFail($request->id);
             if ($locked->status !== 'pending' || now()->greaterThanOrEqualTo($locked->expires_at)) {
                 throw new LogicException('This cancellation vote is no longer open.');
@@ -57,6 +58,7 @@ final class VoteOnV2CancellationAction
                 $locked->update(['status' => 'rejected', 'resolved_at' => now()]);
                 $this->notifications->send($locked->requester, 'tournament_cancellation_rejected', 'Cancellation rejected', 'Your tournament cancellation request did not receive enough approvals.', "/tournaments/{$locked->tournament->uuid}/view");
             }
+            BroadcastTournamentUpdated::dispatch((string) $tournament->uuid, 'cancellation_vote_updated');
 
             return $locked->fresh() ?? $locked;
         }, 3);

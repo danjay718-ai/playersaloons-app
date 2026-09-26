@@ -1,4 +1,4 @@
-<div class="player-match-room space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))" @if($isParticipant && $match->status->value === 'ready') wire:poll.10s="refreshMatchStatus" @elseif($isParticipant && in_array($match->status->value, ['in_progress', 'waiting_for_confirmation', 'disputed'])) wire:poll.10s @endif>
+<div class="player-match-room space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))" @if($isParticipant && $match->status->value === 'ready') wire:poll.30s.visible="refreshMatchStatus" @elseif($isParticipant && in_array($match->status->value, ['in_progress', 'waiting_for_confirmation', 'disputed'])) wire:poll.30s.visible @endif>
     <x-ui.toasts />
 
     @if($isDefeated)

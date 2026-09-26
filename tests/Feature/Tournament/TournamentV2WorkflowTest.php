@@ -15,6 +15,7 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameHeadToHeadDefault;
 use App\Modules\CMS\Models\GameTournamentDefault;
 use App\Modules\CMS\Models\Platform;
+use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\PlayerProgression;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserGameAccount;
@@ -36,7 +37,9 @@ use App\Modules\Tournament\Actions\RegisterForV2TournamentAction;
 use App\Modules\Tournament\Actions\RequestV2CancellationAction;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use App\Modules\Tournament\Actions\VoteOnV2CancellationAction;
+use App\Modules\Tournament\Jobs\NotifyV2CancellationVotersJob;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Tournament\Services\V2TournamentDiscoveryService;
 use App\Modules\Tournament\Services\V2TournamentLifecycle;
@@ -1032,20 +1035,27 @@ final class TournamentV2WorkflowTest extends TestCase
         $register = app(RegisterForV2TournamentAction::class);
         $registration = $register->execute($tournament->fresh(), $player, null, 'dialogplayer');
         $register->execute($tournament->fresh(), $opponent, null, 'dialogopponent');
+        Queue::fake();
 
         Livewire::actingAs($player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
             ->assertSee('Request Cancellation')
-            ->call('openCancellationDialog')
-            ->assertSet('showCancelModal', true)
+            ->assertSee('open-registration-cancellation')
             ->assertSee('Cancel Registration?')
             ->call('cancelRegistration')
             ->assertSet('cancellationError', '')
-            ->assertSet('showCancelModal', false)
             ->assertDispatched('registration-cancellation-completed');
 
-        self::assertSame('pending', $tournament->cancellationRequests()->firstOrFail()->status);
+        $request = $tournament->cancellationRequests()->firstOrFail();
+        self::assertSame('pending', $request->status);
         self::assertSame('confirmed', $registration->fresh()->status->value);
+        Queue::assertPushed(NotifyV2CancellationVotersJob::class, fn ($job): bool => $job->requestId === $request->id && $job->queue === 'notifications');
+        (new NotifyV2CancellationVotersJob($request->id))->handle(app(NotificationService::class));
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $opponent->id,
+            'type' => 'tournament_cancellation_vote',
+            'action_url' => "/tournaments/{$tournament->uuid}/view",
+        ]);
     }
 
     public function test_v2_cancellation_cutoff_is_consistent_at_and_inside_thirty_minutes(): void
@@ -1060,10 +1070,7 @@ final class TournamentV2WorkflowTest extends TestCase
             ->test(TournamentDetail::class, ['uuid' => $atCutoffTournament->uuid])
             ->assertViewHas('canCancelRegistration', true)
             ->assertSee('Request Cancellation')
-            ->call('openCancellationDialog')
-            ->assertSet('showCancelModal', true)
             ->call('cancelRegistration')
-            ->assertSet('showCancelModal', false)
             ->assertSet('cancellationError', '');
         self::assertSame('cancelled', $atCutoffRegistration->fresh()->status->value);
 
@@ -1124,7 +1131,7 @@ final class TournamentV2WorkflowTest extends TestCase
         $tournament->fresh()->update(['max_participants' => 32]);
     }
 
-    public function test_player_can_only_hold_one_active_slot_per_template_and_recurrence_period(): void
+    public function test_player_can_join_multiple_slots_in_the_same_recurrence_period(): void
     {
         $template = app(CreateV2TournamentTemplateAction::class)->execute([
             'game_id' => $this->game->id,
@@ -1146,10 +1153,11 @@ final class TournamentV2WorkflowTest extends TestCase
         $second = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots[1], $this->admin, $now);
         $player = $this->user('one-slot@example.com', 'oneslot', 'PLAYER');
 
-        app(RegisterForV2TournamentAction::class)->execute($first, $player, null, 'one-slot-a');
+        $firstRegistration = app(RegisterForV2TournamentAction::class)->execute($first, $player, null, 'one-slot-a');
+        $secondRegistration = app(RegisterForV2TournamentAction::class)->execute($second, $player, null, 'one-slot-b');
 
-        $this->expectException(LogicException::class);
-        app(RegisterForV2TournamentAction::class)->execute($second, $player, null, 'one-slot-b');
+        self::assertNotSame($firstRegistration->tournament_id, $secondRegistration->tournament_id);
+        self::assertSame(2, TournamentRegistration::query()->where('user_id', $player->id)->count());
     }
 
     public function test_unresolved_final_stays_ongoing_then_admin_can_settle_without_champion_after_24_hours(): void
