@@ -178,6 +178,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasMany(KycSubmission::class);
     }
 
+    public function latestKycSubmission(): HasOne
+    {
+        return $this->hasOne(KycSubmission::class)->latestOfMany();
+    }
+
     /**
      * Get the user's notifications.
      *

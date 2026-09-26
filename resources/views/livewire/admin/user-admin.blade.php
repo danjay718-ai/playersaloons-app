@@ -72,18 +72,18 @@ x-on:keydown.escape.window="closeAll()">
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <!-- Search and Filters -->
         <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-            @if($activeTab === 'users')
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search by username or email..." 
-                       class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full sm:w-64">
-                
-                <select wire:model.live="statusFilter" 
-                        class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
-                    <option value="">All Statuses</option>
-                    @foreach(\App\Shared\Enums\UserStatus::cases() as $status)
-                        <option value="{{ $status->value }}">{{ strtoupper($status->name) }}</option>
-                    @endforeach
-                </select>
+            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search username, email, or display name..."
+                   class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full sm:w-72">
 
+            <select wire:model.live="statusFilter"
+                    class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                <option value="">All Statuses</option>
+                @foreach(\App\Shared\Enums\UserStatus::cases() as $status)
+                    <option value="{{ $status->value }}">{{ strtoupper($status->name) }}</option>
+                @endforeach
+            </select>
+
+            @if($activeTab === 'users')
                 <select wire:model.live="roleFilter" 
                         class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
                     <option value="">All Roles</option>
@@ -99,8 +99,13 @@ x-on:keydown.escape.window="closeAll()">
                     <option value="offline">Offline Only</option>
                 </select>
 
-                <input type="text" wire:model.live.debounce.300ms="countryFilter" placeholder="Country Code (e.g. PH)" 
-                       class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-full sm:w-48">
+                <select wire:model.live="kycFilter"
+                        class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
+                    <option value="">All KYC Statuses</option>
+                    @foreach(\App\Shared\Enums\KycStatus::cases() as $status)
+                        <option value="{{ $status->value }}">{{ strtoupper(str_replace('_', ' ', $status->value)) }}</option>
+                    @endforeach
+                </select>
             @endif
         </div>
         @can('create', \App\Modules\Identity\Models\User::class)
@@ -803,5 +808,4 @@ x-on:keydown.escape.window="closeAll()">
     </div>
     <x-admin.deletion-actions resource="users" />
 </div>
-
 

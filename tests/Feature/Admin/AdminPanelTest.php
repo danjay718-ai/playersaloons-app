@@ -521,6 +521,49 @@ class AdminPanelTest extends TestCase
         $this->assertTrue(Hash::check('Password123!', $user->password));
     }
 
+    public function test_user_admin_searches_players_and_filters_by_account_and_kyc_status(): void
+    {
+        $approved = $this->createUserWithRole('PLAYER', 'verified-search@example.com');
+        $approved->profile()->create([
+            'uuid' => Str::uuid()->toString(),
+            'display_name' => 'Tournament Search Hero',
+        ]);
+        KycSubmission::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $approved->id,
+            'status' => KycStatus::APPROVED,
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(UserAdmin::class)
+            ->set('search', 'Search Hero')
+            ->assertSee('verified-search')
+            ->assertDontSee($this->player->email)
+            ->set('search', '')
+            ->set('kycFilter', KycStatus::APPROVED->value)
+            ->assertSee('verified-search')
+            ->assertDontSee($this->player->email)
+            ->set('statusFilter', UserStatus::SUSPENDED->value)
+            ->assertDontSee('verified-search')
+            ->assertDontSeeHtml('wire:model.live.debounce.300ms="countryFilter"');
+    }
+
+    public function test_user_admin_searches_staff_by_display_name(): void
+    {
+        $staff = $this->createUserWithRole('MODERATOR', 'moderator-search@example.com');
+        $staff->profile()->create([
+            'uuid' => Str::uuid()->toString(),
+            'display_name' => 'Arena Operations',
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(UserAdmin::class)
+            ->call('setTab', 'users')
+            ->set('search', 'Arena Operations')
+            ->assertSee('moderator-search')
+            ->assertDontSee($this->admin->email);
+    }
+
     public function test_user_admin_can_reset_password_with_matching_confirmation(): void
     {
         $targetUser = $this->createUserWithRole('PLAYER', 'targetuser@example.com');

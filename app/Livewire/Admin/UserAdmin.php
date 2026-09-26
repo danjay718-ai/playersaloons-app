@@ -12,15 +12,16 @@ use App\Modules\Identity\Actions\SuspendUserAction;
 use App\Modules\Identity\Actions\TransferSuperAdminAction;
 use App\Modules\Identity\Actions\UnsuspendUserAction;
 use App\Modules\Identity\Models\KycSubmission;
+use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\UserPresenceService;
+use App\Modules\Operations\Services\AdminDeletionService;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\WithPagination;
-use App\Modules\Identity\Models\Role;
 
 class UserAdmin extends AdminComponent
 {
@@ -36,7 +37,7 @@ class UserAdmin extends AdminComponent
 
     public string $onlineFilter = '';
 
-    public string $countryFilter = '';
+    public string $kycFilter = '';
 
     // Modals
     public bool $showDetailModal = false;
@@ -135,7 +136,7 @@ class UserAdmin extends AdminComponent
         $this->resetPage();
     }
 
-    public function updatingCountryFilter(): void
+    public function updatingKycFilter(): void
     {
         $this->resetPage();
     }
@@ -444,7 +445,7 @@ class UserAdmin extends AdminComponent
             return;
         }
 
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('users', [$user->id], $actor);
+        app(AdminDeletionService::class)->delete('users', [$user->id], $actor);
         $this->showDeleteModal = false;
         $this->selectedUserId = null;
         session()->flash('success', 'User account deleted successfully.');
@@ -641,6 +642,18 @@ class UserAdmin extends AdminComponent
             $q->where('name', 'PLAYER');
         });
 
+        if ($this->search !== '') {
+            $playersQuery->where(function ($query): void {
+                $query->where('username', 'like', '%'.$this->search.'%')
+                    ->orWhere('email', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('profile', fn ($profile) => $profile->where('display_name', 'like', '%'.$this->search.'%'));
+            });
+        }
+
+        if ($this->statusFilter !== '') {
+            $playersQuery->where('status', $this->statusFilter);
+        }
+
         if ($this->onlineFilter !== '') {
             if ($this->onlineFilter === 'online') {
                 $playersQuery->whereIn('id', $onlineIds);
@@ -649,10 +662,17 @@ class UserAdmin extends AdminComponent
             }
         }
 
-        if ($this->countryFilter !== '') {
-            $playersQuery->whereHas('profile', function ($q) {
-                $q->where('country_code', $this->countryFilter);
-            });
+        if ($this->kycFilter !== '') {
+            if ($this->kycFilter === 'not_submitted') {
+                $playersQuery->where(function ($query): void {
+                    $query->whereDoesntHave('kycSubmissions')
+                        ->orWhereHas('latestKycSubmission', fn ($kyc) => $kyc->where('status', 'not_submitted'));
+                });
+            } else {
+                $playersQuery->whereHas('latestKycSubmission', function ($query): void {
+                    $query->where('status', $this->kycFilter);
+                });
+            }
         }
 
         $playersCount = $playersQuery->count();
@@ -665,7 +685,8 @@ class UserAdmin extends AdminComponent
         if ($this->search) {
             $usersQuery->where(function ($q) {
                 $q->where('username', 'like', '%'.$this->search.'%')
-                    ->orWhere('email', 'like', '%'.$this->search.'%');
+                    ->orWhere('email', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('profile', fn ($profile) => $profile->where('display_name', 'like', '%'.$this->search.'%'));
             });
         }
         if ($this->statusFilter) {
