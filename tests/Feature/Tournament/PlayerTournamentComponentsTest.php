@@ -99,8 +99,11 @@ class PlayerTournamentComponentsTest extends TestCase
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->call('openCancellationDialog')
+            ->assertSet('showCancelModal', true)
             ->call('cancelRegistration')
             ->assertSet('cancellationError', '')
+            ->assertSet('showCancelModal', false)
             ->assertDispatched('registration-cancellation-completed');
 
         $this->assertSame('cancelled', $registration->fresh()->status->value);
@@ -112,13 +115,16 @@ class PlayerTournamentComponentsTest extends TestCase
         [$registration] = $this->registerPlayers($tournament);
 
         $component = Livewire::actingAs($this->player)
-            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid]);
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->call('openCancellationDialog')
+            ->assertSet('showCancelModal', true);
 
         // Registration can become locked between opening the dialog and confirming.
         $registration->update(['locked_at' => now()]);
 
         $component->call('cancelRegistration')
             ->assertSet('cancellationError', fn (string $message): bool => str_starts_with($message, 'Unable to cancel the tournament registration. Reference:'))
+            ->assertSet('showCancelModal', true)
             ->assertSee('Unable to cancel the tournament registration.')
             ->assertNotDispatched('registration-cancellation-completed');
 

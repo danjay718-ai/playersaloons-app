@@ -18,7 +18,6 @@
      x-data="{ 
          activeTab: @entangle('activeTab').live,
          canViewRestricted: @json($canViewRestricted),
-         showCancelModal: false,
          showJoinModal: false,
          showUnderfilledNotice: false,
          bracketView: 'bracket',
@@ -190,7 +189,13 @@
                         </div>
                     @elseif((int) $tournament->workflow_version === 2 && $isRegistered)
                         <div class="w-full rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-8 py-5 text-center text-xs font-black uppercase tracking-[0.2em] text-emerald-400"><span>Reservation Confirmed</span></div>
-                        <button type="button" @click="showCancelModal = true" class="w-full rounded-xl border border-red-800/50 bg-red-950/30 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-red-400">{{ $canCancelRegistration ? 'Request Cancellation' : 'Cancellation Details' }}</button>
+                        @if($canCancelRegistration)
+                            <button type="button" wire:click="openCancellationDialog" wire:loading.attr="disabled" wire:target="openCancellationDialog" class="w-full rounded-xl border border-red-800/50 bg-red-950/30 px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-red-400 transition hover:border-red-600/60 hover:text-red-300 disabled:opacity-60">Request Cancellation</button>
+                        @elseif($pendingCancellationRequest)
+                            <div role="status" class="w-full rounded-xl border border-amber-700/40 bg-amber-950/20 px-6 py-3 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-amber-300">Cancellation request pending</div>
+                        @else
+                            <div role="status" class="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 px-6 py-3 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">Cancellation closed · Less than 30 minutes before start</div>
+                        @endif
                         @if($pendingCancellationRequest && in_array((int) Auth::id(), array_map('intval', $pendingCancellationRequest->eligible_voter_ids ?? []), true) && !$pendingCancellationRequest->votes->contains('voter_id', Auth::id()))
                             <div class="rounded-xl border border-amber-700/40 bg-amber-950/20 p-4 text-left"><p class="text-xs font-bold text-amber-200">{{ $pendingCancellationRequest->requester?->username }} requested to cancel.</p><div class="mt-3 grid grid-cols-2 gap-2"><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, true)" class="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase text-white">Approve</button><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, false)" class="rounded-lg border border-zinc-700 px-3 py-2 text-[10px] font-black uppercase text-zinc-300">Reject</button></div></div>
                         @endif
@@ -201,7 +206,7 @@
                                 <span>Reservation Confirmed</span>
                             </div>
                             @if($canCancelRegistration)
-                                <button type="button" @click="showCancelModal = true" class="w-full flex items-center justify-center space-x-2 bg-red-950/30 border border-red-800/50 hover:border-red-600/60 text-red-400 hover:text-red-300 font-bold py-3 px-6 rounded-xl transition-all duration-300 text-[10px] uppercase tracking-[0.2em]">
+                                <button type="button" wire:click="openCancellationDialog" wire:loading.attr="disabled" wire:target="openCancellationDialog" class="w-full flex items-center justify-center space-x-2 bg-red-950/30 border border-red-800/50 hover:border-red-600/60 text-red-400 hover:text-red-300 font-bold py-3 px-6 rounded-xl transition-all duration-300 text-[10px] uppercase tracking-[0.2em] disabled:opacity-60">
                                     <i data-lucide="x-circle" class="w-4 h-4"></i>
                                     <span>Cancel Registration</span>
                                 </button>
@@ -1203,10 +1208,9 @@
     @endif
 
     <!-- Cancel Registration Modal -->
+    @if($showCancelModal)
     <template x-teleport="body">
-        <div x-show="showCancelModal"
-             @registration-cancellation-completed.window="showCancelModal = false"
-             @keydown.escape.window="showCancelModal = false"
+        <div @keydown.escape.window="$wire.closeCancellationDialog()"
              role="dialog" aria-modal="true" aria-labelledby="cancel-registration-title"
              class="theme-player fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md"
              x-transition:enter="transition ease-out duration-300"
@@ -1214,8 +1218,7 @@
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             x-cloak>
+             x-transition:leave-end="opacity-0">
             <div class="relative max-h-[90dvh] overflow-y-auto bg-zinc-900 border border-red-500/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(239,68,68,0.15)] space-y-6"
                  x-transition:enter="transition ease-out duration-300 transform"
                  x-transition:enter-start="scale-95 translate-y-4"
@@ -1244,7 +1247,7 @@
                 @endif
 
                 <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                    <button type="button" @click="showCancelModal = false"
+                    <button type="button" wire:click="closeCancellationDialog"
                             class="flex-1 py-3 rounded-xl border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-widest transition-all duration-300">
                         Keep Registration
                     </button>
@@ -1260,6 +1263,7 @@
         </div>
 
     </template>
+    @endif
 
 </div>
 

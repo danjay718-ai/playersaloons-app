@@ -60,6 +60,8 @@ class TournamentDetail extends Component
 
     public string $cancellationError = '';
 
+    public bool $showCancelModal = false;
+
     public function mount(string $uuid): void
     {
         $this->uuid = $uuid;
@@ -244,11 +246,24 @@ class TournamentDetail extends Component
                 $action->execute($registration, $user);
                 session()->flash('message', 'Registration cancelled successfully. Any entry fee has been refunded to your wallet.');
             }
+            $this->showCancelModal = false;
             $this->dispatch('registration-cancellation-completed');
         } catch (\Exception $e) {
             $this->cancellationError = $this->safeError($e, 'Unable to cancel the tournament registration.');
             session()->flash('error', $this->cancellationError);
         }
+    }
+
+    public function openCancellationDialog(): void
+    {
+        $this->cancellationError = '';
+        $this->showCancelModal = true;
+    }
+
+    public function closeCancellationDialog(): void
+    {
+        $this->cancellationError = '';
+        $this->showCancelModal = false;
     }
 
     public function voteOnCancellation(int $requestId, bool $approved, VoteOnV2CancellationAction $action): void
@@ -460,10 +475,19 @@ class TournamentDetail extends Component
                 ->get()
             : collect();
 
-        // Check if tournament can still be cancelled (registration still open)
+        $pendingCancellationRequest = $user && (int) $tournament->workflow_version === 2
+            ? $tournament->cancellationRequests()
+                ->with(['requester:id,username', 'votes:id,request_id,voter_id,approved'])
+                ->where('status', 'pending')
+                ->first()
+            : null;
+        $v2CancellationCutoffOpen = $tournament->start_at !== null
+            && now()->lessThanOrEqualTo($tournament->start_at->copy()->subMinutes(30));
+
+        // Keep the view eligibility identical to RequestV2CancellationAction,
+        // including the exact 30-minute boundary.
         $canCancelRegistration = (int) $tournament->workflow_version === 2
-            ? $isRegistered && $tournament->start_at?->copy()->subMinutes(30)->isFuture()
-                && ! $tournament->cancellationRequests()->where('status', 'pending')->exists()
+            ? $isRegistered && $v2CancellationCutoffOpen && $pendingCancellationRequest === null
             : $isRegistered && $userRegistration?->locked_at === null
                 && $tournament->extra_registration_started_at === null && in_array($tournament->status, [
                     TournamentStatus::REGISTRATION_OPEN,
@@ -483,12 +507,6 @@ class TournamentDetail extends Component
             ->where('status', 'searching')
             ->exists() : false;
         $userSquad = $user ? Team::query()->where('captain_user_id', $user->id)->where('status', 'active')->first(['id', 'name']) : null;
-        $pendingCancellationRequest = $user && (int) $tournament->workflow_version === 2
-            ? $tournament->cancellationRequests()
-                ->with(['requester:id,username', 'votes:id,request_id,voter_id,approved'])
-                ->where('status', 'pending')
-                ->first()
-            : null;
 
         return view('livewire.tournament.tournament-detail', [
             'tournament' => $tournament,

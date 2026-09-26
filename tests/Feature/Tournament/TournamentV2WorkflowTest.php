@@ -1035,12 +1035,53 @@ final class TournamentV2WorkflowTest extends TestCase
 
         Livewire::actingAs($player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSee('Request Cancellation')
+            ->call('openCancellationDialog')
+            ->assertSet('showCancelModal', true)
+            ->assertSee('Cancel Registration?')
             ->call('cancelRegistration')
             ->assertSet('cancellationError', '')
+            ->assertSet('showCancelModal', false)
             ->assertDispatched('registration-cancellation-completed');
 
         self::assertSame('pending', $tournament->cancellationRequests()->firstOrFail()->status);
         self::assertSame('confirmed', $registration->fresh()->status->value);
+    }
+
+    public function test_v2_cancellation_cutoff_is_consistent_at_and_inside_thirty_minutes(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $player = $this->user('cutoff-cancel@example.com', 'cutoffcancel', 'PLAYER');
+        $atCutoffTemplate = $this->template('daily', 4, '10:30');
+        $atCutoffTournament = app(MaterializeV2OccurrenceAction::class)->execute($atCutoffTemplate->scheduleSlots->first(), $this->admin);
+        $atCutoffRegistration = app(RegisterForV2TournamentAction::class)->execute($atCutoffTournament, $player, null, 'cutoff-player');
+
+        Livewire::actingAs($player)
+            ->test(TournamentDetail::class, ['uuid' => $atCutoffTournament->uuid])
+            ->assertViewHas('canCancelRegistration', true)
+            ->assertSee('Request Cancellation')
+            ->call('openCancellationDialog')
+            ->assertSet('showCancelModal', true)
+            ->call('cancelRegistration')
+            ->assertSet('showCancelModal', false)
+            ->assertSet('cancellationError', '');
+        self::assertSame('cancelled', $atCutoffRegistration->fresh()->status->value);
+
+        $insidePlayer = $this->user('closed-cancel@example.com', 'closedcancel', 'PLAYER');
+        $insideTemplate = $this->template('daily', 4, '10:29');
+        $insideTournament = app(MaterializeV2OccurrenceAction::class)->execute($insideTemplate->scheduleSlots->first(), $this->admin);
+        $insideRegistration = app(RegisterForV2TournamentAction::class)->execute($insideTournament, $insidePlayer, null, 'closed-player');
+
+        Livewire::actingAs($insidePlayer)
+            ->test(TournamentDetail::class, ['uuid' => $insideTournament->uuid])
+            ->assertViewHas('canCancelRegistration', false)
+            ->assertSee('Cancellation closed')
+            ->assertSee('Less than 30 minutes before start')
+            ->assertDontSee('Request Cancellation')
+            ->call('cancelRegistration')
+            ->assertSet('cancellationError', fn (string $message): bool => $message !== '')
+            ->assertNotDispatched('registration-cancellation-completed');
+        self::assertSame('confirmed', $insideRegistration->fresh()->status->value);
     }
 
     public function test_cancellation_uses_snapshotted_half_threshold_and_immutable_vote(): void
