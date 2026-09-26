@@ -32,6 +32,7 @@ final class FinalizeV2FinancialsAction
                     'finalized_first_prize' => $result['first'],
                     'finalized_second_prize' => $result['second'],
                     'prize_pool' => DecimalMoney::format((int) $result['first_minor'] + (int) $result['second_minor']),
+                    'financial_calculation_version' => 3,
                     'financial_finalized_at' => now(),
                 ])->save();
             }

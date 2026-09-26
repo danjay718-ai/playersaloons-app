@@ -70,7 +70,7 @@ final class CreateV2TournamentTemplateAction
                     'waiting_result_time' => (int) ($data['waiting_result_time'] ?? 5),
                     'round_duration_seconds' => $data['round_duration_seconds'] ?? null,
                     'winning_points' => $data['winning_points'] ?? 15,
-                    'play_xp' => 10,
+                    'play_xp' => 4,
                     'full_first_bps' => $firstBps,
                     'full_second_bps' => $secondBps,
                     'full_platform_bps' => 1000,

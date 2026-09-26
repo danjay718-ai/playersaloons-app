@@ -17,11 +17,11 @@ final class V2PrizePolicy implements PrizePolicy
         $full = $joinedEntries >= $maximum;
         $gross = DecimalMoney::toMinor((string) $tournament->entry_fee) * $joinedEntries;
 
-        if (! $full) {
-            $platformBps = (int) ($tournament->underfilled_platform_bps ?? 1500);
-            $firstBps = (int) ($tournament->underfilled_first_bps ?? 8500);
-            $secondBps = 0;
-        } elseif ($maximum <= 4) {
+        // Follow the size of the field that actually competed. Small fields
+        // pay the champion only; fields with at least five entries use the
+        // configured full-field split. The former underfilled 85/15 policy is
+        // intentionally no longer used.
+        if ($maximum <= 4 || $joinedEntries <= 4) {
             $platformBps = 1000;
             $firstBps = 9000;
             $secondBps = 0;

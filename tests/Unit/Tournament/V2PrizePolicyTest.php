@@ -37,8 +37,11 @@ final class V2PrizePolicyTest extends TestCase
         return [
             'full four' => [4, 4, '1.00', '0.40', '3.60', '0.00'],
             'full eight configured split' => [8, 8, '1.00', '0.80', '6.00', '1.20'],
-            'underfilled four' => [4, 3, '1.00', '0.45', '2.55', '0.00'],
-            'underfilled sixteen' => [16, 10, '1.00', '1.50', '8.50', '0.00'],
+            'underfilled four' => [4, 3, '1.00', '0.30', '2.70', '0.00'],
+            'two entrants in a larger bracket' => [16, 2, '1.00', '0.20', '1.80', '0.00'],
+            'four entrants in a larger bracket' => [16, 4, '1.00', '0.40', '3.60', '0.00'],
+            'five entrants use configured split' => [16, 5, '1.00', '0.50', '3.75', '0.75'],
+            'underfilled sixteen' => [16, 10, '1.00', '1.00', '7.50', '1.50'],
             'cent rounding remains conserved' => [8, 8, '0.01', '0.01', '0.06', '0.01'],
         ];
     }
