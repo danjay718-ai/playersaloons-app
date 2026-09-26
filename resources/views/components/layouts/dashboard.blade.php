@@ -322,15 +322,12 @@
                     @php
                         $topbarAvatarUrl = auth()->user()?->profile?->avatar_url;
                     @endphp
-                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                    <div class="relative" x-data="{ open: false, avatarUrl: @js($topbarAvatarUrl ?: '') }" @avatar-updated.window="avatarUrl = $event.detail.url" @click.outside="open = false">
                         <button @click="open = !open" class="flex items-center space-x-1.5 bg-zinc-900/40 hover:bg-zinc-800/60 border border-purple-500/20 rounded-full py-1.5 pl-1.5 pr-2 transition-all duration-300 shadow-[0_0_10px_rgba(168,85,247,0.1)] hover:shadow-[0_0_15px_rgba(168,85,247,0.25)]">
                             <div class="w-6 h-6 md:w-7 md:h-7 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 p-[1.5px]">
                                 <div class="w-full h-full bg-[#0a0718] rounded-full overflow-hidden flex items-center justify-center text-purple-400 text-[9px] font-bold font-orbitron">
-                                    @if($topbarAvatarUrl)
-                                        <img src="{{ $topbarAvatarUrl }}" alt="{{ auth()->user()->username }}" class="h-full w-full object-cover">
-                                    @else
-                                        {{ strtoupper(substr(auth()->user()->username, 0, 2)) }}
-                                    @endif
+                                    <img x-show="avatarUrl" :src="avatarUrl" alt="{{ auth()->user()->username }}" class="h-full w-full object-cover" x-cloak>
+                                    <span x-show="!avatarUrl">{{ strtoupper(substr(auth()->user()->username, 0, 2)) }}</span>
                                 </div>
                             </div>
                             <span class="text-[10px] font-black uppercase tracking-wider text-purple-300 hidden md:inline">

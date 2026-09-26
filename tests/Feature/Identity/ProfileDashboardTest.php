@@ -10,8 +10,10 @@ use App\Modules\Compliance\Services\CountryEligibilityService;
 use App\Modules\Identity\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -70,7 +72,25 @@ class ProfileDashboardTest extends TestCase
         $this->actingAs($this->user)
             ->get('/dashboard')
             ->assertOk()
-            ->assertSeeHtml('<img src="/storage/avatars/'.$this->user->id.'/avatar.webp" alt="oldhandle" class="h-full w-full object-cover">');
+            ->assertSee('avatarUrl', false)
+            ->assertSee('/storage/avatars/'.$this->user->id.'/avatar.webp', false);
+    }
+
+    public function test_avatar_upload_dispatches_an_immediate_topbar_update(): void
+    {
+        Storage::fake('public');
+
+        Livewire::actingAs($this->user)
+            ->test(ProfileDashboard::class)
+            ->set('avatarFile', UploadedFile::fake()->image('avatar.png', 400, 400))
+            ->call('updateAvatar')
+            ->assertHasNoErrors()
+            ->assertDispatched('avatar-updated', fn (string $name, array $params): bool => $name === 'avatar-updated' && str_contains((string) ($params['url'] ?? ''), '/storage/avatars/'.$this->user->id.'/')
+            );
+
+        Storage::disk('public')->assertExists($this->user->fresh()->profile->avatar_url
+            ? ltrim(str_replace('/storage/', '', $this->user->fresh()->profile->avatar_url), '/')
+            : 'missing');
     }
 
     public function test_dashboard_topbar_falls_back_to_username_initials_without_an_avatar(): void

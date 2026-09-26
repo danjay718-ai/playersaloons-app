@@ -172,8 +172,11 @@ class ProfileDashboard extends Component
 
         $action->execute($user, $this->avatarFile);
         $this->reset('avatarFile');
+        $user->unsetRelation('profile');
+        $avatarUrl = (string) ($user->profile?->avatar_url ?? '');
 
         session()->flash('message', 'Profile picture updated successfully!');
+        $this->dispatch('avatar-updated', url: $avatarUrl === '' ? '' : $avatarUrl.'?v='.now()->getTimestampMs());
     }
 
     public function updatePassword(): void
