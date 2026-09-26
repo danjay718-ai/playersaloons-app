@@ -9,6 +9,7 @@ use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Shared\Enums\MatchStatus;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 class StartMatchAction
 {
@@ -19,9 +20,21 @@ class StartMatchAction
      */
     public function execute(GameMatch $match): void
     {
-        DB::transaction(function () use ($match) {
-            $this->stateMachine->transition($match, MatchStatus::IN_PROGRESS);
-            MatchStarted::dispatch($match->id, $match->tournament_id);
-        });
+        $started = DB::transaction(function () use ($match): ?GameMatch {
+            $locked = GameMatch::query()->lockForUpdate()->findOrFail($match->id);
+            if ($locked->status === MatchStatus::IN_PROGRESS) {
+                return null;
+            }
+            if ($locked->status !== MatchStatus::READY) {
+                throw new LogicException('This match is no longer ready to start.');
+            }
+            $this->stateMachine->transition($locked, MatchStatus::IN_PROGRESS);
+
+            return $locked;
+        }, 3);
+
+        if ($started !== null) {
+            MatchStarted::dispatch((int) $started->id, (int) $started->tournament_id);
+        }
     }
 }

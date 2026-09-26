@@ -10,12 +10,12 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
+use App\Modules\Match\Actions\OverrideMatchResultAction;
 use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
 use App\Modules\Match\Actions\VoteForRematchAction;
-use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Services\MatchReadinessService;
 use App\Shared\Enums\DisputeStatus;
@@ -23,7 +23,6 @@ use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -75,12 +74,14 @@ class MatchDetail extends Component
         try {
             $action->execute($match, (int) Auth::id());
             session()->flash('message', 'Match result confirmed! The match is now complete.');
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to confirm the match result.'));
         }
     }
 
-    public function adminCompleteMatch(int $winnerId)
+    public function adminCompleteMatch(int $winnerId, OverrideMatchResultAction $action)
     {
         /** @var User $user */
         $user = Auth::user();
@@ -91,19 +92,10 @@ class MatchDetail extends Component
         $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
 
         try {
-            DB::transaction(function () use ($match, $winnerId) {
-                $match->winner_registration_id = $winnerId;
-                $match->status = MatchStatus::COMPLETED;
-                $match->completed_at = now();
-                $match->save();
-
-                MatchCompleted::dispatch(
-                    (int) $match->id,
-                    (int) $match->tournament_id,
-                    (int) $match->winner_registration_id
-                );
-            });
+            $action->execute($match, $winnerId, $user);
             session()->flash('message', 'Match finalized by administrator.');
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to finalize the match result.'));
         }
@@ -143,6 +135,8 @@ class MatchDetail extends Component
             $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
             $readiness->markReady($match, (int) Auth::id());
             session()->flash('message', 'You are ready. We will notify you when the match starts.');
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to update your ready status.'));
         }
@@ -181,6 +175,8 @@ class MatchDetail extends Component
             $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
             $readiness->reportOpponentAbsent($match, (int) Auth::id());
             session()->flash('message', 'Extra Wait Time started. Your opponent has been notified.');
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to report the absent opponent.'));
         }
@@ -248,6 +244,8 @@ class MatchDetail extends Component
                     default => "Result submitted. Your opponent has {$responseMinutes} minutes from the first submission to respond.",
                 });
                 $this->reset(['resultOutcome', 'notes', 'submissionProof']);
+            } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+                session()->flash('error', $e->getMessage());
             } catch (\Exception $e) {
                 session()->flash('error', $this->safeError($e, 'Unable to submit the match result.'));
             }
@@ -312,6 +310,8 @@ class MatchDetail extends Component
                 ? 'Dispute and proof submitted successfully.'
                 : 'Dispute opened successfully. You may add proof below.');
             $this->reset(['disputeReason', 'evidenceFile']);
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to open the match dispute.'));
         }
@@ -328,6 +328,8 @@ class MatchDetail extends Component
         try {
             $rematch = $action->execute($match, (int) Auth::id());
             session()->flash('message', $rematch ? 'Rematch agreed! A new match is ready.' : 'Rematch requested. Waiting for your opponent to agree.');
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to request a rematch.'));
         }
@@ -364,6 +366,8 @@ class MatchDetail extends Component
             $action->execute($dispute, (int) Auth::id(), $this->evidenceFile);
             session()->flash('message', 'Evidence uploaded successfully! The tournament admins will review it.');
             $this->reset('evidenceFile');
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to upload match evidence.'));
         }
@@ -404,6 +408,8 @@ class MatchDetail extends Component
             $action->execute($dispute, (int) Auth::id(), $this->evidenceFile, $this->disputeReason);
             $this->reset(['disputeReason', 'evidenceFile']);
             session()->flash('message', 'Your dispute reason and proof were submitted for admin review.');
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
+            session()->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to submit your dispute details.'));
         }

@@ -8,16 +8,14 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\Identity\Actions\ApplyComplianceBlockAction;
 use App\Modules\Identity\Actions\IssueDisputeStrikeAction;
 use App\Modules\Identity\Models\User;
+use App\Modules\Match\Actions\OverrideMatchResultAction;
 use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\ResolveHeadToHeadDisputeAction;
-use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Match\Models\MatchDispute;
-use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Shared\Enums\DisputeResolution;
-use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\HeadToHeadDisputeResolution;
 use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\MatchStatus;
@@ -179,7 +177,7 @@ class MatchAdmin extends AdminComponent
 
     // ─── Actions ─────────────────────────────────────────────────────────────
 
-    public function overrideResult(MatchStateMachine $stateMachine): void
+    public function overrideResult(OverrideMatchResultAction $action): void
     {
         $this->validate(['winnerRegistrationId' => 'required|integer']);
 
@@ -190,50 +188,8 @@ class MatchAdmin extends AdminComponent
             abort(403);
         }
 
-        if ($this->winnerRegistrationId !== $match->player_a_registration_id
-            && $this->winnerRegistrationId !== $match->player_b_registration_id) {
-            session()->flash('error', 'Winner must be one of the match participants.');
-
-            return;
-        }
-
         try {
-            DB::transaction(function () use ($match, $stateMachine) {
-                if ($match->status === MatchStatus::DISPUTED) {
-                    $dispute = MatchDispute::where('match_id', $match->id)
-                        ->whereIn('status', [DisputeStatus::OPEN, DisputeStatus::UNDER_REVIEW])
-                        ->first();
-                    if ($dispute) {
-                        $dispute->status = DisputeStatus::RESOLVED;
-                        $dispute->resolution = $this->winnerRegistrationId === $match->player_a_registration_id
-                            ? DisputeResolution::PLAYER_A
-                            : DisputeResolution::PLAYER_B;
-                        $dispute->resolved_by = Auth::id();
-                        $dispute->resolved_at = now();
-                        $dispute->save();
-                    }
-                }
-
-                $match->winner_registration_id = $this->winnerRegistrationId;
-                $match->save();
-
-                if ($match->status === MatchStatus::PENDING) {
-                    $stateMachine->transition($match, MatchStatus::READY);
-                }
-                if ($match->status === MatchStatus::READY) {
-                    $stateMachine->transition($match, MatchStatus::IN_PROGRESS);
-                }
-                if ($match->status === MatchStatus::IN_PROGRESS) {
-                    $stateMachine->transition($match, MatchStatus::WAITING_FOR_CONFIRMATION);
-                }
-                if ($match->status === MatchStatus::WAITING_FOR_CONFIRMATION
-                    || $match->status === MatchStatus::RESULT_SUBMITTED
-                    || $match->status === MatchStatus::DISPUTED) {
-                    $stateMachine->transition($match, MatchStatus::COMPLETED);
-                }
-
-                MatchCompleted::dispatch($match->id, $match->tournament_id, $this->winnerRegistrationId);
-            });
+            $action->execute($match, (int) $this->winnerRegistrationId, $actor);
 
             session()->flash('success', 'Match result overridden and advanced successfully.');
             $this->closeDetailModal();
