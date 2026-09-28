@@ -9,6 +9,7 @@ use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
+use App\Modules\Operations\Models\Activity;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Models\Withdrawal;
@@ -17,12 +18,15 @@ use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Enums\WithdrawalStatus;
-use App\Modules\Operations\Models\Activity;
+use Illuminate\Database\Eloquent\Builder;
 
 class AdminDashboard extends AdminComponent
 {
     public function render()
     {
+        $platformUser = User::query()->with('wallet')->where('email', 'platform@playersaloons.com')->first();
+        $platformWalletId = $platformUser?->wallet?->id;
+
         $stats = [
             'total_users' => User::count(),
             'pending_kyc' => KycSubmission::where('status', KycStatus::SUBMITTED->value)->count(),
@@ -49,7 +53,14 @@ class AdminDashboard extends AdminComponent
                 MatchStatus::FORFEITED->value,
             ])->count(),
 
-            'total_escrow' => Wallet::sum('cached_balance'),
+            'user_wallet_liability' => Wallet::query()
+                ->when($platformWalletId !== null, fn (Builder $query) => $query->where('id', '!=', $platformWalletId))
+                ->sum('cached_balance'),
+            'platform_position' => (float) ($platformUser?->wallet?->cached_balance ?? 0),
+            'sponsored_commitments' => Tournament::query()
+                ->where('prize_funding_mode', 'sponsored')
+                ->where('funding_state', 'reserved')
+                ->sum('reserved_prize_amount'),
         ];
 
         $recentActivities = Activity::orderBy('created_at', 'desc')

@@ -100,11 +100,11 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-            <select wire:model.live="statusFilter" 
+            <select wire:change="setStatusFilter($event.target.value)"
                     class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
-                <option value="">All Statuses</option>
+                <option value="" @selected($statusFilter === '')>All Statuses</option>
                 @foreach(\App\Shared\Enums\TournamentStatus::cases() as $status)
-                    <option value="{{ $status->value }}">{{ strtoupper(str_replace('_', ' ', $status->name)) }}</option>
+                    <option value="{{ $status->value }}" @selected($statusFilter === $status->value)>{{ strtoupper(str_replace('_', ' ', $status->name)) }}</option>
                 @endforeach
             </select>
 
@@ -124,6 +124,9 @@
                 @endforeach
             </select>
 
+            @if($activeTab === 'daily')
+                <div><label class="sr-only" for="tournament-start-time">Exact UTC start time</label><input id="tournament-start-time" type="time" wire:model.live="startTimeFilter" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500"><p class="mt-1 text-[10px] text-slate-500">Exact UTC start time</p></div>
+            @else
             <div class="flex items-center gap-2">
                 <input type="date" wire:model.live="startDateFilter" 
                        class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
@@ -131,6 +134,7 @@
                 <input type="date" wire:model.live="endDateFilter" 
                        class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
             </div>
+            @endif
 
             <select wire:model.live="perPage" 
                     class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500">
@@ -156,33 +160,7 @@
         </div>
     @endif
 
-    @if($v2Templates)
-        <div class="mb-6 overflow-hidden rounded-xl border border-indigo-900/50 bg-[#0f172a] shadow-sm">
-            <div class="flex flex-col gap-2 border-b border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 class="text-sm font-bold text-white">Tournament List</h2><p class="mt-1 text-xs text-slate-500">One row per tournament schedule. Open slots to manage individual occurrences.</p></div><span class="rounded border border-indigo-800/60 bg-indigo-950/50 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-indigo-300">Grouped view</span></div>
-            <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="border-b border-slate-800 text-[10px] font-bold uppercase text-slate-400"><th class="p-4">Schedule</th><th class="p-4">Game</th><th class="p-4">Frequency</th><th class="p-4">Slots</th><th class="p-4">Schedule window</th><th class="p-4 text-right">
-                            <div class="flex items-center justify-end gap-1">
-                                <span>Actions</span>
-                                @can('tournaments.delete')
-                                    <x-admin.action-dropdown>
-                                        <div class="py-1 font-normal normal-case">
-                                            <livewire:admin.recoverable-delete resource="tournament_schedules" :menu-item="true" :key="'bulk-delete-tournament_schedules'" />
-                                        </div>
-                                    </x-admin.action-dropdown>
-                                @endcan
-                            </div>
-                        </th></tr></thead><tbody class="divide-y divide-slate-800/50">@forelse($v2Templates as $template)<tr class="hover:bg-slate-900/40" wire:key="v2-template-{{ $template->id }}"><td class="p-4"><span class="font-semibold text-slate-200">{{ $template->name }}</span><span class="mt-1 block text-[10px] text-slate-500">{{ $template->uuid }}</span></td><td class="p-4 text-slate-300">{{ $template->game?->translations->first()?->name ?? $template->game?->slug }}</td><td class="p-4 text-slate-300">{{ $template->recurrence_frequency?->value ?? 'one-time' }}</td><td class="p-4 text-slate-300">{{ $template->slots_count }}</td><td class="p-4"><x-admin.v2-schedule-window :template="$template" /></td><td class="p-4 text-right">
-                <x-admin.action-dropdown>
-                    <div class="py-1">
-                        <a href="{{ route('admin.tournaments.v2.templates.slots', $template) }}" class="group flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white">
-                            <i data-lucide="list-tree" class="mr-2 h-3.5 w-3.5 text-slate-500 group-hover:text-indigo-400"></i>View slots
-                        </a>
-                        <livewire:admin.recoverable-delete resource="tournament_schedules" :menu-item="true" :record-id="$template->id" :key="'delete-tournament-schedule-'.$template->id" />
-                    </div>
-                </x-admin.action-dropdown>
-            </td></tr>@empty<tr><td colspan="6" class="p-8 text-center text-slate-500">No V2 tournament schedules match the filters.</td></tr>@endforelse</tbody></table></div>
-            @if($v2Templates->hasPages())<div class="border-t border-slate-800 px-4 py-3">{{ $v2Templates->links('vendor.livewire.custom-pagination') }}</div>@endif
-        </div>
-    @endif
+    @if($v2Templates)<div class="mb-6"><x-admin.v2-schedule-list :templates="$v2Templates" :livewire="true" :parent-list="true" :status-filter="$statusFilter" :status-tab="$statusTab" :active-tab="$activeTab" :start-date="$startDateFilter" :end-date="$endDateFilter" :start-time="$startTimeFilter" /></div>@endif
 
     @if(!config('features.tournament_v2.enabled'))
     <!-- Legacy V1 tournaments remain available only while the V2 feature is disabled. -->

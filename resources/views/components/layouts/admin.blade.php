@@ -79,6 +79,7 @@
                                 ['label' => 'Streams', 'icon' => 'tv', 'url' => '/admin/streams', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
                                 ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc', 'permission' => 'kyc.view'],
                                 ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals', 'permission' => 'withdrawals.view'],
+                                ['label' => 'Escrow & Cashflow', 'icon' => 'landmark', 'url' => '/admin/escrow-cashflow', 'permission' => 'withdrawals.view'],
                                 ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users', 'permission' => 'users.view'],
                                 ['label' => 'Roles & Permissions', 'icon' => 'key', 'url' => '/admin/roles-permissions', 'permission' => 'roles.view'],
                                 ['label' => 'Compliance', 'icon' => 'shield-alert', 'url' => '/admin/compliance', 'permission' => 'users.suspend'],

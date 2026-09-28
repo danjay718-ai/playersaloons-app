@@ -5,8 +5,8 @@
         <div class="bg-[#0f172a] border border-slate-800 rounded-xl p-5 shadow-sm">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Escrow Balance</p>
-                    <h3 class="text-2xl font-extrabold text-slate-100 mt-1">${{ number_format($stats['total_escrow'], 2) }}</h3>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">User Wallet Liability</p>
+                    <h3 class="text-2xl font-extrabold text-slate-100 mt-1">${{ number_format($stats['user_wallet_liability'], 2) }}</h3>
                 </div>
                 <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
                     <i data-lucide="banknote" class="w-6 h-6"></i>
@@ -14,8 +14,10 @@
             </div>
             <div class="mt-4 flex items-center text-xs text-slate-500">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
-                <span>Active platform liquidity</span>
+                <a href="{{ route('admin.escrow-cashflow') }}" wire:navigate class="font-semibold text-emerald-400 hover:text-emerald-300">View escrow & cashflow →</a>
             </div>
+            <div class="mt-2 flex justify-between text-[10px] text-slate-500"><span>Platform account {{ $stats['platform_position'] < 0 ? 'payable' : 'balance' }}</span><span class="font-bold {{ $stats['platform_position'] < 0 ? 'text-red-400' : 'text-slate-300' }}">${{ number_format($stats['platform_position'], 2) }}</span></div>
+            <div class="mt-1 flex justify-between text-[10px] text-slate-500"><span>Sponsored commitments</span><span class="font-bold text-amber-300">${{ number_format($stats['sponsored_commitments'], 2) }}</span></div>
         </div>
 
         <!-- Users Card -->

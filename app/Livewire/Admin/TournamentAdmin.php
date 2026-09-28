@@ -6,6 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
+use App\Modules\Operations\Services\AdminDeletionService;
 use App\Modules\Tournament\Actions\CancelTournamentAction;
 use App\Modules\Tournament\Actions\CloseCheckinAction;
 use App\Modules\Tournament\Actions\CloseRegistrationAction;
@@ -62,6 +63,9 @@ class TournamentAdmin extends AdminComponent
     public string $endDateFilter = '';
 
     #[Url]
+    public string $startTimeFilter = '';
+
+    #[Url]
     public int $perPage = 10;
 
     // Modal control
@@ -88,6 +92,15 @@ class TournamentAdmin extends AdminComponent
 
     public function updatingStatusFilter(): void
     {
+        $this->resetPage();
+    }
+
+    public function setStatusFilter(string $status): void
+    {
+        $this->statusFilter = $status;
+        // The dropdown selects across the complete V2 status set. Status cards
+        // remain useful as independent grouped filters when no exact status is set.
+        $this->statusTab = 'all';
         $this->resetPage();
     }
 
@@ -307,7 +320,7 @@ class TournamentAdmin extends AdminComponent
             return;
         }
 
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('tournaments', [$tournament->id], $this->actor());
+        app(AdminDeletionService::class)->delete('tournaments', [$tournament->id], $this->actor());
         session()->flash('success', 'Tournament deleted successfully.');
         $this->closeDeleteModal();
     }
@@ -356,11 +369,37 @@ class TournamentAdmin extends AdminComponent
             // V2 occurrences are immutable operational records. Grouping is
             // presentation-only so the admin index is not one row per slot.
             $v2Templates = TournamentTemplate::query()
-                ->with(['game.translations', 'scheduleSlots:id,tournament_template_id,schedule_start_at,schedule_end_at,day_of_week,day_of_month'])
-                ->withCount(['scheduleSlots as slots_count'])
+                ->with(['game.translations', 'scheduleSlots.occurrences' => fn ($query) => $query->withCount('registrations')->orderByDesc('start_at')])
                 ->where('workflow_version', 2)
                 ->where('competition_type', CompetitionType::TOURNAMENT)
-                ->whereHas('scheduleSlots.occurrences', fn ($occurrences) => $this->applyV2OccurrenceSubquery($occurrences, $v2Occurrences))
+                ->when($this->search !== '', fn ($templates) => $templates->where('name', 'like', '%'.$this->search.'%'))
+                ->when($this->gameFilter !== '', fn ($templates) => $templates->where('game_id', $this->gameFilter))
+                ->when($this->platformFilter !== '', fn ($templates) => $templates->where(fn ($platforms) => $platforms
+                    ->whereJsonContains('settings_json->platform_ids', (int) $this->platformFilter)
+                    ->orWhere('settings_json->platform_id', (int) $this->platformFilter)))
+                ->when($this->activeTab !== 'all', function ($templates): void {
+                    if ($this->activeTab === 'one-time') {
+                        $templates->where('is_recurring', false);
+
+                        return;
+                    }
+                    $templates->where('recurrence_frequency', $this->activeTab);
+                })
+                ->where(function ($templates) use ($v2Occurrences): void {
+                    $allowsUnmaterialized = $this->statusTab === 'active'
+                        && $this->statusFilter === ''
+                        && $this->startTimeFilter === ''
+                        && $this->startDateFilter === ''
+                        && $this->endDateFilter === ''
+                        && $this->platformFilter === '';
+                    if ($allowsUnmaterialized) {
+                        $templates->whereDoesntHave('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->withTrashed())
+                            ->orWhereHas('scheduleSlots.occurrences', fn ($occurrences) => $this->applyV2OccurrenceSubquery($occurrences, $v2Occurrences));
+
+                        return;
+                    }
+                    $templates->whereHas('scheduleSlots.occurrences', fn ($occurrences) => $this->applyV2OccurrenceSubquery($occurrences, $v2Occurrences));
+                })
                 ->orderByDesc('updated_at')
                 ->paginate($this->perPage, ['*'], 'v2Page');
 
@@ -390,6 +429,12 @@ class TournamentAdmin extends AdminComponent
         return view('livewire.admin.tournament-admin', [
             'tournaments' => $tournaments,
             'v2Templates' => $v2Templates,
+            'statusFilter' => $this->statusFilter,
+            'statusTab' => $this->statusTab,
+            'activeTab' => $this->activeTab,
+            'startTimeFilter' => $this->startTimeFilter,
+            'startDateFilter' => $this->startDateFilter,
+            'endDateFilter' => $this->endDateFilter,
             'games' => $games,
             'platforms' => $platforms,
             'selectedTournament' => $selectedTournament,
@@ -427,7 +472,13 @@ class TournamentAdmin extends AdminComponent
         }
 
         if ($this->activeTab !== 'all') {
-            $query->where('frequency', $this->activeTab);
+            $query->where('frequency', $this->activeTab === 'one-time' ? 'one_time' : $this->activeTab);
+        }
+
+        if ($this->activeTab === 'daily' && $this->startTimeFilter !== '') {
+            $query->whereTime('start_at', $this->startTimeFilter.':00');
+
+            return;
         }
 
         if ($this->startDateFilter) {
