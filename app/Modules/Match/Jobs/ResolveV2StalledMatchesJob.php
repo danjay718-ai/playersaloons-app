@@ -30,6 +30,6 @@ final class ResolveV2StalledMatchesJob implements ShouldQueue
         GameMatch::query()->whereNotNull('final_resolution_eligible_at')
             ->where('final_resolution_eligible_at', '<=', now())->whereNull('final_resolution_notified_at')
             ->whereNotIn('status', ['completed', 'forfeited'])->orderBy('id')->pluck('id')
-            ->each(fn (int $id) => $stalled->escalateNoChampion($id));
+            ->each(fn (int $id) => $stalled->escalateUnresolvedFinal($id));
     }
 }

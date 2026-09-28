@@ -201,7 +201,7 @@ class MatchAdmin extends AdminComponent
     public function resolveDispute(ResolveDisputeAction $resolver, ApplyComplianceBlockAction $blocker, IssueDisputeStrikeAction $strikes): void
     {
         $this->validate([
-            'resolution' => 'required|string|in:player_a,player_b,rematch,draw,no_champion',
+            'resolution' => 'required|string|in:player_a,player_b,rematch,draw',
             'complianceUserId' => 'nullable|integer',
             'complianceBanDays' => 'required_with:complianceUserId|integer|min:1|max:3650',
             'complianceBanReason' => 'required_with:complianceUserId|nullable|string|min:10|max:1000',

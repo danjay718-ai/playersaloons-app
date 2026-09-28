@@ -32,7 +32,7 @@ class SubmitEvidenceAction
     /**
      * Submit evidence for a match dispute.
      */
-    public function execute(MatchDispute $dispute, int $uploadedByUserId, UploadedFile $file, ?string $reason = null): MatchEvidence
+    public function execute(MatchDispute $dispute, int $uploadedByUserId, ?UploadedFile $file, ?string $reason = null): MatchEvidence
     {
         if ($reason !== null && (mb_strlen(trim($reason)) < 10 || mb_strlen($reason) > 2000)) {
             throw new InvalidArgumentException('A dispute reason must be between 10 and 2000 characters.');
@@ -64,23 +64,25 @@ class SubmitEvidenceAction
                 throw new LogicException('You have already submitted evidence for this dispute.');
             }
 
-            // Validate file upload
-            if (! $file->isValid()) {
-                throw new InvalidArgumentException('Uploaded file is invalid.');
-            }
+            $path = null;
+            if ($file !== null) {
+                if (! $file->isValid()) {
+                    throw new InvalidArgumentException('Uploaded file is invalid.');
+                }
 
-            if ($file->getSize() > self::MAX_FILE_BYTES) {
-                throw new InvalidArgumentException('Evidence file size exceeds the 2MB limit.');
-            }
+                if ($file->getSize() > self::MAX_FILE_BYTES) {
+                    throw new InvalidArgumentException('Evidence file size exceeds the 2MB limit.');
+                }
 
-            if (! in_array($file->getMimeType(), self::ALLOWED_MIME_TYPES, true)) {
-                throw new InvalidArgumentException('Invalid file type. Only JPEG, PNG, and WebP images are allowed.');
-            }
+                if (! in_array($file->getMimeType(), self::ALLOWED_MIME_TYPES, true)) {
+                    throw new InvalidArgumentException('Invalid file type. Only JPEG, PNG, and WebP images are allowed.');
+                }
 
-            // Store file on local public disk (switch to R2/S3 on deployment)
-            $path = $file->store("disputes/{$dispute->id}/evidence", 'public');
-            if ($path === false) {
-                throw new LogicException('Failed to store evidence file.');
+                // Store file on local public disk (switch to R2/S3 on deployment)
+                $path = $file->store("disputes/{$dispute->id}/evidence", 'public');
+                if ($path === false) {
+                    throw new LogicException('Failed to store evidence file.');
+                }
             }
 
             // Update dispute status to under_review if it was open

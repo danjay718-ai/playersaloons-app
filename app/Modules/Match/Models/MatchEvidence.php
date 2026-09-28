@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property int $dispute_id
  * @property int $uploaded_by
- * @property string $file_path
+ * @property string|null $file_path
  * @property string|null $reason
  * @property Carbon|null $created_at
  * @property-read MatchDispute $dispute

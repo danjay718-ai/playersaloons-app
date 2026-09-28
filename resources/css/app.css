@@ -1025,6 +1025,18 @@ html[data-theme='light'] .theme-player .match-result-tabs .match-result-tab-acti
     box-shadow: 0 6px 15px rgba(37, 99, 235, 0.2) !important;
 }
 html[data-theme='light'] .theme-player .match-result-tabs .match-result-tab-active :is(i, svg, span) { color: #ffffff !important; }
+.theme-player .match-result-tabs button.match-result-tab-active,
+.theme-player .match-result-tabs button.match-result-tab-active:hover,
+.theme-player .match-result-tabs button.match-result-tab-active:focus-visible,
+.theme-player .match-result-tabs button.match-result-tab-active:active {
+    color: #ffffff !important;
+}
+.theme-player .match-result-tabs button.match-result-tab-active :is(i, svg, span),
+.theme-player .match-result-tabs button.match-result-tab-active:hover :is(i, svg, span),
+.theme-player .match-result-tabs button.match-result-tab-active:focus-visible :is(i, svg, span),
+.theme-player .match-result-tabs button.match-result-tab-active:active :is(i, svg, span) {
+    color: #ffffff !important;
+}
 html[data-theme='light'] .theme-player .player-match-room .match-open-dispute-button {
     background: #dc2626 !important;
     border-color: #b91c1c !important;

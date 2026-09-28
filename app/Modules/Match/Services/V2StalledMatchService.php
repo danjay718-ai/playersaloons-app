@@ -164,7 +164,7 @@ final class V2StalledMatchService
         }, 3);
     }
 
-    public function escalateNoChampion(int $matchId): void
+    public function escalateUnresolvedFinal(int $matchId): void
     {
         DB::transaction(function () use ($matchId): void {
             $tournamentId = GameMatch::query()->whereKey($matchId)->value('tournament_id');
@@ -181,7 +181,7 @@ final class V2StalledMatchService
                 [
                     'uuid' => Str::uuid()->toString(),
                     'opened_by' => $match->playerARegistration?->user_id,
-                    'reason' => 'The final remained unresolved for 24 hours after the occurrence ended. Admin may select a winner or complete it with no champion.',
+                    'reason' => 'The final remained unresolved for 24 hours after the occurrence ended. Admin must select a winner or reopen the match as a rematch.',
                 ],
             );
             $match->forceFill([

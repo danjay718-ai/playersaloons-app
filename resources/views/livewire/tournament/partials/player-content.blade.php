@@ -196,6 +196,28 @@
                             </a>
                         @endif
                         <p class="text-center text-[10px] font-bold uppercase tracking-wider text-cyan-400">Round {{ $currentMatch->round?->round_number ?? '—' }} · {{ $currentMatchStatusLabel }}</p>
+                    @elseif($isChampion)
+                        <div role="status" class="w-full rounded-2xl border border-amber-400/40 bg-amber-400/10 px-6 py-5 text-center shadow-[0_0_20px_rgba(251,191,36,0.12)]">
+                            <div class="flex items-center justify-center gap-2 text-amber-300">
+                                <i data-lucide="trophy" class="h-5 w-5"></i>
+                                <span class="text-xs font-black uppercase tracking-[0.2em]">Champion</span>
+                            </div>
+                        </div>
+                    @elseif($isSecondPlace)
+                        <div role="status" class="w-full rounded-2xl border border-zinc-300/30 bg-zinc-100/5 px-6 py-5 text-center">
+                            <div class="flex items-center justify-center gap-2 text-zinc-200">
+                                <i data-lucide="medal" class="h-5 w-5"></i>
+                                <span class="text-xs font-black uppercase tracking-[0.2em]">Second Place</span>
+                            </div>
+                            <p class="mt-2 text-xs font-bold text-amber-300">Second prize: ${{ number_format((float) $secondPlacePrize, 2) }}</p>
+                        </div>
+                    @elseif($awaitingNextMatch)
+                        <div role="status" class="w-full rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-6 py-5 text-center">
+                            <div class="flex items-center justify-center gap-2 text-cyan-300">
+                                <i data-lucide="circle-check" class="h-5 w-5"></i>
+                                <span class="text-xs font-black uppercase tracking-[0.15em]">Winner · Waiting for next match</span>
+                            </div>
+                        </div>
                     @elseif($hasLost)
                         <div role="alert" class="w-full rounded-2xl border border-rose-500/40 bg-rose-500/10 px-6 py-5 text-center shadow-[0_0_20px_rgba(244,63,94,0.12)]">
                             <div class="flex items-center justify-center gap-2 text-rose-300">
@@ -671,13 +693,23 @@
             @if($tournament->registrations->count() > 0)
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     @foreach($tournament->registrations as $reg)
+                        @php
+                            $memberUsername = $reg->user?->username ?? '';
+                            $memberName = $reg->team?->name ?: ($reg->user?->profile?->display_name ?: $memberUsername ?: 'Player');
+                            $memberAvatar = $reg->team?->logo_url ?: $reg->user?->profile?->avatar_url;
+                            $memberInitials = strtoupper(substr($memberUsername ?: $memberName, 0, 2));
+                        @endphp
                         <div class="group bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-2xl p-5 flex items-center space-x-4 hover:border-violet-500/50 hover:bg-violet-950/10 transition-all duration-300">
-                            <div class="w-12 h-12 bg-zinc-950 rounded-xl border border-zinc-800 flex items-center justify-center text-zinc-600 group-hover:text-violet-400 transition-colors shrink-0">
-                                <i data-lucide="{{ $reg->team ? 'users' : 'user' }}" class="w-6 h-6"></i>
+                            <div class="w-12 h-12 bg-zinc-950 rounded-xl border border-zinc-800 flex items-center justify-center text-zinc-300 font-black text-xs overflow-hidden shrink-0">
+                                @if($memberAvatar)
+                                    <img src="{{ $memberAvatar }}" alt="{{ $memberName }}" class="w-full h-full object-cover" loading="lazy">
+                                @else
+                                    {{ $memberInitials }}
+                                @endif
                             </div>
                             <div class="truncate">
                                 <span class="block text-sm font-black text-white truncate font-orbitron tracking-tight">
-                                    {{ $reg->team?->name ?: ($reg->user->profile?->display_name ?: $reg->user->username) }}
+                                    {{ $memberName }}
                                 </span>
                                 <span class="block text-[10px] text-zinc-600 font-black uppercase tracking-widest truncate">
                                     @if($reg->team)
@@ -726,8 +758,12 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
                         @foreach($soloPlayers as $reg)
                             <div class="bg-zinc-950/60 border border-amber-800/30 rounded-2xl p-4 flex items-center space-x-3 hover:border-amber-600/50 transition-colors">
-                                <div class="w-10 h-10 bg-amber-950/30 rounded-xl border border-amber-800/30 flex items-center justify-center text-amber-400 shrink-0">
-                                    <i data-lucide="user" class="w-5 h-5"></i>
+                                <div class="w-10 h-10 bg-amber-950/30 rounded-xl border border-amber-800/30 flex items-center justify-center text-amber-200 font-black text-[10px] overflow-hidden shrink-0">
+                                    @if($reg->user?->profile?->avatar_url)
+                                        <img src="{{ $reg->user->profile->avatar_url }}" alt="{{ $reg->user->username }}" class="w-full h-full object-cover" loading="lazy">
+                                    @else
+                                        {{ strtoupper(substr($reg->user?->username ?? '??', 0, 2)) }}
+                                    @endif
                                 </div>
                                 <div class="truncate">
                                     <span class="block text-sm font-bold text-white truncate">{{ $reg->user->profile?->display_name ?: $reg->user->username }}</span>
@@ -748,8 +784,14 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @foreach($formedTeams as $reg)
                             <div class="bg-zinc-950/60 border border-violet-800/30 rounded-2xl p-4 flex items-center space-x-3 hover:border-violet-600/50 transition-colors">
-                                <div class="w-10 h-10 bg-violet-950/30 rounded-xl border border-violet-800/30 flex items-center justify-center text-violet-400 shrink-0">
-                                    <i data-lucide="shield" class="w-5 h-5"></i>
+                                <div class="w-10 h-10 bg-violet-950/30 rounded-xl border border-violet-800/30 flex items-center justify-center text-violet-200 font-black text-[10px] overflow-hidden shrink-0">
+                                    @if($reg->team?->logo_url)
+                                        <img src="{{ $reg->team->logo_url }}" alt="{{ $reg->team->name }}" class="w-full h-full object-cover" loading="lazy">
+                                    @elseif($reg->user?->profile?->avatar_url)
+                                        <img src="{{ $reg->user->profile->avatar_url }}" alt="{{ $reg->user->username }}" class="w-full h-full object-cover" loading="lazy">
+                                    @else
+                                        {{ strtoupper(substr($reg->user?->username ?? $reg->team?->name ?? '??', 0, 2)) }}
+                                    @endif
                                 </div>
                                 <div class="truncate">
                                     <span class="block text-sm font-bold text-white truncate">{{ $reg->team->name }}</span>
@@ -812,6 +854,8 @@
                                         $mStatus = $match->status->value ?? $match->status;
                                         $playerA = $match->playerARegistration?->user;
                                         $playerB = $match->playerBRegistration?->user;
+                                        $playerAAvatar = $playerA?->profile?->avatar_url;
+                                        $playerBAvatar = $playerB?->profile?->avatar_url;
                                         $winnerA = $match->winner_registration_id && $match->winner_registration_id === $match->player_a_registration_id;
                                         $winnerB = $match->winner_registration_id && $match->winner_registration_id === $match->player_b_registration_id;
                                         $isOngoing = in_array($mStatus, ['in_progress', 'ready', 'result_submitted', 'waiting_for_confirmation', 'disputed']);
@@ -834,8 +878,8 @@
 
                                             <!-- Player A -->
                                             <div class="flex-1 flex items-center gap-3 {{ $winnerA ? '' : ($isCompleted && !$winnerA && $playerA ? 'opacity-40' : '') }}">
-                                                <div class="w-9 h-9 bg-zinc-950 rounded-xl border {{ $winnerA ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0">
-                                                    <i data-lucide="user" class="w-4 h-4 {{ $winnerA ? 'text-emerald-400' : 'text-zinc-600' }}"></i>
+                                                <div class="w-9 h-9 bg-zinc-950 rounded-xl border {{ $winnerA ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0 overflow-hidden text-[10px] font-black text-zinc-300">
+                                                    @if($playerAAvatar)<img src="{{ $playerAAvatar }}" alt="{{ $playerA->username }}" class="w-full h-full object-cover" loading="lazy">@else{{ strtoupper(substr($playerA?->username ?? '??', 0, 2)) }}@endif
                                                 </div>
                                                 <div class="min-w-0">
                                                     <span class="block text-sm font-bold {{ $winnerA ? 'text-emerald-400' : ($playerA ? 'text-white' : 'text-zinc-700 italic') }} truncate">
@@ -872,8 +916,8 @@
                                                     @if($viewerIsB)<span class="ml-1 text-[9px] font-black uppercase tracking-widest text-cyan-400">You</span>@endif
                                                     @if($viewerLostThisMatch && $viewerIsB)<span class="ml-1 text-[9px] font-black uppercase tracking-widest text-rose-400">Lost</span>@endif
                                                 </div>
-                                                <div class="w-9 h-9 bg-zinc-950 rounded-xl border {{ $winnerB ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0">
-                                                    <i data-lucide="user" class="w-4 h-4 {{ $winnerB ? 'text-emerald-400' : 'text-zinc-600' }}"></i>
+                                                <div class="w-9 h-9 bg-zinc-950 rounded-xl border {{ $winnerB ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0 overflow-hidden text-[10px] font-black text-zinc-300">
+                                                    @if($playerBAvatar)<img src="{{ $playerBAvatar }}" alt="{{ $playerB->username }}" class="w-full h-full object-cover" loading="lazy">@else{{ strtoupper(substr($playerB?->username ?? '??', 0, 2)) }}@endif
                                                 </div>
                                             </div>
 
@@ -949,6 +993,8 @@
                                             $isMatchDisputed = $matchStatus === 'disputed';
                                             $playerAUser = $match->playerARegistration?->user;
                                             $playerBUser = $match->playerBRegistration?->user;
+                                            $playerAAvatar = $playerAUser?->profile?->avatar_url;
+                                            $playerBAvatar = $playerBUser?->profile?->avatar_url;
                                             $isPlayerAWinner = $match->winner_registration_id && $match->winner_registration_id === $match->player_a_registration_id;
                                             $isPlayerBWinner = $match->winner_registration_id && $match->winner_registration_id === $match->player_b_registration_id;
                                             $viewerIsA = $userRegistration && (int) $match->player_a_registration_id === (int) $userRegistration->id;
@@ -986,8 +1032,8 @@
                                                     <!-- Player A -->
                                                     <div class="flex items-center justify-between px-3 py-2.5 {{ $isPlayerAWinner ? 'bg-emerald-950/20' : '' }} transition-colors">
                                                         <div class="flex items-center gap-2 min-w-0">
-                                                            <div class="w-5 h-5 rounded-md bg-zinc-950 border {{ $isPlayerAWinner ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0">
-                                                                <span class="text-[8px] font-black {{ $isPlayerAWinner ? 'text-emerald-400' : 'text-zinc-700' }}">A</span>
+                                                            <div class="w-6 h-6 rounded-md bg-zinc-950 border {{ $isPlayerAWinner ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0 overflow-hidden text-[8px] font-black text-zinc-300">
+                                                                @if($playerAAvatar)<img src="{{ $playerAAvatar }}" alt="{{ $playerAUser->username }}" class="w-full h-full object-cover" loading="lazy">@else{{ strtoupper(substr($playerAUser?->username ?? '??', 0, 2)) }}@endif
                                                             </div>
                                                             <span class="text-xs font-bold truncate {{ $isPlayerAWinner ? 'text-emerald-400' : ($playerAUser ? 'text-zinc-200' : 'text-zinc-600 italic') }}" style="max-width: 120px;">
                                                                 {{ $playerAUser?->username ?? 'Waiting...' }}
@@ -1008,8 +1054,8 @@
                                                     <!-- Player B -->
                                                     <div class="flex items-center justify-between px-3 py-2.5 {{ $isPlayerBWinner ? 'bg-emerald-950/20' : '' }} transition-colors">
                                                         <div class="flex items-center gap-2 min-w-0">
-                                                            <div class="w-5 h-5 rounded-md bg-zinc-950 border {{ $isPlayerBWinner ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0">
-                                                                <span class="text-[8px] font-black {{ $isPlayerBWinner ? 'text-emerald-400' : 'text-zinc-700' }}">B</span>
+                                                            <div class="w-6 h-6 rounded-md bg-zinc-950 border {{ $isPlayerBWinner ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0 overflow-hidden text-[8px] font-black text-zinc-300">
+                                                                @if($playerBAvatar)<img src="{{ $playerBAvatar }}" alt="{{ $playerBUser->username }}" class="w-full h-full object-cover" loading="lazy">@else{{ strtoupper(substr($playerBUser?->username ?? '??', 0, 2)) }}@endif
                                                             </div>
                                                             <span class="text-xs font-bold truncate {{ $isPlayerBWinner ? 'text-emerald-400' : ($playerBUser ? 'text-zinc-200' : 'text-zinc-600 italic') }}" style="max-width: 120px;">
                                                                 {{ $playerBUser?->username ?? 'Waiting...' }}

@@ -239,7 +239,7 @@ class MatchDetail extends Component
                 $updatedMatch = $match->fresh();
                 $responseMinutes = max(1, (int) ($updatedMatch->tournament->waiting_result_time ?: 5));
                 session()->flash('message', match ($updatedMatch->status) {
-                    MatchStatus::DISPUTED => 'Conflicting results were reported. Submit your dispute reason and proof for admin review.',
+                    MatchStatus::DISPUTED => 'Conflicting results were reported. You may submit an optional reason or screenshot for admin review.',
                     MatchStatus::COMPLETED => 'Both results agree. The match is complete.',
                     default => "Result submitted. Your opponent has {$responseMinutes} minutes from the first submission to respond.",
                 });
@@ -284,6 +284,8 @@ class MatchDetail extends Component
 
     public function openDispute(OpenDisputeAction $action, SubmitEvidenceAction $evidenceAction)
     {
+        // Retained for the legacy V1 dispute flow; V2 disputes are opened
+        // automatically when the two submitted outcomes conflict.
         $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
 
         /** @var User $user */
@@ -399,19 +401,37 @@ class MatchDetail extends Component
             return;
         }
 
+        $triggeringSubmitterId = $match->resultSubmissions()
+            ->whereHas('attempt', fn ($query) => $query->where('attempt_number', $match->active_attempt_number))
+            ->orderByDesc('id')
+            ->value('submitted_by');
+
+        if ((int) $triggeringSubmitterId !== (int) Auth::id()) {
+            $this->addError('evidenceFile', 'Only the player whose report triggered this conflict can submit its evidence.');
+
+            return;
+        }
+
         $this->validate([
-            'disputeReason' => ['required', 'string', 'min:10', 'max:2000'],
-            'evidenceFile' => ['required', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
+            'disputeReason' => ['nullable', 'string', 'max:2000'],
+            'evidenceFile' => ['nullable', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
         ]);
 
         try {
-            $action->execute($dispute, (int) Auth::id(), $this->evidenceFile, $this->disputeReason);
+            $reason = trim((string) $this->disputeReason);
+            if ($reason !== '' && mb_strlen($reason) < 10) {
+                $this->addError('disputeReason', 'If you provide a reason, it must be at least 10 characters.');
+
+                return;
+            }
+
+            $action->execute($dispute, (int) Auth::id(), $this->evidenceFile, $reason !== '' ? $reason : null);
             $this->reset(['disputeReason', 'evidenceFile']);
-            session()->flash('message', 'Your dispute reason and proof were submitted for admin review.');
+            session()->flash('message', 'Your dispute response was submitted for admin review.');
         } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
-            session()->flash('error', $e->getMessage());
+            $this->addError('evidenceFile', $e->getMessage());
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to submit your dispute details.'));
+            $this->addError('evidenceFile', $this->safeError($e, 'Unable to submit your dispute details.'));
         }
     }
 
@@ -420,7 +440,7 @@ class MatchDetail extends Component
         $match = GameMatch::query()
             ->where('uuid', $this->uuid)
             ->with([
-                'round',
+                'round.matches:id,round_id',
                 'playerARegistration.user.profile',
                 'playerARegistration.team',
                 'playerARegistration.platform',
@@ -493,13 +513,27 @@ class MatchDetail extends Component
         }
 
         $activeDispute = $match->disputes->first(fn ($dispute) => $dispute->status !== DisputeStatus::RESOLVED);
+        $activeAttempt = $match->attempts->firstWhere('attempt_number', $match->active_attempt_number);
+        $opponentRegistrationId = $viewerRegistration !== null
+            ? ((int) $match->player_a_registration_id === (int) $viewerRegistration->id
+                ? $match->playerBRegistration?->id
+                : $match->playerARegistration?->id)
+            : null;
+        $opponentSubmissionOutcome = $opponentRegistrationId !== null
+            ? $activeAttempt?->submissions?->firstWhere('registration_id', $opponentRegistrationId)?->outcome
+            : null;
+        $triggeringSubmitterId = $activeAttempt?->submissions?->sortByDesc('id')->first()?->submitted_by;
+        $isDisputeInitiator = $activeDispute !== null && $user !== null
+            && (int) $triggeringSubmitterId === (int) $user->id;
         $hasSubmittedDisputeEvidence = $activeDispute !== null && $user !== null
             && $activeDispute->evidence->contains('uploaded_by', $user->id);
         $isResultConflict = $match->status === MatchStatus::DISPUTED
             && $match->resolution_reason === 'conflicting_submissions';
 
         $latestSubmission = $match->resultSubmissions->first();
-        $activeAttempt = $match->attempts->firstWhere('attempt_number', $match->active_attempt_number);
+        $roundMatchIds = $match->round?->matches?->sortBy('id')->values()->pluck('id') ?? collect();
+        $roundMatchIndex = $roundMatchIds->search((int) $match->id);
+        $roundMatchNumber = $roundMatchIndex === false ? 1 : $roundMatchIndex + 1;
         $isSubmitter = $user && ((int) $match->tournament->workflow_version === 2
             ? $activeAttempt?->submissions->contains('submitted_by', $user->id)
             : $latestSubmission && $user->id === $latestSubmission->submitted_by);
@@ -530,9 +564,12 @@ class MatchDetail extends Component
             'submissionUnavailableMessage' => $submissionUnavailableMessage,
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
+            'isDisputeInitiator' => $isDisputeInitiator,
             'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,
             'isResultConflict' => $isResultConflict,
             'activeAttempt' => $activeAttempt,
+            'opponentSubmissionOutcome' => $opponentSubmissionOutcome,
+            'roundMatchNumber' => $roundMatchNumber,
         ]);
 
         return $this->embedded

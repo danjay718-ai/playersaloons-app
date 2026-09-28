@@ -29,7 +29,7 @@
                     {{ $embedded ? 'SUBMIT RESULT' : 'MATCH ROOM' }}
                 </h1>
                 <p class="text-xs text-zinc-500 mt-0.5">
-                    Round {{ $match->round->round_number }} • Match #{{ $match->id }}
+                    Round {{ $match->round?->round_number ?? '—' }} • Match {{ $roundMatchNumber }}
                 </p>
             </div>
             
@@ -68,7 +68,9 @@
             <div class="md:col-span-3 flex flex-col items-center md:items-end text-center md:text-right space-y-4">
                 <div class="h-20 w-20 overflow-hidden rounded-full border-2 {{ $match->winner_registration_id === $match->player_a_registration_id && $match->winner_registration_id ? 'border-emerald-500' : 'border-zinc-800' }} bg-zinc-950 shadow-lg shadow-black/40">
                     @if($match->playerARegistration?->user?->profile?->avatar_url)
-                        <img src="{{ $match->playerARegistration->user->profile->avatar_url }}" alt="{{ $match->playerARegistration->user->username }}" class="h-full w-full object-cover" loading="lazy">
+                        <img src="{{ $match->playerARegistration->user->profile->avatar_url }}" alt="{{ $match->playerARegistration->user->username }}" class="h-full w-full object-cover" loading="eager" fetchpriority="high">
+                    @elseif($match->playerARegistration?->user)
+                        <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-600 to-fuchsia-600 font-orbitron text-lg font-black text-white">{{ strtoupper(substr($match->playerARegistration->user->username, 0, 2)) }}</span>
                     @else
                         <div class="flex h-full w-full items-center justify-center text-zinc-500"><i data-lucide="user" class="h-10 w-10"></i></div>
                     @endif
@@ -100,7 +102,9 @@
             <div class="md:col-span-3 flex flex-col items-center md:items-start text-center md:text-left space-y-4">
                 <div class="h-20 w-20 overflow-hidden rounded-full border-2 {{ $match->winner_registration_id === $match->player_b_registration_id && $match->winner_registration_id ? 'border-emerald-500' : 'border-zinc-800' }} bg-zinc-950 shadow-lg shadow-black/40">
                     @if($match->playerBRegistration?->user?->profile?->avatar_url)
-                        <img src="{{ $match->playerBRegistration->user->profile->avatar_url }}" alt="{{ $match->playerBRegistration->user->username }}" class="h-full w-full object-cover" loading="lazy">
+                        <img src="{{ $match->playerBRegistration->user->profile->avatar_url }}" alt="{{ $match->playerBRegistration->user->username }}" class="h-full w-full object-cover" loading="eager" fetchpriority="high">
+                    @elseif($match->playerBRegistration?->user)
+                        <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-600 font-orbitron text-lg font-black text-white">{{ strtoupper(substr($match->playerBRegistration->user->username, 0, 2)) }}</span>
                     @else
                         <div class="flex h-full w-full items-center justify-center text-zinc-500"><i data-lucide="user" class="h-10 w-10"></i></div>
                     @endif
@@ -179,10 +183,10 @@
 
     <div x-data="{ resultPanelTab: 'submit' }" class="match-result-workspace space-y-6">
         <nav class="match-result-tabs grid grid-cols-2 gap-2 rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-1.5" aria-label="Match result sections">
-            <button type="button" @click="resultPanelTab = 'submit'" :class="resultPanelTab === 'submit' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
+            <button type="button" @click="resultPanelTab = 'submit'" :aria-pressed="resultPanelTab === 'submit'" :class="resultPanelTab === 'submit' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
                 <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0"></i><span class="truncate">Submit Results</span>
             </button>
-            <button type="button" @click="resultPanelTab = 'submissions'" :class="resultPanelTab === 'submissions' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
+            <button type="button" @click="resultPanelTab = 'submissions'" :aria-pressed="resultPanelTab === 'submissions'" :class="resultPanelTab === 'submissions' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
                 <i data-lucide="history" class="h-4 w-4 shrink-0"></i><span class="truncate">Submissions ({{ $match->resultSubmissions->count() }})</span>
             </button>
         </nav>
@@ -238,15 +242,38 @@
                 @if($isResultConflict && $activeDispute)
                     <div role="alert" class="rounded-xl border border-red-500/40 bg-red-950/25 p-5 text-red-100">
                         <div class="flex items-center gap-2 text-sm font-bold"><i data-lucide="shield-alert" class="h-5 w-5"></i>Result conflict detected</div>
-                        <p class="mt-2 text-xs leading-relaxed text-red-100/80">The players submitted conflicting results. The match is paused for admin review. Each player can provide a reason and screenshot proof.</p>
-                        @if($isParticipant && ! $hasSubmittedDisputeEvidence)
+                        <p class="mt-2 text-xs leading-relaxed text-red-100/80">The players submitted conflicting results. The player who submitted the result that triggered this conflict may provide a reason or screenshot for admin review.</p>
+                        @if($isParticipant && $isDisputeInitiator && ! $hasSubmittedDisputeEvidence)
                             <button type="button" @click="$dispatch('open-dispute-statement')" class="mt-4 rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-500">Submit dispute details</button>
+                        @elseif($isParticipant && $isDisputeInitiator)
+                            <p class="mt-3 text-xs font-semibold text-emerald-300">Your dispute response has been submitted.</p>
                         @elseif($isParticipant)
-                            <p class="mt-3 text-xs font-semibold text-emerald-300">Your reason and proof have been submitted.</p>
+                            <p class="mt-3 text-xs text-zinc-300">Waiting for the other player to submit a dispute response.</p>
                         @endif
                     </div>
                 @elseif(((int) $match->tournament->workflow_version === 2 && in_array($statusVal, ['in_progress', 'waiting_for_confirmation']) && !$isSubmitter) || ((int) $match->tournament->workflow_version !== 2 && $statusVal === 'in_progress'))
-                    <form wire:submit.prevent="submitResult" class="space-y-4">
+                    <form
+                        @if((int) $match->tournament->workflow_version === 2)
+                            x-data="{
+                                confirmationOpen: false,
+                                selectedOutcome: @js($resultOutcome),
+                                opponentOutcome: @js($opponentSubmissionOutcome),
+                                isConflicting() {
+                                    if (!this.opponentOutcome || !this.selectedOutcome) return false;
+                                    const consistent = (this.selectedOutcome === 'win' && this.opponentOutcome === 'loss')
+                                        || (this.selectedOutcome === 'loss' && this.opponentOutcome === 'win')
+                                        || (this.selectedOutcome === 'draw' && this.opponentOutcome === 'draw');
+                                    return !consistent;
+                                },
+                                label(outcome) {
+                                    return ({ win: 'Win', loss: 'Loss', draw: 'Draw' })[outcome] || 'No result selected';
+                                }
+                            }"
+                            x-on:submit.prevent="confirmationOpen = true"
+                        @else
+                            wire:submit.prevent="submitResult"
+                        @endif
+                        class="space-y-4">
                         @if((int) $match->tournament->workflow_version === 2 && $statusVal === 'waiting_for_confirmation')
                             <div role="alert" class="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100"
                                  x-data="{
@@ -261,7 +288,7 @@
                                 </span>
                                 <div class="min-w-0 flex-1">
                                     <p class="text-xs font-black uppercase tracking-wider text-amber-200">Opponent result reported</p>
-                                    <p class="mt-1 text-sm leading-relaxed">Your opponent submitted a result. You have {{ max(1, (int) ($match->tournament->waiting_result_time ?: 5)) }} minutes to report your result.</p>
+                                    <p class="mt-1 text-sm leading-relaxed">Your opponent submitted a result. You have {{ max(1, (int) ($match->tournament->waiting_result_time ?: 5)) }} minutes to report your result. Submit before the timer expires to avoid an automatic loss.</p>
                                 <p data-testid="result-deadline-timer" class="mt-2 font-orbitron text-xl font-black text-amber-300" x-text="formatTime(timeLeft)"></p>
                                 </div>
                             </div>
@@ -274,7 +301,7 @@
                                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                     @foreach(['win' => 'Win', 'loss' => 'Loss', 'draw' => 'Draw'] as $value => $label)
                                         <label class="player-result-option flex cursor-pointer items-center gap-3 rounded-xl border {{ $resultOutcome === $value ? 'border-violet-500' : 'border-zinc-800' }} bg-zinc-950 p-3.5 hover:border-zinc-700">
-                                            <input wire:model="resultOutcome" type="radio" value="{{ $value }}" class="h-4 w-4 text-violet-600">
+                                            <input wire:model.live="resultOutcome" x-on:change="selectedOutcome = $event.target.value" type="radio" value="{{ $value }}" class="h-4 w-4 text-violet-600">
                                             <span class="text-sm font-semibold text-zinc-200">{{ $label }}</span>
                                         </label>
                                     @endforeach
@@ -363,6 +390,8 @@
                                 <span x-show="expired" x-cloak>Submission Time Expired</span>
                             </button>
                             
+                            {{-- Keep the manual dispute control available for legacy V1 only. V2 creates disputes automatically when the result pair conflicts. --}}
+                            @if((int) $match->tournament->workflow_version !== 2)
                             <div class="space-y-3">
                                 <div class="flex items-center space-x-2">
                                     <div class="h-px flex-grow bg-zinc-800"></div>
@@ -383,7 +412,33 @@
                                     Open Official Dispute
                                 </button>
                             </div>
+                            @endif
                         </div>
+
+                        @if((int) $match->tournament->workflow_version === 2)
+                            <div x-show="confirmationOpen" x-cloak class="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 p-4" role="presentation">
+                                <div role="dialog" aria-modal="true" aria-labelledby="result-confirmation-title" class="w-full max-w-md space-y-5 rounded-2xl border border-violet-500/40 bg-zinc-900 p-6 shadow-2xl shadow-black/60">
+                                    <div>
+                                        <h3 id="result-confirmation-title" class="font-orbitron text-lg font-bold text-white">Confirm your result</h3>
+                                        <p class="mt-2 text-sm leading-relaxed text-zinc-300">You selected <span class="font-bold text-white" x-text="label(selectedOutcome)"></span>.</p>
+                                    </div>
+                                    <p x-show="!opponentOutcome" class="text-sm leading-relaxed text-zinc-400">Your result cannot be changed after submission. If your opponent reports a conflicting result, the match will be sent to an admin for review.</p>
+                                    <p x-show="opponentOutcome && isConflicting()" class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm leading-relaxed text-amber-100">
+                                        Your opponent reported <span class="font-bold" x-text="label(opponentOutcome)"></span>. These results conflict. Submitting yours will automatically open a dispute for admin review. Continue only if this is your accurate result.
+                                    </p>
+                                    <p x-show="opponentOutcome && !isConflicting()" class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm leading-relaxed text-emerald-100">
+                                        Your opponent reported <span class="font-bold" x-text="label(opponentOutcome)"></span>. These results are consistent and will finalize the match.
+                                    </p>
+                                    @error('resultOutcome') <p class="text-xs text-red-400">{{ $message }}</p> @enderror
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <button type="button" x-on:click="confirmationOpen = false" class="rounded-xl border border-zinc-700 px-4 py-3 text-xs font-bold uppercase tracking-wider text-zinc-300 transition hover:border-zinc-500 hover:text-white">Go back</button>
+                                        <button type="button" wire:click="submitResult" wire:loading.attr="disabled" wire:target="submitResult" class="rounded-xl bg-violet-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-violet-500 disabled:cursor-wait disabled:opacity-60">
+                                            <span wire:loading.remove wire:target="submitResult">Confirm &amp; submit</span><span wire:loading wire:target="submitResult">Submitting…</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </form>
                 @elseif((int) $match->tournament->workflow_version !== 2 && $statusVal === 'waiting_for_confirmation' && !$isSubmitter)
                     <div class="space-y-4" x-data="{
@@ -571,14 +626,15 @@
                         <!-- Evidence Files -->
                         @if($disp->evidence->count() > 0)
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pl-4">
-                                @foreach($disp->evidence as $ev)
+                                    @foreach($disp->evidence as $ev)
                                     <div class="bg-zinc-950 border border-zinc-850 rounded-xl p-3 flex items-center space-x-2.5">
-                                        <i data-lucide="image" class="w-4 h-4 text-violet-400"></i>
+                                        <i data-lucide="{{ $ev->file_path ? 'image' : 'message-square-text' }}" class="w-4 h-4 text-violet-400"></i>
                                         <div class="truncate">
-                                            <!-- clickable absolute storage path link -->
-                                            <a href="/storage/{{ $ev->file_path }}" target="_blank" class="block text-xs font-semibold text-zinc-300 hover:text-violet-400 transition-colors truncate">
-                                                Evidence File #{{ $ev->id }}
-                                            </a>
+                                            @if($ev->file_path)
+                                                <a href="/storage/{{ $ev->file_path }}" target="_blank" class="block text-xs font-semibold text-zinc-300 hover:text-violet-400 transition-colors truncate">Evidence File #{{ $ev->id }}</a>
+                                            @else
+                                                <span class="block text-xs font-semibold text-zinc-300">Dispute response #{{ $ev->id }} (no screenshot attached)</span>
+                                            @endif
                                             <span class="block text-[9px] text-zinc-600">Uploaded by: {{ $ev->uploadedBy?->username ?? 'Player' }}</span>
                                         </div>
                                     </div>
@@ -597,29 +653,30 @@
     @endif
     </div>
 
-    @if($isResultConflict && $activeDispute && $isParticipant && ! $hasSubmittedDisputeEvidence)
-        <div wire:key="conflict-dispute-{{ $activeDispute->id }}" x-data="{ open: true }" @open-dispute-statement.window="open = true" @keydown.escape.window="open = false" x-show="open" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4" role="presentation">
+    @if($isResultConflict && $activeDispute && $isParticipant && $isDisputeInitiator && ! $hasSubmittedDisputeEvidence)
+        <div wire:key="conflict-dispute-{{ $activeDispute->id }}" x-data="{ open: true }" @open-dispute-statement.window="open = true" @keydown.escape.window.prevent x-show="open" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4" role="presentation">
             <div role="dialog" aria-modal="true" aria-labelledby="conflict-dispute-title" class="w-full max-w-lg rounded-2xl border border-red-500/40 bg-zinc-900 p-5 shadow-2xl shadow-black/60 sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <h2 id="conflict-dispute-title" class="font-orbitron text-lg font-bold text-white">Result conflict detected</h2>
-                        <p class="mt-2 text-xs leading-relaxed text-zinc-300">You and your opponent reported conflicting results. Explain your result and upload screenshot proof for admin review.</p>
+                        <p class="mt-2 text-xs leading-relaxed text-zinc-300">Your result completed the conflicting pair. You may submit a written reason, a screenshot, both, or continue without attachments.</p>
                     </div>
-                    <button type="button" @click="open = false" aria-label="Close dispute details" class="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white">✕</button>
                 </div>
                 <form wire:submit.prevent="submitDisputeStatement" class="mt-5 space-y-4">
                     <div>
-                        <label for="conflict-dispute-reason" class="mb-2 block text-xs font-bold text-zinc-200">Reason for dispute</label>
+                        <label for="conflict-dispute-reason" class="mb-2 block text-xs font-bold text-zinc-200">Reason for dispute <span class="font-normal text-zinc-500">(optional)</span></label>
                         <textarea id="conflict-dispute-reason" wire:model="disputeReason" rows="4" maxlength="2000" placeholder="Explain what happened and why your result is correct…" class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white focus:border-red-500 focus:outline-none"></textarea>
+                        <p class="mt-1 text-[11px] text-zinc-500">If provided, the reason must be at least 10 characters.</p>
                         @error('disputeReason') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="conflict-dispute-proof" class="mb-2 block text-xs font-bold text-zinc-200">Screenshot proof</label>
+                        <label for="conflict-dispute-proof" class="mb-2 block text-xs font-bold text-zinc-200">Screenshot proof <span class="font-normal text-zinc-500">(optional)</span></label>
                         <input id="conflict-dispute-proof" wire:model="evidenceFile" type="file" accept="image/png,image/jpeg,image/webp" class="block w-full rounded-xl border border-zinc-700 bg-zinc-950 p-2.5 text-xs text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-red-600 file:px-3 file:py-2 file:font-bold file:text-white">
                         <p class="mt-1 text-[11px] text-zinc-500">PNG, JPG, or WEBP; up to 2 MB.</p>
+                        <p wire:loading wire:target="evidenceFile" class="mt-2 text-xs font-semibold text-amber-300">Uploading screenshot…</p>
                         @error('evidenceFile') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
                     </div>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="submitDisputeStatement,evidenceFile" class="w-full rounded-xl bg-red-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-500 disabled:cursor-wait disabled:opacity-60">Submit reason and proof</button>
+                    <button type="submit" wire:loading.attr="disabled" wire:target="submitDisputeStatement,evidenceFile" class="w-full rounded-xl bg-red-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-500 disabled:cursor-wait disabled:opacity-60"><span wire:loading.remove wire:target="submitDisputeStatement">Submit dispute response</span><span wire:loading wire:target="submitDisputeStatement">Submitting…</span></button>
                 </form>
             </div>
         </div>

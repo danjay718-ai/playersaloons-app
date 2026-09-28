@@ -395,14 +395,18 @@
                                         @if($disp->evidence->count() > 0)
                                             <div class="border-t border-slate-800/60 pt-3">
                                                 <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">
-                                                    Evidence Screenshots ({{ $disp->evidence->count() }})
+                                                    Player responses and evidence ({{ $disp->evidence->count() }})
                                                 </span>
                                                 <div class="grid grid-cols-2 gap-2">
                                                     @foreach($disp->evidence as $ev)
                                                         <div class="rounded-lg border border-slate-800 bg-slate-950 p-2">
-                                                            <a href="/storage/{{ $ev->file_path }}" target="_blank" class="group relative block overflow-hidden rounded-md">
-                                                                <img src="/storage/{{ $ev->file_path }}" alt="Evidence from {{ $ev->uploadedBy?->username ?? 'player' }}" class="h-28 w-full object-cover opacity-80 transition-opacity group-hover:opacity-100">
-                                                            </a>
+                                                            @if($ev->file_path)
+                                                                <a href="/storage/{{ $ev->file_path }}" target="_blank" class="group relative block overflow-hidden rounded-md">
+                                                                    <img src="/storage/{{ $ev->file_path }}" alt="Evidence from {{ $ev->uploadedBy?->username ?? 'player' }}" class="h-28 w-full object-cover opacity-80 transition-opacity group-hover:opacity-100">
+                                                                </a>
+                                                            @else
+                                                                <p class="rounded-md border border-slate-800 bg-slate-900 px-3 py-5 text-center text-[10px] text-slate-500">No screenshot attached</p>
+                                                            @endif
                                                             <p class="mt-2 text-[10px] font-semibold text-slate-300">{{ $ev->uploadedBy?->username ?? 'Player' }}</p>
                                                             @if($ev->reason)
                                                                 <p class="mt-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-400">{{ $ev->reason }}</p>
@@ -575,11 +579,12 @@
                             <div>
                                 <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">
                                     <i data-lucide="image" class="w-3 h-3 inline mr-1 align-text-bottom"></i>
-                                    Evidence Screenshots ({{ $resolveDispute->evidence->count() }})
+                                    Player responses and evidence ({{ $resolveDispute->evidence->count() }})
                                 </span>
                                 <div class="grid grid-cols-2 gap-2">
                                     @foreach($resolveDispute->evidence as $ev)
                                         <div class="min-w-0">
+                                        @if($ev->file_path)
                                         <a href="/storage/{{ $ev->file_path }}" target="_blank"
                                            class="group relative block rounded-xl overflow-hidden border border-slate-800 bg-slate-950 hover:border-indigo-500/60 transition-all">
                                             <img src="/storage/{{ $ev->file_path }}"
@@ -591,6 +596,9 @@
                                                 <i data-lucide="zoom-in" class="w-4 h-4 text-white shrink-0"></i>
                                             </div>
                                         </a>
+                                        @else
+                                            <p class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-5 text-center text-xs text-slate-500">No screenshot attached</p>
+                                        @endif
                                         @if($ev->reason)
                                             <p class="mt-2 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-300"><span class="font-bold">{{ $ev->uploadedBy?->username ?? 'Player' }}:</span> {{ $ev->reason }}</p>
                                         @endif
@@ -635,16 +643,6 @@
                                         <span class="text-slate-400">{{ (int) $resolveDispute->match->tournament->workflow_version === 2 ? 'Reopens this match with a new auditable attempt' : 'Creates a fresh match slot between these two players' }}</span>
                                     </div>
                                 </label>
-                                @if((int) $resolveDispute->match->tournament->workflow_version === 2
-                                    && $resolveDispute->match->final_resolution_eligible_at?->isPast())
-                                    <label class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-3.5 cursor-pointer hover:border-red-600/50 hover:bg-red-900/10 transition-all has-[:checked]:border-red-500/50 has-[:checked]:bg-red-900/10">
-                                        <input type="radio" wire:model="resolution" value="no_champion" class="text-red-600 focus:ring-red-500 mr-3 shrink-0">
-                                        <div class="text-xs">
-                                            <span class="font-bold text-slate-100 block">Complete Without a Champion</span>
-                                            <span class="text-slate-400">Deduct 10% platform commission, then split the remaining pool equally between both finalists.</span>
-                                        </div>
-                                    </label>
-                                @endif
                             </div>
                             @error('resolution') <span class="text-red-400 text-xs mt-2 block">{{ $message }}</span> @enderror
                         </div>

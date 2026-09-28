@@ -185,11 +185,13 @@ final class SubmitV2MatchResultAction
             $dispute = MatchDispute::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'match_id' => $match->id,
-                'opened_by' => $first->submitted_by,
+                // The second submission completes the conflicting pair and is
+                // the report that causes the dispute to open.
+                'opened_by' => $second->submitted_by,
                 'status' => DisputeStatus::OPEN,
                 'reason' => 'V2 result submissions conflict.',
             ]);
-            MatchDisputed::dispatch($match->id, $dispute->id, $first->submitted_by);
+            MatchDisputed::dispatch($match->id, $dispute->id, $second->submitted_by);
 
             return;
         }

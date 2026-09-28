@@ -397,9 +397,9 @@ class TournamentDetail extends Component
 
         if ($bracketLoaded) {
             $tournament->load([
-                'brackets.rounds.matches.playerARegistration.user',
-                'brackets.rounds.matches.playerBRegistration.user',
-                'brackets.rounds.matches.winnerRegistration.user',
+                'brackets.rounds.matches.playerARegistration.user.profile',
+                'brackets.rounds.matches.playerBRegistration.user.profile',
+                'brackets.rounds.matches.winnerRegistration.user.profile',
                 'brackets.rounds.matches.round',
             ]);
         } else {
@@ -407,6 +407,10 @@ class TournamentDetail extends Component
         }
 
         $hasLost = false;
+        $isChampion = false;
+        $isSecondPlace = false;
+        $secondPlacePrize = null;
+        $awaitingNextMatch = false;
         $currentMatch = null;
         $displayMatch = null;
         if ($user && $userRegistration) {
@@ -455,6 +459,44 @@ class TournamentDetail extends Component
                 ->whereNotNull('winner_registration_id')
                 ->where('winner_registration_id', '!=', $userRegistration->id)
                 ->exists();
+
+            $finalRoundNumber = (int) $tournament->rounds()->max('round_number');
+            if ($finalRoundNumber > 0) {
+                $lastSettledParticipantMatch = GameMatch::query()
+                    ->where('tournament_id', $tournament->id)
+                    ->where(function ($query) use ($userRegistration): void {
+                        $query->where('player_a_registration_id', $userRegistration->id)
+                            ->orWhere('player_b_registration_id', $userRegistration->id);
+                    })
+                    ->whereIn('status', [MatchStatus::COMPLETED, MatchStatus::FORFEITED])
+                    ->whereNotNull('winner_registration_id')
+                    ->with('round:id,round_number')
+                    ->get(['id', 'round_id', 'player_a_registration_id', 'player_b_registration_id', 'winner_registration_id'])
+                    ->sortBy(fn (GameMatch $participantMatch): string => sprintf(
+                        '%010d:%010d',
+                        (int) ($participantMatch->round?->round_number ?? 0),
+                        $participantMatch->id,
+                    ))
+                    ->last();
+
+                if ($lastSettledParticipantMatch !== null) {
+                    $participantRoundNumber = (int) ($lastSettledParticipantMatch->round?->round_number ?? 0);
+                    $wonLatestMatch = (int) $lastSettledParticipantMatch->winner_registration_id === (int) $userRegistration->id;
+
+                    if ($participantRoundNumber === $finalRoundNumber) {
+                        $isChampion = $wonLatestMatch;
+                        if (! $wonLatestMatch) {
+                            $configuredSecondPrize = $tournament->finalized_second_prize ?? $tournament->prize_2nd ?? '0.00';
+                            if ((float) $configuredSecondPrize > 0) {
+                                $isSecondPlace = true;
+                                $secondPlacePrize = $configuredSecondPrize;
+                            }
+                        }
+                    } elseif ($wonLatestMatch && $participantRoundNumber < $finalRoundNumber) {
+                        $awaitingNextMatch = true;
+                    }
+                }
+            }
 
         }
 
@@ -523,6 +565,10 @@ class TournamentDetail extends Component
             'allMatches' => $allMatches,
             'activityLogs' => $activityLogs,
             'hasLost' => $hasLost,
+            'isChampion' => $isChampion,
+            'isSecondPlace' => $isSecondPlace,
+            'secondPlacePrize' => $secondPlacePrize,
+            'awaitingNextMatch' => $awaitingNextMatch,
             'currentMatch' => $currentMatch,
             'displayMatch' => $displayMatch,
             'streamService' => $streamService,

@@ -11,7 +11,6 @@ use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchAttempt;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\StateMachines\MatchStateMachine;
-use App\Modules\Tournament\Actions\CompleteTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\DisputeResolution;
 use App\Shared\Enums\DisputeStatus;
@@ -26,7 +25,6 @@ class ResolveDisputeAction
 {
     public function __construct(
         private readonly MatchStateMachine $stateMachine,
-        private readonly CompleteTournamentAction $completeTournament,
     ) {}
 
     /**
@@ -79,35 +77,7 @@ class ResolveDisputeAction
 
                 MatchCompleted::dispatch($match->id, $match->tournament_id, $winnerRegistrationId);
             } elseif ($resolution === DisputeResolution::NO_CHAMPION) {
-                if ((int) $match->tournament->workflow_version !== 2
-                    || $match->final_resolution_eligible_at === null
-                    || $match->final_resolution_eligible_at->isFuture()) {
-                    throw new LogicException('No-champion resolution is available only for an eligible unresolved V2 final.');
-                }
-                $maxRound = $match->tournament->rounds()->max('round_number');
-                if ((int) $match->round->round_number !== (int) $maxRound) {
-                    throw new LogicException('Only the final match can be completed without a champion.');
-                }
-
-                $match->forceFill([
-                    'status' => MatchStatus::COMPLETED,
-                    'winner_registration_id' => null,
-                    'completed_at' => now(),
-                    'stalled_deadline_at' => null,
-                    'round_deadline_at' => null,
-                    'resolution_reason' => 'no_champion',
-                ])->save();
-                $match->attempts()->where('attempt_number', $match->active_attempt_number)->update([
-                    'status' => 'expired',
-                    'resolution' => 'no_champion',
-                    'resolved_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                $match->tournament->forceFill([
-                    'completion_reason' => 'no_champion',
-                    'payout_status' => 'pending',
-                ])->save();
-                $this->completeTournament->execute($match->tournament->fresh());
+                throw new LogicException('A tournament final must be resolved with a champion or reopened as a rematch.');
             } elseif (in_array($resolution, [DisputeResolution::REMATCH, DisputeResolution::DRAW], true)) {
                 if ((int) $match->tournament->workflow_version === 2) {
                     $nextAttempt = $match->active_attempt_number + 1;
