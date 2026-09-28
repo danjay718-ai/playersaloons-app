@@ -9,6 +9,7 @@ use App\Modules\Tournament\Events\TournamentCancelled;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentCancellation;
 use App\Modules\Tournament\Models\TournamentRegistration;
+use App\Modules\Tournament\Services\SponsoredPrizeFundingService;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Modules\Wallet\Services\WalletService;
 use App\Shared\Enums\PaymentStatus;
@@ -23,6 +24,7 @@ class CancelTournamentAction
     public function __construct(
         private readonly TournamentStateMachine $stateMachine,
         private readonly WalletService $walletService,
+        private readonly SponsoredPrizeFundingService $sponsoredPrizes,
     ) {}
 
     /**
@@ -69,6 +71,8 @@ class CancelTournamentAction
                 $reason,
                 $paid->count() > 0
             );
+
+            $this->sponsoredPrizes->release($tournament);
 
             return $tournament->fresh() ?? $tournament;
         });

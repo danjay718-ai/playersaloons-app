@@ -75,6 +75,7 @@ class Tournament extends Model implements HasMedia
                 'start_at', 'end_at', 'join_closes_at', 'timezone', 'frequency', 'waiting_result_time',
                 'round_duration_seconds', 'winning_points', 'winner_bonus_xp', 'full_first_bps',
                 'full_second_bps', 'full_platform_bps', 'underfilled_first_bps', 'underfilled_platform_bps',
+                'prize_1st', 'prize_2nd', 'prize_funding_mode',
             ];
             $dirtyConfiguration = array_intersect(array_keys($tournament->getDirty()), [...$presentation, ...$structural]);
             if ($dirtyConfiguration === []) {
@@ -138,6 +139,9 @@ class Tournament extends Model implements HasMedia
         'prize_1st',
         'prize_2nd',
         'prize_3rd',
+        'prize_funding_mode',
+        'funding_state',
+        'reserved_prize_amount',
         'winning_points',
         'play_xp',
         'winner_bonus_xp',
@@ -207,6 +211,7 @@ class Tournament extends Model implements HasMedia
             'prize_1st' => 'decimal:2',
             'prize_2nd' => 'decimal:2',
             'prize_3rd' => 'decimal:2',
+            'reserved_prize_amount' => 'decimal:2',
             'waiting_time' => 'integer',
             'match_ready_minutes' => 'integer',
             'match_extra_wait_minutes' => 'integer',

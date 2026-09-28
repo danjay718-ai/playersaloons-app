@@ -29,31 +29,11 @@ final class V2HeadToHeadController extends Controller
         $platformId = (string) $request->query('platform_id', '');
         $startDate = (string) $request->query('start_date', '');
         $endDate = (string) $request->query('end_date', '');
+        $startTime = (string) $request->query('start_time', '');
         $perPage = min(50, max(5, (int) $request->query('per_page', 10)));
 
         abort_unless(in_array($activeTab, ['all', 'daily', 'weekly', 'monthly', 'one-time'], true), 404);
         abort_unless(in_array($statusTab, ['active', 'completed', 'cancelled', 'all'], true), 404);
-
-        $templates = TournamentTemplate::query()
-            ->whereHas('game', fn ($games) => $games->availableInCatalog())
-            ->where('workflow_version', 2)
-            ->where('competition_type', CompetitionType::HEAD_TO_HEAD)
-            ->with(['game.translations', 'scheduleSlots:id,tournament_template_id,schedule_start_at,schedule_end_at,day_of_week,day_of_month'])
-            ->withCount('scheduleSlots')
-            ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
-            ->when($gameId !== '', fn ($query) => $query->where('game_id', $gameId))
-            ->when($platformId !== '', fn ($query) => $query->where(fn ($platforms) => $platforms->whereJsonContains('settings_json->platform_ids', (int) $platformId)->orWhere('settings_json->platform_id', (int) $platformId)))
-            ->when($activeTab !== 'all', function ($query) use ($activeTab): void {
-                if ($activeTab === 'one-time') {
-                    $query->where('is_recurring', false);
-
-                    return;
-                }
-
-                $query->where('recurrence_frequency', $activeTab);
-            })
-            ->when($startDate !== '', fn ($query) => $query->whereHas('scheduleSlots', fn ($slots) => $slots->whereDate('schedule_start_at', '>=', $startDate)))
-            ->when($endDate !== '', fn ($query) => $query->whereHas('scheduleSlots', fn ($slots) => $slots->whereDate('schedule_start_at', '<=', $endDate)));
 
         $activeStatuses = [
             TournamentStatus::DRAFT->value,
@@ -66,18 +46,62 @@ final class V2HeadToHeadController extends Controller
             TournamentStatus::ONGOING->value,
         ];
 
-        // A template can have multiple immutable occurrences. Filtering is
-        // intentionally based on any matching occurrence, so grouped parents
-        // remain discoverable without rewriting historical occurrence data.
-        $templates->when($status !== '', fn ($query) => $query->whereHas('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->where('status', $status)));
+        $matchesOccurrenceFilters = function ($occurrences) use ($status, $statusTab, $activeStatuses, $activeTab, $startDate, $endDate, $startTime): void {
+            if ($status !== '') {
+                $occurrences->where('status', $status);
+            } elseif ($statusTab === 'active') {
+                $occurrences->whereIn('status', $activeStatuses);
+            } elseif ($statusTab === 'completed') {
+                $occurrences->where('status', TournamentStatus::COMPLETED->value);
+            } elseif ($statusTab === 'cancelled') {
+                $occurrences->whereIn('status', [TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value]);
+            }
+
+            if ($activeTab === 'daily' && $startTime !== '') {
+                $occurrences->whereTime('start_at', $startTime.':00');
+            } elseif ($activeTab !== 'daily') {
+                if ($startDate !== '') {
+                    $occurrences->whereDate('start_at', '>=', $startDate);
+                }
+                if ($endDate !== '') {
+                    $occurrences->whereDate('start_at', '<=', $endDate);
+                }
+            }
+        };
+
+        $templates = TournamentTemplate::query()
+            ->whereHas('game', fn ($games) => $games->availableInCatalog())
+            ->where('workflow_version', 2)
+            ->where('competition_type', CompetitionType::HEAD_TO_HEAD)
+            ->with(['game.translations', 'scheduleSlots.occurrences' => fn ($query) => $query->withCount('registrations')->orderByDesc('start_at')])
+            ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
+            ->when($gameId !== '', fn ($query) => $query->where('game_id', $gameId))
+            ->when($platformId !== '', fn ($query) => $query->where(fn ($platforms) => $platforms->whereJsonContains('settings_json->platform_ids', (int) $platformId)->orWhere('settings_json->platform_id', (int) $platformId)))
+            ->when($activeTab !== 'all', function ($query) use ($activeTab): void {
+                if ($activeTab === 'one-time') {
+                    $query->where('is_recurring', false);
+
+                    return;
+                }
+
+                $query->where('recurrence_frequency', $activeTab);
+            });
+
+        // Match all occurrence-level filters against the same occurrence. The
+        // view then chooses its displayed item from that same matching set.
         match ($statusTab) {
-            'active' => $templates->where(function ($query) use ($activeStatuses): void {
-                $query->whereDoesntHave('scheduleSlots.occurrences')
-                    ->orWhereHas('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->whereIn('status', $activeStatuses));
+            'active' => $templates->where(function ($query) use ($matchesOccurrenceFilters, $status, $startTime, $startDate, $endDate): void {
+                $allowsUnmaterialized = $status === '' && $startTime === '' && $startDate === '' && $endDate === '';
+                if ($allowsUnmaterialized) {
+                    $query->whereDoesntHave('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->withTrashed())
+                        ->orWhereHas('scheduleSlots.occurrences', $matchesOccurrenceFilters);
+
+                    return;
+                }
+                $query->whereHas('scheduleSlots.occurrences', $matchesOccurrenceFilters);
             }),
-            'completed' => $templates->whereHas('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->where('status', TournamentStatus::COMPLETED->value)),
-            'cancelled' => $templates->whereHas('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->whereIn('status', [TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])),
-            default => null,
+            'completed', 'cancelled' => $templates->whereHas('scheduleSlots.occurrences', $matchesOccurrenceFilters),
+            default => $templates->when($status !== '' || $startTime !== '' || $startDate !== '' || $endDate !== '', fn ($query) => $query->whereHas('scheduleSlots.occurrences', $matchesOccurrenceFilters)),
         };
 
         $templates = $templates->orderByDesc('updated_at')
@@ -95,7 +119,7 @@ final class V2HeadToHeadController extends Controller
             ->when($gameId !== '', fn ($query) => $query->where('game_id', $gameId))
             ->when($platformId !== '', fn ($query) => $query->where(fn ($platforms) => $platforms->whereJsonContains('settings_json->platform_ids', (int) $platformId)->orWhere('settings_json->platform_id', (int) $platformId)));
         $countActive = (clone $countBase)->where(function ($query) use ($activeStatuses): void {
-            $query->whereDoesntHave('scheduleSlots.occurrences')
+            $query->whereDoesntHave('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->withTrashed())
                 ->orWhereHas('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->whereIn('status', $activeStatuses));
         })->count();
         $countCompleted = (clone $countBase)->whereHas('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->where('status', TournamentStatus::COMPLETED->value))->count();
@@ -103,7 +127,7 @@ final class V2HeadToHeadController extends Controller
         $countAll = (clone $countBase)->count();
 
         return view('admin.head-to-head.index', compact(
-            'templates', 'search', 'gameId', 'activeTab', 'statusTab', 'status', 'platformId', 'startDate', 'endDate', 'perPage',
+            'templates', 'search', 'gameId', 'activeTab', 'statusTab', 'status', 'platformId', 'startDate', 'endDate', 'startTime', 'perPage',
             'games', 'platforms', 'countActive', 'countCompleted', 'countCancelled', 'countAll',
         ));
     }

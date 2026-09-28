@@ -97,7 +97,43 @@ class WalletService
         ?string $description = null,
         ?string $idempotencyKey = null,
     ): LedgerEntry {
-        return DB::transaction(function () use ($wallet, $amount, $type, $referenceType, $referenceId, $description, $idempotencyKey): LedgerEntry {
+        return $this->recordDebit($wallet, $amount, $type, $referenceType, $referenceId, $description, $idempotencyKey, true);
+    }
+
+    /**
+     * Record a platform-funded liability even when treasury funds are not yet
+     * available. A negative balance is intentional: it is the amount the
+     * platform owes to circulation, not a synthetic cash deposit.
+     *
+     * This is deliberately separate from debit() so player wallets can never
+     * accidentally overdraw.
+     *
+     * @param  string|float  $amount
+     */
+    public function debitAllowingLiability(
+        Wallet $wallet,
+        $amount,
+        LedgerType $type,
+        string $referenceType,
+        string $referenceId,
+        ?string $description = null,
+        ?string $idempotencyKey = null,
+    ): LedgerEntry {
+        return $this->recordDebit($wallet, $amount, $type, $referenceType, $referenceId, $description, $idempotencyKey, false);
+    }
+
+    /** @param string|float $amount */
+    private function recordDebit(
+        Wallet $wallet,
+        $amount,
+        LedgerType $type,
+        string $referenceType,
+        string $referenceId,
+        ?string $description,
+        ?string $idempotencyKey,
+        bool $enforceAvailableBalance,
+    ): LedgerEntry {
+        return DB::transaction(function () use ($wallet, $amount, $type, $referenceType, $referenceId, $description, $idempotencyKey, $enforceAvailableBalance): LedgerEntry {
             /** @var Wallet|null $lockedWallet */
             $lockedWallet = Wallet::query()->where('id', $wallet->getKey())->lockForUpdate()->first();
             if ($lockedWallet === null) {
@@ -125,7 +161,7 @@ class WalletService
             $currentBalance = (string) ($wallet->getAttribute('cached_balance') ?? '0.00');
             $currentMinor = DecimalMoney::toMinor($currentBalance);
 
-            if ($currentMinor < $amountMinor) {
+            if ($enforceAvailableBalance && $currentMinor < $amountMinor) {
                 throw new InsufficientBalanceException($wallet->getAttribute('uuid'), $amountDecimal, (string) $currentBalance);
             }
 

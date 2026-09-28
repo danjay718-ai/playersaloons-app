@@ -34,6 +34,9 @@ final class AddV2TournamentScheduleSlotAction
                 'name' => $data['name'] ?? null,
                 'max_teams' => $data['max_teams'] ?? null,
                 'entry_fee' => $data['entry_fee'] ?? null,
+                'free_prize_1st' => $data['free_prize_1st'] ?? null,
+                'free_prize_2nd' => $data['free_prize_2nd'] ?? null,
+                'is_featured' => array_key_exists('is_featured', $data) ? (bool) $data['is_featured'] : null,
             ], static fn ($value) => $value !== null && $value !== '');
 
             return TournamentScheduleSlot::query()->create([

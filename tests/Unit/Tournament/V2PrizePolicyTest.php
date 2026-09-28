@@ -45,4 +45,22 @@ final class V2PrizePolicyTest extends TestCase
             'cent rounding remains conserved' => [8, 8, '0.01', '0.01', '0.06', '0.01'],
         ];
     }
+
+    public function test_sponsored_policy_uses_fixed_prizes_without_commission(): void
+    {
+        $tournament = new Tournament([
+            'max_participants' => 16,
+            'entry_fee' => '0.00',
+            'prize_funding_mode' => 'sponsored',
+            'prize_1st' => '12.34',
+            'prize_2nd' => '5.67',
+        ]);
+
+        $result = (new V2PrizePolicy)->calculate($tournament, 6);
+
+        self::assertSame('18.01', $result['gross']);
+        self::assertSame('0.00', $result['commission']);
+        self::assertSame('12.34', $result['first']);
+        self::assertSame('5.67', $result['second']);
+    }
 }

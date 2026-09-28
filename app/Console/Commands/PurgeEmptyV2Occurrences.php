@@ -11,12 +11,12 @@ final class PurgeEmptyV2Occurrences extends Command
 {
     protected $signature = 'tournaments:purge-empty-v2';
 
-    protected $description = 'Permanently remove expired V2 occurrences that never acquired protected data.';
+    protected $description = 'Apply period-based purge/archive retention to cancelled V2 occurrences.';
 
     public function handle(PurgeEmptyV2OccurrencesAction $purge): int
     {
         $count = $purge->execute();
-        $this->info("Purged {$count} empty V2 occurrence(s).");
+        $this->info("Cleaned up {$count} eligible V2 occurrence(s).");
 
         return self::SUCCESS;
     }

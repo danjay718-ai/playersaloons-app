@@ -7,6 +7,12 @@ namespace App\Modules\CMS\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int|null $default_platform_id
+ * @property string|null $tournament_banner_path
+ * @property string|null $description
+ * @property string|null $rules
+ */
 final class GameTournamentDefault extends Model
 {
     protected $fillable = [

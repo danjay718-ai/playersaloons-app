@@ -73,6 +73,9 @@ final class V2TournamentTemplateController extends Controller
                 'description' => $slot['description'] ?? null,
                 'rules' => $slot['rules'] ?? null,
                 'banner_url' => $overrideBanner,
+                'free_prize_1st' => $slot['free_prize_1st'] ?? null,
+                'free_prize_2nd' => $slot['free_prize_2nd'] ?? null,
+                'is_featured' => isset($slot['is_featured']) ? (bool) $slot['is_featured'] : null,
             ], static fn ($value) => $value !== null && $value !== '');
 
             $start = CarbonImmutable::parse($slot['schedule_start_at'], $timezone->value());

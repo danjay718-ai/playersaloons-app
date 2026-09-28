@@ -6,13 +6,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Modules\CMS\Models\Game;
+use App\Modules\Tournament\Services\CompetitionBannerResolver;
+use App\Shared\Enums\CompetitionType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 final class GameHeadToHeadDefaultController extends Controller
 {
-    public function edit(Game $game): View
+    public function edit(Game $game, CompetitionBannerResolver $banners): View
     {
         abort_unless(config('features.tournament_v2.enabled'), 404);
         abort_unless(request()->user()?->can('tournaments.manage'), 403);
@@ -27,6 +29,7 @@ final class GameHeadToHeadDefaultController extends Controller
             'bannerColumn' => 'head_to_head_banner_path',
             'bannerInput' => 'head_to_head_banner',
             'updateRoute' => route('admin.games.head-to-head-defaults.update', $game),
+            'resolvedBannerUrl' => $banners->resolve($game, CompetitionType::HEAD_TO_HEAD),
         ]);
     }
 

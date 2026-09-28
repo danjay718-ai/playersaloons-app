@@ -20,6 +20,8 @@ use Illuminate\Support\Str;
  * @property string|null $banner_path
  * @property string|null $card_image_path
  * @property bool $is_active
+ * @property-read GameTournamentDefault|null $tournamentDefaults
+ * @property-read GameHeadToHeadDefault|null $headToHeadDefaults
  * @property-read Collection<int, StreamChannel> $streamChannels
  */
 class Game extends Model
@@ -83,12 +85,14 @@ class Game extends Model
         return $this->hasMany(Tournament::class);
     }
 
+    /** @return HasOne<GameTournamentDefault, $this> */
     public function tournamentDefaults(): HasOne
     {
         return $this->hasOne(GameTournamentDefault::class);
     }
 
     /** Defaults for platform-managed 1v1 schedules; never shared with tournaments. */
+    /** @return HasOne<GameHeadToHeadDefault, $this> */
     public function headToHeadDefaults(): HasOne
     {
         return $this->hasOne(GameHeadToHeadDefault::class);

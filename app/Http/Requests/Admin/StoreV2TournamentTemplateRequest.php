@@ -31,9 +31,16 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
             'frequency' => ['required', 'in:one_time,daily,weekly,monthly'],
             'max_teams' => ['required', 'integer', 'min:2', 'max:128'],
             'entry_fee' => ['required', 'regex:/^\d+(?:\.\d{1,2})?$/'],
+            'free_prize_1st' => [
+                $this->isFreeTournament() ? 'required' : 'prohibited',
+                'nullable', 'numeric', 'min:0', 'max:9999999999999999.99',
+            ],
+            'free_prize_2nd' => [
+                $this->isFreeTournament() ? 'nullable' : 'prohibited',
+                'numeric', 'min:0', 'max:9999999999999999.99',
+            ],
             'winning_points' => ['required', 'integer', 'min:0', 'max:100000'],
             'waiting_result_time' => ['required', 'integer', 'min:1', 'max:120'],
-            'is_featured' => ['nullable', 'boolean'],
             'round_duration_value' => ['nullable', 'integer', 'min:1', 'max:10000'],
             'round_duration_unit' => ['nullable', 'required_with:round_duration_value', 'in:minutes,hours,days'],
             'full_first_percent' => ['required', 'numeric', 'min:0', 'max:90'],
@@ -49,6 +56,9 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
             'slots.*.name' => ['nullable', 'string', 'max:191'],
             'slots.*.max_teams' => ['nullable', 'integer', 'min:2', 'max:128'],
             'slots.*.entry_fee' => ['nullable', 'regex:/^\d+(?:\.\d{1,2})?$/'],
+            'slots.*.free_prize_1st' => ['nullable', 'numeric', 'min:0', 'max:9999999999999999.99'],
+            'slots.*.free_prize_2nd' => ['nullable', 'numeric', 'min:0', 'max:9999999999999999.99'],
+            'slots.*.is_featured' => ['nullable', 'boolean'],
             'slots.*.winning_points' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'slots.*.waiting_result_time' => ['nullable', 'integer', 'min:1', 'max:120'],
             'slots.*.round_duration_value' => ['nullable', 'integer', 'min:1', 'max:10000'],
@@ -122,6 +132,18 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
                 if ($this->input('competition_type') === 'head_to_head' && isset($slot['max_teams']) && (int) $slot['max_teams'] !== 2) {
                     $validator->errors()->add("slots.{$index}.max_teams", 'A Head-to-Head slot cannot override the two-player limit.');
                 }
+                $effectiveFee = (float) ($slot['entry_fee'] ?? $this->input('entry_fee', 0));
+                $hasSponsoredFields = filled($slot['free_prize_1st'] ?? null) || filled($slot['free_prize_2nd'] ?? null);
+                if ($this->input('competition_type') === 'head_to_head' && $hasSponsoredFields) {
+                    $validator->errors()->add("slots.{$index}.free_prize_1st", 'Sponsored prizes are available only for free tournaments.');
+                } elseif ($effectiveFee > 0 && $hasSponsoredFields) {
+                    $validator->errors()->add("slots.{$index}.free_prize_1st", 'Paid slots cannot define sponsored prizes.');
+                } elseif ($this->input('competition_type') !== 'head_to_head'
+                    && $effectiveFee === 0.0
+                    && (float) $this->input('entry_fee', 0) > 0
+                    && ! filled($slot['free_prize_1st'] ?? null)) {
+                    $validator->errors()->add("slots.{$index}.free_prize_1st", 'First Prize is required when a paid schedule overrides this slot to free.');
+                }
                 $day = match ($this->input('frequency')) {
                     'weekly' => 'w'.($slot['day_of_week'] ?? ''),
                     'monthly' => 'm'.($slot['day_of_month'] ?? ''),
@@ -135,5 +157,11 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
                 $identities[] = $identity;
             }
         });
+    }
+
+    private function isFreeTournament(): bool
+    {
+        return $this->input('competition_type', 'tournament') !== 'head_to_head'
+            && (float) $this->input('entry_fee', 0) === 0.0;
     }
 }

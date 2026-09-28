@@ -7,7 +7,14 @@ namespace App\Modules\CMS\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Defaults used only when an admin creates a platform-managed H2H schedule. */
+/**
+ * Defaults used only when an admin creates a platform-managed H2H schedule.
+ *
+ * @property int|null $default_platform_id
+ * @property string|null $head_to_head_banner_path
+ * @property string|null $description
+ * @property string|null $rules
+ */
 final class GameHeadToHeadDefault extends Model
 {
     protected $fillable = [

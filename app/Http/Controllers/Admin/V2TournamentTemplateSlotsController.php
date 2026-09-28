@@ -8,9 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreV2TournamentScheduleSlotRequest;
 use App\Modules\Tournament\Actions\AddV2TournamentScheduleSlotAction;
 use App\Modules\Tournament\Actions\MaterializeV2OccurrenceAction;
+use App\Modules\Tournament\Models\TournamentScheduleSlot;
 use App\Modules\Tournament\Models\TournamentTemplate;
+use App\Shared\Enums\CompetitionType;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /** Administrative read model for immutable V2 occurrences. */
@@ -85,5 +88,48 @@ final class V2TournamentTemplateSlotsController extends Controller
         $materialize->execute($slot, $request->user());
 
         return redirect()->route('admin.tournaments.v2.templates.slots', $template)->with('success', 'Slot added. It inherits the parent defaults unless an override was supplied.');
+    }
+
+    public function update(Request $request, TournamentTemplate $template, TournamentScheduleSlot $slot): RedirectResponse
+    {
+        $this->guard($template);
+        abort_unless($request->user()?->can('tournaments.manage'), 403);
+        abort_unless((int) $slot->tournament_template_id === (int) $template->id, 404);
+        $data = $request->validate([
+            'name' => ['nullable', 'string', 'max:191'],
+            'entry_fee' => ['nullable', 'regex:/^\d+(?:\.\d{1,2})?$/'],
+            'max_teams' => ['nullable', 'integer', 'min:2', 'max:128'],
+            'free_prize_1st' => ['nullable', 'numeric', 'min:0'],
+            'free_prize_2nd' => ['nullable', 'numeric', 'min:0'],
+            'is_featured' => ['nullable', 'boolean'],
+        ]);
+        if (filled($data['max_teams'] ?? null) && (int) $data['max_teams'] % 2 !== 0) {
+            return back()->withErrors(['max_teams' => 'Maximum teams must be an even number.']);
+        }
+        if ($template->competition_type === CompetitionType::HEAD_TO_HEAD && filled($data['max_teams'] ?? null) && (int) $data['max_teams'] !== 2) {
+            return back()->withErrors(['max_teams' => 'A Head-to-Head slot always has two players.']);
+        }
+        $effectiveFee = (float) (($data['entry_fee'] ?? null) !== null && $data['entry_fee'] !== '' ? $data['entry_fee'] : $template->entry_fee);
+        $hasSponsored = filled($data['free_prize_1st'] ?? null) || filled($data['free_prize_2nd'] ?? null);
+        if (($template->competition_type === CompetitionType::HEAD_TO_HEAD || $effectiveFee > 0) && $hasSponsored) {
+            return back()->withErrors(['free_prize_1st' => 'Sponsored prizes are available only for free tournaments.']);
+        }
+        if ($template->competition_type !== CompetitionType::HEAD_TO_HEAD && $effectiveFee === 0.0
+            && (float) $template->entry_fee > 0 && ! filled($data['free_prize_1st'] ?? null)) {
+            return back()->withErrors(['free_prize_1st' => 'First Prize is required for a free slot.']);
+        }
+
+        $overrides = $slot->overrides_json ?? [];
+        foreach (['name', 'entry_fee', 'max_teams', 'free_prize_1st', 'free_prize_2nd'] as $key) {
+            if (filled($data[$key] ?? null)) {
+                $overrides[$key] = $data[$key];
+            } else {
+                unset($overrides[$key]);
+            }
+        }
+        $overrides['is_featured'] = $request->boolean('is_featured');
+        $slot->update(['overrides_json' => $overrides]);
+
+        return back()->with('success', 'Future slot overrides updated. Existing occurrences were not changed.');
     }
 }

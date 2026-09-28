@@ -7,7 +7,9 @@ namespace App\Modules\Tournament\Actions;
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentScheduleSlot;
+use App\Modules\Tournament\Services\CompetitionBannerResolver;
 use App\Modules\Tournament\Services\OccurrencePeriod;
+use App\Modules\Tournament\Services\SponsoredPrizeFundingService;
 use App\Modules\Tournament\Support\CompetitionPlatforms;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\RecurrenceFrequency;
@@ -19,7 +21,11 @@ use LogicException;
 
 final class MaterializeV2OccurrenceAction
 {
-    public function __construct(private readonly OccurrencePeriod $periods) {}
+    public function __construct(
+        private readonly OccurrencePeriod $periods,
+        private readonly CompetitionBannerResolver $banners,
+        private readonly SponsoredPrizeFundingService $sponsoredPrizes,
+    ) {}
 
     public function execute(TournamentScheduleSlot $slot, User $creator, ?CarbonImmutable $now = null): ?Tournament
     {
@@ -65,7 +71,7 @@ final class MaterializeV2OccurrenceAction
                 }
                 $endLocal = $this->scheduledEnd($lockedSlot, $startLocal, $period['end'], $template->timezone);
             }
-            $existing = Tournament::query()
+            $existing = Tournament::withTrashed()
                 ->where('schedule_slot_id', $lockedSlot->id)
                 ->where('occurrence_period_key', $period['key'])
                 ->first();
@@ -86,7 +92,10 @@ final class MaterializeV2OccurrenceAction
                 ? $template->game->headToHeadDefaults
                 : $template->game->tournamentDefaults;
 
-            return Tournament::query()->create([
+            $entryFee = (string) ($settings['entry_fee'] ?? $template->entry_fee);
+            $isSponsored = $template->competition_type === CompetitionType::TOURNAMENT
+                && (float) $entryFee === 0.0;
+            $occurrence = Tournament::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'workflow_version' => 2,
                 'template_id' => $template->id,
@@ -97,7 +106,7 @@ final class MaterializeV2OccurrenceAction
                 'name' => ($settings['name'] ?? $template->name).' - '.$startLocal->format('M d, Y g:i A'),
                 'slug' => Str::slug($template->name).'-'.$period['key'].'-'.$lockedSlot->id,
                 'status' => TournamentStatus::REGISTRATION_OPEN,
-                'entry_fee' => $settings['entry_fee'] ?? $template->entry_fee,
+                'entry_fee' => $entryFee,
                 'prize_pool' => '0.00',
                 'advertised_prize_pool' => null,
                 'max_participants' => (int) ($settings['max_teams'] ?? $template->max_participants),
@@ -117,9 +126,12 @@ final class MaterializeV2OccurrenceAction
                 'frequency' => $isOneTime ? 'one_time' : $frequency->value,
                 'description' => $settings['description'] ?? $defaults?->description,
                 'rules' => $settings['rules'] ?? $defaults?->rules,
-                'banner_url' => $this->publicMediaUrl($settings['banner_url'] ?? ($template->competition_type === CompetitionType::HEAD_TO_HEAD
-                    ? $defaults?->head_to_head_banner_path
-                    : $defaults?->tournament_banner_path)),
+                'banner_url' => $this->banners->resolve(
+                    $template->game,
+                    $template->competition_type,
+                    $lockedSlot->overrides_json['banner_url'] ?? null,
+                    $template->settings_json['banner_url'] ?? null,
+                ),
                 'platform_id' => $settings['platform_id'] ?? $defaults?->default_platform_id,
                 'platform_ids' => CompetitionPlatforms::ids($settings + ['platform_id' => $defaults?->default_platform_id]),
                 'waiting_result_time' => (int) ($settings['waiting_result_time'] ?? 5),
@@ -134,9 +146,20 @@ final class MaterializeV2OccurrenceAction
                 'underfilled_platform_bps' => 1500,
                 'financial_calculation_version' => 3,
                 'is_auto_cancel_underfilled' => false,
-                'is_featured' => (bool) ($settings['is_featured'] ?? false),
+                'is_featured' => (bool) ($lockedSlot->overrides_json['is_featured'] ?? false),
+                'prize_1st' => $isSponsored ? ($settings['free_prize_1st'] ?? '0.00') : null,
+                'prize_2nd' => $isSponsored ? ($settings['free_prize_2nd'] ?? '0.00') : null,
+                'prize_funding_mode' => $isSponsored ? 'sponsored' : 'entry_fees',
+                'funding_state' => 'none',
+                'reserved_prize_amount' => '0.00',
                 'created_by' => $template->created_by ?? $creator->id,
             ]);
+
+            if ($isSponsored) {
+                $this->sponsoredPrizes->reserve($occurrence);
+            }
+
+            return $occurrence->fresh();
         }, 3);
     }
 
@@ -173,14 +196,5 @@ final class MaterializeV2OccurrenceAction
         $seconds = max(1, $anchorStart->diffInSeconds($anchorEnd, false));
 
         return $startLocal->addSeconds($seconds);
-    }
-
-    private function publicMediaUrl(?string $path): ?string
-    {
-        if ($path === null || $path === '') {
-            return null;
-        }
-
-        return Str::startsWith($path, ['http://', 'https://', '/']) ? $path : '/storage/'.ltrim($path, '/');
     }
 }

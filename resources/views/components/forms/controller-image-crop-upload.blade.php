@@ -4,6 +4,7 @@
     'width' => 960,
     'height' => 540,
     'currentUrl' => null,
+    'previewBinding' => null,
     'help' => null,
     'nameBinding' => null,
 ])
@@ -13,7 +14,7 @@
 @endphp
 
 {{-- Normal form counterpart of image-crop-upload: no Livewire upload round trip. --}}
-<div x-data="imageCropUpload(@js(['mode' => 'form', 'name' => $name, 'width' => (int) $width, 'height' => (int) $height, 'previewUrl' => $currentUrl]))" @image-crop-preview.window="if ($event.detail.name === name && !fileName) previewUrl = $event.detail.url || ''" class="space-y-2">
+<div x-data="imageCropUpload(@js(['mode' => 'form', 'name' => $name, 'width' => (int) $width, 'height' => (int) $height, 'previewUrl' => $currentUrl]))" @image-crop-preview.window="if ($event.detail.name === name && !fileName) previewUrl = $event.detail.url || ''" @if($previewBinding) x-effect="if (!fileName) previewUrl = {{ $previewBinding }} || ''" @endif class="space-y-2">
     <label for="{{ $inputId }}" class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ $label }}</label>
     <input id="{{ $inputId }}" x-ref="input" type="file" accept="image/jpeg,image/png,image/webp" x-on:change="selectFile($event)" class="block w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-[10px] file:font-black file:uppercase file:text-white">
     <input x-ref="formInput" type="file" @if($nameBinding) x-bind:name="{{ $nameBinding }}" @else name="{{ $name }}" @endif accept="image/jpeg,image/png,image/webp" class="hidden">
@@ -22,7 +23,10 @@
     <p x-show="fileName && !clientError" x-cloak class="truncate text-[10px] font-semibold text-emerald-400"><span x-text="`New upload ready: ${fileName}`"></span></p>
     @error($name)<p class="text-xs text-red-400">{{ $message }}</p>@enderror
 
-    <template x-if="previewUrl"><div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-950"><img :src="previewUrl" alt="{{ $label }} preview" class="aspect-[16/9] w-full object-cover"><p class="border-t border-slate-800 px-3 py-2 text-[10px] text-slate-400" x-text="fileName ? 'New cropped upload preview' : 'Current/default banner preview'"></p></div></template>
+    <div x-show="previewUrl" @if(!$currentUrl) style="display: none" @endif class="overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
+        <img @if($currentUrl) src="{{ $currentUrl }}" @endif :src="previewUrl || null" alt="{{ $label }} preview" class="aspect-[16/9] w-full object-cover">
+        <p class="border-t border-slate-800 px-3 py-2 text-[10px] text-slate-400" x-text="fileName ? 'New cropped upload preview' : 'Current/default banner preview'"></p>
+    </div>
 
     <template x-teleport="body">
         <div x-show="cropOpen" x-cloak x-on:keydown.escape.window="cancelCrop()" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm">

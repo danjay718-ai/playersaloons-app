@@ -6,13 +6,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Modules\CMS\Models\Game;
+use App\Modules\Tournament\Services\CompetitionBannerResolver;
+use App\Shared\Enums\CompetitionType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 final class GameTournamentDefaultController extends Controller
 {
-    public function edit(Game $game): View
+    public function edit(Game $game, CompetitionBannerResolver $banners): View
     {
         abort_unless(config('features.tournament_v2.enabled'), 404);
         abort_unless(request()->user()?->can('tournaments.manage'), 403);
@@ -27,6 +29,7 @@ final class GameTournamentDefaultController extends Controller
             'bannerColumn' => 'tournament_banner_path',
             'bannerInput' => 'tournament_banner',
             'updateRoute' => route('admin.games.tournament-defaults.update', $game),
+            'resolvedBannerUrl' => $banners->resolve($game, CompetitionType::TOURNAMENT),
         ]);
     }
 

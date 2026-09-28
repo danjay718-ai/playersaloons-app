@@ -13,6 +13,25 @@ final class V2PrizePolicy implements PrizePolicy
 {
     public function calculate(Tournament $tournament, int $joinedEntries): array
     {
+        if ($tournament->prize_funding_mode === 'sponsored') {
+            $first = DecimalMoney::toMinor((string) ($tournament->prize_1st ?? '0.00'));
+            $second = DecimalMoney::toMinor((string) ($tournament->prize_2nd ?? '0.00'));
+            $gross = $first + $second;
+
+            return [
+                'full' => $joinedEntries >= (int) $tournament->max_participants,
+                'joined_entries' => $joinedEntries,
+                'gross_minor' => $gross,
+                'commission_minor' => 0,
+                'first_minor' => $first,
+                'second_minor' => $second,
+                'gross' => DecimalMoney::format($gross),
+                'commission' => '0.00',
+                'first' => DecimalMoney::format($first),
+                'second' => DecimalMoney::format($second),
+            ];
+        }
+
         $maximum = (int) $tournament->max_participants;
         $full = $joinedEntries >= $maximum;
         $gross = DecimalMoney::toMinor((string) $tournament->entry_fee) * $joinedEntries;

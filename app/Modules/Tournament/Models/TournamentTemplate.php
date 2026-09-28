@@ -35,6 +35,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  * @property-read Collection|TournamentTemplatePrize[] $prizes
+ * @property-read Collection<int, TournamentScheduleSlot> $scheduleSlots
  */
 class TournamentTemplate extends Model
 {
@@ -112,6 +113,7 @@ class TournamentTemplate extends Model
         return $this->hasMany(TournamentTemplatePrize::class, 'template_id');
     }
 
+    /** @return HasMany<TournamentScheduleSlot, $this> */
     public function scheduleSlots(): HasMany
     {
         return $this->hasMany(TournamentScheduleSlot::class)->orderBy('sort_order');

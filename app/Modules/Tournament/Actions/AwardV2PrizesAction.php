@@ -36,12 +36,7 @@ final class AwardV2PrizesAction
                 ->first();
 
             if ($locked->completion_reason === 'no_champion') {
-                if ($finalMatch === null || $finalMatch->player_a_registration_id === null || $finalMatch->player_b_registration_id === null) {
-                    throw new LogicException('Both finalists are required for a no-champion settlement.');
-                }
-                $this->payNoChampionSettlement($locked, $finalMatch);
-
-                return;
+                throw new LogicException('A champion must be resolved before tournament prizes can be paid.');
             }
 
             if ($finalMatch?->winner_registration_id === null) {
@@ -64,29 +59,12 @@ final class AwardV2PrizesAction
 
             $this->creditCommission($locked, (string) ($locked->finalized_commission_amount ?? '0.00'));
 
-            $locked->forceFill(['payout_status' => 'paid'])->save();
+            $locked->forceFill([
+                'payout_status' => 'paid',
+                'funding_state' => $locked->prize_funding_mode === 'sponsored' ? 'paid' : $locked->funding_state,
+                'reserved_prize_amount' => $locked->prize_funding_mode === 'sponsored' ? '0.00' : $locked->reserved_prize_amount,
+            ])->save();
         }, 3);
-    }
-
-    private function payNoChampionSettlement(Tournament $tournament, GameMatch $finalMatch): void
-    {
-        $grossMinor = DecimalMoney::toMinor((string) ($tournament->finalized_gross_pool ?? '0.00'));
-        $commissionMinor = DecimalMoney::percentage($grossMinor, 1000);
-        $sharedMinor = $grossMinor - $commissionMinor;
-        $playerBMinor = intdiv($sharedMinor, 2);
-        $playerAMinor = $playerBMinor + ($sharedMinor % 2);
-
-        $this->payRank($tournament, 1, (int) $finalMatch->player_a_registration_id, DecimalMoney::format($playerAMinor));
-        $this->payRank($tournament, 2, (int) $finalMatch->player_b_registration_id, DecimalMoney::format($playerBMinor));
-        $this->creditCommission($tournament, DecimalMoney::format($commissionMinor));
-
-        $tournament->forceFill([
-            'finalized_commission_amount' => DecimalMoney::format($commissionMinor),
-            'finalized_first_prize' => DecimalMoney::format($playerAMinor),
-            'finalized_second_prize' => DecimalMoney::format($playerBMinor),
-            'prize_pool' => DecimalMoney::format($sharedMinor),
-            'payout_status' => 'paid',
-        ])->save();
     }
 
     private function creditCommission(Tournament $tournament, string $commission): void
