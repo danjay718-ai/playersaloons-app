@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Shared\Enums\UserStatus;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Component;
 
@@ -39,6 +40,13 @@ class Login extends Component
         if (RateLimiter::tooManyAttempts($accountKey, $maxAttempts)
             || RateLimiter::tooManyAttempts($ipKey, $maxAttempts * 5)) {
             $this->addLockoutError($accountKey, $ipKey);
+
+            return;
+        }
+
+        if ($user?->status === UserStatus::SUSPENDED && Hash::check($this->password, $user->password)) {
+            RateLimiter::clear($accountKey);
+            $this->addError('identity', 'Your account is suspended. Contact support for assistance.');
 
             return;
         }

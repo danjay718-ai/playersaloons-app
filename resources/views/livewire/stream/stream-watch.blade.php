@@ -19,8 +19,7 @@
             if (typeof window.Echo !== 'undefined') {
                 window.Echo.channel('stream.{{ $streamChannel->id }}')
                     .listen('.StreamMessageSent', (e) => {
-                        if (this.messages.some(message => message.id === e.message.id)) return;
-                        this.messages.push(e.message);
+                        this.syncMessages([...this.messages, e.message]);
                         this.$nextTick(() => this.scrollChat());
                     })
                     .listen('.StreamMessageDeleted', (e) => {
@@ -39,13 +38,21 @@
             const el = this.$refs.chatBox;
             if (el) el.scrollTop = el.scrollHeight;
         },
+        syncMessages(messages) {
+            const uniqueMessages = new Map();
+            for (const message of messages || []) {
+                if (message?.id === undefined || message?.id === null) continue;
+                uniqueMessages.set(String(message.id), message);
+            }
+            this.messages = Array.from(uniqueMessages.values());
+        },
         formatViewers(n) {
             if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
             if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
             return String(n);
         }
     }"
-    @chat-updated.window="messages = $wire.recentMessages; $nextTick(() => scrollChat())"
+    @chat-updated.window="syncMessages($wire.recentMessages); $nextTick(() => scrollChat())"
 >
     <x-ui.toasts />
 

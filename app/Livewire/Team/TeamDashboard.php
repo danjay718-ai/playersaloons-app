@@ -236,7 +236,7 @@ class TeamDashboard extends Component
 
         try {
             $memberUser = User::query()->where('username', $username)->firstOrFail();
-            $action->execute($team, $memberUser);
+            $action->execute($team, $memberUser, $user);
             session()->flash('message', "{$memberUser->username} was removed from the team.");
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to change the team captain.'));
@@ -260,7 +260,7 @@ class TeamDashboard extends Component
         }
 
         try {
-            $action->execute($team, $user);
+            $action->execute($team, $user, $user);
             session()->flash('message', 'You have left the team.');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to leave the team.'));
