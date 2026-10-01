@@ -401,17 +401,6 @@ class MatchDetail extends Component
             return;
         }
 
-        $triggeringSubmitterId = $match->resultSubmissions()
-            ->whereHas('attempt', fn ($query) => $query->where('attempt_number', $match->active_attempt_number))
-            ->orderByDesc('id')
-            ->value('submitted_by');
-
-        if ((int) $triggeringSubmitterId !== (int) Auth::id()) {
-            $this->addError('evidenceFile', 'Only the player whose report triggered this conflict can submit its evidence.');
-
-            return;
-        }
-
         $this->validate([
             'disputeReason' => ['nullable', 'string', 'max:2000'],
             'evidenceFile' => ['nullable', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
@@ -522,9 +511,6 @@ class MatchDetail extends Component
         $opponentSubmissionOutcome = $opponentRegistrationId !== null
             ? $activeAttempt?->submissions?->firstWhere('registration_id', $opponentRegistrationId)?->outcome
             : null;
-        $triggeringSubmitterId = $activeAttempt?->submissions?->sortByDesc('id')->first()?->submitted_by;
-        $isDisputeInitiator = $activeDispute !== null && $user !== null
-            && (int) $triggeringSubmitterId === (int) $user->id;
         $hasSubmittedDisputeEvidence = $activeDispute !== null && $user !== null
             && $activeDispute->evidence->contains('uploaded_by', $user->id);
         $isResultConflict = $match->status === MatchStatus::DISPUTED
@@ -564,7 +550,6 @@ class MatchDetail extends Component
             'submissionUnavailableMessage' => $submissionUnavailableMessage,
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
-            'isDisputeInitiator' => $isDisputeInitiator,
             'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,
             'isResultConflict' => $isResultConflict,
             'activeAttempt' => $activeAttempt,

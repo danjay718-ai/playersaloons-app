@@ -14,13 +14,13 @@ use App\Modules\Match\Actions\ResolveHeadToHeadDisputeAction;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Match\Models\MatchDispute;
-use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Shared\Enums\DisputeResolution;
 use App\Shared\Enums\HeadToHeadDisputeResolution;
 use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\MatchStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\WithPagination;
 
@@ -140,6 +140,14 @@ class MatchAdmin extends AdminComponent
 
     public function openOverrideModal(int $id): void
     {
+        $dispute = MatchDispute::query()->where('match_id', $id)
+            ->whereIn('status', ['open', 'under_review'])->first();
+        if ($dispute !== null) {
+            $this->showOverrideModal = false;
+            $this->openDisputeModal($dispute->id);
+
+            return;
+        }
         $this->selectedMatchId = $id;
         $match = GameMatch::select(['id', 'winner_registration_id', 'player_a_registration_id'])
             ->findOrFail($id);
@@ -200,28 +208,29 @@ class MatchAdmin extends AdminComponent
 
     public function resolveDispute(ResolveDisputeAction $resolver, ApplyComplianceBlockAction $blocker, IssueDisputeStrikeAction $strikes): void
     {
+        $this->resetErrorBag();
         $this->validate([
+            'selectedDisputeId' => 'required|integer|exists:match_disputes,id',
             'resolution' => 'required|string|in:player_a,player_b,rematch,draw',
-            'complianceUserId' => 'nullable|integer',
+            'complianceUserId' => [Rule::requiredIf((float) $this->balancePenalty > 0), 'nullable', 'integer'],
             'complianceBanDays' => 'required_with:complianceUserId|integer|min:1|max:3650',
             'complianceBanReason' => 'required_with:complianceUserId|nullable|string|min:10|max:1000',
             'balancePenalty' => ['nullable', 'regex:/^\d+(?:\.\d{1,2})?$/'],
+        ], [
+            'resolution.required' => __('Select a match outcome before submitting the ruling.'),
+            'selectedDisputeId.required' => __('Select a dispute before submitting the ruling.'),
+            'complianceUserId.required' => __('Select the player receiving the penalty.'),
+            'complianceBanReason.required_with' => __('Explain the evidence supporting this penalty.'),
         ]);
 
-        if (! $this->selectedDisputeId) {
-            return;
-        }
-
         $dispute = MatchDispute::query()
-            ->with(['match.playerARegistration.user', 'match.playerBRegistration.user'])
+            ->with(['match.tournament', 'match.playerARegistration.user', 'match.playerBRegistration.user'])
             ->findOrFail($this->selectedDisputeId);
         $resolutionEnum = DisputeResolution::from($this->resolution);
         /** @var User|null $actor */
         $actor = Auth::user();
 
-        if (! $actor) {
-            return;
-        }
+        abort_unless($actor !== null, 403);
 
         try {
             DB::transaction(function () use ($resolver, $blocker, $strikes, $dispute, $actor, $resolutionEnum): void {
@@ -252,21 +261,19 @@ class MatchAdmin extends AdminComponent
                     }
                 }
             });
-            session()->flash('success', $this->complianceUserId !== ''
+            $successMessage = $this->complianceUserId !== ''
                 ? ((int) $dispute->match->tournament->workflow_version === 2
                     ? 'Dispute resolved and dishonest-result strike recorded.'
                     : 'Dispute resolved and timed compliance block applied.')
-                : 'Dispute resolved successfully.');
+                : 'Dispute resolved successfully.';
+            session()->flash('success', $successMessage);
+            $this->dispatch('dispute-ruling-saved', message: $successMessage);
             $this->closeDisputeModal();
             $this->closeDetailModal();
-        } catch (InsufficientBalanceException $e) {
-            // Keep the modal open and attach the failure to the exact field.
-            // A ruling/strike is intentionally rolled back when a requested
-            // debit cannot be collected; we must not silently create debt or
-            // deduct more than the player actually owns.
-            $this->addError('balancePenalty', 'The selected player does not have enough wallet balance for this deduction. Enter an amount within their available balance, or 0.00 to issue the strike without a balance deduction.');
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to resolve the match dispute.'));
+            $this->addError('disputeResolution', $e instanceof \LogicException
+                ? $e->getMessage()
+                : $this->safeError($e, 'Unable to resolve the match dispute.'));
         }
     }
 
@@ -315,7 +322,7 @@ class MatchAdmin extends AdminComponent
             return null;
         }
 
-        return GameMatch::with([
+        $match = GameMatch::with([
             'tournament.game.translations',
             'playerARegistration.user',
             'playerBRegistration.user',
@@ -324,6 +331,9 @@ class MatchAdmin extends AdminComponent
             'disputes.openedBy',
             'disputes.evidence.uploadedBy',
         ])->find($this->selectedMatchId);
+        $match?->disputes->each(fn (MatchDispute $dispute) => $dispute->setRelation('match', $match));
+
+        return $match;
     }
 
     /**
@@ -338,6 +348,7 @@ class MatchAdmin extends AdminComponent
         }
 
         return MatchDispute::with([
+            'match.tournament',
             'match.playerARegistration.user',
             'match.playerBRegistration.user',
             'openedBy',

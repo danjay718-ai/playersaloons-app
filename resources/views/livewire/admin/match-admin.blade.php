@@ -1,4 +1,19 @@
-<div x-data="{ activeTab: 'tournament' }">
+<div x-data="{
+    activeTab: 'tournament',
+    rulingNotice: '',
+    disputeOpen: $wire.entangle('showDisputeModal'),
+    disputeId: $wire.entangle('selectedDisputeId'),
+    openDispute(id) {
+        this.disputeId = id;
+        this.disputeOpen = true;
+        this.$wire.$set('resolution', '', false);
+        this.$wire.$set('complianceUserId', '', false);
+        this.$wire.$set('complianceBanDays', 7, false);
+        this.$wire.$set('complianceBanReason', '', false);
+        this.$wire.$set('balancePenalty', '0.00', false);
+    }
+}" @dispute-ruling-saved.window="rulingNotice = $event.detail.message; setTimeout(() => rulingNotice = '', 6000)">
+    <div x-show="rulingNotice" x-cloak x-text="rulingNotice" role="status" aria-live="polite" class="fixed right-4 top-4 z-[100] max-w-sm rounded-xl border border-emerald-500/50 bg-slate-950 p-4 text-sm font-semibold text-emerald-300 shadow-xl"></div>
     <div class="mb-6 inline-flex max-w-full gap-1 rounded-xl border border-slate-800 bg-slate-900/70 p-1" role="tablist" aria-label="Match type">
         <button type="button" id="tournament-matches-tab" x-ref="tournamentTab"
                 role="tab" aria-controls="tournament-matches-panel"
@@ -289,11 +304,14 @@
 
     {{-- ─── Detail Modal ─────────────────────────────────────────────────────── --}}
     @if($showDetailModal && $this->selectedMatch)
-        @php $selectedMatch = $this->selectedMatch; @endphp
+        @php
+            $selectedMatch = $this->selectedMatch;
+            $activeDispute = $selectedMatch->disputes->first(fn ($dispute) => in_array($dispute->status->value, ['open', 'under_review'], true));
+        @endphp
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" wire:click="closeDetailModal"></div>
             <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl relative z-10 max-h-[85vh] flex flex-col"
-                 wire:key="detail-modal-{{ $selectedMatch->id }}">
+                 wire:key="detail-modal-{{ $selectedMatch->id }}" x-data="{ detailTab: 'match' }">
 
                 {{-- Header --}}
                 <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-start shrink-0">
@@ -306,8 +324,13 @@
                     </button>
                 </div>
 
-                {{-- Scrollable body --}}
-                <div class="p-6 overflow-y-auto space-y-5 flex-grow text-xs">
+                <nav class="flex gap-2 border-b border-slate-800 px-6 py-3 shrink-0" aria-label="{{ __('Match detail sections') }}">
+                    <button type="button" @click="detailTab = 'match'" :aria-pressed="detailTab === 'match'" :class="detailTab === 'match' ? 'bg-indigo-600 text-white' : 'text-slate-400'" class="rounded-lg px-3 py-2 text-xs font-bold">{{ __('Match Details') }}</button>
+                    <button type="button" @click="detailTab = 'history'" :aria-pressed="detailTab === 'history'" :class="detailTab === 'history' ? 'bg-indigo-600 text-white' : 'text-slate-400'" class="rounded-lg px-3 py-2 text-xs font-bold">{{ __('Dispute History') }} ({{ $selectedMatch->disputes->count() }})</button>
+                </nav>
+
+                {{-- Each tab keeps its own scroll position. --}}
+                <div x-show="detailTab === 'match'" class="p-6 overflow-y-auto space-y-5 flex-grow text-xs">
 
                     {{-- VS card --}}
                     <div class="grid grid-cols-3 items-center bg-[#0b0f19] border border-slate-800 rounded-xl p-4 text-center">
@@ -353,6 +376,8 @@
                         </div>
                     </div>
 
+                </div>
+                <div x-show="detailTab === 'history'" x-cloak class="p-6 overflow-y-auto space-y-5 flex-grow text-xs">
                     {{-- Disputes section --}}
                     @if($selectedMatch->disputes->count() > 0)
                         <div>
@@ -433,31 +458,27 @@
                                             </div>
                                         @endif
 
-                                        {{-- Resolve CTA --}}
-                                        @if(in_array($disp->status->value, ['open', 'under_review']))
-                                            <div class="pt-2 flex justify-end">
-                                                <button wire:click="openDisputeModal({{ $disp->id }})"
-                                                        class="inline-flex items-center gap-1.5 bg-red-600/90 hover:bg-red-500 text-white font-bold text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors">
-                                                    <i data-lucide="gavel" class="w-3.5 h-3.5"></i>
-                                                    Resolve Dispute
-                                                </button>
-                                            </div>
-                                        @endif
                                     </div>
                                 @endforeach
                             </div>
                         </div>
+                    @else
+                        <p class="text-slate-500">{{ __('No disputes have been recorded for this match.') }}</p>
                     @endif
 
                 </div>
 
                 {{-- Footer --}}
                 <div class="px-6 py-4 border-t border-slate-800 bg-[#0b0f19] flex justify-end gap-3 shrink-0">
-                    @if(!in_array($selectedMatch->status->value, ['completed','forfeited']) && $selectedMatch->player_a_registration_id && $selectedMatch->player_b_registration_id)
+                    @if($activeDispute)
+                        <button type="button" @click="openDispute({{ $activeDispute->id }})" class="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold uppercase text-white hover:bg-red-500">
+                            <i data-lucide="gavel" class="h-4 w-4"></i>{{ __('Resolve Dispute') }}
+                        </button>
+                    @elseif(!in_array($selectedMatch->status->value, ['completed','forfeited']) && $selectedMatch->player_a_registration_id && $selectedMatch->player_b_registration_id)
                         <button wire:click="openOverrideModal({{ $selectedMatch->id }})"
                                 class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                             <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                            Override Result
+                            {{ __('Set Match Result') }}
                         </button>
                     @endif
                     <button wire:click="closeDetailModal"
@@ -477,7 +498,7 @@
             <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative z-10"
                  wire:key="override-modal-{{ $selectedMatch->id }}">
                 <div class="px-6 py-4 border-b border-slate-800 bg-[#0b0f19] flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Override Match Winner</h3>
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">{{ __('Set Match Result') }}</h3>
                     <button wire:click="$set('showOverrideModal', false)" class="text-slate-400 hover:text-white">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
@@ -528,10 +549,15 @@
     @endif
 
     {{-- ─── Dispute Resolution Modal ─────────────────────────────────────────── --}}
-    @if($showDisputeModal && $this->selectedDispute)
-        @php $resolveDispute = $this->selectedDispute; @endphp
-        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" wire:click="closeDisputeModal"></div>
+    @php
+        $preparedDisputes = $this->selectedMatch?->disputes->whereIn('status', [\App\Shared\Enums\DisputeStatus::OPEN, \App\Shared\Enums\DisputeStatus::UNDER_REVIEW]) ?? collect();
+        if ($this->selectedDispute && ! $preparedDisputes->contains('id', $this->selectedDispute->id)) {
+            $preparedDisputes = $preparedDisputes->push($this->selectedDispute);
+        }
+    @endphp
+    @foreach($preparedDisputes as $resolveDispute)
+        <div wire:key="prepared-dispute-{{ $resolveDispute->id }}" x-show="disputeOpen && disputeId === {{ $resolveDispute->id }}" x-cloak @keydown.escape.window="disputeOpen = false" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="disputeOpen = false"></div>
             <div class="bg-[#0f172a] border border-slate-800 rounded-xl max-w-2xl w-full overflow-hidden shadow-2xl relative z-10 max-h-[90vh] flex flex-col"
                  wire:key="dispute-modal-{{ $resolveDispute->id }}">
 
@@ -540,13 +566,15 @@
                         <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider">Resolve Match Dispute</h3>
                         <p class="text-[10px] text-slate-500 mt-0.5">Review the player's note and evidence before ruling.</p>
                     </div>
-                    <button wire:click="closeDisputeModal" class="text-slate-400 hover:text-white transition-colors">
+                    <button @click="disputeOpen = false" class="text-slate-400 hover:text-white transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
 
                 <div class="overflow-y-auto flex-grow">
-                    <form wire:submit.prevent="resolveDispute" class="p-6 space-y-5">
+                    <form x-data="{ submitting: false, requestError: '' }"
+                          @submit.prevent="if (submitting) return; submitting = true; requestError = ''; try { await $wire.resolveDispute(); } catch (error) { requestError = @js(__('The request could not be completed. Check your connection and try again.')); } finally { submitting = false; }"
+                          class="p-6 space-y-5">
 
                         {{-- Filed by + status --}}
                         <div class="flex items-center justify-between text-xs">
@@ -678,7 +706,7 @@
                                         <label class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-400">Balance deduction (optional)</label>
                                         <input wire:model="balancePenalty" inputmode="decimal" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-slate-200" placeholder="0.00">
                                         @error('balancePenalty') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
-                                        <p class="mt-1 text-[10px] leading-relaxed text-slate-500">A deduction cannot exceed the player's available wallet balance. Use 0.00 to record the strike without a deduction.</p>
+                                        <p class="mt-1 text-[10px] leading-relaxed text-slate-500">{{ __('A penalty can make the wallet balance negative. Future deposits pay the amount owed first. Use 0.00 for a strike without a deduction.') }}</p>
                                     </div>
                                 @endif
                                 <div>
@@ -689,17 +717,30 @@
                             </div>
                         @endif
 
+                        @if($errors->any())
+                            <div role="alert" class="rounded-lg border border-red-500/50 bg-red-950/40 p-3 text-xs text-red-200">
+                                <p class="font-bold">{{ __('The ruling was not saved. Please review the following:') }}</p>
+                                <ul class="mt-2 list-disc space-y-1 pl-4">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                        <p x-show="requestError" x-text="requestError" role="alert" class="rounded-lg border border-red-500/50 bg-red-950/40 p-3 text-xs text-red-200"></p>
+                        <p x-show="submitting" x-cloak role="status" aria-live="polite" class="text-xs font-semibold text-amber-300">{{ __('Saving the ruling and any penalty. Please wait…') }}</p>
+
                         <div class="pt-2 border-t border-slate-800 flex justify-end gap-3">
-                            <button type="button" wire:click="closeDisputeModal"
+                            <button type="button" @click="disputeOpen = false"
                                     class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                                 Cancel
                             </button>
                             <button type="submit"
-                                    wire:loading.attr="disabled" wire:target="resolveDispute"
+                                    :disabled="submitting"
                                     class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold text-xs uppercase px-5 py-2.5 rounded-lg transition-colors">
                                 <i data-lucide="gavel" class="w-3.5 h-3.5"></i>
-                                <span wire:loading.remove wire:target="resolveDispute">Submit Ruling</span>
-                                <span wire:loading wire:target="resolveDispute">Submitting…</span>
+                                <span x-show="!submitting">Submit Ruling</span>
+                                <span x-show="submitting" x-cloak>Submitting…</span>
                             </button>
                         </div>
 
@@ -707,7 +748,7 @@
                 </div>
             </div>
         </div>
-    @endif
+    @endforeach
 
     {{-- ─── H2H Dispute Resolution Modal ────────────────────────────────────── --}}
     @if($showH2HDisputeModal && $this->selectedH2HMatch)

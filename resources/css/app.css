@@ -1325,6 +1325,12 @@ html[data-theme='light'] nav[role='navigation'] div.flex.justify-between.flex-1.
 ─────────────────────────────────── */
 [x-cloak] { display: none !important; }
 
+.player-tournament-detail [data-tournament-content],
+.player-match-room [data-match-panel],
+.player-match-room [data-match-content="dispute"] {
+    scroll-margin-top: 6rem;
+}
+
 /* Lightweight auth arena motion: text/CSS only, with reduced-motion support. */
 @keyframes auth-ascii-drift {
     0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.55; }

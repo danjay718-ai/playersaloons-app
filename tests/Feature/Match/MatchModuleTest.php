@@ -427,6 +427,26 @@ class MatchModuleTest extends TestCase
             ->assertSee('border-red-500', false);
     }
 
+    public function test_admin_match_details_separate_history_and_offer_one_result_action(): void
+    {
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
+        $page = Livewire::actingAs($this->adminUser)->test(MatchAdmin::class)
+            ->call('selectMatch', $match->id)
+            ->assertSee('Dispute History')
+            ->assertSee('Set Match Result')
+            ->assertSee('detailTab === \'history\'', escape: false);
+
+        $dispute = app(OpenDisputeAction::class)->execute($match, $this->playerB->id, 'The reported match outcome is incorrect.');
+        $page->call('$refresh')
+            ->assertSee('Resolve Dispute')
+            ->assertDontSee('Set Match Result')
+            ->assertDontSee('Override Result')
+            ->call('openOverrideModal', $match->id)
+            ->assertSet('showOverrideModal', false)
+            ->assertSet('showDisputeModal', true)
+            ->assertSet('selectedDisputeId', $dispute->id);
+    }
+
     public function test_admin_can_apply_timed_compliance_ban_when_resolving_false_proof(): void
     {
         $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();

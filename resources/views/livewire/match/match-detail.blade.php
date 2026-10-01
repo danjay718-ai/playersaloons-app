@@ -13,6 +13,7 @@
         </div>
     @endif
 
+    @if(! $embedded || $isAdmin)
     <!-- Match Header Card -->
     <div class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
         <i data-lucide="gamepad-2" aria-hidden="true" class="ui-card-watermark"></i>
@@ -34,34 +35,24 @@
             </div>
             
             <div class="flex-shrink-0">
-                @php
-                    $statusColors = [
-                        'pending' => 'bg-zinc-800 text-zinc-400 border-zinc-700',
-                        'ready' => 'bg-blue-950/30 text-blue-400 border-blue-900/40',
-                        'in_progress' => 'bg-violet-950/40 text-violet-300 border-violet-850/60 animate-pulse',
-                        'result_submitted' => 'bg-amber-950/30 text-amber-400 border-amber-900/40',
-                        'waiting_for_confirmation' => 'bg-amber-950/30 text-amber-400 border-amber-900/40',
-                        'disputed' => 'bg-red-950/30 text-red-400 border-red-900/40 shadow-sm shadow-red-500/5',
-                        'completed' => 'bg-emerald-950/30 text-emerald-400 border-emerald-900/40',
-                        'forfeited' => 'bg-zinc-800 text-zinc-400 border-zinc-700',
-                    ];
-                    $colorClass = $statusColors[$match->status->value ?? $match->status] ?? 'bg-zinc-800 text-zinc-400 border-zinc-700';
-                @endphp
-                <span class="text-xs font-bold uppercase tracking-widest border rounded-full px-4 py-1.5 {{ $colorClass }}">
-                    @if((int) $match->tournament->workflow_version === 2 && $match->status->value === 'waiting_for_confirmation')
-                        Waiting for opponent result
-                    @else
-                        {{ $match->status->value === 'ready' ? ($match->tournament->status === \App\Shared\Enums\TournamentStatus::ONGOING ? 'Starting' : 'Scheduled') : str_replace('_', ' ', $match->status->value ?? $match->status) }}
-                    @endif
-                </span>
+                @include('livewire.match.partials._match-status-badge')
             </div>
         </div>
     </div>
+
+    @endif
 
     <!-- H2H Matchups Display -->
     <div class="decorated-card match-room-card bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-850 rounded-2xl p-6 md:p-10 shadow-xl relative overflow-hidden">
         <i data-lucide="swords" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="absolute inset-0 bg-gradient-to-r from-violet-600/5 to-fuchsia-600/5 pointer-events-none"></div>
+
+        @if($embedded && ! $isAdmin)
+            <div data-match-content="matchup" class="relative z-10 mb-6 flex items-start justify-between gap-3 border-b border-zinc-800 pb-4">
+                <p class="text-xs font-bold text-zinc-400">Round {{ $match->round?->round_number ?? '—' }} · Match {{ $roundMatchNumber }}</p>
+                <div class="shrink-0">@include('livewire.match.partials._match-status-badge')</div>
+            </div>
+        @endif
 
         <div class="grid grid-cols-1 md:grid-cols-7 items-center gap-6 md:gap-0 relative z-10">
             <!-- Player A info -->
@@ -127,66 +118,22 @@
         </div>
     </div>
 
-    @if($isParticipant || $isAdmin)
-        @php
-            $isRematch = (int) ($match->active_attempt_number ?? 1) > 1
-                || in_array($match->resolution_reason, ['rematch', 'admin_draw_rematch', 'admin_rematch', 'agreed_rematch'], true)
-                || $match->attempts->contains(fn ($attempt) => $attempt->status === 'rematch');
-        @endphp
-        <div class="decorated-card match-connection-card rounded-2xl border border-cyan-900/40 bg-cyan-950/10 p-5 md:p-6">
-            <i data-lucide="wifi" aria-hidden="true" class="ui-card-watermark"></i>
-            <div class="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div><h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-cyan-100">Game & Connection Details</h2><p class="mt-1 text-xs text-zinc-500">Everything needed to find the opponent and start this match.</p></div>
-                <span class="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $match->tournament->timezone ?: config('app.tournament_timezone') }}</span>
-            </div>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <div class="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4"><span class="block text-[9px] font-black uppercase tracking-widest text-zinc-600">Game / Platforms</span><strong class="mt-1 block text-sm text-white">{{ $match->tournament->game->localizedName() }}</strong><span class="text-xs text-zinc-500">{{ $match->tournament->platform_names ?: 'Platform not set' }}</span></div>
-                <div class="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4"><span class="block text-[9px] font-black uppercase tracking-widest text-zinc-600">Side A Game IDs</span><span class="block text-[10px] text-zinc-500">{{ $match->playerARegistration?->platform?->name ?? $match->tournament->platform?->name ?? 'Platform not set' }}</span>@forelse($match->playerARegistration?->tournamentTeam?->members ?? [] as $member)<span class="mt-1 block break-all text-xs text-cyan-300">{{ $member->user?->username }} · {{ $member->game_id_value ?: 'Not provided' }}</span>@empty<strong class="mt-1 block break-all text-sm text-cyan-300">{{ $match->playerARegistration?->game_id_value ?: 'Not provided' }}</strong>@endforelse</div>
-                <div class="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4"><span class="block text-[9px] font-black uppercase tracking-widest text-zinc-600">Side B Game IDs</span><span class="block text-[10px] text-zinc-500">{{ $match->playerBRegistration?->platform?->name ?? $match->tournament->platform?->name ?? 'Platform not set' }}</span>@forelse($match->playerBRegistration?->tournamentTeam?->members ?? [] as $member)<span class="mt-1 block break-all text-xs text-fuchsia-300">{{ $member->user?->username }} · {{ $member->game_id_value ?: 'Not provided' }}</span>@empty<strong class="mt-1 block break-all text-sm text-fuchsia-300">{{ $match->playerBRegistration?->game_id_value ?: 'Not provided' }}</strong>@endforelse</div>
-                <div class="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4"><span class="block text-[9px] font-black uppercase tracking-widest text-zinc-600">Server / Region</span><strong class="mt-1 block text-sm text-white">{{ $match->server_region ?: 'Follow game default' }}</strong></div>
-                @if($match->lobby_code || $match->lobby_password)
-                    <div class="rounded-xl border border-violet-800/50 bg-violet-950/20 p-4"><span class="block text-[9px] font-black uppercase tracking-widest text-violet-400">Lobby Code</span><strong class="mt-1 block text-base text-white">{{ $match->lobby_code ?: '—' }}</strong></div>
-                    <div class="rounded-xl border border-violet-800/50 bg-violet-950/20 p-4"><span class="block text-[9px] font-black uppercase tracking-widest text-violet-400">Lobby Password</span><strong class="mt-1 block text-base text-white">{{ $match->lobby_password ?: '—' }}</strong></div>
-                @endif
-                @if($match->lobby_instructions)<div class="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 md:col-span-2"><span class="block text-[9px] font-black uppercase tracking-widest text-zinc-600">Instructions</span><p class="mt-1 whitespace-pre-line text-xs leading-relaxed text-zinc-300">{{ $match->lobby_instructions }}</p></div>@endif
-            </div>
-
-            @if($isParticipant && $match->status->value === 'ready')
-                <div class="mt-5 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
-                    <p class="text-xs font-bold text-white">{{ $isRematch ? 'This is a rematch' : 'Match starts automatically' }}</p>
-                    <p class="mt-1 text-[11px] text-zinc-400">{{ $match->tournament->status === \App\Shared\Enums\TournamentStatus::ONGOING ? 'The match is starting. Result submission will open shortly.' : 'Result submission opens when the tournament starts.' }}</p>
-                </div>
-            @endif
-
-            @if($isParticipant && $match->status->value === 'in_progress')
-                <div role="{{ $isRematch ? 'alert' : 'status' }}" class="mt-5 flex items-center gap-3 rounded-xl border p-4 {{ $isRematch ? 'border-cyan-400/40 bg-cyan-500/10' : 'border-emerald-800/50 bg-emerald-950/20' }}">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $isRematch ? 'bg-cyan-400/15 text-cyan-300' : 'bg-emerald-500/15 text-emerald-300' }}"><i data-lucide="{{ $isRematch ? 'refresh-cw' : 'check-circle-2' }}" class="h-5 w-5"></i></span>
-                    @if($isRematch)
-                        <div><p class="text-xs font-black uppercase tracking-wider text-cyan-200">This is a rematch — play again</p><p class="mt-1 text-[11px] text-cyan-100/75">The previous attempt ended without a winner. Play this rematch and submit a new result{{ $isSubmitter ? '; your new result is submitted and the opponent still needs to respond' : '' }}.</p></div>
-                    @else
-                        <div><p class="text-xs font-black uppercase tracking-wider text-emerald-200">Match in progress — play now</p><p class="mt-1 text-[11px] text-zinc-400">Play the match, then submit your result below.</p></div>
-                    @endif
-                </div>
-            @endif
-
-            @if($isAdmin)
-                <form wire:submit.prevent="saveMatchRoomDetails" class="mt-5 grid grid-cols-1 gap-3 border-t border-zinc-800 pt-5 md:grid-cols-2 lg:grid-cols-4">
-                    <input wire:model="lobbyCode" type="text" placeholder="Lobby code" class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-white">
-                    <input wire:model="lobbyPassword" type="text" placeholder="Lobby password" class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-white">
-                    <input wire:model="serverRegion" type="text" placeholder="Server / region" class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-white">
-                    <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-white">Save Match Room</button>
-                    <textarea wire:model="lobbyInstructions" rows="2" placeholder="Connection instructions" class="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-white md:col-span-2 lg:col-span-4"></textarea>
-                </form>
-            @endif
-        </div>
+    @if($isAdmin)
+        @include('livewire.match.partials._game-connection-details')
     @endif
 
-    <div x-data="{ resultPanelTab: 'submit' }" class="match-result-workspace space-y-6">
+    <div x-data="{
+        resultPanelTab: 'submit',
+        selectResultPanel(tab) {
+            this.resultPanelTab = tab;
+            if (@js(! $isAdmin)) this.$nextTick(() => scrollToMatchContent(this.$root, tab));
+        }
+    }" @tournament-content-opened.window="if ($event.detail.matchUuid === @js($match->uuid)) resultPanelTab = 'submit'" @tournament-result-selected.window="if ($event.detail.tournamentUuid === @js($match->tournament->uuid)) resultPanelTab = 'submit'" class="match-result-workspace space-y-6">
         <nav class="match-result-tabs grid grid-cols-2 gap-2 rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-1.5" aria-label="Match result sections">
-            <button type="button" @click="resultPanelTab = 'submit'" :aria-pressed="resultPanelTab === 'submit'" :class="resultPanelTab === 'submit' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
+            <button type="button" @click="selectResultPanel('submit')" :aria-pressed="resultPanelTab === 'submit'" :class="resultPanelTab === 'submit' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
                 <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0"></i><span class="truncate">Submit Results</span>
             </button>
-            <button type="button" @click="resultPanelTab = 'submissions'" :aria-pressed="resultPanelTab === 'submissions'" :class="resultPanelTab === 'submissions' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
+            <button type="button" @click="selectResultPanel('submissions')" :aria-pressed="resultPanelTab === 'submissions'" :class="resultPanelTab === 'submissions' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
                 <i data-lucide="history" class="h-4 w-4 shrink-0"></i><span class="truncate">Submissions ({{ $match->resultSubmissions->count() }})</span>
             </button>
         </nav>
@@ -219,7 +166,7 @@
             @endif
 
             <!-- Result Submission or Dispute info -->
-            <div x-show="resultPanelTab === 'submit'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
+            <div data-match-panel="submit" x-show="resultPanelTab === 'submit'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
                 <i data-lucide="clipboard-check" aria-hidden="true" class="ui-card-watermark"></i>
                 @php
                     $statusVal = $match->status->value ?? $match->status;
@@ -240,15 +187,13 @@
                 </div>
 
                 @if($isResultConflict && $activeDispute)
-                    <div role="alert" class="rounded-xl border border-red-500/40 bg-red-950/25 p-5 text-red-100">
+                    <div data-match-content="dispute" role="alert" class="rounded-xl border border-red-500/40 bg-red-950/25 p-5 text-red-100">
                         <div class="flex items-center gap-2 text-sm font-bold"><i data-lucide="shield-alert" class="h-5 w-5"></i>Result conflict detected</div>
-                        <p class="mt-2 text-xs leading-relaxed text-red-100/80">The players submitted conflicting results. The player who submitted the result that triggered this conflict may provide a reason or screenshot for admin review.</p>
-                        @if($isParticipant && $isDisputeInitiator && ! $hasSubmittedDisputeEvidence)
+                        <p class="mt-2 text-xs leading-relaxed text-red-100/80">{{ __('The players submitted conflicting results. Both players may provide a reason or screenshot for admin review.') }}</p>
+                        @if($isParticipant && ! $hasSubmittedDisputeEvidence)
                             <button type="button" @click="$dispatch('open-dispute-statement')" class="mt-4 rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-500">Submit dispute details</button>
-                        @elseif($isParticipant && $isDisputeInitiator)
-                            <p class="mt-3 text-xs font-semibold text-emerald-300">Your dispute response has been submitted.</p>
                         @elseif($isParticipant)
-                            <p class="mt-3 text-xs text-zinc-300">Waiting for the other player to submit a dispute response.</p>
+                            <p class="mt-3 text-xs font-semibold text-emerald-300">Your dispute response has been submitted.</p>
                         @endif
                     </div>
                 @elseif(((int) $match->tournament->workflow_version === 2 && in_array($statusVal, ['in_progress', 'waiting_for_confirmation']) && !$isSubmitter) || ((int) $match->tournament->workflow_version !== 2 && $statusVal === 'in_progress'))
@@ -459,7 +404,7 @@
 
             <!-- Dispute & Evidence Upload Panel -->
             @if($activeDispute && ! $isResultConflict)
-            <div x-show="resultPanelTab === 'submit'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
+            <div data-match-content="dispute" x-show="resultPanelTab === 'submit'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
                 <i data-lucide="shield-alert" aria-hidden="true" class="ui-card-watermark"></i>
                 <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase border-b border-zinc-850 pb-3">
                     DISPUTE MANAGER
@@ -517,7 +462,7 @@
     @endif
 
     <!-- Results Submissions log -->
-    <div x-show="resultPanelTab === 'submissions'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-4">
+    <div data-match-panel="submissions" x-show="resultPanelTab === 'submissions'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-4">
         <i data-lucide="history" aria-hidden="true" class="ui-card-watermark"></i>
         <h2 class="text-lg font-bold font-orbitron tracking-wide text-zinc-100 uppercase border-b border-zinc-850 pb-3">
             SUBMISSIONS LOG
@@ -608,13 +553,17 @@
     @endif
     </div>
 
-    @if($isResultConflict && $activeDispute && $isParticipant && $isDisputeInitiator && ! $hasSubmittedDisputeEvidence)
+    @if(! $isAdmin)
+        @include('livewire.match.partials._game-connection-details')
+    @endif
+
+    @if($isResultConflict && $activeDispute && $isParticipant && ! $hasSubmittedDisputeEvidence)
         <div wire:key="conflict-dispute-{{ $activeDispute->id }}" x-data="{ open: true }" @open-dispute-statement.window="open = true" @keydown.escape.window.prevent x-show="open" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4" role="presentation">
             <div role="dialog" aria-modal="true" aria-labelledby="conflict-dispute-title" class="w-full max-w-lg rounded-2xl border border-red-500/40 bg-zinc-900 p-5 shadow-2xl shadow-black/60 sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <h2 id="conflict-dispute-title" class="font-orbitron text-lg font-bold text-white">Result conflict detected</h2>
-                        <p class="mt-2 text-xs leading-relaxed text-zinc-300">Your result completed the conflicting pair. You may submit a written reason, a screenshot, both, or continue without attachments.</p>
+                        <p class="mt-2 text-xs leading-relaxed text-zinc-300">{{ __('The results conflict. You may submit a written reason, a screenshot, both, or continue without attachments.') }}</p>
                     </div>
                 </div>
                 <form wire:submit.prevent="submitDisputeStatement" class="mt-5 space-y-4">
