@@ -6,6 +6,7 @@ namespace App\Livewire\Tournament;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
 use App\Modules\CMS\Models\Platform;
+use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Operations\Models\Activity;
 use App\Modules\Stream\Support\StreamEmbedService;
@@ -25,6 +26,7 @@ use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentTeam;
 use App\Modules\Tournament\Models\TournamentTeamSearchEntry;
 use App\Modules\Tournament\Services\PrizeCalculationService;
+use App\Modules\Tournament\Services\V2CancellationPolicy;
 use App\Modules\Tournament\Services\V2PrizePolicy;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Shared\Enums\MatchStatus;
@@ -46,7 +48,7 @@ class TournamentDetail extends Component
     public string $layout = 'components.layouts.dashboard';
 
     #[Url]
-    public string $activeTab = 'overview';
+    public string $activeTab = 'matches';
 
     #[Url(as: 'match')]
     public string $selectedMatchUuid = '';
@@ -82,9 +84,15 @@ class TournamentDetail extends Component
             $this->layout = 'components.layouts.app';
         }
 
+        $tournament = $this->getTournamentQuery()->where('uuid', $uuid)->firstOrFail();
+        if ($user?->can('viewRestrictedDetails', $tournament)) {
+            $this->loadSection($this->activeTab);
+        } elseif (! in_array($this->activeTab, ['overview', 'streams'], true)) {
+            $this->activeTab = 'overview';
+        }
+
         if ($user) {
-            $tournament = $this->getTournamentQuery()->where('uuid', $uuid)->first(['platform_id', 'platform_ids']);
-            $this->selectedPlatformId = $tournament?->platform_id ?? $tournament?->supportedPlatformIds()[0] ?? null;
+            $this->selectedPlatformId = $tournament->platform_id ?? $tournament->supportedPlatformIds()[0] ?? null;
         }
     }
 
@@ -143,17 +151,19 @@ class TournamentDetail extends Component
             ->whereNotIn('status', [RegistrationStatus::CANCELLED, RegistrationStatus::REFUNDED])
             ->firstOrFail(['id']);
 
-        GameMatch::query()
+        $match = GameMatch::query()
             ->where('tournament_id', $tournament->id)
             ->where('uuid', $matchUuid)
             ->where(function ($query) use ($registration): void {
                 $query->where('player_a_registration_id', $registration->id)
                     ->orWhere('player_b_registration_id', $registration->id);
             })
-            ->firstOrFail(['id']);
+            ->firstOrFail(['id', 'status']);
 
         $this->selectedMatchUuid = $matchUuid;
         $this->activeTab = 'submit-results';
+        $this->dispatch('tournament-content-opened', tournamentUuid: $this->uuid, matchUuid: $matchUuid, tab: 'submit-results',
+            focus: $match->status === MatchStatus::DISPUTED ? 'dispute' : null);
     }
 
     public function register(RegisterForTournamentAction $action, RegisterForV2TournamentAction $v2Action, FindTournamentTeamAction $findTeam)
@@ -250,12 +260,13 @@ class TournamentDetail extends Component
             if ((int) $tournament->workflow_version === 2) {
                 $request = $v2Action->execute($registration, $user);
                 session()->flash('message', $request->status === 'approved'
-                    ? 'Registration cancelled and refunded.'
+                    ? __('Registration cancelled. The applicable refund has been credited to your wallet.')
                     : "Cancellation request created. {$request->required_approvals} approval(s) are required before tournament start.");
             } else {
                 $action->execute($registration, $user);
                 session()->flash('message', 'Registration cancelled successfully. Any entry fee has been refunded to your wallet.');
             }
+            $this->dispatch('wallet-balance-updated');
             $this->dispatch('registration-cancellation-completed');
         } catch (LogicException $e) {
             $this->cancellationError = $e->getMessage();
@@ -525,13 +536,11 @@ class TournamentDetail extends Component
                 ->where('status', 'pending')
                 ->first()
             : null;
-        $v2CancellationCutoffOpen = $tournament->start_at !== null
-            && now()->lessThanOrEqualTo($tournament->start_at->copy()->subMinutes(30));
-
-        // Keep the view eligibility identical to RequestV2CancellationAction,
-        // including the exact 30-minute boundary.
+        $cancellationAmounts = V2CancellationPolicy::amounts($tournament,
+            $pendingCancellationRequest && (int) $pendingCancellationRequest->requested_by === (int) $user?->id
+                ? $pendingCancellationRequest->requested_at : now());
         $canCancelRegistration = (int) $tournament->workflow_version === 2
-            ? $isRegistered && $v2CancellationCutoffOpen && $pendingCancellationRequest === null
+            ? $isRegistered && V2CancellationPolicy::isOpen($tournament)
             : $isRegistered && $userRegistration?->locked_at === null
                 && $tournament->extra_registration_started_at === null && in_array($tournament->status, [
                     TournamentStatus::REGISTRATION_OPEN,
@@ -573,6 +582,7 @@ class TournamentDetail extends Component
             'displayMatch' => $displayMatch,
             'streamService' => $streamService,
             'canCancelRegistration' => $canCancelRegistration,
+            'cancellationAmounts' => $cancellationAmounts,
             'canViewRestricted' => $canViewRestricted,
             'participantsLoaded' => $participantsLoaded,
             'bracketLoaded' => $bracketLoaded,

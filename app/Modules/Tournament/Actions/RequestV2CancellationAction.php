@@ -6,10 +6,10 @@ namespace App\Modules\Tournament\Actions;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Events\BroadcastTournamentUpdated;
-use App\Modules\Tournament\Jobs\NotifyV2CancellationVotersJob;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentCancellationRequest;
 use App\Modules\Tournament\Models\TournamentRegistration;
+use App\Modules\Tournament\Services\V2CancellationPolicy;
 use App\Shared\Enums\RegistrationStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -31,39 +31,30 @@ final class RequestV2CancellationAction
             if ($locked->status !== RegistrationStatus::CONFIRMED) {
                 throw new LogicException('This registration is not active.');
             }
-            if ($tournament->start_at === null || now()->greaterThan($tournament->start_at->copy()->subMinutes(30))) {
-                throw new LogicException('Cancellation requests close 30 minutes before tournament start.');
+            if (! V2CancellationPolicy::isOpen($tournament)) {
+                throw new LogicException(__('Cancellation is available only before the tournament starts.'));
             }
-            if (TournamentCancellationRequest::query()->where('tournament_id', $tournament->id)->where('status', 'pending')->exists()) {
-                throw new LogicException('Another cancellation request is already pending for this occurrence.');
+            $request = TournamentCancellationRequest::query()
+                ->where('registration_id', $locked->id)->where('status', 'pending')->lockForUpdate()->first();
+            if ($request !== null) {
+                $request->update(['status' => 'approved', 'resolved_at' => now()]);
             }
-
-            $eligible = $tournament->registrations()
-                ->where('status', RegistrationStatus::CONFIRMED)
-                ->where('user_id', '!=', $requester->id)
-                ->pluck('user_id')
-                ->unique()
-                ->values();
-            $request = TournamentCancellationRequest::query()->create([
+            $request ??= TournamentCancellationRequest::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'tournament_id' => $tournament->id,
                 'registration_id' => $locked->id,
                 'requested_by' => $requester->id,
-                'status' => $eligible->isEmpty() ? 'approved' : 'pending',
-                'eligible_voter_count' => $eligible->count(),
-                'eligible_voter_ids' => $eligible->map(static fn ($id): int => (int) $id)->all(),
-                'required_approvals' => (int) ceil($eligible->count() / 2),
+                'status' => 'approved',
+                'eligible_voter_count' => 0,
+                'eligible_voter_ids' => [],
+                'required_approvals' => 0,
                 'requested_at' => now(),
                 'expires_at' => $tournament->start_at,
-                'resolved_at' => $eligible->isEmpty() ? now() : null,
+                'resolved_at' => now(),
             ]);
 
-            if ($eligible->isEmpty()) {
-                $this->cancel->execute($locked);
-            } else {
-                NotifyV2CancellationVotersJob::dispatch($request->id)->afterCommit();
-            }
-            BroadcastTournamentUpdated::dispatch((string) $tournament->uuid, 'cancellation_requested');
+            $this->cancel->execute($locked, $request);
+            BroadcastTournamentUpdated::dispatch((string) $tournament->uuid, 'registration_cancelled');
 
             return $request;
         }, 3);

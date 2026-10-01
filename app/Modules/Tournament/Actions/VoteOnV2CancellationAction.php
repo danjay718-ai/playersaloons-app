@@ -52,7 +52,7 @@ final class VoteOnV2CancellationAction
 
             if ($approvals >= $locked->required_approvals) {
                 $locked->update(['status' => 'approved', 'resolved_at' => now()]);
-                $this->cancel->execute($locked->registration);
+                $this->cancel->execute($locked->registration, $locked);
                 $this->notifications->send($locked->requester, 'tournament_cancellation_approved', 'Cancellation approved', 'Your tournament cancellation request was approved and processed.', "/tournaments/{$locked->tournament->uuid}/view");
             } elseif ($approvals + $remaining < $locked->required_approvals) {
                 $locked->update(['status' => 'rejected', 'resolved_at' => now()]);

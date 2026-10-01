@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tournament;
 
+use App\Http\Middleware\TranslateRenderedHtml;
+use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Game\GameShow;
 use App\Livewire\Match\MatchDetail;
@@ -11,11 +13,11 @@ use App\Livewire\Tournament\PlatformHeadToHeadList;
 use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
+use App\Livewire\Wallet\WalletBalance;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameHeadToHeadDefault;
 use App\Modules\CMS\Models\GameTournamentDefault;
 use App\Modules\CMS\Models\Platform;
-use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\PlayerProgression;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserGameAccount;
@@ -24,26 +26,30 @@ use App\Modules\Match\Actions\ForfeitMatchAction;
 use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
+use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Jobs\ResolveV2ResultTimeoutJob;
 use App\Modules\Match\Jobs\ResolveV2ResultTimeoutsJob;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Services\V2StalledMatchService;
 use App\Modules\Tournament\Actions\AwardV2PrizesAction;
+use App\Modules\Tournament\Actions\CancelTournamentAction;
 use App\Modules\Tournament\Actions\CreateV2TournamentTemplateAction;
 use App\Modules\Tournament\Actions\MaterializeV2OccurrenceAction;
 use App\Modules\Tournament\Actions\PurgeEmptyV2OccurrencesAction;
 use App\Modules\Tournament\Actions\RegisterForV2TournamentAction;
-use App\Modules\Tournament\Actions\RequestV2CancellationAction;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use App\Modules\Tournament\Actions\VoteOnV2CancellationAction;
+use App\Modules\Tournament\Events\BroadcastTournamentUpdated;
 use App\Modules\Tournament\Jobs\NotifyV2CancellationVotersJob;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Models\TournamentCancellationRequest;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Tournament\Services\CancelledOccurrenceRetention;
 use App\Modules\Tournament\Services\V2TournamentDiscoveryService;
 use App\Modules\Tournament\Services\V2TournamentLifecycle;
+use App\Modules\Wallet\Actions\ProcessDepositAction;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\DisputeResolution;
@@ -51,13 +57,16 @@ use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Enums\WalletStatus;
+use App\Shared\Support\DecimalMoney;
 use Carbon\CarbonImmutable;
 use Database\Seeders\PlatformSystemUserSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use LogicException;
@@ -400,6 +409,147 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertSet('statusTab', 'all');
     }
 
+    public function test_admin_badges_count_visible_schedules_and_exclude_head_to_head_and_archived_occurrences(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $template = $this->template('daily', 4, '23:59');
+        $slot = $template->scheduleSlots->firstOrFail();
+        $first = app(MaterializeV2OccurrenceAction::class)->execute($slot, $this->admin);
+        $second = app(MaterializeV2OccurrenceAction::class)->execute($slot, $this->admin, CarbonImmutable::now()->addDay());
+        foreach ([$first, $second] as $occurrence) {
+            app(CancelTournamentAction::class)->execute($occurrence, $this->admin, 'Test cancellation');
+        }
+        $h2hTemplate = $this->template('daily', 2, '23:58');
+        $h2hTemplate->forceFill(['competition_type' => CompetitionType::HEAD_TO_HEAD])->save();
+        $h2h = app(MaterializeV2OccurrenceAction::class)->execute($h2hTemplate->scheduleSlots->firstOrFail(), $this->admin);
+        app(CancelTournamentAction::class)->execute($h2h, $this->admin, 'Test H2H cancellation');
+
+        $page = Livewire::actingAs($this->admin)->test(TournamentAdmin::class)
+            ->assertViewHas('countCancelled', 1)
+            ->assertViewHas('countAll', 1)
+            ->assertViewHas('countActive', 0)
+            ->set('statusTab', 'cancelled')
+            ->assertViewHas('v2Templates', fn ($rows) => $rows->total() === 1)
+            ->assertSee($template->name)
+            ->set('statusTab', 'all')
+            ->assertViewHas('v2Templates', fn ($rows) => $rows->total() === 1);
+
+        $first->delete();
+        $second->delete();
+        $page->call('$refresh')
+            ->assertViewHas('countCancelled', 0)
+            ->assertViewHas('countAll', 0)
+            ->assertViewHas('v2Templates', fn ($rows) => $rows->total() === 0);
+    }
+
+    public function test_admin_head_to_head_badges_use_the_same_frequency_and_date_filters_as_the_list(): void
+    {
+        $this->withoutMiddleware(TranslateRenderedHtml::class);
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        foreach (['daily', 'weekly'] as $frequency) {
+            $template = $this->template($frequency, 2, '23:59', ['day_of_week' => 3]);
+            $template->forceFill(['competition_type' => CompetitionType::HEAD_TO_HEAD])->save();
+            $occurrence = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+            app(CancelTournamentAction::class)->execute($occurrence, $this->admin, 'Test cancellation');
+        }
+
+        $this->actingAs($this->admin)->get(route('admin.h2h.index', ['tab' => 'daily', 'status_tab' => 'cancelled']))
+            ->assertOk()->assertViewHas('countCancelled', 1)->assertViewHas('countAll', 1)
+            ->assertViewHas('templates', fn ($rows) => $rows->total() === 1);
+        $this->get(route('admin.h2h.index', ['tab' => 'weekly', 'status_tab' => 'cancelled', 'start_date' => '2027-01-01']))
+            ->assertOk()->assertViewHas('countCancelled', 0)->assertViewHas('countAll', 0)
+            ->assertViewHas('templates', fn ($rows) => $rows->total() === 0);
+    }
+
+    public function test_admin_tabs_reset_the_v2_paginator_and_recover_when_a_page_becomes_empty(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        for ($i = 0; $i < 3; $i++) {
+            $template = $this->template('daily', 4, '23:59');
+            app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        }
+        $cancelled = Tournament::query()->firstOrFail();
+        app(CancelTournamentAction::class)->execute($cancelled, $this->admin, 'Test cancellation');
+
+        $page = Livewire::actingAs($this->admin)->test(TournamentAdmin::class)
+            ->set('perPage', 1)
+            ->call('setPage', 2, 'v2Page')
+            ->assertViewHas('v2Templates', fn ($rows) => $rows->currentPage() === 2)
+            ->set('statusTab', 'cancelled')
+            ->assertViewHas('countCancelled', 1)
+            ->assertViewHas('v2Templates', fn ($rows) => $rows->currentPage() === 1 && $rows->count() === 1)
+            ->set('statusTab', 'all')
+            ->call('setPage', 3, 'v2Page');
+
+        $cancelled->delete();
+        $page->call('$refresh')
+            ->assertViewHas('countAll', 2)
+            ->assertViewHas('v2Templates', fn ($rows) => $rows->currentPage() === 1 && $rows->count() === 1);
+    }
+
+    #[DataProvider('discoveryViewers')]
+    public function test_open_discovery_lists_remove_cancelled_occurrences_on_automatic_refresh(string $component, bool $player, bool $headToHead): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $template = $this->template('daily', $headToHead ? 2 : 4, '23:59');
+        if ($headToHead) {
+            $template->forceFill(['competition_type' => CompetitionType::HEAD_TO_HEAD])->save();
+        }
+        $occurrence = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        if ($player) {
+            Livewire::actingAs($this->user('discovery-player@example.com', 'discoveryplayer', 'PLAYER'));
+        }
+        $page = Livewire::test($component)
+            ->assertSee('wire:poll.10s.visible', escape: false)
+            ->assertSee('tournamentListRealtime', escape: false)
+            ->assertViewHas('tournaments', fn ($rows) => $rows->total() === 1);
+
+        app(CancelTournamentAction::class)->execute($occurrence, $this->admin, 'Test cancellation');
+
+        $page->call('$refresh')
+            ->assertViewHas('tournaments', fn ($rows) => $rows->total() === 0)
+            ->assertViewHas('featuredTournaments', fn ($rows) => $rows->total() === 0);
+    }
+
+    public static function discoveryViewers(): array
+    {
+        return [
+            'guest tournaments' => [PublicTournamentList::class, false, false],
+            'player tournaments' => [PlayerTournamentList::class, true, false],
+            'guest H2H' => [PlatformHeadToHeadList::class, false, true],
+            'player H2H' => [PlatformHeadToHeadList::class, true, true],
+        ];
+    }
+
+    public function test_start_time_scheduler_generates_the_bracket_and_open_detail_loads_it_on_refresh(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $template = $this->template('daily', 4, '10:05');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        $player = $this->user('scheduled-player@example.com', 'scheduledplayer', 'PLAYER');
+        $opponent = $this->user('scheduled-opponent@example.com', 'scheduledopponent', 'PLAYER');
+        $register = app(RegisterForV2TournamentAction::class);
+        $register->execute($tournament, $player, null, 'scheduled-player');
+        $register->execute($tournament->fresh(), $opponent, null, 'scheduled-opponent');
+
+        $page = Livewire::actingAs($player)->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->call('loadSection', 'matches')
+            ->assertViewHas('rounds', fn ($rounds) => $rounds->isEmpty());
+        $this->travelTo($tournament->start_at);
+        $this->artisan('tournaments:reconcile-lifecycle')->assertSuccessful();
+
+        self::assertSame(TournamentStatus::ONGOING, $tournament->fresh()->status);
+        self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::IN_PROGRESS)->count());
+        $page->call('$refresh')->assertViewHas('rounds', fn ($rounds) => $rounds->isNotEmpty());
+    }
+
+    public function test_tournament_changes_are_broadcast_to_detail_and_discovery_channels(): void
+    {
+        $event = new BroadcastTournamentUpdated('test-uuid', 'TournamentCancelled');
+        self::assertSame(['tournament.test-uuid', 'tournaments'], array_map(fn ($channel) => $channel->name, $event->broadcastOn()));
+        self::assertSame(['change' => 'TournamentCancelled', 'match_uuid' => null], $event->broadcastWith());
+    }
+
     public function test_public_head_to_head_navigation_keeps_a_signed_in_player_in_the_public_shell(): void
     {
         $player = $this->user('public-h2h-player@example.com', 'publich2hplayer', 'PLAYER');
@@ -678,7 +828,8 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(3, GameMatch::query()->where('tournament_id', $tournament->id)->count());
         self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->whereNull('player_b_registration_id')->where('status', MatchStatus::COMPLETED)->count());
         self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::IN_PROGRESS)->count());
-        self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::PENDING)->whereNotNull('player_b_registration_id')->count());
+        self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::PENDING)
+            ->where(fn ($query) => $query->whereNotNull('player_a_registration_id')->orWhereNotNull('player_b_registration_id'))->count());
     }
 
     public function test_full_tournament_starts_matches_as_soon_as_registration_locks(): void
@@ -700,6 +851,98 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(TournamentStatus::ONGOING, $tournament->fresh()->status);
         self::assertSame(2, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::IN_PROGRESS)->count());
         self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::PENDING)->count());
+    }
+
+    public function test_non_adjacent_winners_pair_immediately_and_the_bracket_shows_their_actual_destination(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $template = $this->template('daily', 8, '23:59');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        for ($i = 1; $i <= 8; $i++) {
+            app(RegisterForV2TournamentAction::class)->execute($tournament->fresh(), $this->user("random{$i}@example.com", "random{$i}", 'PLAYER'), null, "random{$i}");
+        }
+        $firstRound = $tournament->rounds()->where('round_number', 1)->firstOrFail()->matches()->orderBy('id')->get();
+        $first = $firstRound[0];
+        $third = $firstRound[2];
+        $page = Livewire::actingAs($first->playerARegistration->user)
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSet('activeTab', 'matches')
+            ->assertViewHas('bracketLoaded', true);
+
+        $this->completeV2Match($first);
+        $destination = $tournament->rounds()->where('round_number', 2)->firstOrFail()->matches()
+            ->where('player_a_registration_id', $first->player_a_registration_id)->firstOrFail();
+        self::assertSame(MatchStatus::PENDING, $destination->status);
+        self::assertNull($destination->player_b_registration_id);
+
+        // Match 3 can pair with Match 1 without waiting for Match 2 or Match 4.
+        $this->completeV2Match($third);
+        self::assertSame($third->player_a_registration_id, $destination->fresh()->player_b_registration_id);
+        self::assertSame(MatchStatus::IN_PROGRESS, $destination->fresh()->status);
+        self::assertSame(MatchStatus::IN_PROGRESS, $firstRound[1]->fresh()->status);
+        self::assertSame(MatchStatus::IN_PROGRESS, $firstRound[3]->fresh()->status);
+        $page->call('$refresh')->assertSee("Advances to match #{$destination->id}");
+
+        // Replayed events must not duplicate either player or restart their match.
+        foreach ([$first, $third] as $source) {
+            MatchCompleted::dispatch($source->id, $tournament->id, $source->player_a_registration_id);
+        }
+        self::assertSame(MatchStatus::IN_PROGRESS, $destination->fresh()->status);
+        $assigned = $tournament->rounds()->where('round_number', 2)->firstOrFail()->matches()->get();
+        self::assertSame(2, $assigned->sum(fn ($match) => (int) ($match->player_a_registration_id !== null) + (int) ($match->player_b_registration_id !== null)));
+    }
+
+    public function test_random_advancement_preserves_byes_and_completes_every_round_without_duplicate_players(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $template = $this->template('daily', 8, '10:05');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+        for ($i = 1; $i <= 5; $i++) {
+            app(RegisterForV2TournamentAction::class)->execute($tournament->fresh(), $this->user("bye{$i}@example.com", "bye{$i}", 'PLAYER'), null, "bye{$i}");
+        }
+        $this->travelTo($tournament->start_at);
+        $this->artisan('tournaments:reconcile-lifecycle')->assertSuccessful();
+        $rounds = $tournament->rounds()->orderBy('round_number')->get();
+        $firstRound = $rounds[0]->matches()->get();
+        self::assertSame(3, $firstRound->where('status', MatchStatus::COMPLETED)->count());
+        $this->completeV2Match($firstRound->firstWhere('status', MatchStatus::IN_PROGRESS));
+
+        $secondRound = $rounds[1]->matches()->get();
+        self::assertSame(2, $secondRound->where('status', MatchStatus::IN_PROGRESS)->count());
+        $players = $secondRound->flatMap(fn ($match) => [$match->player_a_registration_id, $match->player_b_registration_id]);
+        self::assertSame(4, $players->unique()->count());
+        foreach ($secondRound as $match) {
+            $this->completeV2Match($match);
+        }
+        $final = $rounds[2]->matches()->firstOrFail();
+        self::assertSame(MatchStatus::IN_PROGRESS, $final->status);
+        $this->completeV2Match($final);
+        self::assertSame(TournamentStatus::COMPLETED, $tournament->fresh()->status);
+        MatchCompleted::dispatch($final->id, $tournament->id, $final->player_a_registration_id);
+        self::assertSame(TournamentStatus::COMPLETED, $tournament->fresh()->status);
+    }
+
+    public function test_tournament_tabs_default_to_the_bracket_and_put_overview_and_activity_last(): void
+    {
+        [$match, $player] = $this->activeTwoPlayerMatch();
+        foreach ([$player, $this->admin] as $viewer) {
+            Livewire::actingAs($viewer)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+                ->assertSet('activeTab', 'matches')
+                ->assertViewHas('bracketLoaded', true)
+                ->assertSeeInOrder(['Fixtures & Bracket', 'Players (', 'Overview', 'Activity']);
+        }
+        Livewire::actingAs($player)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSeeInOrder(["selectTab('matches')", "selectTab('submit-results')", "selectTab('participants')"], escape: false);
+        Livewire::actingAs($player)->withQueryParams(['activeTab' => 'overview'])
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSet('activeTab', 'overview');
+    }
+
+    private function completeV2Match(GameMatch $match): void
+    {
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match->fresh(), $match->playerARegistration->user_id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $match->playerBRegistration->user_id, MatchOutcome::LOSS);
     }
 
     public function test_expired_v2_match_timer_does_not_forfeit_current_or_future_match(): void
@@ -828,7 +1071,51 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertDontSee('MATCH ROOM')
             ->call('openMatch', $match->uuid)
             ->assertSet('activeTab', 'submit-results')
-            ->assertSet('selectedMatchUuid', $match->uuid);
+            ->assertSet('selectedMatchUuid', $match->uuid)
+            ->assertDispatched('tournament-content-opened', tournamentUuid: $match->tournament->uuid, matchUuid: $match->uuid, tab: 'submit-results', focus: null);
+    }
+
+    public function test_player_result_view_combines_match_metadata_and_places_connection_details_after_results(): void
+    {
+        [$match, $player] = $this->activeTwoPlayerMatch();
+        Livewire::actingAs($player)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->assertDontSee('Match Header Card', escape: false)
+            ->assertSee('data-match-content="matchup"', escape: false)
+            ->assertSeeInOrder(['Round 1', 'in progress', 'VS', 'SUBMIT RESULTS', 'Submit Match Results', 'Game &amp; Connection Details'], escape: false);
+    }
+
+    public function test_review_match_dispute_opens_the_result_section_and_targets_the_dispute_content(): void
+    {
+        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+
+        Livewire::actingAs($first)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee('Review Match Dispute')
+            ->call('openMatch', $match->uuid)
+            ->assertSet('activeTab', 'submit-results')
+            ->assertDispatched('tournament-content-opened', tournamentUuid: $match->tournament->uuid, matchUuid: $match->uuid, tab: 'submit-results', focus: 'dispute');
+
+        Livewire::actingAs($first)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->assertSee('data-match-content="dispute"', escape: false);
+    }
+
+    public function test_player_tournament_header_shows_the_winners_prize_instead_of_the_combined_pool(): void
+    {
+        [$match, $player] = $this->activeTwoPlayerMatch(['free_prize_1st' => '15.00', 'free_prize_2nd' => '5.00']);
+        $match->tournament->update([
+            'financial_finalized_at' => now(),
+            'finalized_first_prize' => '15.00',
+            'finalized_second_prize' => '5.00',
+            'finalized_gross_pool' => '20.00',
+            'finalized_commission_amount' => '0.00',
+        ]);
+        Livewire::actingAs($player)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee("Current Winner's Prize")
+            ->assertViewHas('prizeCalculation', fn ($prizes) => (float) $prizes['distributions'][1] === 15.0 && (float) $prizes['prize_pool'] === 20.0)
+            ->assertSeeInOrder(["Current Winner's Prize", '$15.00', 'Entry Fee'])
+            ->assertDontSee('Current Prize Pool');
     }
 
     public function test_non_participant_does_not_get_the_v2_submit_result_tab(): void
@@ -899,6 +1186,88 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertDontSee('Submit Match Results');
     }
 
+    public static function penaltyBalanceCases(): array
+    {
+        return [
+            'empty wallet' => ['0.00', '-10.00', '-7.00'],
+            'insufficient wallet' => ['5.00', '-5.00', '-2.00'],
+        ];
+    }
+
+    #[DataProvider('penaltyBalanceCases')]
+    public function test_admin_penalty_can_overdraw_the_wallet_and_deposits_repay_it(string $startingBalance, string $afterPenalty, string $afterPartialDeposit): void
+    {
+        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        $wallet = $this->walletFor($second, $startingBalance);
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        $dispute = $match->disputes()->firstOrFail();
+        $resolution = $match->playerARegistration->includesUser($first->id) ? 'player_a' : 'player_b';
+
+        $page = Livewire::actingAs($this->admin)->test(MatchAdmin::class)
+            ->call('selectMatch', $match->id)
+            ->assertSee('openDispute('.$dispute->id.')', escape: false)
+            ->assertSee('disputeOpen && disputeId === '.$dispute->id, escape: false)
+            ->set('selectedDisputeId', $dispute->id)
+            ->set('showDisputeModal', true)
+            ->set('resolution', $resolution)
+            ->set('complianceUserId', (string) $second->id)
+            ->set('complianceBanReason', 'The submitted evidence demonstrates a deliberately false result.')
+            ->set('balancePenalty', '10.00')
+            ->call('resolveDispute')
+            ->assertHasNoErrors()
+            ->assertDispatched('dispute-ruling-saved')
+            ->assertSet('showDisputeModal', false);
+
+        self::assertSame($afterPenalty, $wallet->fresh()->cached_balance);
+        self::assertDatabaseHas('ledger_entries', ['wallet_id' => $wallet->id, 'amount' => '-10.00', 'running_balance' => $afterPenalty]);
+        $strikeId = DB::table('player_dispute_strikes')->where('dispute_id', $dispute->id)->value('id');
+        self::assertDatabaseHas('ledger_entries', ['wallet_id' => $wallet->id, 'reference_type' => 'player_dispute_strike', 'reference_id' => $strikeId]);
+        $page->call('resolveDispute');
+        self::assertSame($afterPenalty, $wallet->fresh()->cached_balance);
+
+        Livewire::actingAs($second)->test(WalletBalance::class)
+            ->assertSee('$'.$afterPenalty);
+        $deposits = app(ProcessDepositAction::class);
+        $deposits->execute($wallet, '3.00', 'test', 'penalty-partial');
+        self::assertSame($afterPartialDeposit, $wallet->fresh()->cached_balance);
+        $deposits->execute($wallet, '7.00', 'test', 'penalty-rest');
+        self::assertSame($startingBalance, $wallet->fresh()->cached_balance);
+        $deposits->execute($wallet, '7.00', 'test', 'penalty-rest');
+        self::assertSame($startingBalance, $wallet->fresh()->cached_balance);
+    }
+
+    public function test_admin_dispute_validation_and_failures_are_visible_in_the_modal(): void
+    {
+        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        $dispute = $match->disputes()->firstOrFail();
+        $page = Livewire::actingAs($this->admin)->test(MatchAdmin::class)
+            ->call('selectMatch', $match->id)
+            ->call('openDisputeModal', $dispute->id)
+            ->call('resolveDispute')
+            ->assertHasErrors('resolution')
+            ->assertSee('Select a match outcome before submitting the ruling.')
+            ->assertSee('The ruling was not saved. Please review the following:')
+            ->assertSet('showDisputeModal', true)
+            ->set('resolution', 'player_a')
+            ->set('balancePenalty', '10.00')
+            ->call('resolveDispute')
+            ->assertHasErrors('complianceUserId')
+            ->assertSee('Select the player receiving the penalty.');
+
+        $resolver = \Mockery::mock(ResolveDisputeAction::class);
+        $resolver->shouldReceive('execute')->once()->andThrow(new LogicException('Dispute is already resolved.'));
+        $this->app->instance(ResolveDisputeAction::class, $resolver);
+        $page->set('balancePenalty', '0.00')->call('resolveDispute')
+            ->assertHasErrors('disputeResolution')
+            ->assertSee('Dispute is already resolved.')
+            ->assertSet('showDisputeModal', true);
+    }
+
     public function test_v2_matches_cannot_be_forfeited(): void
     {
         [$match] = $this->activeTwoPlayerMatch();
@@ -907,6 +1276,31 @@ final class TournamentV2WorkflowTest extends TestCase
         $this->expectExceptionMessage('Forfeits are currently disabled for V2 matches.');
 
         app(ForfeitMatchAction::class)->execute($match, (int) $match->player_a_registration_id);
+    }
+
+    public function test_first_submitter_receives_conflict_modal_on_refresh_and_can_upload_evidence(): void
+    {
+        Storage::fake('public');
+        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $page = Livewire::actingAs($first)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->assertDontSee('id="conflict-dispute-title"', escape: false);
+
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+
+        $page->call('$refresh')
+            ->assertSee('id="conflict-dispute-title"', escape: false)
+            ->set('evidenceFile', UploadedFile::fake()->image('score.png'))
+            ->call('submitDisputeStatement')
+            ->assertHasNoErrors()
+            ->assertDontSee('id="conflict-dispute-title"', escape: false);
+
+        $evidence = $match->disputes()->firstOrFail()->evidence()->where('uploaded_by', $first->id)->firstOrFail();
+        Storage::disk('public')->assertExists($evidence->file_path);
+        $page->call('submitDisputeStatement')->assertHasErrors('evidenceFile');
+        self::assertDatabaseCount('match_evidence', 1);
     }
 
     public function test_conflicting_v2_results_create_a_dispute_for_admin_review(): void
@@ -932,10 +1326,17 @@ final class TournamentV2WorkflowTest extends TestCase
         Livewire::actingAs($p1)
             ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
             ->assertSee('Result conflict detected')
-            ->assertDontSee('Submit dispute details')
-            ->assertSee('Waiting for the other player to submit a dispute response.')
-            ->call('submitDisputeStatement');
-        self::assertDatabaseCount('match_evidence', 0);
+            ->assertSee('Submit dispute details')
+            ->assertSee('id="conflict-dispute-title"', escape: false)
+            ->set('disputeReason', 'I won the match and want the admin to review the final score.')
+            ->call('submitDisputeStatement')
+            ->assertHasNoErrors()
+            ->assertSee('Your dispute response has been submitted.')
+            ->assertDontSee('id="conflict-dispute-title"', escape: false);
+        self::assertDatabaseHas('match_evidence', [
+            'uploaded_by' => $p1->id,
+            'reason' => 'I won the match and want the admin to review the final score.',
+        ]);
 
         Livewire::actingAs($p2)
             ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
@@ -945,7 +1346,7 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertHasNoErrors()
             ->assertSee('Your dispute response has been submitted.');
 
-        self::assertDatabaseCount('match_evidence', 1);
+        self::assertDatabaseCount('match_evidence', 2);
         self::assertDatabaseHas('match_evidence', [
             'uploaded_by' => $p2->id,
             'file_path' => null,
@@ -1139,7 +1540,7 @@ final class TournamentV2WorkflowTest extends TestCase
 
         Livewire::actingAs($player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
-            ->assertSee('Request Cancellation')
+            ->assertSee('Cancel Registration')
             ->assertSee('open-registration-cancellation')
             ->assertSee('Cancel Registration?')
             ->call('cancelRegistration')
@@ -1147,15 +1548,9 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertDispatched('registration-cancellation-completed');
 
         $request = $tournament->cancellationRequests()->firstOrFail();
-        self::assertSame('pending', $request->status);
-        self::assertSame('confirmed', $registration->fresh()->status->value);
-        Queue::assertPushed(NotifyV2CancellationVotersJob::class, fn ($job): bool => $job->requestId === $request->id && $job->queue === 'notifications');
-        (new NotifyV2CancellationVotersJob($request->id))->handle(app(NotificationService::class));
-        $this->assertDatabaseHas('notifications', [
-            'user_id' => $opponent->id,
-            'type' => 'tournament_cancellation_vote',
-            'action_url' => "/tournaments/{$tournament->uuid}/view",
-        ]);
+        self::assertSame('approved', $request->status);
+        self::assertSame('cancelled', $registration->fresh()->status->value);
+        Queue::assertNotPushed(NotifyV2CancellationVotersJob::class);
     }
 
     public function test_v2_cancellation_cutoff_is_consistent_at_and_inside_thirty_minutes(): void
@@ -1169,7 +1564,7 @@ final class TournamentV2WorkflowTest extends TestCase
         Livewire::actingAs($player)
             ->test(TournamentDetail::class, ['uuid' => $atCutoffTournament->uuid])
             ->assertViewHas('canCancelRegistration', true)
-            ->assertSee('Request Cancellation')
+            ->assertSee('Cancel Registration')
             ->call('cancelRegistration')
             ->assertSet('cancellationError', '');
         self::assertSame('cancelled', $atCutoffRegistration->fresh()->status->value);
@@ -1181,14 +1576,72 @@ final class TournamentV2WorkflowTest extends TestCase
 
         Livewire::actingAs($insidePlayer)
             ->test(TournamentDetail::class, ['uuid' => $insideTournament->uuid])
-            ->assertViewHas('canCancelRegistration', false)
-            ->assertSee('Cancellation closed')
-            ->assertSee('Less than 30 minutes before start')
-            ->assertDontSee('Request Cancellation')
+            ->assertViewHas('canCancelRegistration', true)
+            ->assertSee('Cancel Registration')
             ->call('cancelRegistration')
-            ->assertSet('cancellationError', fn (string $message): bool => $message !== '')
-            ->assertNotDispatched('registration-cancellation-completed');
-        self::assertSame('confirmed', $insideRegistration->fresh()->status->value);
+            ->assertSet('cancellationError', '')
+            ->assertDispatched('registration-cancellation-completed');
+        self::assertSame('cancelled', $insideRegistration->fresh()->status->value);
+    }
+
+    public static function cancellationRefundCases(): array
+    {
+        return [
+            'over thirty minutes' => [1801, '10.00', '10.00', '0.00'],
+            'exactly thirty minutes' => [1800, '10.00', '10.00', '0.00'],
+            'under thirty minutes' => [1799, '10.00', '9.00', '1.00'],
+            'one second before start' => [1, '10.00', '9.00', '1.00'],
+            'cent rounding' => [60, '10.05', '9.04', '1.01'],
+        ];
+    }
+
+    #[DataProvider('cancellationRefundCases')]
+    public function test_paid_cancellation_refunds_and_accounts_for_the_late_fee(int $seconds, string $entry, string $refund, string $fee): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $template = $this->template('daily', 4, '11:00');
+        $template->update(['entry_fee' => $entry]);
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
+        $player = $this->user('fee-cancel@example.com', 'feecancel', 'PLAYER');
+        $wallet = $this->walletFor($player, $entry);
+        $platformWallet = User::where('email', 'platform@playersaloons.com')->firstOrFail()->wallet;
+        $platformBefore = DecimalMoney::toMinor($platformWallet->cached_balance);
+        $registration = app(RegisterForV2TournamentAction::class)->execute($tournament, $player, null, 'fee-player');
+        $this->travelTo($tournament->start_at->copy()->subSeconds($seconds));
+
+        $page = Livewire::actingAs($player)->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertViewHas('canCancelRegistration', true)
+            ->assertSee("Cancellation fee: $$fee. Refund: $$refund.")
+            ->assertSee('10% of the entry fee')
+            ->call('cancelRegistration')
+            ->assertSet('cancellationError', '')
+            ->assertDispatched('registration-cancellation-completed')
+            ->assertDispatched('wallet-balance-updated');
+
+        self::assertSame($refund, $wallet->fresh()->cached_balance);
+        self::assertSame($platformBefore + DecimalMoney::toMinor($fee), DecimalMoney::toMinor($platformWallet->fresh()->cached_balance));
+        self::assertDatabaseHas('refunds', ['registration_id' => $registration->id, 'amount' => $refund]);
+        self::assertDatabaseHas('ledger_entries', ['wallet_id' => $wallet->id, 'type' => 'REFUND', 'amount' => $refund]);
+        self::assertSame('refunded', $registration->fresh()->payment_status->value);
+        $page->call('cancelRegistration');
+        self::assertSame($refund, $wallet->fresh()->cached_balance);
+        self::assertDatabaseCount('refunds', 1);
+    }
+
+    public function test_cancellation_is_rejected_at_the_exact_start_time(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
+        $template = $this->template('daily', 4, '11:00');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
+        $player = $this->user('start-cancel@example.com', 'startcancel', 'PLAYER');
+        $registration = app(RegisterForV2TournamentAction::class)->execute($tournament, $player, null, 'start');
+        $this->travelTo($tournament->start_at);
+        Livewire::actingAs($player)->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertViewHas('canCancelRegistration', false)
+            ->call('cancelRegistration')
+            ->assertSet('cancellationError', 'Cancellation is available only before the tournament starts.');
+        self::assertSame('confirmed', $registration->fresh()->status->value);
+        self::assertDatabaseCount('refunds', 0);
     }
 
     public function test_cancellation_uses_snapshotted_half_threshold_and_immutable_vote(): void
@@ -1203,7 +1656,14 @@ final class TournamentV2WorkflowTest extends TestCase
         ];
         $register = app(RegisterForV2TournamentAction::class);
         $registrations = collect($players)->map(fn (User $player, int $i) => $register->execute($tournament->fresh(), $player, null, "cancel{$i}"));
-        $request = app(RequestV2CancellationAction::class)->execute($registrations[0], $players[0]);
+        // Previously created pending requests can still finish their approval flow.
+        $request = TournamentCancellationRequest::query()->create([
+            'uuid' => Str::uuid(), 'tournament_id' => $tournament->id,
+            'registration_id' => $registrations[0]->id, 'requested_by' => $players[0]->id,
+            'status' => 'pending', 'eligible_voter_count' => 3,
+            'eligible_voter_ids' => [$players[1]->id, $players[2]->id, $players[3]->id],
+            'required_approvals' => 2, 'requested_at' => now(), 'expires_at' => $tournament->start_at,
+        ]);
 
         self::assertSame([3, 2], [$request->eligible_voter_count, $request->required_approvals]);
         app(VoteOnV2CancellationAction::class)->execute($request, $players[1], true);

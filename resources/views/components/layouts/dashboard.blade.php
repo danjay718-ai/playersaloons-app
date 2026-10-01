@@ -300,9 +300,7 @@
                         <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></div>
                         <div class="flex flex-col text-right">
                             <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">{{ __('BAL') }}</span>
-                            <span class="text-xs font-black text-emerald-400 font-orbitron tracking-wider group-hover:text-emerald-300 transition-colors">
-                                ${{ number_format((float)(auth()->user()->wallet?->cached_balance ?? 0.00), 2) }}
-                            </span>
+                            <livewire:wallet.wallet-balance />
                         </div>
                     </a>
 

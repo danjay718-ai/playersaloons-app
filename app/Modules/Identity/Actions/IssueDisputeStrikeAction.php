@@ -9,8 +9,8 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\WalletService;
-use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Support\DecimalMoney;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -59,13 +59,12 @@ final class IssueDisputeStrikeAction
             ]);
 
             if ($minor > 0) {
-                $wallet = $lockedPlayer->wallet()->lockForUpdate()->firstOrFail();
-                $this->wallets->debit(
+                $wallet = Wallet::query()->where('user_id', $lockedPlayer->id)->lockForUpdate()->firstOrFail();
+                $this->wallets->debitPenalty(
                     $wallet,
                     DecimalMoney::format($minor),
-                    LedgerType::ADJUSTMENT,
                     'player_dispute_strike',
-                    (string) $strike->uuid,
+                    (string) $strike->id,
                     "Dispute strike #{$number}: {$reason}",
                     "dispute-strike-penalty:{$strike->id}",
                 );

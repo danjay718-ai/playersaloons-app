@@ -105,8 +105,8 @@ class WalletService
      * available. A negative balance is intentional: it is the amount the
      * platform owes to circulation, not a synthetic cash deposit.
      *
-     * This is deliberately separate from debit() so player wallets can never
-     * accidentally overdraw.
+     * Normal player spending uses debit(); authorized player penalties use
+     * debitPenalty(). Both liability paths are explicit.
      *
      * @param  string|float  $amount
      */
@@ -120,6 +120,18 @@ class WalletService
         ?string $idempotencyKey = null,
     ): LedgerEntry {
         return $this->recordDebit($wallet, $amount, $type, $referenceType, $referenceId, $description, $idempotencyKey, false);
+    }
+
+    /** Record an authorized penalty, including any amount owed beyond the available balance. */
+    public function debitPenalty(
+        Wallet $wallet,
+        string $amount,
+        string $referenceType,
+        string $referenceId,
+        string $description,
+        string $idempotencyKey,
+    ): LedgerEntry {
+        return $this->recordDebit($wallet, $amount, LedgerType::ADJUSTMENT, $referenceType, $referenceId, $description, $idempotencyKey, false);
     }
 
     /** @param string|float $amount */

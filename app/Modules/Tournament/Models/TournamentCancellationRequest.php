@@ -8,7 +8,15 @@ use App\Modules\Identity\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon $requested_at
+ * @property Carbon $expires_at
+ * @property-read Tournament $tournament
+ * @property-read TournamentRegistration $registration
+ * @property-read User $requester
+ */
 final class TournamentCancellationRequest extends Model
 {
     protected $fillable = [
