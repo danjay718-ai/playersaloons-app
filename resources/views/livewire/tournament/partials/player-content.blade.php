@@ -157,7 +157,7 @@
                     </div>
                 </div>
                 @if((int) $tournament->workflow_version === 2)
-                    <p class="-mt-3 text-xs text-zinc-500">Estimated prize only until entries close. The final prize is based on the actual number of paid entries and may be adjusted if the tournament starts below capacity.</p>
+                    <p class="-mt-3 text-xs text-zinc-500">{{ __('Estimated prize until entries close. Final prize amounts may be adjusted if the tournament starts below capacity. Prizes are set and administered by PlayerSaloons.') }}</p>
                 @else
                     <p class="-mt-3 text-xs text-zinc-500">Based on {{ $prizeCalculation['confirmed_count'] }} confirmed of {{ $tournament->max_participants }} players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.</p>
                 @endif

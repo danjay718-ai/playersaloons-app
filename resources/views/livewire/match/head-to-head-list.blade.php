@@ -13,6 +13,7 @@
                 <p class="mt-2 max-w-2xl text-xs font-semibold uppercase tracking-wider text-zinc-400">
                     Find matches, lock stakes, and report results.
                 </p>
+                <p class="mt-2 max-w-2xl text-xs text-zinc-500">{{ __('Prizes are set and administered by PlayerSaloons.') }}</p>
             </div>
 
             <div class="flex w-full flex-col gap-4 lg:w-auto lg:flex-row lg:items-end">
