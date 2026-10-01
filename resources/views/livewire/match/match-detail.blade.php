@@ -252,28 +252,7 @@
                         @endif
                     </div>
                 @elseif(((int) $match->tournament->workflow_version === 2 && in_array($statusVal, ['in_progress', 'waiting_for_confirmation']) && !$isSubmitter) || ((int) $match->tournament->workflow_version !== 2 && $statusVal === 'in_progress'))
-                    <form
-                        @if((int) $match->tournament->workflow_version === 2)
-                            x-data="{
-                                confirmationOpen: false,
-                                selectedOutcome: @js($resultOutcome),
-                                opponentOutcome: @js($opponentSubmissionOutcome),
-                                isConflicting() {
-                                    if (!this.opponentOutcome || !this.selectedOutcome) return false;
-                                    const consistent = (this.selectedOutcome === 'win' && this.opponentOutcome === 'loss')
-                                        || (this.selectedOutcome === 'loss' && this.opponentOutcome === 'win')
-                                        || (this.selectedOutcome === 'draw' && this.opponentOutcome === 'draw');
-                                    return !consistent;
-                                },
-                                label(outcome) {
-                                    return ({ win: 'Win', loss: 'Loss', draw: 'Draw' })[outcome] || 'No result selected';
-                                }
-                            }"
-                            x-on:submit.prevent="confirmationOpen = true"
-                        @else
-                            wire:submit.prevent="submitResult"
-                        @endif
-                        class="space-y-4">
+                    <form wire:submit.prevent="submitResult" class="space-y-4">
                         @if((int) $match->tournament->workflow_version === 2 && $statusVal === 'waiting_for_confirmation')
                             <div role="alert" class="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100"
                                  x-data="{
@@ -301,7 +280,7 @@
                                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                     @foreach(['win' => 'Win', 'loss' => 'Loss', 'draw' => 'Draw'] as $value => $label)
                                         <label class="player-result-option flex cursor-pointer items-center gap-3 rounded-xl border {{ $resultOutcome === $value ? 'border-violet-500' : 'border-zinc-800' }} bg-zinc-950 p-3.5 hover:border-zinc-700">
-                                            <input wire:model.live="resultOutcome" x-on:change="selectedOutcome = $event.target.value" type="radio" value="{{ $value }}" class="h-4 w-4 text-violet-600">
+                                            <input wire:model.live="resultOutcome" type="radio" value="{{ $value }}" class="h-4 w-4 text-violet-600">
                                             <span class="text-sm font-semibold text-zinc-200">{{ $label }}</span>
                                         </label>
                                     @endforeach
@@ -384,7 +363,7 @@
                                 <div class="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-zinc-500">SUBMISSION DEADLINE: <span class="text-amber-400" x-text="formatTime(timeLeft)"></span></div>
                             @endif
 
-                            <button type="submit" :disabled="expired"
+                            <button type="submit" :disabled="expired" wire:loading.attr="disabled" wire:target="submitResult,submissionProof"
                                 class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 shadow-md shadow-violet-900/20 uppercase tracking-widest font-orbitron disabled:cursor-not-allowed disabled:opacity-50">
                                 <span x-show="!expired">Submit Match Results</span>
                                 <span x-show="expired" x-cloak>Submission Time Expired</span>
@@ -415,30 +394,6 @@
                             @endif
                         </div>
 
-                        @if((int) $match->tournament->workflow_version === 2)
-                            <div x-show="confirmationOpen" x-cloak class="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 p-4" role="presentation">
-                                <div role="dialog" aria-modal="true" aria-labelledby="result-confirmation-title" class="w-full max-w-md space-y-5 rounded-2xl border border-violet-500/40 bg-zinc-900 p-6 shadow-2xl shadow-black/60">
-                                    <div>
-                                        <h3 id="result-confirmation-title" class="font-orbitron text-lg font-bold text-white">Confirm your result</h3>
-                                        <p class="mt-2 text-sm leading-relaxed text-zinc-300">You selected <span class="font-bold text-white" x-text="label(selectedOutcome)"></span>.</p>
-                                    </div>
-                                    <p x-show="!opponentOutcome" class="text-sm leading-relaxed text-zinc-400">Your result cannot be changed after submission. If your opponent reports a conflicting result, the match will be sent to an admin for review.</p>
-                                    <p x-show="opponentOutcome && isConflicting()" class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm leading-relaxed text-amber-100">
-                                        Your opponent reported <span class="font-bold" x-text="label(opponentOutcome)"></span>. These results conflict. Submitting yours will automatically open a dispute for admin review. Continue only if this is your accurate result.
-                                    </p>
-                                    <p x-show="opponentOutcome && !isConflicting()" class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm leading-relaxed text-emerald-100">
-                                        Your opponent reported <span class="font-bold" x-text="label(opponentOutcome)"></span>. These results are consistent and will finalize the match.
-                                    </p>
-                                    @error('resultOutcome') <p class="text-xs text-red-400">{{ $message }}</p> @enderror
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <button type="button" x-on:click="confirmationOpen = false" class="rounded-xl border border-zinc-700 px-4 py-3 text-xs font-bold uppercase tracking-wider text-zinc-300 transition hover:border-zinc-500 hover:text-white">Go back</button>
-                                        <button type="button" wire:click="submitResult" wire:loading.attr="disabled" wire:target="submitResult" class="rounded-xl bg-violet-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-violet-500 disabled:cursor-wait disabled:opacity-60">
-                                            <span wire:loading.remove wire:target="submitResult">Confirm &amp; submit</span><span wire:loading wire:target="submitResult">Submitting…</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
                     </form>
                 @elseif((int) $match->tournament->workflow_version !== 2 && $statusVal === 'waiting_for_confirmation' && !$isSubmitter)
                     <div class="space-y-4" x-data="{

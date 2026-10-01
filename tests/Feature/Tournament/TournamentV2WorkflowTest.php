@@ -956,24 +956,33 @@ final class TournamentV2WorkflowTest extends TestCase
         }
     }
 
-    public function test_v2_result_submission_uses_confirmation_and_hides_manual_dispute_button(): void
+    public function test_v2_results_submit_directly_without_a_confirmation_modal(): void
     {
         [$match, $firstPlayer, $secondPlayer] = $this->activeTwoPlayerMatch();
 
         Livewire::actingAs($firstPlayer)
             ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
-            ->assertSee('Confirm your result')
-            ->assertSee('Your result cannot be changed after submission.')
-            ->assertDontSee('Open Official Dispute');
+            ->assertSee('wire:submit.prevent="submitResult"', escape: false)
+            ->assertDontSee('Confirm your result')
+            ->assertDontSee('Open Official Dispute')
+            ->call('submitResult')
+            ->assertHasErrors(['resultOutcome' => 'required'])
+            ->set('resultOutcome', 'win')
+            ->call('submitResult')
+            ->assertHasNoErrors();
 
-        app(SubmitV2MatchResultAction::class)->execute($match, $firstPlayer->id, MatchOutcome::WIN);
+        self::assertSame(MatchStatus::WAITING_FOR_CONFIRMATION, $match->fresh()->status);
 
         Livewire::actingAs($secondPlayer)
             ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
             ->set('resultOutcome', 'win')
-            ->assertSee('Your opponent reported')
-            ->assertSee('These results conflict. Submitting yours will automatically open a dispute for admin review.')
-            ->assertDontSee('Open Official Dispute');
+            ->assertDontSee('Confirm your result')
+            ->assertDontSee('Open Official Dispute')
+            ->call('submitResult')
+            ->assertHasNoErrors()
+            ->assertSee('Result conflict detected');
+
+        self::assertSame(MatchStatus::DISPUTED, $match->fresh()->status);
     }
 
     public function test_tournament_overview_shows_next_match_champion_and_second_place_outcomes(): void
