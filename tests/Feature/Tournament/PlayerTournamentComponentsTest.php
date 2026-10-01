@@ -246,8 +246,8 @@ class PlayerTournamentComponentsTest extends TestCase
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
-            ->assertSeeHtml("@click=\"bracketView = 'bracket'\"")
-            ->assertSeeHtml("@click=\"bracketView = 'fixtures'\"");
+            ->assertSeeHtml("@click=\"selectBracketView('bracket')\"")
+            ->assertSeeHtml("@click=\"selectBracketView('fixtures')\"");
     }
 
     public function test_stats_banner_calculation(): void

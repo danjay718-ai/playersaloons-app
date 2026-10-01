@@ -6,6 +6,7 @@ namespace App\Modules\Match\Listeners;
 
 use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Match\Services\RandomWinnerAdvancementService;
 use App\Modules\Match\StateMachines\MatchStateMachine;
 use App\Modules\Tournament\Actions\CompleteTournamentAction;
 use App\Modules\Tournament\Models\Round;
@@ -17,6 +18,7 @@ class AdvanceWinnerListener
     public function __construct(
         private readonly MatchStateMachine $stateMachine,
         private readonly CompleteTournamentAction $completeTournamentAction,
+        private readonly RandomWinnerAdvancementService $randomAdvancement,
     ) {}
 
     /**
@@ -34,6 +36,12 @@ class AdvanceWinnerListener
             $match = GameMatch::query()->find($event->matchId);
 
             if ($match === null) {
+                return;
+            }
+
+            if ((int) $match->tournament->workflow_version === 2) {
+                $this->randomAdvancement->advance($match);
+
                 return;
             }
 

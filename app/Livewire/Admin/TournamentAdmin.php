@@ -19,6 +19,7 @@ use App\Modules\Tournament\Actions\PublishTournamentAction;
 use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTemplate;
+use App\Modules\Tournament\Services\AdminV2ScheduleQuery;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
@@ -87,12 +88,12 @@ class TournamentAdmin extends AdminComponent
 
     public function updatingSearch(): void
     {
-        $this->resetPage();
+        $this->resetListPages();
     }
 
     public function updatingStatusFilter(): void
     {
-        $this->resetPage();
+        $this->resetListPages();
     }
 
     public function setStatusFilter(string $status): void
@@ -101,43 +102,54 @@ class TournamentAdmin extends AdminComponent
         // The dropdown selects across the complete V2 status set. Status cards
         // remain useful as independent grouped filters when no exact status is set.
         $this->statusTab = 'all';
-        $this->resetPage();
+        $this->resetListPages();
     }
 
     public function updatingGameFilter(): void
     {
-        $this->resetPage();
+        $this->resetListPages();
     }
 
     public function updatingPlatformFilter(): void
     {
-        $this->resetPage();
+        $this->resetListPages();
     }
 
     public function updatingActiveTab(): void
     {
-        $this->resetPage();
+        $this->resetListPages();
     }
 
     public function updatingStatusTab(): void
     {
-        $this->resetPage();
+        $this->resetListPages();
         $this->statusFilter = ''; // clear per-status dropdown when switching group tabs
     }
 
     public function updatingStartDateFilter(): void
     {
-        $this->resetPage();
+        $this->resetListPages();
     }
 
     public function updatingEndDateFilter(): void
     {
+        $this->resetListPages();
+    }
+
+    public function updatingStartTimeFilter(): void
+    {
+        $this->resetListPages();
+    }
+
+    private function resetListPages(): void
+    {
         $this->resetPage();
+        $this->resetPage('v2Page');
     }
 
     public function updatingPerPage(): void
     {
-        $this->resetPage();
+        $this->resetListPages();
     }
 
     public function selectTournament(int $id): void
@@ -354,69 +366,43 @@ class TournamentAdmin extends AdminComponent
         $this->applyFilters($query, includeStatus: true);
 
         $v2Templates = null;
+        $scheduleQueries = [];
         if (config('features.tournament_v2.enabled')) {
-            $v2Occurrences = Tournament::query()
-                ->where('workflow_version', 2)
-                ->where('competition_type', CompetitionType::TOURNAMENT);
-            match ($this->statusTab) {
-                'active' => $v2Occurrences->whereIn('status', $activeStatuses),
-                'completed' => $v2Occurrences->where('status', TournamentStatus::COMPLETED->value),
-                'cancelled' => $v2Occurrences->whereIn('status', [TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value]),
-                default => null,
-            };
-            $this->applyFilters($v2Occurrences, includeStatus: true);
+            $filters = [
+                'search' => $this->search,
+                'game_id' => $this->gameFilter,
+                'platform_id' => $this->platformFilter,
+                'tab' => $this->activeTab,
+                'status' => $this->statusFilter,
+                'start_time' => $this->startTimeFilter,
+                'start_date' => $this->startDateFilter,
+                'end_date' => $this->endDateFilter,
+            ];
+            foreach (['active', 'completed', 'cancelled', 'all'] as $tab) {
+                $scheduleQueries[$tab] = app(AdminV2ScheduleQuery::class)->query(CompetitionType::TOURNAMENT, $tab, $filters);
+            }
+            $scheduleQuery = $scheduleQueries[$this->statusTab] ?? $scheduleQueries['all'];
+            $v2Templates = (clone $scheduleQuery)
+                ->orderByDesc('updated_at')->paginate($this->perPage, ['*'], 'v2Page');
+            if ($v2Templates->currentPage() > $v2Templates->lastPage()) {
+                $this->resetPage('v2Page');
+                $v2Templates = (clone $scheduleQuery)
+                    ->orderByDesc('updated_at')->paginate($this->perPage, ['*'], 'v2Page');
+            }
 
-            // V2 occurrences are immutable operational records. Grouping is
-            // presentation-only so the admin index is not one row per slot.
-            $v2Templates = TournamentTemplate::query()
-                ->with(['game.translations', 'scheduleSlots.occurrences' => fn ($query) => $query->withCount('registrations')->orderByDesc('start_at')])
-                ->where('workflow_version', 2)
-                ->where('competition_type', CompetitionType::TOURNAMENT)
-                ->when($this->search !== '', fn ($templates) => $templates->where('name', 'like', '%'.$this->search.'%'))
-                ->when($this->gameFilter !== '', fn ($templates) => $templates->where('game_id', $this->gameFilter))
-                ->when($this->platformFilter !== '', fn ($templates) => $templates->where(fn ($platforms) => $platforms
-                    ->whereJsonContains('settings_json->platform_ids', (int) $this->platformFilter)
-                    ->orWhere('settings_json->platform_id', (int) $this->platformFilter)))
-                ->when($this->activeTab !== 'all', function ($templates): void {
-                    if ($this->activeTab === 'one-time') {
-                        $templates->where('is_recurring', false);
-
-                        return;
-                    }
-                    $templates->where('recurrence_frequency', $this->activeTab);
-                })
-                ->where(function ($templates) use ($v2Occurrences): void {
-                    $allowsUnmaterialized = $this->statusTab === 'active'
-                        && $this->statusFilter === ''
-                        && $this->startTimeFilter === ''
-                        && $this->startDateFilter === ''
-                        && $this->endDateFilter === ''
-                        && $this->platformFilter === '';
-                    if ($allowsUnmaterialized) {
-                        $templates->whereDoesntHave('scheduleSlots.occurrences', fn ($occurrences) => $occurrences->withTrashed())
-                            ->orWhereHas('scheduleSlots.occurrences', fn ($occurrences) => $this->applyV2OccurrenceSubquery($occurrences, $v2Occurrences));
-
-                        return;
-                    }
-                    $templates->whereHas('scheduleSlots.occurrences', fn ($occurrences) => $this->applyV2OccurrenceSubquery($occurrences, $v2Occurrences));
-                })
-                ->orderByDesc('updated_at')
-                ->paginate($this->perPage, ['*'], 'v2Page');
-
-            // Retain historical V1 records in their original row-based UI.
+            // V1 rows are hidden while the V2 schedule list is enabled.
             $query->where('workflow_version', 1);
         }
 
-        // Counts per status group for tab badges
         $baseCount = Tournament::query();
-        if (config('features.tournament_v2.enabled')) {
-            $baseCount->where('workflow_version', 2);
-        }
         $this->applyFilters($baseCount, includeStatus: true);
-        $countActive = (clone $baseCount)->whereIn('status', $activeStatuses)->count();
-        $countCompleted = (clone $baseCount)->where('status', TournamentStatus::COMPLETED->value)->count();
-        $countCancelled = (clone $baseCount)->whereIn('status', [TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])->count();
-        $countAll = (clone $baseCount)->count();
+        $countActive = isset($scheduleQueries['active']) ? $scheduleQueries['active']->count()
+            : (clone $baseCount)->whereIn('status', $activeStatuses)->count();
+        $countCompleted = isset($scheduleQueries['completed']) ? $scheduleQueries['completed']->count()
+            : (clone $baseCount)->where('status', TournamentStatus::COMPLETED->value)->count();
+        $countCancelled = isset($scheduleQueries['cancelled']) ? $scheduleQueries['cancelled']->count()
+            : (clone $baseCount)->whereIn('status', [TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])->count();
+        $countAll = isset($scheduleQueries['all']) ? $scheduleQueries['all']->count() : (clone $baseCount)->count();
 
         $tournaments = $query->paginate($this->perPage);
         $games = Game::availableInCatalog()->with('translations')->get();
@@ -445,11 +431,6 @@ class TournamentAdmin extends AdminComponent
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Tournament Management',
         ]);
-    }
-
-    private function applyV2OccurrenceSubquery($occurrences, $source): void
-    {
-        $occurrences->whereIn('id', (clone $source)->select('id'));
     }
 
     private function applyFilters($query, bool $includeStatus): void

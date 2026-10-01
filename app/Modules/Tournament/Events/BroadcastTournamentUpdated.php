@@ -24,7 +24,7 @@ final class BroadcastTournamentUpdated implements ShouldBroadcast, ShouldDispatc
     /** @return array<int, Channel> */
     public function broadcastOn(): array
     {
-        return [new Channel('tournament.'.$this->tournamentUuid)];
+        return [new Channel('tournament.'.$this->tournamentUuid), new Channel('tournaments')];
     }
 
     public function broadcastAs(): string

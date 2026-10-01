@@ -13,10 +13,13 @@ use App\Modules\Match\Events\MatchRematchCreated;
 use App\Modules\Match\Events\MatchResultSubmitted;
 use App\Modules\Match\Events\MatchStarted;
 use App\Modules\Match\Models\GameMatch;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Collection;
 
-class NotifyParticipantsListener
+class NotifyParticipantsListener implements ShouldQueueAfterCommit
 {
+    public string $queue = 'notifications';
+
     /**
      * Create a new listener instance.
      */

@@ -8,13 +8,13 @@
             'all' => ['label' => 'All', 'description' => 'Every H2H schedule', 'count' => $countAll, 'icon' => 'layers', 'accent' => 'slate'],
         ];
     @endphp
-    <div class="w-full space-y-6">
+    <div class="w-full space-y-6" x-data="tournamentListRealtime(() => refreshAdminHeadToHead(), { poll: true })">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div><p class="text-[10px] font-black uppercase tracking-[.24em] text-fuchsia-400">Platform competitions</p><h1 class="mt-1 text-2xl font-black text-white">Head-to-Head schedules</h1><p class="mt-1 text-sm text-slate-400">One card per reusable 1v1 parent. Open its slots to manage immutable match occurrences.</p></div>
             <a href="{{ route('admin.h2h.v2.create') }}" class="inline-flex items-center justify-center rounded-lg bg-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fuchsia-500"><i data-lucide="swords" class="mr-2 h-4 w-4"></i>Create H2H schedule</a>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div id="h2h-status-cards" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             @foreach($statusCards as $key => $card)
                 @php($selected = $statusTab === $key)
                 <a href="{{ $filterUrl(['status_tab' => $key, 'status' => '']) }}" class="group relative overflow-hidden rounded-xl border p-4 text-left transition-all duration-200 {{ $selected ? 'border-fuchsia-500/60 bg-fuchsia-500/10 shadow-lg shadow-fuchsia-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 hover:bg-slate-800/60' }}">
@@ -44,7 +44,7 @@
             </div>
         </form>
 
-        <x-admin.v2-schedule-list :templates="$templates" :head-to-head="true" :status-filter="$status" :status-tab="$statusTab" :active-tab="$activeTab" :start-date="$startDate" :end-date="$endDate" :start-time="$startTime" />
+        <div id="h2h-schedules"><x-admin.v2-schedule-list :templates="$templates" :head-to-head="true" :status-filter="$status" :status-tab="$statusTab" :active-tab="$activeTab" :start-date="$startDate" :end-date="$endDate" :start-time="$startTime" /></div>
     </div>
     <x-admin.deletion-actions resource="head_to_head_schedules" />
 </x-layouts.admin>

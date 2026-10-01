@@ -1,4 +1,4 @@
-<div class="player-my-games space-y-8">
+<div class="player-my-games space-y-8" wire:poll.10s.visible x-data="tournamentListRealtime(() => $wire.$refresh())">
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>

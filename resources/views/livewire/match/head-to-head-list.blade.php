@@ -1,4 +1,4 @@
-<div class="space-y-6" x-data="{ showInitiateDrawer: false }">
+<div class="space-y-6" wire:poll.10s.visible x-data="{ showInitiateDrawer: false }">
     <x-ui.toasts />
 
     <!-- Game Filter & Actions Panel -->

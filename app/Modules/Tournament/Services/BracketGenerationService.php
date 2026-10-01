@@ -6,6 +6,7 @@ namespace App\Modules\Tournament\Services;
 
 use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Match\Services\RandomWinnerAdvancementService;
 use App\Modules\Tournament\Exceptions\InsufficientParticipantsException;
 use App\Modules\Tournament\Models\Bracket;
 use App\Modules\Tournament\Models\Round;
@@ -17,6 +18,8 @@ use Illuminate\Support\Str;
 
 class BracketGenerationService
 {
+    public function __construct(private readonly RandomWinnerAdvancementService $randomAdvancement) {}
+
     /**
      * Generate brackets, rounds, and matches for a tournament.
      *
@@ -135,6 +138,16 @@ class BracketGenerationService
             $match->winner_registration_id = $playerA->registration_id;
             $match->status = MatchStatus::COMPLETED;
             $match->save();
+        }
+
+        if ((int) $tournament->workflow_version === 2) {
+            foreach ($matchesByRound[1] as $match) {
+                if ($match->winner_registration_id !== null) {
+                    $this->randomAdvancement->advance($match);
+                }
+            }
+
+            return $bracket;
         }
 
         // ── Step 7: Propagate bye winners into later rounds ────────────────

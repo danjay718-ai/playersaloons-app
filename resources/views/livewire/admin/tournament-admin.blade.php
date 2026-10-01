@@ -1,4 +1,5 @@
-<div x-data="{ 
+<div wire:poll.10s.visible x-data="{
+    ...tournamentListRealtime(() => $wire.$refresh()),
     showDetail: @entangle('showDetailModal'), 
     showCancel: @entangle('showCancelModal') 
 }">

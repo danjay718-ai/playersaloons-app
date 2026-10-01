@@ -19,7 +19,7 @@
     }
 @endphp
 
-<div class="player-tournament-discovery space-y-12" x-data>
+<div class="player-tournament-discovery space-y-12" wire:poll.10s.visible x-data="tournamentListRealtime(() => $wire.$refresh())">
     <section class="space-y-5">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>

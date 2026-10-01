@@ -4,8 +4,14 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { tournamentCountdown } from './slot-picker';
+import { tournamentListRealtime, refreshAdminHeadToHead } from './tournament-list-realtime';
+import { scrollToTournamentContent, scrollToMatchContent } from './tournament-content-navigation';
 
 window.tournamentCountdown = tournamentCountdown;
+window.tournamentListRealtime = tournamentListRealtime;
+window.refreshAdminHeadToHead = refreshAdminHeadToHead;
+window.scrollToTournamentContent = scrollToTournamentContent;
+window.scrollToMatchContent = scrollToMatchContent;
 
 window.Pusher = Pusher;
 
