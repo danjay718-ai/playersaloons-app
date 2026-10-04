@@ -93,7 +93,9 @@
     "Current Winner's Prize": "Current Winner's Prize",
     "Play the match, then submit your result above.": "Play the match, then submit your result above.",
     "The players submitted conflicting results. Both players may provide a reason or screenshot for admin review.": "The players submitted conflicting results. Both players may provide a reason or screenshot for admin review.",
-    "The results conflict. You may submit a written reason, a screenshot, both, or continue without attachments.": "The results conflict. You may submit a written reason, a screenshot, both, or continue without attachments.",
+    "The results conflict. Upload a screenshot for admin review. You may also provide a written reason.": "The results conflict. Upload a screenshot for admin review. You may also provide a written reason.",
+    "Screenshot proof (required)": "Screenshot proof (required)",
+    "Please upload a screenshot before submitting your dispute.": "Please upload a screenshot before submitting your dispute.",
     "Cancellation is available only before the tournament starts.": "Cancellation is available only before the tournament starts.",
     "Registration cancelled. The applicable refund has been credited to your wallet.": "Registration cancelled. The applicable refund has been credited to your wallet.",
     "Other eligible joined players must approve this request before the tournament starts. The cancellation fee is based on when you request cancellation.": "Other eligible joined players must approve this request before the tournament starts. The cancellation fee is based on when you request cancellation.",
@@ -116,5 +118,9 @@
     "Dispute History": "Dispute History",
     "Resolve Dispute": "Resolve Dispute",
     "Set Match Result": "Set Match Result",
-    "No disputes have been recorded for this match.": "No disputes have been recorded for this match."
+    "No disputes have been recorded for this match.": "No disputes have been recorded for this match.",
+    "Scroll to bottom": "Scroll to bottom",
+    "Tournament description": "Tournament description",
+    "Join Competition": "Join Competition",
+    "Waiting for your result": "Waiting for your result"
 }

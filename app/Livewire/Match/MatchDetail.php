@@ -403,7 +403,9 @@ class MatchDetail extends Component
 
         $this->validate([
             'disputeReason' => ['nullable', 'string', 'max:2000'],
-            'evidenceFile' => ['nullable', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
+            'evidenceFile' => ['required', 'file', 'max:2048', 'mimes:png,jpg,jpeg,webp'],
+        ], [
+            'evidenceFile.required' => __('Please upload a screenshot before submitting your dispute.'),
         ]);
 
         try {

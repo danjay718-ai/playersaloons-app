@@ -137,7 +137,7 @@ class TournamentForm extends AdminComponent
             return;
         }
 
-        $this->timezone = (string) config('app.tournament_timezone', 'UTC');
+        $this->timezone = (string) config('app.tournament_timezone', 'Europe/Amsterdam');
         $this->waiting_result_time = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
 
         if ($id) {
@@ -174,7 +174,7 @@ class TournamentForm extends AdminComponent
             $this->min_participants = (int) $tournament->min_participants;
             $this->entry_fee = (string) $tournament->entry_fee;
             $this->prize_pool = (string) ($tournament->advertised_prize_pool ?? $tournament->prize_pool);
-            $this->timezone = $tournament->timezone ?: ($tournament->template?->timezone ?? (string) config('app.tournament_timezone', 'UTC'));
+            $this->timezone = $tournament->timezone ?: ($tournament->template?->timezone ?? (string) config('app.tournament_timezone', 'Europe/Amsterdam'));
             $this->registration_open_at = $this->formatScheduleDate($tournament->registration_open_at);
             $this->start_at = $this->formatScheduleDate($tournament->start_at);
             $this->tournament_end_at = $this->formatScheduleDate($tournament->end_at ?? $tournament->start_at?->copy()->addDay());

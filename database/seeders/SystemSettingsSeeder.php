@@ -80,7 +80,7 @@ class SystemSettingsSeeder extends Seeder
             ['key' => 'language_switcher.show_admin', 'value' => 'false', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'platform.commission_percentage', 'value' => '10.00', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'h2h.commission_percentage', 'value' => '10.00', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'tournament.timezone', 'value' => config('app.tournament_timezone', 'UTC'), 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'tournament.timezone', 'value' => config('app.tournament_timezone', 'Europe/Amsterdam'), 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'auth.login_max_attempts', 'value' => '5', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'auth.login_lockout_minutes', 'value' => '15', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'notifications.dispute_email', 'value' => 'info@playersaloons.com', 'created_at' => now(), 'updated_at' => now()],

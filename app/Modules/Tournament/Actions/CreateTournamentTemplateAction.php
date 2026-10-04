@@ -50,7 +50,7 @@ class CreateTournamentTemplateAction
                 'checkin_minutes' => $data['checkin_minutes'] ?? 15,
                 'is_recurring' => $data['is_recurring'] ?? false,
                 'recurrence_frequency' => $data['recurrence_frequency'] ?? null,
-                'timezone' => $data['timezone'] ?? 'UTC',
+                'timezone' => $data['timezone'] ?? config('app.tournament_timezone', 'Europe/Amsterdam'),
                 'next_run_at' => $data['next_run_at'] ?? null,
                 'generation_lead_minutes' => $data['generation_lead_minutes'] ?? 1440,
                 'settings_json' => $data['settings_json'] ?? null,

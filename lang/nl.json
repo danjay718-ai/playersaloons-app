@@ -86,5 +86,12 @@
     "Select a game to see its supported platforms.": "Select a game to see its supported platforms.",
     "Select platforms supported by the selected game.": "Select platforms supported by the selected game.",
     "Your platform": "Your platform",
-    "Select a platform supported by this competition.": "Select a platform supported by this competition."
+    "Select a platform supported by this competition.": "Select a platform supported by this competition.",
+    "The results conflict. Upload a screenshot for admin review. You may also provide a written reason.": "De resultaten komen niet overeen. Upload een screenshot voor beoordeling door een beheerder. Je kunt ook een schriftelijke toelichting geven.",
+    "Screenshot proof (required)": "Screenshot als bewijs (verplicht)",
+    "Please upload a screenshot before submitting your dispute.": "Upload een screenshot voordat je je geschil indient.",
+    "Scroll to bottom": "Scroll naar beneden",
+    "Tournament description": "Toernooibeschrijving",
+    "Join Competition": "Deelnemen aan competitie",
+    "Waiting for your result": "Wachten op jouw resultaat"
 }

@@ -34,6 +34,10 @@ class SubmitEvidenceAction
      */
     public function execute(MatchDispute $dispute, int $uploadedByUserId, ?UploadedFile $file, ?string $reason = null): MatchEvidence
     {
+        if ($file === null) {
+            throw new InvalidArgumentException(__('Please upload a screenshot before submitting your dispute.'));
+        }
+
         if ($reason !== null && (mb_strlen(trim($reason)) < 10 || mb_strlen($reason) > 2000)) {
             throw new InvalidArgumentException('A dispute reason must be between 10 and 2000 characters.');
         }

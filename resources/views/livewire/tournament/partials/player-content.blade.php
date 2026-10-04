@@ -1,5 +1,8 @@
 @php
     $statusValue = $tournament->status->value ?? (string) $tournament->status;
+    $joinLabel = $tournament->competition_type === \App\Shared\Enums\CompetitionType::HEAD_TO_HEAD
+        ? __('Join Competition')
+        : __('Join Tournament');
     $isPlayerView = ! (Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']));
     $statusColorClass = [
         'DRAFT' => 'text-zinc-500 border-zinc-800 bg-zinc-900/50',
@@ -133,7 +136,7 @@
                         {{ str_replace('_', ' ', $statusValue) }}
                     </span>
                     <span class="text-[10px] font-black uppercase tracking-[0.15em] rounded-full border border-zinc-800 bg-zinc-950/60 px-4 py-1.5 text-zinc-400">
-                        {{ $tournament->timezone ?: config('app.tournament_timezone') }}
+                        Europe/Amsterdam
                     </span>
                     @if(($tournament->team_size ?? 1) > 1)
                         <span class="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] bg-violet-950/30 border border-violet-800/60 rounded-full px-4 py-1.5">
@@ -191,12 +194,12 @@
                         @php
                             $currentMatchStatus = $currentMatch->status->value ?? (string) $currentMatch->status;
                             $currentMatchLabel = match($currentMatchStatus) {
-                                'waiting_for_confirmation' => 'View Result Status',
+                                'waiting_for_confirmation' => $currentMatchHasSubmittedResult ? 'View Result Status' : 'Submit Result',
                                 'disputed' => 'Review Match Dispute',
                                 default => 'Submit Result',
                             };
                             $currentMatchStatusLabel = (int) $tournament->workflow_version === 2 && $currentMatchStatus === 'waiting_for_confirmation'
-                                ? 'Waiting for opponent result'
+                                ? ($currentMatchHasSubmittedResult ? 'Waiting for opponent result' : __('Waiting for your result'))
                                 : str_replace('_', ' ', $currentMatchStatus);
                         @endphp
                         @if((int) $tournament->workflow_version === 2)
@@ -292,7 +295,7 @@
                                 @else
                                     <button type="button" @click="openJoinModal()" wire:loading.attr="disabled" wire:target="prepareRegistrationPrompt" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
                                         <i data-lucide="plus-circle" class="w-5 h-5"></i>
-                                        <span>Join Tournament</span>
+                                        <span>{{ $joinLabel }}</span>
                                     </button>
                                 @endif
                             @else
@@ -633,8 +636,8 @@
                                 <div class="space-y-1 min-w-0">
                                     <span class="block text-[10px] font-black {{ $isPast ? 'text-zinc-700' : 'text-zinc-500' }} uppercase tracking-widest">{{ $item['label'] }}</span>
                                     <span class="text-sm font-bold {{ $isPast ? 'text-zinc-600 line-through' : 'text-zinc-300' }}">
-                                        {{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->setTimezone($tournament->timezone)->format('M d, Y') : 'TBD' }}
-                                        <span class="text-xs text-zinc-500 ml-1 opacity-60">{{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->setTimezone($tournament->timezone)->format('h:i A T') : '' }}</span>
+                                        {{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->setTimezone('Europe/Amsterdam')->format('M d, Y') : 'TBD' }}
+                                        <span class="text-xs text-zinc-500 ml-1 opacity-60">{{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->setTimezone('Europe/Amsterdam')->format('h:i A T') : '' }}</span>
                                     </span>
                                     @if($item['time'] && !$isPast)
                                         <span class="text-[10px] text-zinc-600 font-medium">{{ \Illuminate\Support\Carbon::parse($item['time'])->diffForHumans() }}</span>
@@ -1283,7 +1286,7 @@
                         <p class="text-xs leading-relaxed text-zinc-500">Your match starts automatically when the tournament begins. {{ (int) $tournament->workflow_version === 2 ? 'Open Submit Result to play and report your result.' : 'Open the Match Room to play and submit your result.' }}</p>
                         <div class="flex gap-3 pt-2">
                             <button type="button" @click="showJoinModal = false" class="flex-1 rounded-xl border border-zinc-700 px-4 py-3 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800">Cancel</button>
-                            <button type="submit" wire:loading.attr="disabled" wire:target="register" class="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 disabled:opacity-60">{{ ($tournament->team_size ?? 1) > 1 ? ($userTournamentTeam || $userSquad ? 'Register Team' : 'Find a Team') : 'Join Tournament' }}</button>
+                            <button type="submit" wire:loading.attr="disabled" wire:target="register" class="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 disabled:opacity-60">{{ ($tournament->team_size ?? 1) > 1 ? ($userTournamentTeam || $userSquad ? 'Register Team' : 'Find a Team') : $joinLabel }}</button>
                         </div>
                     </form>
                 </div>

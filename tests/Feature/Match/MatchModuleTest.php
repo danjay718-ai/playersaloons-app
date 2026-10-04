@@ -324,6 +324,14 @@ class MatchModuleTest extends TestCase
         ]);
 
         // Player B uploads evidence (create mock file without GD dependency)
+        try {
+            app(SubmitEvidenceAction::class)->execute($dispute, $this->playerB->id, null);
+            self::fail('Dispute evidence must include a screenshot.');
+        } catch (InvalidArgumentException $exception) {
+            self::assertSame('Please upload a screenshot before submitting your dispute.', $exception->getMessage());
+        }
+        self::assertSame(0, $dispute->evidence()->count());
+
         $file = UploadedFile::fake()->create('screenshot.jpg', 100, 'image/jpeg');
         $evidence = app(SubmitEvidenceAction::class)->execute($dispute, $this->playerB->id, $file);
 

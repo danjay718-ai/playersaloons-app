@@ -7,6 +7,7 @@
     'previewBinding' => null,
     'help' => null,
     'nameBinding' => null,
+    'previewClass' => '',
 ])
 
 @php
@@ -23,7 +24,7 @@
     <p x-show="fileName && !clientError" x-cloak class="truncate text-[10px] font-semibold text-emerald-400"><span x-text="`New upload ready: ${fileName}`"></span></p>
     @error($name)<p class="text-xs text-red-400">{{ $message }}</p>@enderror
 
-    <div x-show="previewUrl" @if(!$currentUrl) style="display: none" @endif class="overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
+    <div x-show="previewUrl" @if(!$currentUrl) style="display: none" @endif class="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 {{ $previewClass }}">
         <img @if($currentUrl) src="{{ $currentUrl }}" @endif :src="previewUrl || null" alt="{{ $label }} preview" class="aspect-[16/9] w-full object-cover">
         <p class="border-t border-slate-800 px-3 py-2 text-[10px] text-slate-400" x-text="fileName ? 'New cropped upload preview' : 'Current/default banner preview'"></p>
     </div>

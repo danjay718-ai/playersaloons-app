@@ -239,7 +239,7 @@
                                 </span>
                             </td>
                             <td class="p-4 text-slate-400">
-                                {{ $tournament->start_at ? $tournament->start_at->format('M d, H:i') : 'N/A' }}
+                                {{ $tournament->start_at?->setTimezone('Europe/Amsterdam')->format('M d, H:i') ?? 'N/A' }}
                             </td>
                             <td class="p-4 text-right">
                                 <x-admin.action-dropdown>
@@ -601,15 +601,15 @@
                         <div class="bg-slate-900/40 border border-slate-800/60 rounded-lg p-4 space-y-2.5 text-xs text-slate-300">
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Registration Window</span>
-                                <span>{{ $selectedTournament->registration_open_at?->format('Y-m-d H:i') ?? 'N/A' }} — {{ $selectedTournament->registration_close_at?->format('Y-m-d H:i') ?? 'N/A' }}</span>
+                                <span>{{ $selectedTournament->registration_open_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }} — {{ $selectedTournament->registration_close_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Check-in Window</span>
-                                <span>{{ $selectedTournament->checkin_open_at?->format('Y-m-d H:i') ?? 'N/A' }} — {{ $selectedTournament->checkin_close_at?->format('Y-m-d H:i') ?? 'N/A' }}</span>
+                                <span>{{ $selectedTournament->checkin_open_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }} — {{ $selectedTournament->checkin_close_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Starts At</span>
-                                <span>{{ $selectedTournament->start_at?->format('Y-m-d H:i') ?? 'N/A' }}</span>
+                                <span>{{ $selectedTournament->start_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }} Europe/Amsterdam</span>
                             </div>
                         </div>
                     </div>

@@ -64,7 +64,7 @@ final class AdminUserSeeder extends Seeder
                     DB::table('user_profiles')->insert([
                         'uuid' => (string) Str::uuid(), 'user_id' => $userId,
                         'display_name' => $account['role'] === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin',
-                        'timezone' => config('app.tournament_timezone', 'UTC'),
+                        'timezone' => config('app.tournament_timezone', 'Europe/Amsterdam'),
                         'created_at' => now(), 'updated_at' => now(),
                     ]);
                 }

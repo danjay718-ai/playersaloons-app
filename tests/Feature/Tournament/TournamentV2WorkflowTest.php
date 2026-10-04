@@ -34,6 +34,7 @@ use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Services\V2StalledMatchService;
 use App\Modules\Tournament\Actions\AwardV2PrizesAction;
 use App\Modules\Tournament\Actions\CancelTournamentAction;
+use App\Modules\Tournament\Actions\ConvertTournamentSchedulesTimezoneAction;
 use App\Modules\Tournament\Actions\CreateV2TournamentTemplateAction;
 use App\Modules\Tournament\Actions\MaterializeV2OccurrenceAction;
 use App\Modules\Tournament\Actions\PurgeEmptyV2OccurrencesAction;
@@ -1075,6 +1076,53 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertDispatched('tournament-content-opened', tournamentUuid: $match->tournament->uuid, matchUuid: $match->uuid, tab: 'submit-results', focus: null);
     }
 
+    #[DataProvider('competitionTypes')]
+    public function test_join_button_uses_the_competition_type(CompetitionType $type): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-04 10:00:00', 'UTC'));
+        $template = $this->template('daily', $type === CompetitionType::HEAD_TO_HEAD ? 2 : 4, '23:59', [], $type);
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
+        $player = $this->user('join-label@example.com', 'joinlabel', 'PLAYER');
+
+        Livewire::actingAs($player)->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSee($type === CompetitionType::HEAD_TO_HEAD ? 'Join Competition' : 'Join Tournament')
+            ->assertDontSee($type === CompetitionType::HEAD_TO_HEAD ? 'Join Tournament' : 'Join Competition');
+    }
+
+    #[DataProvider('competitionTypes')]
+    public function test_opponent_can_still_submit_after_the_first_result_and_rematches_reset_submission_status(CompetitionType $type): void
+    {
+        [$match, $first, $opponent] = $this->activeTwoPlayerMatch([], $type);
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::DRAW);
+
+        Livewire::actingAs($first)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertViewHas('currentMatchHasSubmittedResult', true)
+            ->assertSee('View Result Status');
+
+        Livewire::actingAs($opponent)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertViewHas('currentMatchHasSubmittedResult', false)
+            ->assertSee('Submit Result')
+            ->assertSee('Waiting for your result')
+            ->assertDontSee('View Result Status')
+            ->call('openMatch', $match->uuid)
+            ->assertSet('activeTab', 'submit-results');
+
+        $submit->execute($match->fresh(), $opponent->id, MatchOutcome::DRAW);
+        Livewire::actingAs($first)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertViewHas('currentMatchHasSubmittedResult', false)
+            ->assertSee('Submit Result')
+            ->assertDontSee('View Result Status');
+    }
+
+    public static function competitionTypes(): array
+    {
+        return [
+            'tournament' => [CompetitionType::TOURNAMENT],
+            'head to head' => [CompetitionType::HEAD_TO_HEAD],
+        ];
+    }
+
     public function test_player_result_view_combines_match_metadata_and_places_connection_details_after_results(): void
     {
         [$match, $player] = $this->activeTwoPlayerMatch();
@@ -1305,6 +1353,7 @@ final class TournamentV2WorkflowTest extends TestCase
 
     public function test_conflicting_v2_results_create_a_dispute_for_admin_review(): void
     {
+        Storage::fake('public');
         [$match, $p1, $p2] = $this->activeTwoPlayerMatch();
         $submit = app(SubmitV2MatchResultAction::class);
         $submit->execute($match, $p1->id, MatchOutcome::WIN);
@@ -1330,6 +1379,11 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertSee('id="conflict-dispute-title"', escape: false)
             ->set('disputeReason', 'I won the match and want the admin to review the final score.')
             ->call('submitDisputeStatement')
+            ->assertHasErrors(['evidenceFile' => 'required'])
+            ->assertSee('Please upload a screenshot before submitting your dispute.')
+            ->assertDontSee('Unable to submit your dispute details.')
+            ->set('evidenceFile', UploadedFile::fake()->image('first-score.png'))
+            ->call('submitDisputeStatement')
             ->assertHasNoErrors()
             ->assertSee('Your dispute response has been submitted.')
             ->assertDontSee('id="conflict-dispute-title"', escape: false);
@@ -1343,17 +1397,21 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertSee('Submit dispute details')
             ->assertDontSee('Disputes (')
             ->call('submitDisputeStatement')
+            ->assertHasErrors(['evidenceFile' => 'required'])
+            ->assertSee('Please upload a screenshot before submitting your dispute.')
+            ->set('evidenceFile', UploadedFile::fake()->image('second-score.png'))
+            ->call('submitDisputeStatement')
             ->assertHasNoErrors()
             ->assertSee('Your dispute response has been submitted.');
 
         self::assertDatabaseCount('match_evidence', 2);
         self::assertDatabaseHas('match_evidence', [
             'uploaded_by' => $p2->id,
-            'file_path' => null,
             'reason' => null,
         ]);
         foreach ($match->disputes()->firstOrFail()->evidence as $evidence) {
-            self::assertNull($evidence->file_path);
+            self::assertNotNull($evidence->file_path);
+            Storage::disk('public')->assertExists($evidence->file_path);
         }
     }
 
@@ -1842,6 +1900,72 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertTrue(Tournament::query()->forPlatform($this->platform->id)->whereKey($tournament->id)->exists());
     }
 
+    #[DataProvider('netherlandsScheduleDates')]
+    public function test_admin_creation_and_added_slots_store_netherlands_schedules_as_utc(string $date, string $utcStart, string $utcAddedStart): void
+    {
+        $this->travelTo(CarbonImmutable::parse($date.' 10:00:00', 'UTC'));
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Europe/Amsterdam']);
+
+        $this->actingAs($this->admin)->post(
+            route('admin.tournaments.v2.store'),
+            $this->multiPlatformPayload([$this->platform->id]),
+        )->assertSessionHasNoErrors()->assertRedirect();
+
+        $tournament = Tournament::query()->firstOrFail();
+        $template = $tournament->template;
+        $slot = $template->scheduleSlots()->firstOrFail();
+        self::assertSame($date.' '.$utcStart, $slot->schedule_start_at->utc()->format('Y-m-d H:i:s'));
+        self::assertSame($date.' '.$utcStart, $tournament->start_at->utc()->format('Y-m-d H:i:s'));
+        self::assertSame('23:00', $tournament->start_at->copy()->setTimezone('Europe/Amsterdam')->format('H:i'));
+        self::assertSame('23:59', $slot->schedule_end_at->copy()->setTimezone('Europe/Amsterdam')->format('H:i'));
+
+        $this->post(route('admin.tournaments.v2.templates.slots.store', $template), [
+            'schedule_start_at' => $date.'T22:00',
+            'schedule_end_at' => now()->addDay()->format('Y-m-d').'T23:59',
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $addedSlot = $template->scheduleSlots()->reorder()->latest('id')->firstOrFail();
+        $addedOccurrence = $addedSlot->occurrences()->firstOrFail();
+        self::assertSame($date.' '.$utcAddedStart, $addedSlot->schedule_start_at->utc()->format('Y-m-d H:i:s'));
+        self::assertSame($date.' '.$utcAddedStart, $addedOccurrence->start_at->utc()->format('Y-m-d H:i:s'));
+        self::assertSame('23:59', $addedSlot->schedule_end_at->copy()->setTimezone('Europe/Amsterdam')->format('H:i'));
+    }
+
+    #[DataProvider('netherlandsScheduleDates')]
+    public function test_existing_utc_schedules_move_to_the_same_wall_clock_time_in_netherlands(string $date, string $utcStart, string $utcAddedStart): void
+    {
+        $this->travelTo(CarbonImmutable::parse($date.' 10:00:00', 'UTC'));
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'UTC']);
+        $this->actingAs($this->admin)->post(
+            route('admin.tournaments.v2.store'),
+            $this->multiPlatformPayload([$this->platform->id]),
+        )->assertSessionHasNoErrors();
+
+        $tournament = Tournament::query()->firstOrFail();
+        $template = $tournament->template;
+        $template->update(['next_run_at' => now()->subDay()->setTime(23, 0)]);
+        $convert = app(ConvertTournamentSchedulesTimezoneAction::class);
+        $convert->execute('UTC', 'Europe/Amsterdam');
+        $convert->execute('UTC', 'Europe/Amsterdam');
+
+        $tournament->refresh();
+        $slot = $template->scheduleSlots()->firstOrFail();
+        self::assertSame('Europe/Amsterdam', $tournament->timezone);
+        self::assertSame($date.' '.$utcStart, $tournament->start_at->utc()->format('Y-m-d H:i:s'));
+        self::assertSame($date.' '.$utcStart, $slot->schedule_start_at->utc()->format('Y-m-d H:i:s'));
+        self::assertSame('23:00', $tournament->start_at->copy()->setTimezone('Europe/Amsterdam')->format('H:i'));
+        self::assertSame('23:59', $slot->schedule_end_at->copy()->setTimezone('Europe/Amsterdam')->format('H:i'));
+        self::assertSame('23:00', $template->fresh()->next_run_at->setTimezone('Europe/Amsterdam')->format('H:i'));
+    }
+
+    public static function netherlandsScheduleDates(): array
+    {
+        return [
+            'summer time' => ['2026-09-12', '21:00:00', '20:00:00'],
+            'winter time' => ['2026-12-12', '22:00:00', '21:00:00'],
+        ];
+    }
+
     private function multiPlatformPayload(array $ids, string $type = 'tournament'): array
     {
         return [
@@ -1888,9 +2012,9 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertSee('Submit Match Results');
     }
 
-    private function activeTwoPlayerMatch(array $slotOverrides = []): array
+    private function activeTwoPlayerMatch(array $slotOverrides = [], CompetitionType $type = CompetitionType::TOURNAMENT): array
     {
-        $template = $this->template('daily', 4, '23:59', $slotOverrides);
+        $template = $this->template('daily', $type === CompetitionType::HEAD_TO_HEAD ? 2 : 4, '23:59', $slotOverrides, $type);
         $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
         $p1 = $this->user('result1@example.com', 'result1', 'PLAYER');
         $p2 = $this->user('result2@example.com', 'result2', 'PLAYER');
@@ -1932,12 +2056,13 @@ final class TournamentV2WorkflowTest extends TestCase
         $this->assertDatabaseHas('tournaments', ['id' => $occurrence->id]);
     }
 
-    private function template(string $frequency, int $maximum, string $time, array $slot = [])
+    private function template(string $frequency, int $maximum, string $time, array $slot = [], CompetitionType $type = CompetitionType::TOURNAMENT)
     {
         return app(CreateV2TournamentTemplateAction::class)->execute([
             'game_id' => $this->game->id,
             'platform_id' => $this->platform->id,
             'name' => 'V2 Tournament',
+            'competition_type' => $type->value,
             'frequency' => $frequency,
             'timezone' => 'UTC',
             'max_teams' => $maximum,

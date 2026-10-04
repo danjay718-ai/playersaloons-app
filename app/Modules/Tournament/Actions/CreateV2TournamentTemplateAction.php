@@ -9,6 +9,7 @@ use App\Modules\Tournament\Models\TournamentScheduleSlot;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Tournament\Support\CompetitionPlatforms;
 use App\Shared\Enums\CompetitionType;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use LogicException;
@@ -106,8 +107,12 @@ final class CreateV2TournamentTemplateAction
                     'identity_key' => $this->slotIdentity((string) $data['frequency'], $slot),
                     'label' => $slot['label'] ?? null,
                     'local_start_time' => $slot['local_start_time'],
-                    'schedule_start_at' => $slot['schedule_start_at'] ?? null,
-                    'schedule_end_at' => $slot['schedule_end_at'] ?? null,
+                    'schedule_start_at' => isset($slot['schedule_start_at'])
+                        ? CarbonImmutable::parse($slot['schedule_start_at'], $template->timezone)->utc()
+                        : null,
+                    'schedule_end_at' => isset($slot['schedule_end_at'])
+                        ? CarbonImmutable::parse($slot['schedule_end_at'], $template->timezone)->utc()
+                        : null,
                     'day_of_week' => $slot['day_of_week'] ?? null,
                     'day_of_month' => $slot['day_of_month'] ?? null,
                     'overrides_json' => $overrides ?: null,

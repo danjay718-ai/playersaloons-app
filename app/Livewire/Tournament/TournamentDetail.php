@@ -423,6 +423,7 @@ class TournamentDetail extends Component
         $secondPlacePrize = null;
         $awaitingNextMatch = false;
         $currentMatch = null;
+        $currentMatchHasSubmittedResult = false;
         $displayMatch = null;
         if ($user && $userRegistration) {
             // Always expose the participant's actionable match on the overview.
@@ -443,7 +444,14 @@ class TournamentDetail extends Component
                 ])
                 ->with('round:id,round_number')
                 ->latest('updated_at')
-                ->first(['id', 'uuid', 'round_id', 'status', 'updated_at']);
+                ->first(['id', 'uuid', 'round_id', 'status', 'active_attempt_number', 'updated_at']);
+
+            if ($currentMatch !== null && (int) $tournament->workflow_version === 2) {
+                $currentMatchHasSubmittedResult = $currentMatch->attempts()
+                    ->where('attempt_number', $currentMatch->active_attempt_number)
+                    ->whereHas('submissions', fn ($query) => $query->where('registration_id', $userRegistration->id))
+                    ->exists();
+            }
 
             $participantMatches = GameMatch::query()
                 ->where('tournament_id', $tournament->id)
@@ -579,6 +587,7 @@ class TournamentDetail extends Component
             'secondPlacePrize' => $secondPlacePrize,
             'awaitingNextMatch' => $awaitingNextMatch,
             'currentMatch' => $currentMatch,
+            'currentMatchHasSubmittedResult' => $currentMatchHasSubmittedResult,
             'displayMatch' => $displayMatch,
             'streamService' => $streamService,
             'canCancelRegistration' => $canCancelRegistration,

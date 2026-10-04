@@ -50,9 +50,6 @@
                     </fieldset>
                     <div class="flex items-start pt-6"><a x-show="gameId" :href="games[gameId]?.defaults_url" class="v2-secondary-button w-full whitespace-nowrap">Edit game defaults</a></div>
                 <div class="md:col-span-2 lg:col-span-3"><label class="v2-field-label">{{ ($h2h ?? false) ? 'Head-to-Head name' : 'Tournament name' }} <span class="text-red-400">*</span></label><input name="name" value="{{ old('name') }}" maxlength="255" placeholder="{{ ($h2h ?? false) ? 'e.g. Evening 1v1' : 'e.g. Friday Night Championship' }}" class="v2-field" required>@error('name')<p class="v2-field-error">{{ $message }}</p>@enderror</div>
-                    <div class="md:col-span-2 lg:col-span-3"><x-forms.controller-image-crop-upload name="banner" :label="($h2h ?? false) ? 'Head-to-Head banner' : 'Tournament banner'" :width="960" :height="540" :current-url="$initialBannerUrl" :preview-binding="'games[gameId]?.banner_url'" help="Separate from the game logo and game banner. A new cropped upload overrides the selected game's template banner." /></div>
-                    <div class="md:col-span-2 lg:col-span-3"><x-forms.quill-editor name="description" label="Description" :value="old('description', '')" placeholder="Explain the tournament format and what players can expect." /></div>
-                    <div class="md:col-span-2 lg:col-span-3"><x-forms.quill-editor name="rules" :label="($h2h ?? false) ? 'Head-to-Head rules' : 'Tournament rules'" :value="old('rules', '')" :placeholder="($h2h ?? false) ? 'Add rules specific to this 1v1 competition.' : 'Add rules specific to this tournament.'" /></div>
                 </div>
             </section>
 
@@ -72,6 +69,20 @@
                     <div><label class="v2-field-label">Result response time</label><div class="v2-input-suffix"><input name="waiting_result_time" value="{{ old('waiting_result_time', 5) }}" type="number" min="1" max="120" class="v2-field" required><span>minutes</span></div><p class="v2-field-help">{{ ($h2h ?? false) ? 'Default 5 minutes. After the first result, an unanswered opponent loses when this timer expires.' : 'Time allowed for the opponent to submit their result.' }}</p>@error('waiting_result_time')<p class="v2-field-error">{{ $message }}</p>@enderror</div>
                     <div><label class="v2-field-label">Round duration <span class="normal-case text-slate-500">(optional)</span></label><div class="v2-input-suffix"><input name="round_duration_value" value="{{ old('round_duration_value') }}" type="number" min="1" placeholder="No timer" class="v2-field"><select name="round_duration_unit"><option value="">Unit</option><option value="minutes">Minutes</option><option value="hours">Hours</option><option value="days">Days</option></select></div></div>
                 </div>
+            </section>
+
+            <section class="v2-card">
+                <div class="v2-section-heading"><div><h2>{{ __('Tournament description') }}</h2></div></div>
+                <x-forms.quill-editor name="description" label="Description" :value="old('description', '')" height="h-72" :scroll-controls="true" placeholder="Explain the tournament format and what players can expect." />
+            </section>
+
+            <section class="v2-card">
+                <div class="v2-section-heading"><div><h2>{{ ($h2h ?? false) ? 'Head-to-Head rules' : 'Tournament rules' }}</h2></div></div>
+                <x-forms.quill-editor name="rules" :label="($h2h ?? false) ? 'Head-to-Head rules' : 'Tournament rules'" :value="old('rules', '')" height="h-72" :scroll-controls="true" :placeholder="($h2h ?? false) ? 'Add rules specific to this 1v1 competition.' : 'Add rules specific to this tournament.'" />
+            </section>
+
+            <section class="v2-card">
+                <x-forms.controller-image-crop-upload name="banner" :label="($h2h ?? false) ? 'Head-to-Head banner' : 'Tournament banner'" :width="960" :height="540" :current-url="$initialBannerUrl" :preview-binding="'games[gameId]?.banner_url'" preview-class="w-full max-w-xs" help="Separate from the game logo and game banner. A new cropped upload overrides the selected game's template banner." />
             </section>
 
             <section class="v2-card">

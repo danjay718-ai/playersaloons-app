@@ -156,12 +156,12 @@
 
             <!-- Sidebar Footer -->
             @php
-                $adminClockTimezone = app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value();
+                $adminClockTimezone = 'Europe/Amsterdam';
                 $adminClockNow = now($adminClockTimezone)->toIso8601String();
             @endphp
             <div class="p-4 border-t border-slate-800 bg-[#0b0f19]/50 space-y-2">
                 <div x-data="systemClock(@js(['now' => $adminClockNow, 'timezone' => $adminClockTimezone]))" x-init="init()" class="rounded-lg border border-slate-800/70 bg-slate-900/40 px-4 py-2.5">
-                    <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-indigo-300"><i data-lucide="clock-3" class="h-3.5 w-3.5"></i>Tournament System Time</div>
+                    <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-indigo-300"><i data-lucide="clock-3" class="h-3.5 w-3.5"></i>Netherlands Time</div>
                     <p class="mt-1 font-mono text-sm font-bold text-slate-100" x-text="time"></p>
                     <p class="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500"><span x-text="date"></span> · {{ $adminClockTimezone }}</p>
                 </div>
@@ -319,7 +319,7 @@
 
             <div class="p-4 border-t border-slate-800 bg-[#0b0f19]/50 space-y-2">
                 <div x-data="systemClock(@js(['now' => $adminClockNow, 'timezone' => $adminClockTimezone]))" x-init="init()" class="rounded-lg border border-slate-800/70 bg-slate-900/40 px-4 py-2.5">
-                    <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-indigo-300"><i data-lucide="clock-3" class="h-3.5 w-3.5"></i>Tournament System Time</div>
+                    <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-indigo-300"><i data-lucide="clock-3" class="h-3.5 w-3.5"></i>Netherlands Time</div>
                     <p class="mt-1 font-mono text-sm font-bold text-slate-100" x-text="time"></p>
                     <p class="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500"><span x-text="date"></span> · {{ $adminClockTimezone }}</p>
                 </div>

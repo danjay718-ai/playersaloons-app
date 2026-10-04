@@ -6,6 +6,7 @@ namespace App\Modules\Tournament\Actions;
 
 use App\Modules\Tournament\Models\TournamentScheduleSlot;
 use App\Modules\Tournament\Models\TournamentTemplate;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use LogicException;
@@ -45,8 +46,8 @@ final class AddV2TournamentScheduleSlotAction
                 'identity_key' => $identity,
                 'label' => $data['label'] ?? null,
                 'local_start_time' => $data['local_start_time'],
-                'schedule_start_at' => $data['schedule_start_at'],
-                'schedule_end_at' => $data['schedule_end_at'],
+                'schedule_start_at' => CarbonImmutable::parse($data['schedule_start_at'], $template->timezone)->utc(),
+                'schedule_end_at' => CarbonImmutable::parse($data['schedule_end_at'], $template->timezone)->utc(),
                 'day_of_week' => $data['day_of_week'] ?? null,
                 'day_of_month' => $data['day_of_month'] ?? null,
                 'overrides_json' => $overrides ?: null,

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Tournament\Actions\ConvertTournamentSchedulesTimezoneAction;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use DateTimeZone;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SystemSettingsAdmin extends AdminComponent
 {
@@ -27,7 +29,7 @@ class SystemSettingsAdmin extends AdminComponent
 
     public int $defaultWaitingResultTime = 30;
 
-    public string $tournamentTimezone = 'UTC';
+    public string $tournamentTimezone = 'Europe/Amsterdam';
 
     public bool $showLanguageSwitcherGuest = false;
 
@@ -69,7 +71,7 @@ class SystemSettingsAdmin extends AdminComponent
         );
 
         $this->defaultWaitingResultTime = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
-        $this->tournamentTimezone = (string) (SystemSetting::query()->where('key', 'tournament.timezone')->value('value') ?? config('app.tournament_timezone', 'UTC'));
+        $this->tournamentTimezone = (string) (SystemSetting::query()->where('key', 'tournament.timezone')->value('value') ?? config('app.tournament_timezone', 'Europe/Amsterdam'));
 
         $langSettings = SystemSetting::query()->whereIn('key', ['language_switcher.show_guest', 'language_switcher.show_admin'])->pluck('value', 'key');
         $this->showLanguageSwitcherGuest = filter_var($langSettings['language_switcher.show_guest'] ?? false, FILTER_VALIDATE_BOOL);
@@ -84,21 +86,26 @@ class SystemSettingsAdmin extends AdminComponent
         $this->disputeNotificationName = (string) ($notificationSettings['notifications.dispute_name'] ?? 'PlayerSaloons Disputes');
     }
 
-    public function saveTournamentSettings(): void
+    public function saveTournamentSettings(ConvertTournamentSchedulesTimezoneAction $convertSchedules): void
     {
         $this->authorizeManagement();
         $this->validate([
             'defaultWaitingResultTime' => ['required', 'integer', 'min:1', 'max:1440'],
             'tournamentTimezone' => ['required', 'timezone'],
         ]);
-        SystemSetting::query()->updateOrCreate(
-            ['key' => 'tournament.waiting_result_time_default'],
-            ['value' => (string) $this->defaultWaitingResultTime, 'updated_by' => Auth::id()]
-        );
-        SystemSetting::query()->updateOrCreate(
-            ['key' => 'tournament.timezone'],
-            ['value' => $this->tournamentTimezone, 'updated_by' => Auth::id()]
-        );
+        $previousTimezone = (string) (SystemSetting::query()->where('key', 'tournament.timezone')->value('value')
+            ?? config('app.tournament_timezone', 'Europe/Amsterdam'));
+        DB::transaction(function () use ($convertSchedules, $previousTimezone): void {
+            $convertSchedules->execute($previousTimezone, $this->tournamentTimezone);
+            SystemSetting::query()->updateOrCreate(
+                ['key' => 'tournament.waiting_result_time_default'],
+                ['value' => (string) $this->defaultWaitingResultTime, 'updated_by' => Auth::id()]
+            );
+            SystemSetting::query()->updateOrCreate(
+                ['key' => 'tournament.timezone'],
+                ['value' => $this->tournamentTimezone, 'updated_by' => Auth::id()]
+            );
+        });
         session()->flash('success', 'Tournament timing settings updated.');
     }
 

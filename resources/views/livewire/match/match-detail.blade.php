@@ -189,7 +189,7 @@
                 @if($isResultConflict && $activeDispute)
                     <div data-match-content="dispute" role="alert" class="rounded-xl border border-red-500/40 bg-red-950/25 p-5 text-red-100">
                         <div class="flex items-center gap-2 text-sm font-bold"><i data-lucide="shield-alert" class="h-5 w-5"></i>Result conflict detected</div>
-                        <p class="mt-2 text-xs leading-relaxed text-red-100/80">{{ __('The players submitted conflicting results. Both players may provide a reason or screenshot for admin review.') }}</p>
+                        <p class="mt-2 text-xs leading-relaxed text-red-100/80">{{ __('The results conflict. Upload a screenshot for admin review. You may also provide a written reason.') }}</p>
                         @if($isParticipant && ! $hasSubmittedDisputeEvidence)
                             <button type="button" @click="$dispatch('open-dispute-statement')" class="mt-4 rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-500">Submit dispute details</button>
                         @elseif($isParticipant)
@@ -563,7 +563,7 @@
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <h2 id="conflict-dispute-title" class="font-orbitron text-lg font-bold text-white">Result conflict detected</h2>
-                        <p class="mt-2 text-xs leading-relaxed text-zinc-300">{{ __('The results conflict. You may submit a written reason, a screenshot, both, or continue without attachments.') }}</p>
+                        <p class="mt-2 text-xs leading-relaxed text-zinc-300">{{ __('The results conflict. Upload a screenshot for admin review. You may also provide a written reason.') }}</p>
                     </div>
                 </div>
                 <form wire:submit.prevent="submitDisputeStatement" class="mt-5 space-y-4">
@@ -574,8 +574,8 @@
                         @error('disputeReason') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="conflict-dispute-proof" class="mb-2 block text-xs font-bold text-zinc-200">Screenshot proof <span class="font-normal text-zinc-500">(optional)</span></label>
-                        <input id="conflict-dispute-proof" wire:model="evidenceFile" type="file" accept="image/png,image/jpeg,image/webp" class="block w-full rounded-xl border border-zinc-700 bg-zinc-950 p-2.5 text-xs text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-red-600 file:px-3 file:py-2 file:font-bold file:text-white">
+                        <label for="conflict-dispute-proof" class="mb-2 block text-xs font-bold text-zinc-200">{{ __('Screenshot proof (required)') }}</label>
+                        <input id="conflict-dispute-proof" wire:model="evidenceFile" type="file" required accept="image/png,image/jpeg,image/webp" class="block w-full rounded-xl border border-zinc-700 bg-zinc-950 p-2.5 text-xs text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-red-600 file:px-3 file:py-2 file:font-bold file:text-white">
                         <p class="mt-1 text-[11px] text-zinc-500">PNG, JPG, or WEBP; up to 2 MB.</p>
                         <p wire:loading wire:target="evidenceFile" class="mt-2 text-xs font-semibold text-amber-300">Uploading screenshot…</p>
                         @error('evidenceFile') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
