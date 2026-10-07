@@ -93,5 +93,15 @@
     "Scroll to bottom": "Scroll naar beneden",
     "Tournament description": "Toernooibeschrijving",
     "Join Competition": "Deelnemen aan competitie",
-    "Waiting for your result": "Wachten op jouw resultaat"
+    "Waiting for your result": "Wachten op jouw resultaat",
+    ":language translation": ":language vertaling",
+    "Choose a language to edit its translations. Sync Database adds public content to the phrase list.": "Kies een taal om de vertalingen te bewerken. Database synchroniseren voegt openbare inhoud toe aan de lijst met teksten.",
+    "Database phrases synced.": "Databaseteksten gesynchroniseerd.",
+    "English phrase": "Engelse tekst",
+    "Search English or translated text...": "Zoek Engelse of vertaalde tekst...",
+    "Sync Database": "Database synchroniseren",
+    "Translation languages": "Vertaaltalen",
+    "Show/hide languages": "Talen tonen/verbergen",
+    "Choose which language tabs to display.": "Kies welke taaltabbladen je wilt weergeven.",
+    "Show all languages": "Alle talen tonen"
 }

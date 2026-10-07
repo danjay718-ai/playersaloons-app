@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Http\Middleware\EnsureNotComplianceBlocked;
+use App\Modules\CMS\Models\GameHeadToHeadDefault;
+use App\Modules\CMS\Models\GameTournamentDefault;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Policies\KycPolicy;
 use App\Modules\Identity\Policies\UserPolicy;
+use App\Modules\Localization\Observers\CompetitionTranslationObserver;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Policies\DisputePolicy;
@@ -16,6 +19,8 @@ use App\Modules\Match\Policies\MatchPolicy;
 use App\Modules\Team\Models\Team;
 use App\Modules\Team\Policies\TeamPolicy;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Models\TournamentScheduleSlot;
+use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Tournament\Policies\TournamentPolicy;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Models\Withdrawal;
@@ -72,6 +77,10 @@ class AppServiceProvider extends ServiceProvider
 
             return false;
         });
+
+        foreach ([Tournament::class, TournamentTemplate::class, TournamentScheduleSlot::class, GameTournamentDefault::class, GameHeadToHeadDefault::class] as $modelClass) {
+            $modelClass::observe(CompetitionTranslationObserver::class);
+        }
 
         // Register modular policies
         Gate::policy(Tournament::class, TournamentPolicy::class);

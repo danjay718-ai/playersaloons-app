@@ -4,12 +4,26 @@ declare(strict_types=1);
 
 namespace App\Modules\Localization\Services;
 
+use App\Modules\CMS\Models\CmsPageTranslation;
+use App\Modules\CMS\Models\GameHeadToHeadDefault;
+use App\Modules\CMS\Models\GameTournamentDefault;
+use App\Modules\CMS\Models\GameTranslation;
+use App\Modules\CMS\Models\LandingSection;
+use App\Modules\CMS\Models\LandingSectionItem;
+use App\Modules\CMS\Models\PolicyPage;
+use App\Modules\CMS\Models\PublicNavigationItem;
 use App\Modules\Localization\Models\TranslationString;
+use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Models\TournamentScheduleSlot;
+use App\Modules\Tournament\Models\TournamentTemplate;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 
 final class TranslationCatalogService
 {
+    public function __construct(private readonly ContentTranslationSegments $segments) {}
+
     /**
      * @return array<string, array{native: string, english: string}>
      */
@@ -57,6 +71,88 @@ final class TranslationCatalogService
         $this->createMissingLocaleRows();
 
         return $synced;
+    }
+
+    public function syncFromDatabaseContent(): int
+    {
+        // Import public, staff-managed copy only; never private or player-authored data.
+        $sources = [
+            [LandingSection::query(), ['title', 'subtitle', 'body', 'cta_label']],
+            [LandingSectionItem::query(), ['title', 'subtitle', 'body', 'label']],
+            [PolicyPage::query(), ['title', 'summary', 'content']],
+            [PublicNavigationItem::query(), ['label']],
+            [GameTranslation::query()->where('locale', 'en')->whereHas('game'), ['name', 'description']],
+            [CmsPageTranslation::query()->where('locale', 'en')->whereHas('page'), ['title', 'excerpt', 'content']],
+        ];
+        $content = [];
+        foreach ($sources as [$query, $fields]) {
+            foreach ($query->select($fields)->cursor() as $record) {
+                foreach ($fields as $field) {
+                    $content[] = $record->getAttribute($field);
+                }
+            }
+        }
+        $count = $this->syncContent($content);
+        foreach ([Tournament::class, TournamentTemplate::class, TournamentScheduleSlot::class, GameTournamentDefault::class, GameHeadToHeadDefault::class] as $modelClass) {
+            foreach ($modelClass::query()->cursor() as $record) {
+                $count += $this->syncCompetitionContent($record);
+            }
+        }
+
+        return $count;
+    }
+
+    public function syncCompetitionContent(Model $model): int
+    {
+        $content = [];
+        foreach (['name', 'description', 'rules'] as $field) {
+            // Read attributes explicitly: Tournament also has a rules relationship.
+            $content[] = $model->getAttributes()[$field] ?? null;
+        }
+        foreach (['settings_json', 'overrides_json'] as $field) {
+            $settings = $model->getAttribute($field);
+            if (is_array($settings)) {
+                foreach (['name', 'description', 'rules'] as $key) {
+                    $content[] = $settings[$key] ?? null;
+                }
+            }
+        }
+
+        return $this->syncContent($content);
+    }
+
+    /** @param iterable<mixed> $content */
+    public function syncContent(iterable $content): int
+    {
+        $phrases = [];
+        foreach ($content as $text) {
+            if (is_string($text)) {
+                foreach ($this->segments->phrases($text) as $phrase) {
+                    $phrases[$phrase] = true;
+                }
+            }
+        }
+        $rows = [];
+        $now = now();
+        foreach (array_keys($phrases) as $phrase) {
+            foreach (array_keys($this->supportedLanguages()) as $locale) {
+                $rows[] = [
+                    'key' => $phrase,
+                    'locale' => $locale,
+                    'text' => $locale === 'en' ? $phrase : null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+        $count = 0;
+        foreach (array_chunk($rows, 100) as $batch) {
+            // The unique key protects simultaneous saves too. Keep existing values
+            // and soft-deleted phrases intact; only insert genuinely new rows.
+            $count += TranslationString::query()->insertOrIgnore($batch);
+        }
+
+        return $count;
     }
 
     public function createMissingLocaleRows(): void
@@ -112,6 +208,16 @@ final class TranslationCatalogService
                 ['text' => $values[$locale] ?? null],
             );
         }
+    }
+
+    public function saveTranslation(string $key, string $locale, ?string $text): void
+    {
+        abort_unless(array_key_exists($locale, $this->supportedLanguages()), 422);
+
+        TranslationString::query()->updateOrCreate(
+            ['key' => $key, 'locale' => $locale],
+            ['text' => $text],
+        );
     }
 
     public function deleteKey(string $key): void

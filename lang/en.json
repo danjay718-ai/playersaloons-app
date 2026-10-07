@@ -122,5 +122,15 @@
     "Scroll to bottom": "Scroll to bottom",
     "Tournament description": "Tournament description",
     "Join Competition": "Join Competition",
-    "Waiting for your result": "Waiting for your result"
+    "Waiting for your result": "Waiting for your result",
+    ":language translation": ":language translation",
+    "Choose a language to edit its translations. Sync Database adds public content to the phrase list.": "Choose a language to edit its translations. Sync Database adds public content to the phrase list.",
+    "Database phrases synced.": "Database phrases synced.",
+    "English phrase": "English phrase",
+    "Search English or translated text...": "Search English or translated text...",
+    "Sync Database": "Sync Database",
+    "Translation languages": "Translation languages",
+    "Show/hide languages": "Show/hide languages",
+    "Choose which language tabs to display.": "Choose which language tabs to display.",
+    "Show all languages": "Show all languages"
 }

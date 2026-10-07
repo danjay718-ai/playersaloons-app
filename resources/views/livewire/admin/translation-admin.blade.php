@@ -12,12 +12,16 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <h2 class="text-sm font-extrabold uppercase tracking-widest text-slate-200">Translation Manager</h2>
-                <p class="mt-1 text-xs text-slate-500">Edit app UI words from the database and export them back to Laravel JSON translation files.</p>
+                <p class="mt-1 text-xs text-slate-500">Choose a language to edit its translations. Sync Database adds public content to the phrase list.</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <button type="button" wire:click="syncFromJson" class="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-indigo-500/50 hover:text-white">
                     <i data-lucide="refresh-cw" class="h-4 w-4"></i>
                     Sync JSON
+                </button>
+                <button type="button" wire:click="syncFromDatabase" class="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-indigo-500/50 hover:text-white">
+                    <i data-lucide="database" class="h-4 w-4"></i>
+                    Sync Database
                 </button>
                 <button type="button" wire:click="exportJson" class="inline-flex items-center gap-2 rounded-lg border border-emerald-700/50 bg-emerald-950/30 px-3 py-2 text-xs font-semibold text-emerald-300 hover:border-emerald-500/70 hover:text-white">
                     <i data-lucide="download" class="h-4 w-4"></i>
@@ -39,19 +43,10 @@
 
     <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div class="rounded-xl border border-slate-800 bg-[#0f172a] p-4">
-            <div class="grid gap-3 md:grid-cols-[1fr_180px_auto] md:items-end">
+            <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
                 <div>
                     <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Search</label>
-                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search translation key or English text..." class="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Locale</label>
-                    <select wire:model.live="localeFilter" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
-                        <option value="all">All locales</option>
-                        @foreach($languages as $locale => $language)
-                            <option value="{{ $locale }}">{{ strtoupper($locale) }} - {{ $language['native'] }}</option>
-                        @endforeach
-                    </select>
+                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search English or translated text..." class="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
                 </div>
                 <label class="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300">
                     <input type="checkbox" wire:model.live="missingOnly" class="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500">
@@ -72,59 +67,71 @@
         </form>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        @foreach($missingCounts as $locale => $count)
-            <button type="button" wire:click="$set('localeFilter', '{{ $locale }}')" class="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-left">
-                <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ strtoupper($locale) }} missing</span>
-                <span class="mt-1 block text-lg font-extrabold text-slate-100">{{ $count }}</span>
+    <details class="rounded-xl border border-slate-800 bg-[#0f172a] p-4">
+        <summary class="cursor-pointer text-sm font-semibold text-slate-200">{{ __('Show/hide languages') }}</summary>
+        <p class="mt-3 text-xs text-slate-500">{{ __('Choose which language tabs to display.') }}</p>
+        <div class="mt-3 flex flex-wrap gap-3">
+            @foreach($languages as $locale => $language)
+                <label class="flex items-center gap-2 text-sm text-slate-300">
+                    <input type="checkbox" wire:click="toggleLanguage('{{ $locale }}')" @checked(!in_array($locale, $hiddenLanguages, true)) @disabled($locale === 'en') class="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50">
+                    {{ $language['english'] }}
+                </label>
+            @endforeach
+        </div>
+        <button type="button" wire:click="showAllLanguages" class="mt-4 text-xs font-semibold text-indigo-300 hover:text-white">{{ __('Show all languages') }}</button>
+    </details>
+
+    <nav aria-label="Translation languages" class="flex gap-2 overflow-x-auto rounded-xl border border-slate-800 bg-[#0f172a] p-3">
+        @foreach($visibleLanguages as $locale => $language)
+            <button type="button" data-translation-language="{{ $locale }}" wire:click="$set('localeFilter', '{{ $locale }}')" aria-current="{{ $localeFilter === $locale ? 'page' : 'false' }}" @class([
+                'shrink-0 rounded-lg border px-4 py-2 text-sm font-semibold transition',
+                'border-indigo-500 bg-indigo-600/20 text-indigo-200' => $localeFilter === $locale,
+                'border-slate-800 bg-slate-900 text-slate-400 hover:text-white' => $localeFilter !== $locale,
+            ])>
+                {{ $language['english'] }}
+                @if(($missingCounts[$locale] ?? 0) > 0)
+                    <span class="ml-2 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-300">{{ $missingCounts[$locale] }}</span>
+                @endif
             </button>
         @endforeach
-    </div>
+    </nav>
 
     <div class="overflow-hidden rounded-xl border border-slate-800 bg-[#0f172a]">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[980px] text-left text-xs">
+            <table class="w-full min-w-[540px] table-fixed text-left text-xs">
                 <thead>
                     <tr class="border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        <th class="p-4">Key / English</th>
-                        @foreach($languages as $locale => $language)
-                            @if($locale !== 'en')
-                                <th class="p-4">{{ strtoupper($locale) }}</th>
-                            @endif
-                        @endforeach
-                        <th class="p-4 text-right">Actions</th>
+                        <th class="p-4">English</th>
+                        <th class="p-4">{{ __(':language translation', ['language' => $languages[$localeFilter]['english']]) }}</th>
+                        <th class="w-28 p-4 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
                     @forelse($keys as $keyRow)
                         @php($row = $rows->get($keyRow->key, collect())->keyBy('locale'))
                         <tr class="hover:bg-slate-900/40">
-                            <td class="max-w-xs p-4 align-top">
-                                <p class="font-semibold text-slate-200">{{ $row->get('en')?->text ?? $keyRow->key }}</p>
-                                <p class="mt-1 truncate font-mono text-[10px] text-slate-600">{{ $keyRow->key }}</p>
+                            <td class="break-words p-4 align-top">
+                                <p translate="no" class="font-semibold text-slate-200">{{ $row->get('en')?->text ?? $keyRow->key }}</p>
+                                <p translate="no" class="mt-1 truncate font-mono text-[10px] text-slate-600">{{ $keyRow->key }}</p>
                             </td>
-                            @foreach($languages as $locale => $language)
-                                @if($locale !== 'en')
-                                    @php($value = $row->get($locale)?->text)
-                                    <td class="max-w-[180px] p-4 align-top">
-                                        @if($value)
-                                            <span class="line-clamp-2 text-slate-350">{{ $value }}</span>
-                                        @else
-                                            <span class="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-300">Missing</span>
-                                        @endif
-                                    </td>
+                            @php($value = $row->get($localeFilter)?->text)
+                            <td class="break-words p-4 align-top">
+                                @if($value !== null && $value !== '')
+                                    <span translate="no" class="whitespace-pre-line text-slate-300">{{ $value }}</span>
+                                @else
+                                    <span class="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-300">Missing</span>
                                 @endif
-                            @endforeach
+                            </td>
                             <td class="p-4 text-right align-top">
-                                <button type="button" wire:click="editKey(@js($keyRow->key))" class="rounded-lg border border-indigo-900/50 bg-indigo-950/40 p-1.5 text-indigo-400 hover:text-white" title="Edit translations">
+                                <button type="button" wire:click="editKey(@js($keyRow->key))" class="rounded-lg border border-indigo-900/50 bg-indigo-950/40 p-1.5 text-indigo-400 hover:text-white" title="Edit translation">
                                     <i data-lucide="edit" class="h-4 w-4"></i>
                                 </button>
-                                <livewire:admin.recoverable-delete resource="translations" :record-id="\App\Modules\Localization\Models\TranslationString::where('key', $keyRow->key)->where('locale', 'en')->value('id')" :key="'delete-translation-'.$keyRow->key" />
+                                <livewire:admin.recoverable-delete resource="translations" :record-id="$keyRow->id" :key="'delete-translation-'.$keyRow->key" />
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ count($languages) + 1 }}" class="p-8 text-center text-slate-500">No translation keys found.</td>
+                            <td colspan="3" class="p-8 text-center text-slate-500">No translation keys found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -148,14 +155,15 @@
                 </div>
 
                 <div class="grid gap-4 p-5 md:grid-cols-2">
-                    @foreach($languages as $locale => $language)
-                        <div>
-                            <label class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                {{ strtoupper($locale) }} - {{ $language['native'] }}
-                            </label>
-                            <textarea wire:model="values.{{ $locale }}" rows="3" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"></textarea>
-                        </div>
-                    @endforeach
+                    <div>
+                        <p class="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">English phrase</p>
+                        <p translate="no" class="whitespace-pre-line break-words rounded-lg border border-slate-800 bg-slate-950 p-3 text-sm text-slate-300">{{ $rows->get($editingKey, collect())->firstWhere('locale', 'en')?->text ?? $editingKey }}</p>
+                    </div>
+                    <div>
+                        <label for="translation-value" class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ __(':language translation', ['language' => $languages[$editingLocale]['english']]) }}</label>
+                        <textarea id="translation-value" wire:model="values.{{ $editingLocale }}" rows="5" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"></textarea>
+                        @error('values.'.$editingLocale) <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    </div>
                 </div>
 
                 <div class="flex justify-end gap-2 border-t border-slate-800 p-5">

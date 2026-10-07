@@ -86,5 +86,15 @@
     "Select a game to see its supported platforms.": "Select a game to see its supported platforms.",
     "Select platforms supported by the selected game.": "Select platforms supported by the selected game.",
     "Your platform": "Your platform",
-    "Select a platform supported by this competition.": "Select a platform supported by this competition."
+    "Select a platform supported by this competition.": "Select a platform supported by this competition.",
+    ":language translation": ":languageの翻訳",
+    "Choose a language to edit its translations. Sync Database adds public content to the phrase list.": "翻訳を編集する言語を選択してください。データベースの同期で公開コンテンツが文言一覧に追加されます。",
+    "Database phrases synced.": "データベースの文言を同期しました。",
+    "English phrase": "英語の文言",
+    "Search English or translated text...": "英語または翻訳されたテキストを検索...",
+    "Sync Database": "データベースを同期",
+    "Translation languages": "翻訳言語",
+    "Show/hide languages": "言語を表示／非表示",
+    "Choose which language tabs to display.": "表示する言語タブを選択してください。",
+    "Show all languages": "すべての言語を表示"
 }

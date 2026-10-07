@@ -203,8 +203,10 @@ Managing user-facing UI phrases and locale JSON runtime files.
     *   `users.locale`: Stores the preferred locale for authenticated users.
 *   **Admin Workflow**:
     *   Click **Sync JSON** after developers add new `lang/en.json` keys in code.
-    *   Use search, locale filter, and **Missing only** to find untranslated phrases.
-    *   Click a row edit action to fill translations for all supported locales.
+    *   Choose a language tab to see English phrases alongside that language’s equivalents. Search matches English and the selected language; **Missing only** includes absent and empty translations.
+    *   Use **Show/hide languages** to hide unused language tabs or restore them with **Show all languages**. English stays visible. Visibility is remembered per admin in the current session and does not remove translations or change the site language selector.
+    *   Click a row edit action to edit only the selected language; saving preserves every other language.
+    *   Click **Sync Database** to import staff-managed landing content, navigation labels, policies, and English game/CMS copy into the existing phrase catalog. Long content is imported as individual sentences or line-separated phrases, with very long sentences split at word boundaries to fit the 500-character catalog key. The rendered HTML translator uses the same segmentation and preserves markup and spacing. Existing whole-text translations take precedence. Existing translations and deleted phrases are preserved. This imports phrases, but does not generate translations. Tournament and template names, descriptions, rules, schedule overrides, and game tournament/H2H defaults are included. New or updated competition content is added automatically when saved; repeated phrases reuse existing entries. Use Sync Database to backfill older content or changes made through bulk database updates.
     *   Click **Save & Export** so the database changes are written back to `lang/*.json`.
     *   Click **Fill Missing** when missing entries should be populated with English fallback text first; real translations can still be edited later.
 *   **Runtime Flow**:
@@ -216,6 +218,8 @@ Managing user-facing UI phrases and locale JSON runtime files.
 *   **Tests**:
     *   `tests/Feature/Admin/TranslationAdminTest.php`
     *   `tests/Feature/Localization/LanguageSwitchTest.php`
+    *   `tests/Feature/Localization/DatabaseContentTranslationTest.php`
+    *   `tests/Feature/Localization/CompetitionContentTranslationTest.php`
 
 ## 11. Contact Inquiries
 Managing support/contact messages submitted by guests and signed-in players.

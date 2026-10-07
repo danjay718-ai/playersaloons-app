@@ -86,5 +86,15 @@
     "Select a game to see its supported platforms.": "Select a game to see its supported platforms.",
     "Select platforms supported by the selected game.": "Select platforms supported by the selected game.",
     "Your platform": "Your platform",
-    "Select a platform supported by this competition.": "Select a platform supported by this competition."
+    "Select a platform supported by this competition.": "Select a platform supported by this competition.",
+    ":language translation": "Traducción en :language",
+    "Choose a language to edit its translations. Sync Database adds public content to the phrase list.": "Elige un idioma para editar sus traducciones. Sincronizar base de datos añade contenido público a la lista de frases.",
+    "Database phrases synced.": "Frases de la base de datos sincronizadas.",
+    "English phrase": "Frase en inglés",
+    "Search English or translated text...": "Buscar texto en inglés o traducido...",
+    "Sync Database": "Sincronizar base de datos",
+    "Translation languages": "Idiomas de traducción",
+    "Show/hide languages": "Mostrar/ocultar idiomas",
+    "Choose which language tabs to display.": "Elige qué pestañas de idioma mostrar.",
+    "Show all languages": "Mostrar todos los idiomas"
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Modules\Localization\Services\ContentTranslationSegments;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,6 +13,8 @@ final class TranslateRenderedHtml
 {
     /** @var array<int, string> */
     private array $protectedBlocks = [];
+
+    public function __construct(private readonly ContentTranslationSegments $segments) {}
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -86,8 +89,19 @@ final class TranslateRenderedHtml
     {
         $this->protectedBlocks = [];
 
-        return (string) preg_replace_callback(
+        $content = (string) preg_replace_callback(
             '#<(script|style|pre|code|textarea)\b[^>]*>.*?</\1>#is',
+            function (array $matches): string {
+                $token = '___PS_I18N_BLOCK_'.count($this->protectedBlocks).'___';
+                $this->protectedBlocks[$token] = $matches[0];
+
+                return $token;
+            },
+            $content
+        );
+
+        return (string) preg_replace_callback(
+            '#<([a-z][a-z0-9]*)\b(?=[^>]*\btranslate=["\']no["\'])[^>]*>.*?</\1>#is',
             function (array $matches): string {
                 $token = '___PS_I18N_BLOCK_'.count($this->protectedBlocks).'___';
                 $this->protectedBlocks[$token] = $matches[0];
@@ -149,16 +163,29 @@ final class TranslateRenderedHtml
 
     private function translateString(string $key): string
     {
-        $translated = __($key);
-
-        if (is_string($translated)) {
+        $decoded = html_entity_decode($key, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $translated = __($decoded);
+        // Prefer existing whole-text translations for backwards compatibility.
+        if (is_string($translated) && $translated !== $decoded) {
             return $translated;
         }
 
-        if (is_scalar($translated)) {
-            return (string) $translated;
+        $result = '';
+        foreach ($this->segments->split($decoded) as $segment) {
+            $phrase = trim($segment);
+            if ($phrase === '') {
+                $result .= $segment;
+
+                continue;
+            }
+            $value = __($phrase);
+            $leadingLength = strlen($segment) - strlen(ltrim($segment));
+            $trailingLength = strlen($segment) - strlen(rtrim($segment));
+            $result .= substr($segment, 0, $leadingLength)
+                .(is_string($value) ? $value : $phrase)
+                .($trailingLength > 0 ? substr($segment, -$trailingLength) : '');
         }
 
-        return $key;
+        return $result;
     }
 }
