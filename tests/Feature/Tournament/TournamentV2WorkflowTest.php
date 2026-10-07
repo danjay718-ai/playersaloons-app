@@ -43,6 +43,7 @@ use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use App\Modules\Tournament\Actions\VoteOnV2CancellationAction;
 use App\Modules\Tournament\Events\BroadcastTournamentUpdated;
 use App\Modules\Tournament\Jobs\NotifyV2CancellationVotersJob;
+use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentCancellationRequest;
 use App\Modules\Tournament\Models\TournamentRegistration;
@@ -893,34 +894,69 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(2, $assigned->sum(fn ($match) => (int) ($match->player_a_registration_id !== null) + (int) ($match->player_b_registration_id !== null)));
     }
 
-    public function test_random_advancement_preserves_byes_and_completes_every_round_without_duplicate_players(): void
+    #[DataProvider('tournamentPairingCounts')]
+    public function test_random_advancement_pairs_every_available_player_and_completes_without_duplicates(int $capacity, int $count): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-09-16 10:00:00', 'UTC'));
-        $template = $this->template('daily', 8, '10:05');
+        $template = $this->template('daily', $capacity, '10:05');
         $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= $count; $i++) {
             app(RegisterForV2TournamentAction::class)->execute($tournament->fresh(), $this->user("bye{$i}@example.com", "bye{$i}", 'PLAYER'), null, "bye{$i}");
         }
         $this->travelTo($tournament->start_at);
         $this->artisan('tournaments:reconcile-lifecycle')->assertSuccessful();
-        $rounds = $tournament->rounds()->orderBy('round_number')->get();
-        $firstRound = $rounds[0]->matches()->get();
-        self::assertSame(3, $firstRound->where('status', MatchStatus::COMPLETED)->count());
-        $this->completeV2Match($firstRound->firstWhere('status', MatchStatus::IN_PROGRESS));
+        $rounds = Round::query()->whereHas('bracket', fn ($query) => $query->where('tournament_id', $tournament->id))
+            ->orderBy('round_number')->get();
+        $expectedPlayers = $count;
+        $expectedRegistrations = $tournament->participants()->pluck('registration_id')->all();
+        foreach ($rounds as $round) {
+            $matches = $round->matches()->orderBy('id')->get();
+            self::assertSame((int) ceil($expectedPlayers / 2), $matches->count());
+            self::assertSame(intdiv($expectedPlayers, 2), $matches->where('status', MatchStatus::IN_PROGRESS)->count());
+            self::assertSame($expectedPlayers % 2, $matches->where('status', MatchStatus::COMPLETED)->count());
+            $players = $matches->flatMap(fn ($match) => [$match->player_a_registration_id, $match->player_b_registration_id])->filter();
+            self::assertSame($expectedPlayers, $players->count());
+            self::assertSame($expectedPlayers, $players->unique()->count());
+            self::assertEqualsCanonicalizing($expectedRegistrations, $players->all());
+            foreach ($matches->where('status', MatchStatus::IN_PROGRESS) as $pair) {
+                self::assertNotNull($pair->player_a_registration_id);
+                self::assertNotNull($pair->player_b_registration_id);
+                self::assertNull($pair->winner_registration_id);
+            }
+            foreach ($matches->where('status', MatchStatus::COMPLETED) as $bye) {
+                self::assertNull($bye->player_b_registration_id);
+                self::assertSame($bye->player_a_registration_id, $bye->winner_registration_id);
+            }
+            // Finish in reverse order to exercise random allocation and the last bye.
+            foreach ($matches->where('status', MatchStatus::IN_PROGRESS)->reverse() as $match) {
+                $this->completeV2Match($match);
+                MatchCompleted::dispatch($match->id, $tournament->id, $match->player_a_registration_id);
 
-        $secondRound = $rounds[1]->matches()->get();
-        self::assertSame(2, $secondRound->where('status', MatchStatus::IN_PROGRESS)->count());
-        $players = $secondRound->flatMap(fn ($match) => [$match->player_a_registration_id, $match->player_b_registration_id]);
-        self::assertSame(4, $players->unique()->count());
-        foreach ($secondRound as $match) {
-            $this->completeV2Match($match);
+                // Waiting for an unfinished match must never grant an early bye.
+                $nextRound = $rounds->firstWhere('round_number', $round->round_number + 1);
+                if ($nextRound !== null) {
+                    $sourceFinished = $round->matches()->whereNull('winner_registration_id')->doesntExist();
+                    $nextByes = $nextRound->matches()->where('status', MatchStatus::COMPLETED)
+                        ->whereNull('player_b_registration_id')->count();
+                    self::assertSame($sourceFinished ? $matches->count() % 2 : 0, $nextByes);
+                }
+            }
+            $expectedRegistrations = $round->matches()->pluck('winner_registration_id')->all();
+            $expectedPlayers = (int) ceil($expectedPlayers / 2);
         }
-        $final = $rounds[2]->matches()->firstOrFail();
-        self::assertSame(MatchStatus::IN_PROGRESS, $final->status);
-        $this->completeV2Match($final);
         self::assertSame(TournamentStatus::COMPLETED, $tournament->fresh()->status);
-        MatchCompleted::dispatch($final->id, $tournament->id, $final->player_a_registration_id);
-        self::assertSame(TournamentStatus::COMPLETED, $tournament->fresh()->status);
+    }
+
+    public static function tournamentPairingCounts(): array
+    {
+        $cases = ['five players' => [16, 5], 'six players' => [16, 6]];
+        foreach ([16, 32, 64, 128] as $capacity) {
+            foreach ([$capacity, $capacity - 1, $capacity - 2, intdiv($capacity, 2) + 1, intdiv($capacity, 2) + 2] as $count) {
+                $cases["{$count} players in {$capacity} slots"] = [$capacity, $count];
+            }
+        }
+
+        return $cases;
     }
 
     public function test_tournament_tabs_default_to_the_bracket_and_put_overview_and_activity_last(): void

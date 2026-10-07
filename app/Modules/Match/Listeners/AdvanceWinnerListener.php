@@ -95,6 +95,15 @@ class AdvanceWinnerListener
                 $nextMatch->player_b_registration_id = $winnerRegistrationId;
             }
 
+            if ($j === $matchesInRound->count() && $j % 2 !== 0) {
+                $nextMatch->winner_registration_id = $winnerRegistrationId;
+                $nextMatch->status = MatchStatus::COMPLETED;
+                $nextMatch->save();
+                $this->handle((object) ['matchId' => $nextMatch->id]);
+
+                return;
+            }
+
             $nextMatch->save();
 
             if ($nextMatch->player_a_registration_id !== null && $nextMatch->player_b_registration_id !== null) {

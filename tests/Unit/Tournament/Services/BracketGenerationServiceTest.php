@@ -7,7 +7,9 @@ namespace Tests\Unit\Tournament\Services;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\Identity\Models\User;
+use App\Modules\Match\Listeners\AdvanceWinnerListener;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Tournament\Actions\CompleteTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentParticipant;
 use App\Modules\Tournament\Models\TournamentRegistration;
@@ -20,6 +22,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class BracketGenerationServiceTest extends TestCase
@@ -68,14 +71,14 @@ class BracketGenerationServiceTest extends TestCase
     /**
      * Helper to set up a tournament and checked-in participants.
      */
-    private function setupTournamentWithParticipants(int $count): Tournament
+    private function setupTournamentWithParticipants(int $count, int $capacity = 16): Tournament
     {
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
             'name' => "Tournament {$count} Players",
             'slug' => "tournament-{$count}-".Str::random(6),
             'game_id' => $this->game->id,
-            'max_participants' => 16,
+            'max_participants' => $capacity,
             'min_participants' => 2,
             'entry_fee' => 0.00,
             'status' => 'DRAFT',
@@ -135,98 +138,99 @@ class BracketGenerationServiceTest extends TestCase
 
     public function test_bracket_generation_with_5_players(): void
     {
-        $tournament = $this->setupTournamentWithParticipants(5);
+        $bracket = $this->service->generate($this->setupTournamentWithParticipants(5));
+        $rounds = $bracket->rounds()->orderBy('round_number')->get();
+        $this->assertSame([3, 2, 1], $rounds->map(fn ($round) => $round->matches()->count())->all());
+        $matches = $rounds[0]->matches()->orderBy('id')->get();
+        $this->assertCount(2, $matches->where('status', MatchStatus::READY));
+        $this->assertCount(1, $matches->where('status', MatchStatus::COMPLETED));
+        $bye = $matches->last();
+        $this->assertNull($bye->player_b_registration_id);
+        $this->assertSame($bye->player_a_registration_id, $bye->winner_registration_id);
 
-        $bracket = $this->service->generate($tournament);
-
-        $this->assertNotNull($bracket);
-        $this->assertCount(3, $bracket->rounds); // log2(8) = 3 rounds
-
-        $round1 = $bracket->rounds()->where('round_number', 1)->first();
-        $matches = GameMatch::where('round_id', $round1->id)->orderBy('id')->get();
-
-        // nextPowerOfTwo(5) = 8.
-        // byes = 8 - 5 = 3.
-        // actual matches = (5 - 3) / 2 = 1.
-        $this->assertCount(4, $matches);
-
-        $readyMatches = $matches->where('status', MatchStatus::READY);
-        $completedMatches = $matches->where('status', MatchStatus::COMPLETED);
-
-        $this->assertCount(1, $readyMatches);
-        $this->assertCount(3, $completedMatches);
-
-        foreach ($completedMatches as $match) {
-            $this->assertNotNull($match->player_a_registration_id);
-            $this->assertNull($match->player_b_registration_id);
-            $this->assertEquals($match->player_a_registration_id, $match->winner_registration_id);
-        }
-
-        // Verify propagation to round 2
-        $round2 = $bracket->rounds()->where('round_number', 2)->first();
-        $matchesRound2 = GameMatch::where('round_id', $round2->id)->orderBy('id')->get();
-        $this->assertCount(2, $matchesRound2);
-
-        $r2Match1 = $matchesRound2[0];
-        $r2Match2 = $matchesRound2[1];
-
-        // Match 1 has one participant from bye, other waiting for round 1 match 1
-        $this->assertNotNull($r2Match1->player_b_registration_id);
-        $this->assertNull($r2Match1->player_a_registration_id);
-        $this->assertEquals(MatchStatus::PENDING, $r2Match1->status);
-
-        // Match 2 has both participants from byes (round 1 matches 3 and 4)
-        $this->assertNotNull($r2Match2->player_a_registration_id);
-        $this->assertNotNull($r2Match2->player_b_registration_id);
-        $this->assertEquals(MatchStatus::READY, $r2Match2->status);
+        // The unpaired winner also receives the only bye among three R2 players.
+        $secondRoundBye = $rounds[1]->matches()->orderBy('id')->get()->last();
+        $this->assertSame(MatchStatus::COMPLETED, $secondRoundBye->status);
+        $this->assertSame($bye->winner_registration_id, $secondRoundBye->winner_registration_id);
+        $final = $rounds[2]->matches()->firstOrFail();
+        $this->assertSame(MatchStatus::PENDING, $final->status);
+        $this->assertSame($bye->winner_registration_id, $final->player_b_registration_id);
     }
 
     public function test_bracket_generation_with_6_players(): void
     {
-        $tournament = $this->setupTournamentWithParticipants(6);
+        $bracket = $this->service->generate($this->setupTournamentWithParticipants(6));
+        $rounds = $bracket->rounds()->orderBy('round_number')->get();
+        $this->assertSame([3, 2, 1], $rounds->map(fn ($round) => $round->matches()->count())->all());
+        $this->assertCount(3, $rounds[0]->matches()->get()->where('status', MatchStatus::READY));
+        $this->assertCount(0, $rounds[0]->matches()->get()->where('status', MatchStatus::COMPLETED));
 
+        // The last R1 winner is unpaired in R2 and must advance to the final.
+        $match = $rounds[0]->matches()->orderBy('id')->get()->last();
+        $match->update(['status' => MatchStatus::COMPLETED, 'winner_registration_id' => $match->player_a_registration_id]);
+        app(AdvanceWinnerListener::class)->handle((object) ['matchId' => $match->id]);
+        $bye = $rounds[1]->matches()->orderBy('id')->get()->last();
+        $this->assertSame(MatchStatus::COMPLETED, $bye->status);
+        $this->assertSame($match->winner_registration_id, $bye->winner_registration_id);
+        $this->assertSame($match->winner_registration_id, $rounds[2]->matches()->firstOrFail()->player_b_registration_id);
+    }
+
+    public function test_nine_players_in_sixteen_slots_get_four_pairs_and_one_bye(): void
+    {
+        $tournament = $this->setupTournamentWithParticipants(9);
         $bracket = $this->service->generate($tournament);
+        $rounds = $bracket->rounds()->orderBy('round_number')->get();
+        $this->assertSame([5, 3, 2, 1], $rounds->map(fn ($round) => $round->matches()->count())->all());
+        $matches = $rounds[0]->matches()->get();
+        $this->assertCount(4, $matches->where('status', MatchStatus::READY));
+        $this->assertCount(1, $matches->where('status', MatchStatus::COMPLETED));
+        $players = $matches->flatMap(fn ($match) => [$match->player_a_registration_id, $match->player_b_registration_id])->filter();
+        $this->assertCount(9, $players);
+        $this->assertCount(9, $players->unique());
+    }
 
-        $this->assertNotNull($bracket);
-        $this->assertCount(3, $bracket->rounds); // log2(8) = 3 rounds
+    #[DataProvider('largeTournamentPairingCounts')]
+    public function test_legacy_advancement_pairs_all_players_in_every_round(int $capacity, int $count): void
+    {
+        $tournament = $this->setupTournamentWithParticipants($count, $capacity);
+        $bracket = $this->service->generate($tournament);
+        $this->mock(CompleteTournamentAction::class)->shouldReceive('execute')->once();
+        $listener = app(AdvanceWinnerListener::class);
+        $expectedRegistrations = $tournament->participants()->pluck('registration_id')->all();
 
-        $round1 = $bracket->rounds()->where('round_number', 1)->first();
-        $matches = GameMatch::where('round_id', $round1->id)->orderBy('id')->get();
+        foreach ($bracket->rounds()->orderBy('round_number')->get() as $round) {
+            $matches = $round->matches()->orderBy('id')->get();
+            $playerCount = count($expectedRegistrations);
+            $this->assertCount((int) ceil($playerCount / 2), $matches);
+            $this->assertCount(intdiv($playerCount, 2), $matches->where('status', MatchStatus::READY));
+            $this->assertCount($playerCount % 2, $matches->where('status', MatchStatus::COMPLETED));
+            $players = $matches->flatMap(fn ($match) => [$match->player_a_registration_id, $match->player_b_registration_id])->filter();
+            $this->assertCount($playerCount, $players);
+            $this->assertEqualsCanonicalizing($expectedRegistrations, $players->all());
+            foreach ($matches->where('status', MatchStatus::COMPLETED) as $bye) {
+                $this->assertNull($bye->player_b_registration_id);
+                $this->assertSame($bye->player_a_registration_id, $bye->winner_registration_id);
+            }
+            foreach ($matches->where('status', MatchStatus::READY)->reverse() as $pair) {
+                $this->assertNotNull($pair->player_a_registration_id);
+                $this->assertNotNull($pair->player_b_registration_id);
+                $pair->update(['status' => MatchStatus::COMPLETED, 'winner_registration_id' => $pair->player_a_registration_id]);
+                $listener->handle((object) ['matchId' => $pair->id]);
+            }
+            $expectedRegistrations = $round->matches()->pluck('winner_registration_id')->all();
+        }
+    }
 
-        // nextPowerOfTwo(6) = 8.
-        // byes = 8 - 6 = 2.
-        // actual matches = (6 - 2) / 2 = 2.
-        $this->assertCount(4, $matches);
-
-        $readyMatches = $matches->where('status', MatchStatus::READY);
-        $completedMatches = $matches->where('status', MatchStatus::COMPLETED);
-
-        $this->assertCount(2, $readyMatches);
-        $this->assertCount(2, $completedMatches);
-
-        foreach ($completedMatches as $match) {
-            $this->assertNotNull($match->player_a_registration_id);
-            $this->assertNull($match->player_b_registration_id);
-            $this->assertEquals($match->player_a_registration_id, $match->winner_registration_id);
+    public static function largeTournamentPairingCounts(): array
+    {
+        $cases = [];
+        foreach ([16, 32, 64, 128] as $capacity) {
+            foreach ([$capacity, $capacity - 1, $capacity - 2, intdiv($capacity, 2) + 1, intdiv($capacity, 2) + 2] as $count) {
+                $cases["{$count} players in {$capacity} slots"] = [$capacity, $count];
+            }
         }
 
-        // Verify propagation to round 2
-        $round2 = $bracket->rounds()->where('round_number', 2)->first();
-        $matchesRound2 = GameMatch::where('round_id', $round2->id)->orderBy('id')->get();
-        $this->assertCount(2, $matchesRound2);
-
-        $r2Match1 = $matchesRound2[0];
-        $r2Match2 = $matchesRound2[1];
-
-        // Round 2 Match 1 is pending winners from Match 1 and Match 2
-        $this->assertNull($r2Match1->player_a_registration_id);
-        $this->assertNull($r2Match1->player_b_registration_id);
-        $this->assertEquals(MatchStatus::PENDING, $r2Match1->status);
-
-        // Round 2 Match 2 is READY because both Match 3 and Match 4 are byes (completed)
-        $this->assertNotNull($r2Match2->player_a_registration_id);
-        $this->assertNotNull($r2Match2->player_b_registration_id);
-        $this->assertEquals(MatchStatus::READY, $r2Match2->status);
+        return $cases;
     }
 
     public function test_bracket_generation_with_8_players(): void

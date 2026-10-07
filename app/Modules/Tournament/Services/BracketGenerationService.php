@@ -25,8 +25,7 @@ class BracketGenerationService
      *
      * Uses checked-in participants (TournamentParticipant records, which are
      * created by CheckinParticipantAction) as the authoritative player list.
-     * Byes are distributed to the highest-seeded players so that the lowest
-     * seeds (best players) face opponents in Round 1.
+     * Pair every available participant; only an unpaired participant gets a bye.
      *
      * @throws InsufficientParticipantsException
      */
@@ -54,20 +53,18 @@ class BracketGenerationService
             );
         }
 
-        // ── Step 2: Power-of-two sizing ────────────────────────────────────
-        $bracketSize = $this->nextPowerOfTwo($participantCount);
-        $totalRounds = (int) log($bracketSize, 2);
-        $byeCount = $bracketSize - $participantCount;
-
-        // Players at the end of the seeded list receive byes (standard practice:
-        // top seeds advance automatically; they meet the bye-receivers in R2).
-        //
-        // Layout of Round 1 slots (1-indexed):
-        //   Slots 1 … actualMatchCount        → real matches (2 players each)
-        //   Slots actualMatchCount+1 … total  → bye slots   (1 player, auto-COMPLETED)
-        $actualMatchCount = (int) (($participantCount - $byeCount) / 2);
-        // Sanity: with byes counted in, total R1 slots = bracketSize / 2
-        // actualMatchCount * 2 + byeCount * 1 = participantCount ✓
+        // Each round contains pairs plus at most one unpaired participant.
+        $slotsByRound = [];
+        $advancingCount = $participantCount;
+        $roundNumber = 1;
+        while ($advancingCount > 1) {
+            $advancingCount = (int) ceil($advancingCount / 2);
+            $slotsByRound[$roundNumber] = $advancingCount;
+            $roundNumber++;
+        }
+        $totalRounds = count($slotsByRound);
+        $byeCount = $participantCount % 2;
+        $actualMatchCount = intdiv($participantCount, 2);
 
         // ── Step 3: Create Bracket & Rounds ───────────────────────────────
         $bracket = Bracket::query()->create([
@@ -90,7 +87,7 @@ class BracketGenerationService
         /** @var array<int, array<int, GameMatch>> $matchesByRound */
         $matchesByRound = [];
         for ($r = 1; $r <= $totalRounds; $r++) {
-            $slotsInRound = $bracketSize / (2 ** $r);
+            $slotsInRound = $slotsByRound[$r];
             for ($j = 1; $j <= $slotsInRound; $j++) {
                 $matchesByRound[$r][$j] = GameMatch::query()->create([
                     'uuid' => Str::uuid()->toString(),
@@ -103,7 +100,7 @@ class BracketGenerationService
 
         // ── Step 5: Seed Round 1 — real matches ───────────────────────────
         // Players 0…(2*actualMatchCount - 1) fight in Round 1.
-        // Standard 1v(n), 2v(n-1) seeding pairing:
+        // Pair adjacent seeds:
         //   Slot 1 → seed 1 vs seed 2
         //   Slot 2 → seed 3 vs seed 4  …etc.
         for ($i = 1; $i <= $actualMatchCount; $i++) {
@@ -125,7 +122,7 @@ class BracketGenerationService
         }
 
         // ── Step 6: Seed Round 1 — bye slots ──────────────────────────────
-        // The remaining players (highest-seeded = weakest) get automatic wins.
+        // Only the remaining unpaired participant gets an automatic win.
         // Their bye slot is marked COMPLETED immediately; AdvanceWinnerListener
         // will propagate them into Round 2 in the next step.
         for ($i = 1; $i <= $byeCount; $i++) {
@@ -155,7 +152,7 @@ class BracketGenerationService
         // place them into the correct slot of Round 2. If both players of a
         // Round 2 slot are now filled, mark it READY and dispatch MatchCreated.
         for ($r = 1; $r < $totalRounds; $r++) {
-            $slotsInRound = $bracketSize / (2 ** $r);
+            $slotsInRound = $slotsByRound[$r];
             for ($j = 1; $j <= $slotsInRound; $j++) {
                 /** @var GameMatch $match */
                 $match = $matchesByRound[$r][$j];
@@ -175,6 +172,11 @@ class BracketGenerationService
                     $nextMatch->player_b_registration_id = $winnerId;
                 }
 
+                // The last winner has no opponent when this round has odd slots.
+                if ($j === $slotsInRound && $slotsInRound % 2 !== 0) {
+                    $nextMatch->winner_registration_id = $winnerId;
+                    $nextMatch->status = MatchStatus::COMPLETED;
+                }
                 $nextMatch->save();
 
                 if (
@@ -194,20 +196,5 @@ class BracketGenerationService
         }
 
         return $bracket;
-    }
-
-    /**
-     * Return the smallest power of two that is ≥ $n.
-     *
-     * Examples: 6 → 8, 8 → 8, 9 → 16.
-     */
-    private function nextPowerOfTwo(int $n): int
-    {
-        $p = 1;
-        while ($p < $n) {
-            $p *= 2;
-        }
-
-        return $p;
     }
 }

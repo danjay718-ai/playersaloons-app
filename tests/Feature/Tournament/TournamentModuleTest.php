@@ -331,19 +331,13 @@ class TournamentModuleTest extends TestCase
         $this->assertInstanceOf(Bracket::class, $bracket);
         $this->assertCount(3, $bracket->rounds); // log_2(8) = 3 rounds
 
-        // Verify matches structure in round 1: 4 matches total
         $round1 = $bracket->rounds()->where('round_number', 1)->first();
         $matchesRound1 = GameMatch::where('round_id', $round1->id)->get();
-        $this->assertCount(4, $matchesRound1);
-
-        // 5 players, next power of 2 is 8, byes = 8 - 5 = 3.
-        // Actual matches: (5 - 3) / 2 = 1 match.
-        // Bye matches: 3.
+        $this->assertCount(3, $matchesRound1);
         $completedByes = $matchesRound1->where('status', MatchStatus::COMPLETED);
         $readyMatches = $matchesRound1->where('status', MatchStatus::READY);
-
-        $this->assertCount(3, $completedByes);
-        $this->assertCount(1, $readyMatches);
+        $this->assertCount(1, $completedByes);
+        $this->assertCount(2, $readyMatches);
 
         // Check propagation to round 2 (total match slots = 2)
         $round2 = $bracket->rounds()->where('round_number', 2)->first();

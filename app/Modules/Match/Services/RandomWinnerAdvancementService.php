@@ -54,6 +54,15 @@ final class RandomWinnerAdvancementService
             if ($available->isEmpty()) {
                 throw new LogicException('No next-round slot is available for this winner.');
             }
+            // An odd number of source winners leaves one single-player slot.
+            // Fill all real pairs first; the final arriving winner takes the bye.
+            $byeMatchId = $source->round->matches()->count() % 2 !== 0
+                ? $matches->last()?->id
+                : null;
+            $pairedSlots = $available->filter(fn (GameMatch $candidate): bool => $candidate->id !== $byeMatchId);
+            if ($pairedSlots->isNotEmpty()) {
+                $available = $pairedSlots;
+            }
             $waiting = $available->filter(fn (GameMatch $candidate): bool => $candidate->player_a_registration_id !== null
                 || $candidate->player_b_registration_id !== null);
             // Pair with an already advanced winner first so any two finished
@@ -66,7 +75,12 @@ final class RandomWinnerAdvancementService
             }
             $destination->save();
 
-            if ($destination->player_b_registration_id !== null) {
+            if ($destination->id === $byeMatchId) {
+                $destination->winner_registration_id = $winnerId;
+                $destination->status = MatchStatus::COMPLETED;
+                $destination->save();
+                $this->advance($destination);
+            } elseif ($destination->player_b_registration_id !== null) {
                 $this->stateMachine->transition($destination, MatchStatus::READY);
                 MatchCreated::dispatch((int) $destination->id, (int) $destination->tournament_id, (int) $destination->round_id);
             }
