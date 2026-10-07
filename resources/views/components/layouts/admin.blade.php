@@ -10,24 +10,16 @@
     <meta name="theme-color" content="{{ $accountTheme->metaColor() }}">
     <title>{{ $title ?? __('Admin Panel | GamersRival') }}</title>
 
-    <!-- Google Fonts for Professional Aesthetic (Inter only, no Orbitron for admin) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <x-site-fonts />
 
     <!-- Quill Editor Assets (Lightweight Rich Text) -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
-<body class="theme-auth theme-admin bg-[#090d16] text-slate-100 h-screen overflow-hidden antialiased flex flex-col">
+<body class="font-sans theme-auth theme-admin bg-[#090d16] text-slate-100 h-screen overflow-hidden antialiased flex flex-col">
 
     <!-- Mobile Header -->
     <header class="theme-header md:hidden flex items-center justify-between bg-[#0f172a] border-b border-slate-800 px-4 py-3 sticky top-0 z-50">

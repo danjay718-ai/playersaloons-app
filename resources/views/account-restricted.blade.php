@@ -5,6 +5,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <x-brand-icons />
+    <x-site-fonts />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Account Restricted | GamersRival</title>

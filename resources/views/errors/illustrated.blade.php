@@ -88,20 +88,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title }} | GamersRival</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <x-site-fonts />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .font-orbitron {
-            font-family: 'Orbitron', sans-serif;
-        }
-    </style>
 </head>
-<body class="bg-[#05070c] text-slate-100 min-h-screen antialiased flex flex-col items-center justify-center p-6 relative overflow-hidden">
+<body class="font-sans bg-[#05070c] text-slate-100 min-h-screen antialiased flex flex-col items-center justify-center p-6 relative overflow-hidden">
     <!-- Glowing background effects -->
     <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] {{ $c['bg_glow'] }} rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute bottom-0 right-10 w-96 h-96 bg-slate-900/5 rounded-full blur-3xl pointer-events-none"></div>
