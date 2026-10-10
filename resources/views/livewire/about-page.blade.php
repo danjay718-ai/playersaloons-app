@@ -9,7 +9,7 @@
         <article class="landing-card relative overflow-hidden p-6 sm:p-10">
             <div class="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-cyan-400/10 blur-3xl"></div>
             <div class="pointer-events-none absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl"></div>
-            <div class="relative prose prose-invert max-w-none prose-headings:font-orbitron prose-headings:font-black prose-headings:uppercase prose-headings:tracking-wide prose-p:text-zinc-300 prose-p:leading-7 prose-a:text-cyan-300 hover:prose-a:text-cyan-200">
+            <div class="about-content relative mx-auto max-w-3xl text-base leading-8 text-zinc-300 sm:text-lg sm:leading-9">
                 {!! $body !!}
             </div>
         </article>

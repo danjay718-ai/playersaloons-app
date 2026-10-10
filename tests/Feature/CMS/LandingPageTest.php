@@ -10,6 +10,7 @@ use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\CMS\Models\PublicNavigationItem;
 use App\Modules\Identity\Models\User;
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Enums\UserStatus;
@@ -34,6 +35,18 @@ class LandingPageTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
         $this->seed(LandingPageSeeder::class);
         $this->seed(PublicNavigationSeeder::class);
+    }
+
+    public function test_about_page_preserves_paragraph_structure_in_a_readable_content_container(): void
+    {
+        SystemSetting::query()->updateOrCreate(
+            ['key' => 'about.body'],
+            ['value' => '<h2>Our Mission</h2><p>Competitive gaming for everyone.</p><p>Play together and grow.</p>'],
+        );
+
+        $this->get('/about')->assertOk()
+            ->assertSee('about-content relative mx-auto max-w-3xl text-base leading-8', escape: false)
+            ->assertSeeInOrder(['<h2>Our Mission</h2>', '<p>Competitive gaming for everyone.</p>', '<p>Play together and grow.</p>'], escape: false);
     }
 
     public function test_landing_page_renders_seeded_content_video_and_games(): void

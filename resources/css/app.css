@@ -19,6 +19,40 @@ body {
     --font-orbitron: 'Orbitron', sans-serif;
 }
 
+.about-content p {
+    margin: 0;
+    padding-block: 0.625rem;
+    text-align: justify;
+    overflow-wrap: break-word;
+}
+
+.about-content p + p {
+    margin-top: 0.5rem;
+}
+
+.about-content h2,
+.about-content h3,
+.about-content h4 {
+    margin-block: 1.75rem 0.75rem;
+    font-family: var(--font-orbitron);
+    font-weight: 800;
+    line-height: 1.4;
+    color: #fff;
+}
+
+.about-content h2 { font-size: 1.5em; }
+.about-content h3 { font-size: 1.25em; }
+.about-content h4 { font-size: 1.1em; }
+.about-content > :first-child { margin-top: 0; }
+.about-content > :last-child { margin-bottom: 0; }
+.about-content ul,
+.about-content ol { margin-block: 1rem; padding-left: 1.5rem; }
+.about-content ul { list-style: disc; }
+.about-content ol { list-style: decimal; }
+.about-content li + li { margin-top: 0.5rem; }
+.about-content a { color: #67e8f9; text-decoration: underline; }
+.about-content a:hover { color: #a5f3fc; }
+
 /* Authenticated account themes. Public and guest pages intentionally stay on their original palette. */
 html[data-theme='purple_dark'] {
     color-scheme: dark;
