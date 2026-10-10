@@ -50,6 +50,9 @@ class TournamentDetail extends Component
     #[Url]
     public string $activeTab = 'matches';
 
+    #[Url]
+    public string $bracketView = 'bracket';
+
     #[Url(as: 'match')]
     public string $selectedMatchUuid = '';
 
@@ -71,8 +74,11 @@ class TournamentDetail extends Component
         $this->uuid = $uuid;
 
         if (in_array($this->activeTab, ['fixtures', 'bracket'], true)) {
+            $this->bracketView = $this->activeTab;
             $this->activeTab = 'matches';
         }
+
+        $this->updatedBracketView();
 
         $user = Auth::user();
         if ($user && $this->viewMode !== 'guest' && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
@@ -99,6 +105,13 @@ class TournamentDetail extends Component
     public function updatedSelectedPlatformId(): void
     {
         $this->gameIdValue = '';
+    }
+
+    public function updatedBracketView(): void
+    {
+        if (! in_array($this->bracketView, ['fixtures', 'bracket'], true)) {
+            $this->bracketView = 'bracket';
+        }
     }
 
     public function prepareRegistrationPrompt(): void
@@ -462,12 +475,12 @@ class TournamentDetail extends Component
             if ($this->selectedMatchUuid !== '') {
                 $displayMatch = (clone $participantMatches)
                     ->where('uuid', $this->selectedMatchUuid)
-                    ->first(['id', 'uuid', 'status', 'updated_at']);
+                    ->first(['id', 'uuid', 'status', 'active_attempt_number', 'updated_at']);
             }
             $displayMatch ??= $currentMatch;
             $displayMatch ??= (clone $participantMatches)
                 ->latest('updated_at')
-                ->first(['id', 'uuid', 'status', 'updated_at']);
+                ->first(['id', 'uuid', 'status', 'active_attempt_number', 'updated_at']);
 
             $hasLost = GameMatch::where('tournament_id', $tournament->id)
                 ->where(function ($query) use ($userRegistration) {

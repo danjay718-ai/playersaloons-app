@@ -16,6 +16,7 @@ final class MatchRematchCreated extends DomainEvent implements ShouldBroadcastNo
         public readonly int $rematchMatchId,
         public readonly string $originalMatchUuid,
         public readonly string $rematchMatchUuid,
+        public readonly bool $adminRuling = false,
     ) {
         parent::__construct();
     }

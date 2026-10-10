@@ -18,6 +18,7 @@ use App\Modules\Match\Actions\SubmitV2MatchResultAction;
 use App\Modules\Match\Actions\VoteForRematchAction;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Services\MatchReadinessService;
+use App\Modules\Match\Support\DisputeRulingMessage;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
@@ -504,6 +505,11 @@ class MatchDetail extends Component
         }
 
         $activeDispute = $match->disputes->first(fn ($dispute) => $dispute->status !== DisputeStatus::RESOLVED);
+        $latestDispute = $match->disputes->sortByDesc('id')->first();
+        $rulingMessage = $activeDispute === null && $latestDispute?->status === DisputeStatus::RESOLVED
+            && in_array($match->resolution_reason, ['admin_resolution', 'admin_draw_rematch', 'admin_rematch'], true)
+            ? DisputeRulingMessage::for($latestDispute)
+            : null;
         $activeAttempt = $match->attempts->firstWhere('attempt_number', $match->active_attempt_number);
         $opponentRegistrationId = $viewerRegistration !== null
             ? ((int) $match->player_a_registration_id === (int) $viewerRegistration->id
@@ -557,6 +563,7 @@ class MatchDetail extends Component
             'activeAttempt' => $activeAttempt,
             'opponentSubmissionOutcome' => $opponentSubmissionOutcome,
             'roundMatchNumber' => $roundMatchNumber,
+            'rulingMessage' => $rulingMessage,
         ]);
 
         return $this->embedded

@@ -12,6 +12,7 @@ final class MatchCompleted extends DomainEvent
         public readonly int $matchId,
         public readonly int $tournamentId,
         public readonly int $winnerRegistrationId,
+        public readonly bool $adminRuling = false,
     ) {
         parent::__construct();
     }

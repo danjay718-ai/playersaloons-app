@@ -1165,7 +1165,98 @@ final class TournamentV2WorkflowTest extends TestCase
         Livewire::actingAs($player)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
             ->assertDontSee('Match Header Card', escape: false)
             ->assertSee('data-match-content="matchup"', escape: false)
-            ->assertSeeInOrder(['Round 1', 'in progress', 'VS', 'SUBMIT RESULTS', 'Submit Match Results', 'Game &amp; Connection Details'], escape: false);
+            ->assertSeeInOrder(['Round 1', 'in progress', 'VS', 'Match in progress — play now', 'SUBMIT RESULTS', 'Submit Match Results', 'Game &amp; Connection Details'], escape: false)
+            ->assertSee('Lost')
+            ->assertDontSee('>Loss<', escape: false);
+    }
+
+    public static function adminRematchResolutions(): array
+    {
+        return [['rematch'], ['draw']];
+    }
+
+    #[DataProvider('adminRematchResolutions')]
+    public function test_admin_rematch_reopens_both_players_embedded_result_pages_and_delivers_the_ruling(string $resolution): void
+    {
+        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        $dispute = $match->disputes()->firstOrFail();
+        $originalAttempt = $match->fresh()->active_attempt_number;
+
+        $pages = [];
+        foreach ([$first, $second] as $player) {
+            $pages[$player->id] = Livewire::actingAs($player)
+                ->withQueryParams(['activeTab' => 'submit-results', 'match' => $match->uuid])
+                ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+                ->assertSee('Result conflict detected');
+        }
+
+        // The decision must reach both players even while queued listeners are delayed.
+        Queue::fake();
+        Livewire::actingAs($this->admin)->test(MatchAdmin::class)
+            ->set('selectedDisputeId', $dispute->id)
+            ->set('resolution', $resolution)
+            ->call('resolveDispute')
+            ->assertHasNoErrors();
+
+        self::assertSame(MatchStatus::IN_PROGRESS, $match->fresh()->status);
+        self::assertSame($originalAttempt + 1, $match->fresh()->active_attempt_number);
+        self::assertDatabaseHas('match_attempts', [
+            'match_id' => $match->id, 'attempt_number' => $originalAttempt + 1, 'status' => 'open',
+        ]);
+        self::assertDatabaseHas('match_attempts', [
+            'match_id' => $match->id, 'attempt_number' => $originalAttempt, 'status' => 'rematch',
+        ]);
+
+        foreach ([$first, $second] as $player) {
+            $this->actingAs($player);
+            $pages[$player->id]->call('$refresh')
+                ->assertSee('An administrator ruled a rematch. Play again and submit a new result.')
+                ->assertSee('Submit Match Results')
+                ->assertDontSee('Result conflict detected')
+                ->assertDontSee('id="conflict-dispute-title"', escape: false);
+            Livewire::actingAs($player)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+                ->assertSeeInOrder(['Admin Ruling', 'This is a rematch — play again', 'SUBMIT RESULTS', 'Submit Match Results'])
+                ->assertDontSee('Your result has already been submitted.');
+            self::assertDatabaseHas('notifications', [
+                'user_id' => $player->id, 'title' => 'Rematch Required',
+                'message' => 'An administrator ruled a rematch. Play again and submit a new result.',
+                'action_url' => "/tournaments/{$match->tournament->uuid}/view?activeTab=submit-results&match={$match->uuid}",
+            ]);
+        }
+
+        $submit->execute($match->fresh(), $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::LOSS);
+        self::assertSame(MatchStatus::COMPLETED, $match->fresh()->status);
+        Livewire::actingAs($first)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->assertDontSee('An administrator ruled a rematch. Play again and submit a new result.')
+            ->assertDontSee('Submit Match Results');
+    }
+
+    public function test_admin_winner_ruling_reaches_both_players_and_clears_the_embedded_conflict_page(): void
+    {
+        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        $page = Livewire::actingAs($second)->withQueryParams(['activeTab' => 'submit-results', 'match' => $match->uuid])
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])->assertSee('Result conflict detected');
+        $resolution = $match->playerARegistration->includesUser($first->id) ? 'player_a' : 'player_b';
+
+        Queue::fake();
+        Livewire::actingAs($this->admin)->test(MatchAdmin::class)
+            ->set('selectedDisputeId', $match->disputes()->firstOrFail()->id)
+            ->set('resolution', $resolution)
+            ->call('resolveDispute')->assertHasNoErrors();
+
+        $message = "An administrator resolved the dispute. Winner: {$first->username}.";
+        foreach ([$first, $second] as $player) {
+            self::assertDatabaseHas('notifications', ['user_id' => $player->id, 'title' => 'Admin Ruling', 'message' => $message]);
+        }
+        $this->actingAs($second);
+        $page->call('$refresh')->assertSee($message)->assertDontSee('Result conflict detected')->assertDontSee('Submit Match Results');
     }
 
     public function test_review_match_dispute_opens_the_result_section_and_targets_the_dispute_content(): void

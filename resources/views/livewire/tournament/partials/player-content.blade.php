@@ -25,7 +25,7 @@
          canViewRestricted: @json($canViewRestricted),
          showJoinModal: false,
          showUnderfilledNotice: false,
-         bracketView: 'bracket',
+         bracketView: @entangle('bracketView').live,
          loadedSections: @js(array_keys($loadedSections ?? [])),
          loadingSection: null,
          scrollEnabled: @js($isPlayerView),
@@ -693,7 +693,7 @@
                     <livewire:match.match-detail
                         :uuid="$displayMatch->uuid"
                         :embedded="true"
-                        :key="'tournament-match-'.$displayMatch->uuid"
+                        :key="'tournament-match-'.$displayMatch->uuid.'-'.$displayMatch->status->value.'-'.$displayMatch->active_attempt_number"
                     />
                 @else
                     <div class="rounded-[2rem] border border-zinc-800 bg-zinc-900/40 p-10 text-center">
@@ -888,7 +888,7 @@
                                             <!-- Match ID & Status -->
                                             <div class="hidden sm:flex flex-col items-center w-16 shrink-0 text-center">
                                                 <span class="text-[9px] font-black text-zinc-700 uppercase tracking-widest">Match</span>
-                                                <span class="text-lg font-black font-orbitron text-zinc-600">#{{ $match->id }}</span>
+                                                <span class="text-lg font-black font-orbitron text-zinc-600">#{{ $loop->iteration }}</span>
                                                 <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full mt-1 {{ $isOngoing ? 'text-cyan-400 bg-cyan-950/40' : ($isCompleted ? 'text-zinc-600 bg-zinc-900' : 'text-fuchsia-400 bg-fuchsia-950/30') }}">
                                                     {{ $isOngoing ? 'Live' : ($isCompleted ? 'Done' : 'Soon') }}
                                                 </span>
@@ -1003,7 +1003,7 @@
                                 <!-- Matches in round with bracket layout -->
                                 <div class="flex-1 flex flex-col relative">
                                     @php $matchCount = $round->matches->count(); @endphp
-                                    @foreach($round->matches as $mIdx => $match)
+                                    @foreach($round->matches->sortBy('id')->values() as $mIdx => $match)
                                         @php
                                             $matchStatus = $match->status->value ?? $match->status;
                                             $isMatchOngoing = in_array($matchStatus, ['ready', 'in_progress', 'result_submitted', 'waiting_for_confirmation']);
@@ -1025,7 +1025,7 @@
                                         @endphp
 
                                         <!-- Match card wrapper for vertical spacing -->
-                                        <div class="relative flex items-center" style="flex: 1; min-height: {{ max(100, 600 / max(1, $matchCount)) }}px;">
+                                        <div data-bracket-match="{{ $match->uuid }}" class="relative flex items-center py-3" style="flex: 1 0 auto; min-height: {{ max(100, 600 / max(1, $matchCount)) }}px;">
                                             <!-- Bracket connectors (right side) - vertical bar for grouping -->
                                             @if(!$isLast && (int) $tournament->workflow_version !== 2)
                                                 @if($mIdx % 2 === 0)
@@ -1044,7 +1044,7 @@
                                                 <div class="bg-zinc-900/80 backdrop-blur-md border {{ $viewerLostThisMatch ? 'border-rose-500/60 shadow-[0_0_24px_rgba(244,63,94,.16)]' : ($isMatchOngoing ? 'border-cyan-500/50 shadow-[0_0_20px_rgba(34,211,238,0.12)]' : ($isMatchCompleted ? 'border-zinc-800/50' : 'border-zinc-800')) }} rounded-2xl overflow-hidden transition-all duration-300 hover:border-zinc-600 hover:shadow-lg group">
                                                     <!-- Match header -->
                                                     <div class="flex items-center justify-between px-3 py-2 border-b border-zinc-800/50 bg-zinc-950/50">
-                                                        <span class="text-[8px] font-black text-zinc-700 uppercase tracking-widest">#{{ $match->id }}</span>
+                                                        <span class="text-[8px] font-black text-zinc-700 uppercase tracking-widest">#{{ $mIdx + 1 }}</span>
                                                         <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full {{ $isMatchOngoing ? 'text-cyan-400 bg-cyan-950/50' : ($isMatchCompleted ? 'text-emerald-400 bg-emerald-950/30' : ($isMatchDisputed ? 'text-red-400 bg-red-950/30' : 'text-fuchsia-500 bg-fuchsia-950/30')) }}">
                                                             {{ $isMatchOngoing ? '● Live' : ($isMatchCompleted ? 'Done' : ($isMatchDisputed ? 'Disputed' : 'Pending')) }}
                                                         </span>

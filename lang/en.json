@@ -132,5 +132,15 @@
     "Translation languages": "Translation languages",
     "Show/hide languages": "Show/hide languages",
     "Choose which language tabs to display.": "Choose which language tabs to display.",
-    "Show all languages": "Show all languages"
+    "Show all languages": "Show all languages",
+    "Lost": "Lost",
+    "Admin Ruling": "Admin Ruling",
+    "Rematch Required": "Rematch Required",
+    "An administrator ruled a rematch. Play again and submit a new result.": "An administrator ruled a rematch. Play again and submit a new result.",
+    "An administrator resolved the dispute. Winner: :winner.": "An administrator resolved the dispute. Winner: :winner.",
+    "This is a rematch": "This is a rematch",
+    "This is a rematch — play again": "This is a rematch — play again",
+    "Match starts automatically": "Match starts automatically",
+    "Match in progress — play now": "Match in progress — play now",
+    "Play the match, then submit your result below.": "Play the match, then submit your result below."
 }

@@ -6,6 +6,7 @@ namespace App\Modules\Match\Actions;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Events\MatchCompleted;
+use App\Modules\Match\Events\MatchDisputeResolved;
 use App\Modules\Match\Events\MatchRematchCreated;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchAttempt;
@@ -68,14 +69,12 @@ class ResolveDisputeAction
                 }
 
                 $match->winner_registration_id = $winnerRegistrationId;
-                if ((int) $match->tournament->workflow_version === 2) {
-                    $match->resolution_reason = 'admin_resolution';
-                }
+                $match->resolution_reason = 'admin_resolution';
 
                 // Transition match to COMPLETED
                 $this->stateMachine->transition($match, MatchStatus::COMPLETED);
 
-                MatchCompleted::dispatch($match->id, $match->tournament_id, $winnerRegistrationId);
+                MatchCompleted::dispatch($match->id, $match->tournament_id, $winnerRegistrationId, true);
             } elseif ($resolution === DisputeResolution::NO_CHAMPION) {
                 throw new LogicException('A tournament final must be resolved with a champion or reopened as a rematch.');
             } elseif (in_array($resolution, [DisputeResolution::REMATCH, DisputeResolution::DRAW], true)) {
@@ -83,25 +82,30 @@ class ResolveDisputeAction
                     $nextAttempt = $match->active_attempt_number + 1;
                     $stalledDeadline = $match->stalled_deadline_at !== null ? now()->addMinutes(30) : null;
                     $match->forceFill([
-                        'status' => MatchStatus::IN_PROGRESS,
                         'active_attempt_number' => $nextAttempt,
+                        'winner_registration_id' => null,
+                        'completed_at' => null,
                         'result_submitted_at' => null,
                         'resolution_reason' => 'admin_draw_rematch',
                         'stalled_deadline_at' => $stalledDeadline,
                         'final_resolution_eligible_at' => null,
                         'final_resolution_notified_at' => null,
                     ])->save();
-                    if ($stalledDeadline !== null) {
-                        MatchAttempt::query()->firstOrCreate(
-                            ['match_id' => $match->id, 'attempt_number' => $nextAttempt],
-                            ['uuid' => Str::uuid()->toString(), 'status' => 'open', 'stalled_deadline_at' => $stalledDeadline],
-                        );
-                    }
-                    MatchRematchCreated::dispatch($match->id, $match->id, $match->uuid, $match->uuid);
+                    $this->stateMachine->transition($match, MatchStatus::IN_PROGRESS);
+                    $match->attempts()->where('attempt_number', $nextAttempt - 1)->update([
+                        'status' => 'rematch', 'resolution' => 'admin_draw_rematch', 'resolved_at' => now(),
+                    ]);
+                    MatchAttempt::query()->firstOrCreate(
+                        ['match_id' => $match->id, 'attempt_number' => $nextAttempt],
+                        ['uuid' => Str::uuid()->toString(), 'status' => 'open', 'stalled_deadline_at' => $stalledDeadline],
+                    );
+                    MatchRematchCreated::dispatch($match->id, $match->id, $match->uuid, $match->uuid, true);
+                    MatchDisputeResolved::dispatch($dispute->id, $match->id);
 
                     return;
                 }
                 // For rematch, transition original match to COMPLETED (terminal state for this match)
+                $match->resolution_reason = 'admin_rematch';
                 $this->stateMachine->transition($match, MatchStatus::COMPLETED);
 
                 // Create new GameMatch copy for rematch
@@ -116,8 +120,13 @@ class ResolveDisputeAction
                     'resolution_reason' => 'admin_rematch',
                 ]);
 
-                MatchRematchCreated::dispatch($match->id, $rematch->id, $match->uuid, $rematch->uuid);
+                MatchRematchCreated::dispatch($match->id, $rematch->id, $match->uuid, $rematch->uuid, true);
+                MatchDisputeResolved::dispatch($dispute->id, $rematch->id);
+
+                return;
             }
+
+            MatchDisputeResolved::dispatch($dispute->id, $match->id);
         });
     }
 }

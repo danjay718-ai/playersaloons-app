@@ -14,6 +14,7 @@ use App\Modules\Match\Events\HeadToHeadMatchDisputed;
 use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Events\MatchCreated;
 use App\Modules\Match\Events\MatchDisputed;
+use App\Modules\Match\Events\MatchDisputeResolved;
 use App\Modules\Match\Events\MatchForfeited;
 use App\Modules\Match\Events\MatchRematchCreated;
 use App\Modules\Match\Events\MatchResultSubmitted;
@@ -23,6 +24,7 @@ use App\Modules\Match\Listeners\ArmV2RoundDeadlineListener;
 use App\Modules\Match\Listeners\ArmV2StalledMatchTimerListener;
 use App\Modules\Match\Listeners\BroadcastBracketUpdateListener;
 use App\Modules\Match\Listeners\NotifyAdminsOfDisputeListener;
+use App\Modules\Match\Listeners\NotifyDisputeRulingListener;
 use App\Modules\Match\Listeners\NotifyParticipantsListener;
 use App\Modules\Match\Listeners\PrepareMatchRoomListener;
 use App\Modules\Operations\Services\ErrorIncidentReporter;
@@ -69,6 +71,9 @@ class EventServiceProvider extends ServiceProvider
      * @var array<class-string, list<class-string>>
      */
     protected array $listen = [
+        MatchDisputeResolved::class => [
+            NotifyDisputeRulingListener::class,
+        ],
         // ── Identity ────────────────────────────────────────────────────────
         UserRegistered::class => [
             CreateWalletListener::class,

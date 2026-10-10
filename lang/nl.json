@@ -103,5 +103,15 @@
     "Translation languages": "Vertaaltalen",
     "Show/hide languages": "Talen tonen/verbergen",
     "Choose which language tabs to display.": "Kies welke taaltabbladen je wilt weergeven.",
-    "Show all languages": "Alle talen tonen"
+    "Show all languages": "Alle talen tonen",
+    "Lost": "Verloren",
+    "Admin Ruling": "Beslissing van de beheerder",
+    "Rematch Required": "Rematch vereist",
+    "An administrator ruled a rematch. Play again and submit a new result.": "Een beheerder heeft een rematch bepaald. Speel opnieuw en dien een nieuw resultaat in.",
+    "An administrator resolved the dispute. Winner: :winner.": "Een beheerder heeft het geschil opgelost. Winnaar: :winner.",
+    "This is a rematch": "Dit is een rematch",
+    "This is a rematch — play again": "Dit is een rematch — speel opnieuw",
+    "Match starts automatically": "De wedstrijd start automatisch",
+    "Match in progress — play now": "Wedstrijd bezig — speel nu",
+    "Play the match, then submit your result below.": "Speel de wedstrijd en dien daarna hieronder je resultaat in."
 }

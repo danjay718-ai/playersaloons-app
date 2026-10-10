@@ -165,6 +165,10 @@
                 </div>
             @endif
 
+            <div x-show="resultPanelTab === 'submit'" class="space-y-3">
+                @include('livewire.match.partials._play-status-alerts')
+            </div>
+
             <!-- Result Submission or Dispute info -->
             <div data-match-panel="submit" x-show="resultPanelTab === 'submit'" x-cloak class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 space-y-6">
                 <i data-lucide="clipboard-check" aria-hidden="true" class="ui-card-watermark"></i>
@@ -223,10 +227,10 @@
                             <span class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">{{ (int) $match->tournament->workflow_version === 2 ? 'Your Result' : 'Declare Winner' }}</span>
                             @if((int) $match->tournament->workflow_version === 2)
                                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                    @foreach(['win' => 'Win', 'loss' => 'Loss', 'draw' => 'Draw'] as $value => $label)
+                                    @foreach(['win' => 'Win', 'loss' => 'Lost', 'draw' => 'Draw'] as $value => $label)
                                         <label class="player-result-option flex cursor-pointer items-center gap-3 rounded-xl border {{ $resultOutcome === $value ? 'border-violet-500' : 'border-zinc-800' }} bg-zinc-950 p-3.5 hover:border-zinc-700">
                                             <input wire:model.live="resultOutcome" type="radio" value="{{ $value }}" class="h-4 w-4 text-violet-600">
-                                            <span class="text-sm font-semibold text-zinc-200">{{ $label }}</span>
+                                            <span class="text-sm font-semibold text-zinc-200">{{ __($label) }}</span>
                                         </label>
                                     @endforeach
                                 </div>

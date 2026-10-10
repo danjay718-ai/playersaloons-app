@@ -223,8 +223,76 @@ class PlayerTournamentComponentsTest extends TestCase
 
         Livewire::actingAs($this->player)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
-            ->assertSeeHtml("bracketView: 'bracket'")
+            ->assertSet('bracketView', 'bracket')
+            ->assertSeeHtml("bracketView: window.Livewire.find('")
             ->assertSee('Fixtures & Bracket');
+    }
+
+    public function test_fixture_selection_survives_refresh_and_can_be_restored_from_the_url(): void
+    {
+        $tournament = $this->makeTournament('Fixture Selection Cup', TournamentStatus::ONGOING);
+        $this->registerPlayers($tournament);
+
+        Livewire::actingAs($this->player)
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->set('bracketView', 'fixtures')
+            ->call('$refresh')
+            ->assertSet('bracketView', 'fixtures')
+            ->set('activeTab', 'overview')
+            ->set('activeTab', 'matches')
+            ->assertSet('bracketView', 'fixtures');
+
+        Livewire::withQueryParams(['bracketView' => 'fixtures'])
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSet('bracketView', 'fixtures')
+            ->assertSet('activeTab', 'matches');
+
+        Livewire::withQueryParams(['activeTab' => 'fixtures'])
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSet('bracketView', 'fixtures')
+            ->assertSet('activeTab', 'matches');
+
+        Livewire::withQueryParams(['bracketView' => 'invalid'])
+            ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSet('bracketView', 'bracket');
+    }
+
+    public function test_fixtures_and_bracket_number_matches_within_each_round_and_space_every_card(): void
+    {
+        $other = $this->makeTournament('Other Cup', TournamentStatus::ONGOING);
+        [$otherPlayer, $otherOpponent] = $this->registerPlayers($other);
+        $this->makeMatch($other, $otherPlayer, $otherOpponent, $otherPlayer);
+
+        $tournament = $this->makeTournament('Numbering Cup', TournamentStatus::ONGOING);
+        [$player, $opponent] = $this->registerPlayers($tournament);
+        $first = $this->makeMatch($tournament, $player, $opponent, $player);
+        $matches = collect([$first]);
+        for ($index = 0; $index < 3; $index++) {
+            $matches->push(GameMatch::query()->create([
+                'uuid' => Str::uuid()->toString(),
+                'tournament_id' => $tournament->id,
+                'round_id' => $first->round_id,
+                'status' => MatchStatus::PENDING,
+            ]));
+        }
+        $secondRound = Round::query()->create(['bracket_id' => $first->round->bracket_id, 'round_number' => 2]);
+        GameMatch::query()->create([
+            'uuid' => Str::uuid()->toString(), 'tournament_id' => $tournament->id,
+            'round_id' => $secondRound->id, 'status' => MatchStatus::PENDING,
+        ]);
+
+        $page = Livewire::actingAs($this->player)->test(TournamentDetail::class, ['uuid' => $tournament->uuid]);
+        $html = $page->html();
+        foreach (['matches-fixtures', 'matches-bracket'] as $section) {
+            $document = new \DOMDocument;
+            @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
+            $xpath = new \DOMXPath($document);
+            $labels = $xpath->query('//*[@data-tournament-content="'.$section.'"]//span[starts-with(normalize-space(.), "#")]');
+            self::assertSame(['#1', '#2', '#3', '#4', '#1'], array_map(fn ($node) => trim($node->textContent), iterator_to_array($labels)));
+        }
+        foreach ($matches as $match) {
+            self::assertSame(1, $xpath->query('//*[@data-bracket-match="'.$match->uuid.'" and contains(@class, "py-3")]')->length);
+        }
     }
 
     public function test_tournament_timer_target_is_preserved_during_tab_updates(): void

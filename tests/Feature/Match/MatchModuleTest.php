@@ -368,7 +368,7 @@ class MatchModuleTest extends TestCase
         // Match completed notifications should be sent
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->playerA->id,
-            'title' => 'Match Completed',
+            'title' => 'Admin Ruling',
         ]);
 
         Event::assertDispatched(TournamentBracketUpdated::class);

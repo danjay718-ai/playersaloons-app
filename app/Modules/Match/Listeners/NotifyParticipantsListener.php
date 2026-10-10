@@ -57,6 +57,11 @@ class NotifyParticipantsListener implements ShouldQueueAfterCommit
         }
 
         $tournament = $match->tournament;
+        if (($event instanceof MatchCompleted || $event instanceof MatchRematchCreated) && $event->adminRuling) {
+            // Admin rulings have their own after-commit notification, including
+            // the decision and the playable match link.
+            return;
+        }
         $playerAUser = $match->playerARegistration?->user;
         $playerBUser = $match->playerBRegistration?->user;
         $playerAUsers = $this->registrationUsers($match->playerARegistration);
