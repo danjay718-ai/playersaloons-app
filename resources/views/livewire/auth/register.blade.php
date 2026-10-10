@@ -24,10 +24,10 @@
             get passwordScore() { return Object.values(this.passwordChecks).filter(Boolean).length; },
             get passwordStrong() { return this.passwordScore === 4; },
             get strengthLabel() {
-                if (!this.password) return 'Enter a password';
-                if (this.passwordScore <= 1) return 'Weak';
-                if (this.passwordScore <= 3) return 'Almost there';
-                return 'Strong password';
+                if (!this.password) return @js(__('Enter a password'));
+                if (this.passwordScore <= 1) return @js(__('Weak'));
+                if (this.passwordScore <= 3) return @js(__('Almost there'));
+                return @js(__('Strong password'));
             },
             get canSubmit() {
                 return /^[A-Za-z0-9_-]{3,30}$/.test(this.username)
@@ -181,7 +181,7 @@
                                 <svg x-show="showPasswordConfirmation" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                             </button>
                         </div>
-                        <p x-show="passwordConfirmation" class="mt-1 text-xs font-semibold" :class="password === passwordConfirmation ? 'text-emerald-300' : 'text-red-300'" x-text="password === passwordConfirmation ? 'Passwords match' : 'Passwords do not match'" aria-live="polite"></p>
+                        <p x-show="passwordConfirmation" class="mt-1 text-xs font-semibold" :class="password === passwordConfirmation ? 'text-emerald-300' : 'text-red-300'" x-text="password === passwordConfirmation ? @js(__('Passwords match')) : @js(__('Passwords do not match'))" aria-live="polite"></p>
                         @error('password_confirmation') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
                     </div>
                 </div>

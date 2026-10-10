@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" x-data="{ ...translationLanguageVisibility(@js(auth()->id()), @js(array_keys($languages))), languageModalOpen: false, resetModalOpen: false }" @translation-language-added.window="if (!supported.includes($event.detail.locale)) supported.push($event.detail.locale); languageModalOpen = false" @translation-reset-completed.window="resetModalOpen = false">
 
     @unless($this->translationTableReady)
         <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200">
@@ -12,27 +12,34 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <h2 class="text-sm font-extrabold uppercase tracking-widest text-slate-200">Translation Manager</h2>
-                <p class="mt-1 text-xs text-slate-500">Choose a language to edit its translations. Sync Database adds public content to the phrase list.</p>
+                <p class="mt-1 text-xs text-slate-500">{{ __('English is the source catalog. Export it, translate the translation values, then import the file into another language.') }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                @can('translations.manage')
                 <button type="button" wire:click="syncFromJson" class="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-indigo-500/50 hover:text-white">
                     <i data-lucide="refresh-cw" class="h-4 w-4"></i>
-                    Sync JSON
+                    {{ __('Sync English') }}
                 </button>
                 <button type="button" wire:click="syncFromDatabase" class="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-indigo-500/50 hover:text-white">
                     <i data-lucide="database" class="h-4 w-4"></i>
                     Sync Database
                 </button>
-                <button type="button" wire:click="exportJson" class="inline-flex items-center gap-2 rounded-lg border border-emerald-700/50 bg-emerald-950/30 px-3 py-2 text-xs font-semibold text-emerald-300 hover:border-emerald-500/70 hover:text-white">
+                <button type="button" wire:click="exportEnglish" class="inline-flex items-center gap-2 rounded-lg border border-emerald-700/50 bg-emerald-950/30 px-3 py-2 text-xs font-semibold text-emerald-300 hover:border-emerald-500/70 hover:text-white">
                     <i data-lucide="download" class="h-4 w-4"></i>
-                    Export JSON
+                    {{ __('Export English') }}
                 </button>
-                <button type="button" wire:click="fillMissingWithEnglish" wire:confirm="Fill every missing translation with its English text? This clears Missing badges, but real translations can still be edited later." class="inline-flex items-center gap-2 rounded-lg border border-amber-700/50 bg-amber-950/30 px-3 py-2 text-xs font-semibold text-amber-300 hover:border-amber-500/70 hover:text-white">
-                    <i data-lucide="copy-check" class="h-4 w-4"></i>
-                    Fill Missing
-                </button>
+
+                @endcan
+                @can('translations.reset')
+                    <button data-testid="reset-translations-button" type="button" @disabled(! $this->resetTableReady) @click="$wire.set('resetLocale', $wire.localeFilter === 'en' ? 'all' : $wire.localeFilter, false); $wire.set('resetConfirmation', '', false); resetModalOpen = true" class="inline-flex items-center gap-2 rounded-lg border border-rose-500/25 bg-rose-500/5 px-3 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-40"><i data-lucide="rotate-ccw" class="h-4 w-4"></i>{{ __('Reset translations') }}</button>
+                @endcan
             </div>
         </div>
+        @if(! $this->resetTableReady)
+            @can('translations.reset')
+                <p role="status" class="mt-3 text-xs text-amber-300">{{ __('Reset is unavailable until the application update is complete. No translations were changed.') }}</p>
+            @endcan
+        @endif
 
         @if(session()->has('success'))
             <div class="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
@@ -40,6 +47,14 @@
             </div>
         @endif
     </div>
+
+    @can('translations.manage')
+        @include('livewire.admin.partials.translation-import-panel')
+        @include('livewire.admin.partials.translation-language-modal')
+    @endcan
+    @can('translations.reset')
+        @include('livewire.admin.partials.translation-reset-modal')
+    @endcan
 
     <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div class="rounded-xl border border-slate-800 bg-[#0f172a] p-4">
@@ -69,25 +84,42 @@
 
     <details class="rounded-xl border border-slate-800 bg-[#0f172a] p-4">
         <summary class="cursor-pointer text-sm font-semibold text-slate-200">{{ __('Show/hide languages') }}</summary>
-        <p class="mt-3 text-xs text-slate-500">{{ __('Choose which language tabs to display.') }}</p>
+        <p class="mt-3 text-xs text-slate-500">{{ __('Choose which language tabs to display. This preference only affects your admin view.') }}</p>
         <div class="mt-3 flex flex-wrap gap-3">
             @foreach($languages as $locale => $language)
                 <label class="flex items-center gap-2 text-sm text-slate-300">
-                    <input type="checkbox" wire:click="toggleLanguage('{{ $locale }}')" @checked(!in_array($locale, $hiddenLanguages, true)) @disabled($locale === 'en') class="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50">
+                    <input type="checkbox" :checked="!hiddenLanguages.includes('{{ $locale }}')" @click="toggleLanguage('{{ $locale }}')" @disabled($locale === 'en') class="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50">
                     {{ $language['english'] }}
                 </label>
             @endforeach
         </div>
-        <button type="button" wire:click="showAllLanguages" class="mt-4 text-xs font-semibold text-indigo-300 hover:text-white">{{ __('Show all languages') }}</button>
+        <button type="button" @click="showAllLanguages()" class="mt-4 text-xs font-semibold text-indigo-300 hover:text-white">{{ __('Show all languages') }}</button>
     </details>
 
+    @can('translations.manage')
+        <section class="rounded-xl border border-slate-800 bg-[#0f172a] p-4">
+            <h2 class="text-sm font-semibold text-slate-200">{{ __('Available to players') }}</h2>
+            <p class="mt-1 text-xs text-slate-500">{{ __('Disabled languages are hidden from the site language picker. Existing users fall back to English. Stored translations are kept.') }}</p>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($languages as $locale => $language)
+                    <label wire:key="language-availability-{{ $locale }}" class="flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-slate-300">
+                        <span><span class="fi fi-{{ $language['flag'] ?? 'un' }} mr-2 rounded-sm" aria-hidden="true"></span>{{ $language['english'] }}</span>
+                        <input type="checkbox" data-player-language="{{ $locale }}" @checked(isset($availableLanguages[$locale])) @disabled($locale === 'en') wire:change="setLanguageAvailability('{{ $locale }}', $event.target.checked)" wire:loading.attr="disabled" wire:target="setLanguageAvailability" class="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50">
+                    </label>
+                @endforeach
+            </div>
+            @error('languageAvailability') <p class="mt-2 text-xs text-red-400">{{ $message }}</p> @enderror
+        </section>
+    @endcan
+
     <nav aria-label="Translation languages" class="flex gap-2 overflow-x-auto rounded-xl border border-slate-800 bg-[#0f172a] p-3">
-        @foreach($visibleLanguages as $locale => $language)
-            <button type="button" data-translation-language="{{ $locale }}" wire:click="$set('localeFilter', '{{ $locale }}')" aria-current="{{ $localeFilter === $locale ? 'page' : 'false' }}" @class([
+        @foreach($languages as $locale => $language)
+            <button type="button" data-translation-language="{{ $locale }}" x-show="!hiddenLanguages.includes('{{ $locale }}')" wire:click="$set('localeFilter', '{{ $locale }}')" aria-current="{{ $localeFilter === $locale ? 'page' : 'false' }}" @class([
                 'shrink-0 rounded-lg border px-4 py-2 text-sm font-semibold transition',
                 'border-indigo-500 bg-indigo-600/20 text-indigo-200' => $localeFilter === $locale,
                 'border-slate-800 bg-slate-900 text-slate-400 hover:text-white' => $localeFilter !== $locale,
             ])>
+                <span class="fi fi-{{ $language['flag'] ?? 'un' }} mr-2 rounded-sm" aria-hidden="true"></span>
                 {{ $language['english'] }}
                 @if(($missingCounts[$locale] ?? 0) > 0)
                     <span class="ml-2 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-300">{{ $missingCounts[$locale] }}</span>
@@ -102,7 +134,7 @@
                 <thead>
                     <tr class="border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                         <th class="p-4">English</th>
-                        <th class="p-4">{{ __(':language translation', ['language' => $languages[$localeFilter]['english']]) }}</th>
+                        @if($localeFilter !== 'en')<th class="p-4">{{ __(':language translation', ['language' => $languages[$localeFilter]['english']]) }}</th>@endif
                         <th class="w-28 p-4 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -112,8 +144,9 @@
                         <tr class="hover:bg-slate-900/40">
                             <td class="break-words p-4 align-top">
                                 <p translate="no" class="font-semibold text-slate-200">{{ $row->get('en')?->text ?? $keyRow->key }}</p>
-                                <p translate="no" class="mt-1 truncate font-mono text-[10px] text-slate-600">{{ $keyRow->key }}</p>
+                                @if($keyRow->text !== null && $keyRow->text !== $keyRow->key)<p translate="no" class="mt-1 truncate font-mono text-[10px] text-slate-600">{{ $keyRow->key }}</p>@endif
                             </td>
+                            @if($localeFilter !== 'en')
                             @php($value = $row->get($localeFilter)?->text)
                             <td class="break-words p-4 align-top">
                                 @if($value !== null && $value !== '')
@@ -122,16 +155,19 @@
                                     <span class="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-300">Missing</span>
                                 @endif
                             </td>
+                            @endif
                             <td class="p-4 text-right align-top">
                                 <button type="button" wire:click="editKey(@js($keyRow->key))" class="rounded-lg border border-indigo-900/50 bg-indigo-950/40 p-1.5 text-indigo-400 hover:text-white" title="Edit translation">
                                     <i data-lucide="edit" class="h-4 w-4"></i>
                                 </button>
-                                <livewire:admin.recoverable-delete resource="translations" :record-id="$keyRow->id" :key="'delete-translation-'.$keyRow->key" />
+                                @can('translations.delete')
+                                    <button type="button" wire:click="deleteKey(@js($keyRow->key))" wire:confirm="{{ __('Delete this English phrase and its translations? Stored entries remain recoverable.') }}" class="rounded-lg border border-red-900/50 bg-red-950/40 p-1.5 text-red-400 hover:text-white" title="{{ __('Delete phrase') }}"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                                @endcan
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="p-8 text-center text-slate-500">No translation keys found.</td>
+                            <td colspan="{{ $localeFilter === 'en' ? 2 : 3 }}" class="p-8 text-center text-slate-500">No translation keys found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -139,7 +175,7 @@
         </div>
     </div>
 
-    {{ $keys->links('vendor.livewire.custom-pagination') }}
+    @if($this->translationTableReady){{ $keys->links('vendor.livewire.custom-pagination') }}@endif
 
     @if($showEditModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
@@ -171,7 +207,7 @@
                         Cancel
                     </button>
                     <button type="button" wire:click="saveKey" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-500">
-                        Save & Export
+                        {{ __('Save translation') }}
                     </button>
                 </div>
             </div>

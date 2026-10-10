@@ -79,7 +79,7 @@
                         <i data-lucide="globe" class="h-5 w-5 text-purple-400"></i>
                         <h3 class="font-orbitron text-sm font-black uppercase tracking-wider text-zinc-200">Open Challenges</h3>
                     </div>
-                    <span class="rounded bg-purple-950 px-2 py-0.5 font-mono text-[9px] font-bold text-purple-400">{{ $waitingChallenges->count() }} Open</span>
+                    <span class="rounded bg-purple-950 px-2 py-0.5 font-mono text-[9px] font-bold text-purple-400">{{ __(':value1 Open', ['value1' => ($waitingChallenges->count())]) }}</span>
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -94,7 +94,7 @@
                                         <div class="flex h-7 w-7 items-center justify-center rounded-full border border-purple-500/20 bg-purple-900/30 font-orbitron text-[9px] font-bold text-purple-400">
                                             {{ strtoupper(substr($challenge->creator?->username ?? '??', 0, 2)) }}
                                         </div>
-                                        <span class="font-orbitron text-xs font-bold text-zinc-300">{{ $challenge->creator?->username }}</span>
+                                        <span class="font-orbitron text-xs font-bold text-zinc-300" translate="no">{{ $challenge->creator?->username }}</span>
                                     </div>
                                     <div class="mt-3 flex flex-wrap items-center gap-2">
                                         <span class="rounded border border-fuchsia-900/40 bg-fuchsia-950/40 px-2 py-0.5 font-orbitron text-[8px] font-bold text-fuchsia-400">{{ $gameName }}</span>
@@ -133,7 +133,7 @@
                         <i data-lucide="swords" class="h-5 w-5 text-purple-400"></i>
                         <h3 class="font-orbitron text-sm font-black uppercase tracking-wider text-zinc-200">Active Duels (All Games)</h3>
                     </div>
-                    <span class="rounded bg-purple-950 px-2 py-0.5 font-mono text-[9px] font-bold text-purple-400">{{ $activeMatches->count() }} Active</span>
+                    <span class="rounded bg-purple-950 px-2 py-0.5 font-mono text-[9px] font-bold text-purple-400">{{ __(':value1 Active', ['value1' => ($activeMatches->count())]) }}</span>
                 </div>
 
                 <div class="space-y-4">
@@ -153,7 +153,7 @@
                         <i data-lucide="history" class="h-5 w-5 text-purple-400"></i>
                         <h3 class="font-orbitron text-sm font-black uppercase tracking-wider text-zinc-200">Duel History</h3>
                     </div>
-                    <span class="rounded bg-purple-950 px-2 py-0.5 font-mono text-[9px] font-bold text-purple-400">{{ $historyMatches->count() }} Recent</span>
+                    <span class="rounded bg-purple-950 px-2 py-0.5 font-mono text-[9px] font-bold text-purple-400">{{ __(':value1 Recent', ['value1' => ($historyMatches->count())]) }}</span>
                 </div>
 
                 <div class="space-y-4">

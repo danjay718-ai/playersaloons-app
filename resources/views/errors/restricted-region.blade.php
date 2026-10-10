@@ -20,9 +20,7 @@
         <p class="mb-6 text-lg text-zinc-400">
             {{ $message }}
         </p>
-        <p class="text-sm font-semibold text-zinc-500 bg-zinc-900/50 inline-block px-4 py-2 rounded-lg border border-zinc-800">
-            Detected Region: {{ $countryName }} ({{ $countryCode }})
-        </p>
+        <p class="text-sm font-semibold text-zinc-500 bg-zinc-900/50 inline-block px-4 py-2 rounded-lg border border-zinc-800">{{ __('Detected Region: :value1 (:value2)', ['value1' => ($countryName), 'value2' => ($countryCode)]) }}</p>
         <div class="mt-10">
             <a href="mailto:support@gamersrival.com" class="text-sm text-cyan-400 hover:text-cyan-300 underline underline-offset-4">Contact Support</a>
         </div>

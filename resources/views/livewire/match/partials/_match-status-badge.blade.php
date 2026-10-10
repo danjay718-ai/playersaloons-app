@@ -15,6 +15,6 @@
     @if((int) $match->tournament->workflow_version === 2 && $match->status->value === 'waiting_for_confirmation')
         Waiting for opponent result
     @else
-        {{ $match->status->value === 'ready' ? ($match->tournament->status === \App\Shared\Enums\TournamentStatus::ONGOING ? 'Starting' : 'Scheduled') : str_replace('_', ' ', $match->status->value ?? $match->status) }}
+        {{ $match->status->value === 'ready' ? ($match->tournament->status === \App\Shared\Enums\TournamentStatus::ONGOING ? __('Starting') : __('Scheduled')) : $match->status->label() }}
     @endif
 </span>

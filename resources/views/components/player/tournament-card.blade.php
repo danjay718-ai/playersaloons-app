@@ -50,7 +50,7 @@
         <div class="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
             <span class="player-badge max-w-[55%] truncate border-cyan-800/50 bg-zinc-950/85 text-cyan-400">{{ $gameName }}</span>
             <span class="player-badge {{ $statusColors[$statusValue] ?? 'text-zinc-400 border-zinc-800 bg-zinc-950/85' }}">
-                {{ str_replace('_', ' ', $statusValue) }}
+                {{ \App\Shared\Enums\TournamentStatus::from($statusValue)->label() }}
             </span>
         </div>
 

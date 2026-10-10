@@ -12,6 +12,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Policies\KycPolicy;
 use App\Modules\Identity\Policies\UserPolicy;
 use App\Modules\Localization\Observers\CompetitionTranslationObserver;
+use App\Modules\Localization\Services\CatalogTranslationLoader;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Policies\DisputePolicy;
@@ -41,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->extend('translation.loader', fn ($loader) => new CatalogTranslationLoader($loader));
     }
 
     /**

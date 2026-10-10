@@ -22,7 +22,7 @@
                         </div>
                         <div class="min-w-0">
                             <h3 class="truncate font-orbitron text-sm font-black uppercase tracking-wide text-white">{{ $player['name'] }}</h3>
-                            <p class="mt-1 text-xs text-zinc-500">{{ $player['wins'] }} wins / {{ $player['losses'] }} losses</p>
+                            <p class="mt-1 text-xs text-zinc-500">{{ __(':value1 wins / :value2 losses', ['value1' => ($player['wins']), 'value2' => ($player['losses'])]) }}</p>
                         </div>
                     </div>
                     <div class="mt-5 grid grid-cols-2 gap-3 border-t border-zinc-800 pt-4 text-xs">

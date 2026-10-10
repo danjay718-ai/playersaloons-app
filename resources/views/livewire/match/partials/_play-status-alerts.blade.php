@@ -22,7 +22,7 @@
     <div role="{{ $isRematch ? 'alert' : 'status' }}" class="flex items-center gap-3 rounded-xl border p-4 {{ $isRematch ? 'border-cyan-400/40 bg-cyan-500/10' : 'border-emerald-800/50 bg-emerald-950/20' }}">
         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $isRematch ? 'bg-cyan-400/15 text-cyan-300' : 'bg-emerald-500/15 text-emerald-300' }}"><i data-lucide="{{ $isRematch ? 'refresh-cw' : 'check-circle-2' }}" class="h-5 w-5"></i></span>
         @if($isRematch)
-            <div><p class="text-xs font-black uppercase tracking-wider text-cyan-200">{{ __('This is a rematch — play again') }}</p><p class="mt-1 text-[11px] text-cyan-100/75">The previous attempt ended without a winner. Play this rematch and submit a new result{{ $isSubmitter ? '; your new result is submitted and the opponent still needs to respond' : '' }}.</p></div>
+            <div><p class="text-xs font-black uppercase tracking-wider text-cyan-200">{{ __('This is a rematch — play again') }}</p><p class="mt-1 text-[11px] text-cyan-100/75">{{ __('The previous attempt ended without a winner. Play this rematch and submit a new result:value1.', ['value1' => ($isSubmitter ? '; your new result is submitted and the opponent still needs to respond' : '')]) }}</p></div>
         @else
             <div><p class="text-xs font-black uppercase tracking-wider text-emerald-200">{{ __('Match in progress — play now') }}</p><p class="mt-1 text-[11px] text-zinc-400">{{ __('Play the match, then submit your result below.') }}</p></div>
         @endif

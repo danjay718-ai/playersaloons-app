@@ -6,12 +6,18 @@ import Pusher from 'pusher-js';
 import { tournamentCountdown } from './slot-picker';
 import { tournamentListRealtime, refreshAdminHeadToHead } from './tournament-list-realtime';
 import { scrollToTournamentContent, scrollToMatchContent } from './tournament-content-navigation';
+import { translationLanguageVisibility } from './translation-language-visibility';
+import { translationImportUpload } from './translation-import-upload';
+import { interfaceText } from './interface-text';
 
 window.tournamentCountdown = tournamentCountdown;
 window.tournamentListRealtime = tournamentListRealtime;
 window.refreshAdminHeadToHead = refreshAdminHeadToHead;
 window.scrollToTournamentContent = scrollToTournamentContent;
 window.scrollToMatchContent = scrollToMatchContent;
+window.translationLanguageVisibility = translationLanguageVisibility;
+window.translationImportUpload = translationImportUpload;
+window.interfaceText = interfaceText;
 
 window.Pusher = Pusher;
 
@@ -104,7 +110,7 @@ window.imageCropUpload = function (config) {
 
             if (!file) return;
             if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                this.rejectFile('Use a JPG, PNG, or WebP image.');
+                this.rejectFile(interfaceText('Use a JPG, PNG, or WebP image.'));
                 return;
             }
             this.releaseObjectUrl();
@@ -115,7 +121,7 @@ window.imageCropUpload = function (config) {
             try {
                 await image.decode();
             } catch (_) {
-                this.rejectFile('The selected image could not be read.');
+                this.rejectFile(interfaceText('The selected image could not be read.'));
                 return;
             }
 
@@ -173,7 +179,7 @@ window.imageCropUpload = function (config) {
             this.$refs.canvas.toBlob((blob) => {
                 if (!blob) {
                     this.processing = false;
-                    this.clientError = 'The cropped image could not be created.';
+                    this.clientError = interfaceText('The cropped image could not be created.');
                     return;
                 }
                 const baseName = (this.originalFile?.name || 'image').replace(/\.[^.]+$/, '');
@@ -194,7 +200,7 @@ window.imageCropUpload = function (config) {
             if (this.mode === 'form') {
                 const input = this.$refs.formInput;
                 if (!input) {
-                    this.clientError = 'The cropped image could not be attached to this form.';
+                    this.clientError = interfaceText('The cropped image could not be attached to this form.');
                     return;
                 }
 
@@ -231,7 +237,7 @@ window.imageCropUpload = function (config) {
 
         failUpload() {
             this.uploading = false;
-            this.clientError = 'Upload failed. Please try again.';
+            this.clientError = interfaceText('Upload failed. Please try again.');
         },
 
         cancelCrop() {
@@ -415,7 +421,7 @@ window.chatConsole = function (config) {
                 this.connected = Boolean(window.ensurePlayerSaloonsEcho?.());
             } catch (error) {
                 this.loadingMessages = false;
-                this.bootError = error?.message || 'Chat could not sync. Refresh the page or try again.';
+                this.bootError = error?.message || interfaceText('Chat could not sync. Refresh the page or try again.');
             }
         },
 
@@ -478,7 +484,7 @@ window.chatConsole = function (config) {
                 this.subscribe(conversation.uuid);
                 this.scrollToBottom();
             } catch (error) {
-                this.error = error?.message || 'Could not load messages.';
+                this.error = error?.message || interfaceText('Could not load messages.');
             } finally {
                 this.loadingMessages = false;
             }
@@ -528,7 +534,7 @@ window.chatConsole = function (config) {
                 this.pushMessage(data.message);
                 this.draft = '';
             } catch (error) {
-                this.error = error?.errors?.message?.[0] || error?.message || 'Message failed.';
+                this.error = error?.errors?.message?.[0] || error?.message || interfaceText('Message failed.');
             } finally {
                 this.sending = false;
             }
@@ -546,7 +552,7 @@ window.chatConsole = function (config) {
                 const data = await this.request(`${this.endpoints.users}?search=${query}`);
                 this.playerResults = data.users || [];
             } catch (error) {
-                this.searchError = error?.message || 'Player search failed.';
+                this.searchError = error?.message || interfaceText('Player search failed.');
             }
         },
 
@@ -565,7 +571,7 @@ window.chatConsole = function (config) {
                 this.playerResults = [];
                 this.playerModalOpen = false;
             } catch (error) {
-                this.searchError = error?.errors?.username?.[0] || error?.message || 'Could not open player chat.';
+                this.searchError = error?.errors?.username?.[0] || error?.message || interfaceText('Could not open player chat.');
             }
         },
 
@@ -602,7 +608,7 @@ window.chatConsole = function (config) {
                 const data = await this.request(`${this.endpoints.players}/${uuid}`);
                 this.selectedPlayer = data.player;
             } catch (error) {
-                this.selectedPlayer = { error: error?.message || 'Could not load player.' };
+                this.selectedPlayer = { error: error?.message || interfaceText('Could not load player.') };
             } finally {
                 this.playerLoading = false;
             }
@@ -1142,14 +1148,14 @@ function initPublicPwaInstall() {
 
     const setButtonState = (button, state) => {
         const labels = {
-            ready: 'Install',
-            installed: 'Installed',
-            manual: 'Install App',
+            ready: interfaceText('Install'),
+            installed: interfaceText('Installed'),
+            manual: interfaceText('Install App'),
         };
         const ariaLabels = {
-            ready: 'Install GamersRival app',
-            installed: 'GamersRival is installed. Show reinstall instructions',
-            manual: 'Show GamersRival install options',
+            ready: interfaceText('Install GamersRival app'),
+            installed: interfaceText('GamersRival is installed. Show reinstall instructions'),
+            manual: interfaceText('Show GamersRival install options'),
         };
 
         button.dataset.pwaState = state;
@@ -1214,14 +1220,14 @@ function initPublicPwaInstall() {
             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
         if (isStandalone() || window.__playerSaloonsPwaJustInstalled) {
-            return 'GamersRival is already installed. To reinstall it, remove the existing app from your device first, then return here and install again.';
+            return interfaceText('GamersRival is already installed. To reinstall it, remove the existing app from your device first, then return here and install again.');
         }
 
         if (isIos) {
-            return 'To install on iPhone or iPad, tap Share, then Add to Home Screen. If it is already installed, open GamersRival from your Home Screen.';
+            return interfaceText('To install on iPhone or iPad, tap Share, then Add to Home Screen. If it is already installed, open GamersRival from your Home Screen.');
         }
 
-        return 'Use your browser menu and choose Install app. If GamersRival is already installed, open it from your desktop or app launcher.';
+        return interfaceText('Use your browser menu and choose Install app. If GamersRival is already installed, open it from your desktop or app launcher.');
     };
 
     getInstallButtons().forEach(button => {
@@ -1248,7 +1254,7 @@ function initPublicPwaInstall() {
                 if (choice.outcome === 'accepted') {
                     window.__playerSaloonsPwaJustInstalled = true;
                 } else {
-                    showInstallNotice('Install was dismissed. You can try again later from your browser menu.');
+                    showInstallNotice(interfaceText('Install was dismissed. You can try again later from your browser menu.'));
                 }
             } catch (error) {
                 console.warn('PWA install prompt failed:', error);

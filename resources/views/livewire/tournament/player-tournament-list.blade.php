@@ -1,10 +1,10 @@
 @php
     $isHeadToHeadListing = ($listingType ?? 'tournament') === 'head_to_head';
     $fixedFrequency = $fixedFrequency ?? false;
-    $competitionLabel = $isHeadToHeadListing ? 'Head-to-Head' : 'Tournament';
+    $competitionLabel = $isHeadToHeadListing ? __('Head-to-Head') : __('Tournament');
     $competitionPlural = $isHeadToHeadListing
-        ? 'Head-to-Head Matches'
-        : ($fixedFrequency ? ucfirst($frequency).' Tournaments' : 'Tournaments');
+        ? __('Head-to-Head Matches')
+        : ($fixedFrequency ? __(':frequency Tournaments', ['frequency' => __(ucfirst($frequency))]) : __('Tournaments'));
     $publicView = $publicView ?? false;
     $gameContext = [];
     if ($isHeadToHeadListing) {
@@ -59,7 +59,7 @@
 
     @if($featuredTournaments->isNotEmpty())
     <section class="space-y-6">
-        <div class="flex items-end justify-between gap-4"><div><p class="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Selected competitions</p><h2 class="mt-2 font-orbitron text-2xl font-black uppercase text-white">Featured {{ $competitionPlural }}</h2></div><span class="hidden text-xs text-zinc-500 sm:block">Highlights from active competitions</span></div>
+        <div class="flex items-end justify-between gap-4"><div><p class="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Selected competitions</p><h2 class="mt-2 font-orbitron text-2xl font-black uppercase text-white">{{ __('Featured :value1', ['value1' => ($competitionPlural)]) }}</h2></div><span class="hidden text-xs text-zinc-500 sm:block">Highlights from active competitions</span></div>
         <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($featuredTournaments as $tournament)<div wire:key="featured-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" action-label="Join" :public-view="$publicView" class="min-w-0" /></div>@endforeach</div>
         @if($hasMoreFeatured)<div class="text-center"><button wire:click="loadMoreFeatured" wire:loading.attr="disabled" class="rounded-xl border border-violet-500/30 bg-violet-500/10 px-6 py-3 font-orbitron text-[10px] font-black uppercase tracking-widest text-violet-200 transition hover:bg-violet-500/20 disabled:opacity-50"><span wire:loading.remove wire:target="loadMoreFeatured">View More</span><span wire:loading wire:target="loadMoreFeatured">Loading...</span></button></div>@endif
     </section>
@@ -77,7 +77,7 @@
                 <div class="flex min-w-0 gap-2">
                     <select wire:model.live="maxTeams" aria-label="Filter by maximum teams" class="min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300">
                         <option value="">All max teams</option>
-                        @foreach([4, 8, 16, 32, 64, 128] as $maximum)<option value="{{ $maximum }}">{{ $maximum }} teams</option>@endforeach
+                        @foreach([4, 8, 16, 32, 64, 128] as $maximum)<option value="{{ $maximum }}">{{ __(':value1 teams', ['value1' => ($maximum)]) }}</option>@endforeach
                         <option value="custom">Custom</option>
                     </select>
                     @if($maxTeams === 'custom')
@@ -87,7 +87,7 @@
             @endif
             <select wire:model.live="gameId" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All games</option>@foreach($games as $game)<option value="{{ $game->id }}">{{ $game->localizedName() }}</option>@endforeach</select>
             @if($fixedFrequency)
-                <div class="flex items-center rounded-xl border border-violet-500/25 bg-violet-500/10 px-3 py-3 text-sm font-semibold text-violet-200"><i data-lucide="calendar-days" class="mr-2 h-4 w-4"></i>{{ ucfirst($frequency) }} Tournaments</div>
+                <div class="flex items-center rounded-xl border border-violet-500/25 bg-violet-500/10 px-3 py-3 text-sm font-semibold text-violet-200"><i data-lucide="calendar-days" class="mr-2 h-4 w-4"></i>{{ __(':value1 Tournaments', ['value1' => (ucfirst($frequency))]) }}</div>
             @else
                 <select wire:model.live="frequency" class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3 text-sm text-zinc-300"><option value="">All frequencies</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="one-time">One-time</option></select>
             @endif
@@ -96,9 +96,9 @@
         </div></div>
         @if($tournaments->count())
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach($tournaments as $tournament)<div wire:key="browse-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" :action-label="match ($activeTab) { 'upcoming' => 'Join', 'past' => 'View Results', default => 'View Tournament' }" :public-view="$publicView" /></div>@endforeach</div>
-            <div class="flex flex-col gap-4 border-t border-zinc-900/60 pt-6 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs text-zinc-500">Showing {{ $tournaments->firstItem() }}–{{ $tournaments->lastItem() }} of {{ $tournaments->total() }} results</p>{{ $tournaments->links('vendor.livewire.custom-pagination') }}</div>
+            <div class="flex flex-col gap-4 border-t border-zinc-900/60 pt-6 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs text-zinc-500">{{ __('Showing :value1–:value2 of :value3 results', ['value1' => ($tournaments->firstItem()), 'value2' => ($tournaments->lastItem()), 'value3' => ($tournaments->total())]) }}</p>{{ $tournaments->links('vendor.livewire.custom-pagination') }}</div>
         @else
-            <div class="rounded-2xl border border-dashed border-zinc-800 p-12 text-center"><i data-lucide="trophy" class="mx-auto h-9 w-9 text-zinc-700"></i><h3 class="mt-4 font-orbitron text-sm font-black uppercase text-zinc-300">No {{ strtolower($competitionPlural) }} found</h3><p class="mt-2 text-sm text-zinc-600">Try changing the selected tab or filters.</p></div>
+            <div class="rounded-2xl border border-dashed border-zinc-800 p-12 text-center"><i data-lucide="trophy" class="mx-auto h-9 w-9 text-zinc-700"></i><h3 class="mt-4 font-orbitron text-sm font-black uppercase text-zinc-300">{{ __('No :value1 found', ['value1' => (strtolower($competitionPlural))]) }}</h3><p class="mt-2 text-sm text-zinc-600">Try changing the selected tab or filters.</p></div>
         @endif
     </section>
 </div>

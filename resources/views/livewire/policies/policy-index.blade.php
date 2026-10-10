@@ -19,9 +19,7 @@
                         <i data-lucide="arrow-up-right" class="h-5 w-5 shrink-0 text-zinc-500 transition-colors group-hover:text-cyan-300"></i>
                     </div>
                     <p class="mt-4 text-sm leading-6 text-zinc-400">{{ $policy->summary }}</p>
-                    <p class="mt-5 text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                        Last updated {{ $policy->updated_at->format('M j, Y') }}
-                    </p>
+                    <p class="mt-5 text-[10px] font-black uppercase tracking-widest text-zinc-600">{{ __('Last updated :value1', ['value1' => ($policy->updated_at->format('M j, Y'))]) }}</p>
                 </a>
             @empty
                 <div class="landing-card p-8 text-center text-sm text-zinc-500 md:col-span-2">

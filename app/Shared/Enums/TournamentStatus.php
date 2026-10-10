@@ -15,4 +15,21 @@ enum TournamentStatus: string
     case COMPLETED = 'COMPLETED';
     case CANCELLED = 'CANCELLED';
     case REFUNDED = 'REFUNDED';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::DRAFT => __('Draft'),
+            self::PUBLISHED => __('Published'),
+            self::REGISTRATION_OPEN => __('Registration open'),
+            self::REGISTRATION_CLOSED => __('Registration closed'),
+            self::CHECKIN_OPEN => __('Check-in open'),
+            self::CHECKIN_CLOSED => __('Check-in closed'),
+            self::BRACKET_GENERATED => __('Bracket generated'),
+            self::ONGOING => __('Ongoing'),
+            self::COMPLETED => __('Completed'),
+            self::CANCELLED => __('Cancelled'),
+            self::REFUNDED => __('Refunded'),
+        };
+    }
 }

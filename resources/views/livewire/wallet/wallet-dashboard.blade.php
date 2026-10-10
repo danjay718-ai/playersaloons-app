@@ -236,9 +236,7 @@
                                 <div class="font-orbitron text-base font-black {{ $isCredit ? 'text-emerald-300' : 'text-red-300' }}">
                                     {{ $isCredit ? '+' : '-' }}${{ number_format(abs((float)$entry->amount), 2) }}
                                 </div>
-                                <div class="mt-1 font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                                    Bal ${{ number_format((float)$entry->running_balance, 2) }}
-                                </div>
+                                <div class="mt-1 font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-600">{{ __('Bal $:value1', ['value1' => (number_format((float)$entry->running_balance, 2))]) }}</div>
                             </div>
                         </div>
                     @endforeach

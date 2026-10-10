@@ -6,7 +6,7 @@
            wire:navigate
            class="player-tab {{ request()->is($item['pattern']) ? 'player-tab-active' : '' }}"
            @if(request()->is($item['pattern'])) aria-current="page" @endif>
-            {{ $item['label'] }}
+            {{ __($item['label']) }}
         </a>
     @endforeach
 </nav>

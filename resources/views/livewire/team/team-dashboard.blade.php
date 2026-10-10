@@ -59,14 +59,14 @@
             @forelse($teamFinderTournaments as $finderTournament)
                 <a href="/tournaments/{{ $finderTournament->uuid }}/view" wire:navigate wire:key="finder-{{ $finderTournament->uuid }}" class="group rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 transition-colors hover:border-cyan-700/70 hover:bg-cyan-950/10">
                     <div class="flex items-start justify-between gap-3">
-                        <span class="rounded-md border border-cyan-900/60 bg-cyan-950/40 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-cyan-300">{{ $finderTournament->team_size }} players/team</span>
+                        <span class="rounded-md border border-cyan-900/60 bg-cyan-950/40 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-cyan-300">{{ __(':value1 players/team', ['value1' => ($finderTournament->team_size)]) }}</span>
                         <i data-lucide="arrow-up-right" class="h-4 w-4 text-zinc-600 transition-colors group-hover:text-cyan-300"></i>
                     </div>
                     <h3 class="mt-3 line-clamp-2 text-sm font-bold text-white">{{ $finderTournament->name }}</h3>
                     <p class="mt-1 text-[11px] text-zinc-500">{{ $finderTournament->game?->localizedName() ?? 'Game' }} · {{ $finderTournament->platform?->name ?? 'Any platform' }}</p>
                     <div class="mt-3 flex items-center justify-between text-[10px] text-zinc-600">
-                        <span>{{ $finderTournament->registrations_count }}/{{ $finderTournament->max_participants }} joined</span>
-                        @if($finderTournament->registration_close_at)<span>Closes {{ $finderTournament->registration_close_at->diffForHumans() }}</span>@endif
+                        <span>{{ __(':value1/:value2 joined', ['value1' => ($finderTournament->registrations_count), 'value2' => ($finderTournament->max_participants)]) }}</span>
+                        @if($finderTournament->registration_close_at)<span>{{ __('Closes :value1', ['value1' => ($finderTournament->registration_close_at->diffForHumans())]) }}</span>@endif
                     </div>
                 </a>
             @empty
@@ -129,7 +129,7 @@
                                 <div>
                                     <span class="text-[10px] text-zinc-500 font-semibold block">INVITATION TO JOIN</span>
                                     <h3 class="text-sm font-bold text-zinc-200 mt-0.5">{{ $invite->team->name }}</h3>
-                                    <span class="text-[10px] text-zinc-400 mt-1 block">Sent by: {{ $invite->inviter->username }}</span>
+                                    <span class="text-[10px] text-zinc-400 mt-1 block">{{ __('Sent by: :value1', ['value1' => ($invite->inviter->username)]) }}</span>
                                 </div>
                                 <div class="flex items-center space-x-2 pt-1">
                                     <button 
@@ -165,7 +165,7 @@
             <textarea wire:model="joinRequestMessage" rows="2" maxlength="500" placeholder="Optional message to squad leaders" class="mb-4 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-white outline-none focus:border-fuchsia-600"></textarea>
             <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 @forelse($squadDirectory as $directorySquad)
-                    <div class="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4"><div class="min-w-0"><strong class="block truncate text-sm text-white">{{ $directorySquad->name }}</strong><span class="text-[10px] uppercase tracking-wider text-zinc-500">{{ $directorySquad->members_count }} members</span></div><button wire:click="requestToJoin({{ $directorySquad->id }})" class="shrink-0 rounded-lg bg-fuchsia-600 px-3 py-2 text-[10px] font-black uppercase text-white hover:bg-fuchsia-500">Request</button></div>
+                    <div class="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4"><div class="min-w-0"><strong class="block truncate text-sm text-white">{{ $directorySquad->name }}</strong><span class="text-[10px] uppercase tracking-wider text-zinc-500">{{ __(':value1 members', ['value1' => ($directorySquad->members_count)]) }}</span></div><button wire:click="requestToJoin({{ $directorySquad->id }})" class="shrink-0 rounded-lg bg-fuchsia-600 px-3 py-2 text-[10px] font-black uppercase text-white hover:bg-fuchsia-500">Request</button></div>
                 @empty
                     <p class="text-xs text-zinc-500">No squads match your search.</p>
                 @endforelse
@@ -204,7 +204,7 @@
                                 </div>
                                 <div>
                                     <div class="flex items-center space-x-2">
-                                        <span class="text-sm font-bold text-zinc-200">
+                                        <span class="text-sm font-bold text-zinc-200" translate="no">
                                             {{ $member->user->profile?->display_name ?: $member->user->username }}
                                         </span>
                                         @if($member->role === 'captain')
@@ -215,7 +215,7 @@
                                             <span class="rounded border border-cyan-900/60 bg-cyan-950/40 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-cyan-400">Co-Leader</span>
                                         @endif
                                     </div>
-                                    <span class="text-[10px] text-zinc-500 font-semibold uppercase">Joined: {{ $member->joined_at->format('M d, Y') }}</span>
+                                    <span class="text-[10px] text-zinc-500 font-semibold uppercase">{{ __('Joined: :value1', ['value1' => ($member->joined_at->format('M d, Y'))]) }}</span>
                                 </div>
                             </div>
 
@@ -251,7 +251,7 @@
             <!-- Right: Settings / Invites -->
             <div class="space-y-8">
                 @if($teamJoinRequests->isNotEmpty())
-                    <div class="space-y-4 rounded-xl border border-cyan-900/40 bg-cyan-950/10 p-5"><h2 class="font-orbitron text-sm font-bold uppercase tracking-wide text-cyan-100">Join Requests</h2>@foreach($teamJoinRequests as $joinRequest)<div class="rounded-lg border border-zinc-800 bg-zinc-950 p-3"><strong class="text-xs text-white">{{ $joinRequest->user->username }}</strong>@if($joinRequest->message)<p class="mt-1 text-[10px] text-zinc-500">{{ $joinRequest->message }}</p>@endif<div class="mt-2 flex gap-2"><button wire:click="reviewJoinRequest('{{ $joinRequest->uuid }}', true)" class="rounded bg-emerald-600 px-2 py-1 text-[9px] font-bold uppercase text-white">Approve</button><button wire:click="reviewJoinRequest('{{ $joinRequest->uuid }}', false)" class="rounded bg-zinc-800 px-2 py-1 text-[9px] font-bold uppercase text-zinc-300">Decline</button></div></div>@endforeach</div>
+                    <div class="space-y-4 rounded-xl border border-cyan-900/40 bg-cyan-950/10 p-5"><h2 class="font-orbitron text-sm font-bold uppercase tracking-wide text-cyan-100">Join Requests</h2>@foreach($teamJoinRequests as $joinRequest)<div class="rounded-lg border border-zinc-800 bg-zinc-950 p-3"><strong class="text-xs text-white" translate="no">{{ $joinRequest->user->username }}</strong>@if($joinRequest->message)<p class="mt-1 text-[10px] text-zinc-500">{{ $joinRequest->message }}</p>@endif<div class="mt-2 flex gap-2"><button wire:click="reviewJoinRequest('{{ $joinRequest->uuid }}', true)" class="rounded bg-emerald-600 px-2 py-1 text-[9px] font-bold uppercase text-white">Approve</button><button wire:click="reviewJoinRequest('{{ $joinRequest->uuid }}', false)" class="rounded bg-zinc-800 px-2 py-1 text-[9px] font-bold uppercase text-zinc-300">Decline</button></div></div>@endforeach</div>
                 @endif
                 <!-- Captain Controls (Invite & Rename & Disband) -->
                 @if($team->captain_user_id === auth()->id())
@@ -293,8 +293,8 @@
                                     @foreach($teamPendingInvites as $outboundInvite)
                                         <div wire:key="outbound-{{ $outboundInvite->uuid }}" class="bg-zinc-950 border border-zinc-850 rounded-xl p-3 flex items-center justify-between gap-3 text-xs">
                                             <div class="truncate">
-                                                <span class="block font-bold text-zinc-300 truncate">{{ $outboundInvite->invitee->username }}</span>
-                                                <span class="text-[9px] text-zinc-500">Expires: {{ $outboundInvite->expires_at->format('M d, Y') }}</span>
+                                                <span class="block font-bold text-zinc-300 truncate" translate="no">{{ $outboundInvite->invitee->username }}</span>
+                                                <span class="text-[9px] text-zinc-500">{{ __('Expires: :value1', ['value1' => ($outboundInvite->expires_at->format('M d, Y'))]) }}</span>
                                             </div>
                                             <button 
                                                 wire:click="revokeInvitation('{{ $outboundInvite->uuid }}')"
@@ -360,7 +360,7 @@
                             </h2>
                         </div>
                         <p class="text-xs text-zinc-500 leading-relaxed">
-                            Only the Squad Leader (<span class="text-zinc-300 font-semibold">{{ $team->captain?->username }}</span>) can change membership and squad settings. Co-Leaders can review join requests.
+                            Only the Squad Leader (<span class="text-zinc-300 font-semibold" translate="no">{{ $team->captain?->username }}</span>) can change membership and squad settings. Co-Leaders can review join requests.
                         </p>
                     </div>
                 @endif

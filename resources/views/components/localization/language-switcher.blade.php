@@ -4,7 +4,7 @@
 ])
 
 @php
-    $languages = config('localization.supported', []);
+    $languages = app(\App\Modules\Localization\Services\LanguageRegistry::class)->available();
     $currentLocale = app()->getLocale();
     $currentLanguage = $languages[$currentLocale] ?? reset($languages);
 

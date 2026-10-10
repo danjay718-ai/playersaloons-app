@@ -11,9 +11,7 @@
             @if($policy->summary)
                 <p class="mt-4 text-base leading-7 text-zinc-400">{{ $policy->summary }}</p>
             @endif
-            <p class="mt-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                Last updated {{ $policy->updated_at->format('M j, Y') }}
-            </p>
+            <p class="mt-6 text-[10px] font-black uppercase tracking-widest text-zinc-600">{{ __('Last updated :value1', ['value1' => ($policy->updated_at->format('M j, Y'))]) }}</p>
         </header>
 
         <div class="policy-rich-content mt-10 text-sm leading-7 text-zinc-300 sm:text-base">

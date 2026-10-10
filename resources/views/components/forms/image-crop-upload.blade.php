@@ -82,8 +82,8 @@
                 <header class="flex items-start justify-between gap-4 border-b border-slate-800 {{ $compact ? 'shrink-0 px-4 py-3' : 'px-5 py-4' }}">
                     <div>
                         <p class="text-[9px] font-black uppercase tracking-[0.25em] text-indigo-400">Image editor</p>
-                        <h2 class="mt-1 text-base font-black text-white">Crop {{ $label }}</h2>
-                        <p class="mt-1 text-xs text-slate-500">Original: <span x-text="`${sourceWidth} × ${sourceHeight}px`"></span> · Output: {{ $width }} × {{ $height }}px</p>
+                        <h2 class="mt-1 text-base font-black text-white">{{ __('Crop :value1', ['value1' => (__($label))]) }}</h2>
+                        <p class="mt-1 text-xs text-slate-500">Original: <span x-text="`${sourceWidth} × ${sourceHeight}px`"></span> {{ __('· Output: :value1 × :value2 px', ['value1' => ($width), 'value2' => ($height)]) }}</p>
                     </div>
                     <button type="button" x-on:click="cancelCrop()" class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-white">✕</button>
                 </header>

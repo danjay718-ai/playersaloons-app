@@ -10,7 +10,7 @@
         @if($icon)
             <i data-lucide="{{ $icon }}" class="h-5 w-5"></i>
         @endif
-        <span class="player-metric-label">{{ $label }}</span>
+        <span class="player-metric-label">{{ __($label) }}</span>
     </div>
     <div class="mt-2 font-orbitron text-3xl font-black text-white">{{ $value }}</div>
 </div>

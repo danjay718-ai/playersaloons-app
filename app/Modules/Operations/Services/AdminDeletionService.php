@@ -20,6 +20,7 @@ use App\Modules\Compliance\Services\CountryEligibilityService;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Localization\Models\TranslationString;
+use App\Modules\Localization\Services\TranslationCatalogCache;
 use App\Modules\Operations\Models\ErrorIncident;
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Tournament\Models\Tournament;
@@ -222,6 +223,9 @@ final class AdminDeletionService
 
             if ($resource === 'countries') {
                 app(CountryEligibilityService::class)->forget();
+            }
+            if ($resource === 'translations') {
+                TranslationCatalogCache::invalidate();
             }
 
             return $records->count();

@@ -1,9 +1,7 @@
 <main class="landing-page-root min-h-screen bg-[#050311] pt-28 text-zinc-100">
     <article class="mx-auto w-full max-w-4xl px-4 pb-20 sm:px-6 lg:px-8">
         <a href="{{ $indexUrl }}" wire:navigate class="mb-8 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 transition-colors hover:text-cyan-300">
-            <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i>
-            Back to {{ $label }}
-        </a>
+            <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i>{{ __('Back to :value1', ['value1' => ($label)]) }}</a>
 
         <header>
             <p class="landing-section-kicker">{{ $label }}</p>
@@ -17,7 +15,7 @@
                 <span>{{ $article->published_at?->format('M j, Y') }}</span>
                 @if($article->creator)
                     <span class="text-zinc-800">/</span>
-                    <span>{{ $article->creator->username }}</span>
+                    <span translate="no">{{ $article->creator->username }}</span>
                 @endif
             </div>
         </header>

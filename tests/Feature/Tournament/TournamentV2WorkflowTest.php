@@ -1165,7 +1165,7 @@ final class TournamentV2WorkflowTest extends TestCase
         Livewire::actingAs($player)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
             ->assertDontSee('Match Header Card', escape: false)
             ->assertSee('data-match-content="matchup"', escape: false)
-            ->assertSeeInOrder(['Round 1', 'in progress', 'VS', 'Match in progress — play now', 'SUBMIT RESULTS', 'Submit Match Results', 'Game &amp; Connection Details'], escape: false)
+            ->assertSeeInOrder(['Round 1', 'In progress', 'VS', 'Match in progress — play now', 'SUBMIT RESULTS', 'Submit Match Results', 'Game &amp; Connection Details'], escape: false)
             ->assertSee('Lost')
             ->assertDontSee('>Loss<', escape: false);
     }

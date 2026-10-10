@@ -23,9 +23,7 @@
         <div class="px-4 py-2 border-b border-purple-500/10 flex justify-between items-center">
             <span class="font-orbitron font-bold text-xs text-zinc-300 uppercase tracking-wider">SYSTEM LOGS</span>
             @if($unreadCount > 0)
-                <span class="text-[9px] bg-purple-950 text-purple-400 border border-purple-900 px-2 py-0.5 rounded-full font-bold">
-                    {{ $unreadCount }} NEW
-                </span>
+                <span class="text-[9px] bg-purple-950 text-purple-400 border border-purple-900 px-2 py-0.5 rounded-full font-bold">{{ __(':value1 NEW', ['value1' => ($unreadCount)]) }}</span>
             @endif
         </div>
 

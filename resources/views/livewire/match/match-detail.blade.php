@@ -29,9 +29,7 @@
                 <h1 class="text-2xl md:text-3xl font-black font-orbitron tracking-wider text-white mt-1.5 uppercase">
                     {{ $embedded ? 'SUBMIT RESULT' : 'MATCH ROOM' }}
                 </h1>
-                <p class="text-xs text-zinc-500 mt-0.5">
-                    Round {{ $match->round?->round_number ?? '—' }} • Match {{ $roundMatchNumber }}
-                </p>
+                <p class="text-xs text-zinc-500 mt-0.5">{{ __('Round :value1 • Match :value2', ['value1' => ($match->round?->round_number ?? '—'), 'value2' => ($roundMatchNumber)]) }}</p>
             </div>
             
             <div class="flex-shrink-0">
@@ -49,7 +47,7 @@
 
         @if($embedded && ! $isAdmin)
             <div data-match-content="matchup" class="relative z-10 mb-6 flex items-start justify-between gap-3 border-b border-zinc-800 pb-4">
-                <p class="text-xs font-bold text-zinc-400">Round {{ $match->round?->round_number ?? '—' }} · Match {{ $roundMatchNumber }}</p>
+                <p class="text-xs font-bold text-zinc-400">{{ __('Round :value1 · Match :value2', ['value1' => ($match->round?->round_number ?? '—'), 'value2' => ($roundMatchNumber)]) }}</p>
                 <div class="shrink-0">@include('livewire.match.partials._match-status-badge')</div>
             </div>
         @endif
@@ -67,7 +65,7 @@
                     @endif
                 </div>
                 <div class="space-y-1">
-                    <h2 class="text-xl font-bold text-zinc-100 truncate w-60">
+                    <h2 class="text-xl font-bold text-zinc-100 truncate w-60" translate="no">
                         {{ $match->playerARegistration?->team?->name ?: ($match->playerARegistration?->user?->profile?->display_name ?: $match->playerARegistration?->user?->username ?: 'TBD') }}
                     </h2>
                     <span class="block text-xs text-zinc-500 font-semibold">
@@ -101,7 +99,7 @@
                     @endif
                 </div>
                 <div class="space-y-1">
-                    <h2 class="text-xl font-bold text-zinc-100 truncate w-60">
+                    <h2 class="text-xl font-bold text-zinc-100 truncate w-60" translate="no">
                         {{ $match->playerBRegistration?->team?->name ?: ($match->playerBRegistration?->user?->profile?->display_name ?: $match->playerBRegistration?->user?->username ?: 'TBD') }}
                     </h2>
                     <span class="block text-xs text-zinc-500 font-semibold">
@@ -134,7 +132,7 @@
                 <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0"></i><span class="truncate">Submit Results</span>
             </button>
             <button type="button" @click="selectResultPanel('submissions')" :aria-pressed="resultPanelTab === 'submissions'" :class="resultPanelTab === 'submissions' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
-                <i data-lucide="history" class="h-4 w-4 shrink-0"></i><span class="truncate">Submissions ({{ $match->resultSubmissions->count() }})</span>
+                <i data-lucide="history" class="h-4 w-4 shrink-0"></i><span class="truncate">{{ __('Submissions (:value1)', ['value1' => ($match->resultSubmissions->count())]) }}</span>
             </button>
         </nav>
 
@@ -152,10 +150,10 @@
                     <div class="flex flex-wrap gap-4">
                         <p class="text-xs text-indigo-300/80 mb-2 w-full">As an administrator, you can manually declare the winner and finalize this match instantly.</p>
                         @if($match->playerARegistration)
-                            <button wire:click="adminCompleteMatch({{ $match->player_a_registration_id }})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest">Force Win: {{ $match->playerARegistration?->user?->username }}</button>
+                            <button wire:click="adminCompleteMatch({{ $match->player_a_registration_id }})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest">{{ __('Force Win: :value1', ['value1' => ($match->playerARegistration?->user?->username)]) }}</button>
                         @endif
                         @if($match->playerBRegistration)
-                            <button wire:click="adminCompleteMatch({{ $match->player_b_registration_id }})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest">Force Win: {{ $match->playerBRegistration?->user?->username }}</button>
+                            <button wire:click="adminCompleteMatch({{ $match->player_b_registration_id }})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest">{{ __('Force Win: :value1', ['value1' => ($match->playerBRegistration?->user?->username)]) }}</button>
                         @endif
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 uppercase tracking-widest">
                             <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 mr-1.5 animate-pulse"></span>
@@ -216,7 +214,7 @@
                                 </span>
                                 <div class="min-w-0 flex-1">
                                     <p class="text-xs font-black uppercase tracking-wider text-amber-200">Opponent result reported</p>
-                                    <p class="mt-1 text-sm leading-relaxed">Your opponent submitted a result. You have {{ max(1, (int) ($match->tournament->waiting_result_time ?: 5)) }} minutes to report your result. Submit before the timer expires to avoid an automatic loss.</p>
+                                    <p class="mt-1 text-sm leading-relaxed">{{ __('Your opponent submitted a result. You have :value1 minutes to report your result. Submit before the timer expires to avoid an automatic loss.', ['value1' => (max(1, (int) ($match->tournament->waiting_result_time ?: 5)))]) }}</p>
                                 <p data-testid="result-deadline-timer" class="mt-2 font-orbitron text-xl font-black text-amber-300" x-text="formatTime(timeLeft)"></p>
                                 </div>
                             </div>
@@ -241,9 +239,7 @@
                                 @if($match->player_a_registration_id)
                                     <label class="player-result-option flex items-center space-x-3 bg-zinc-950 border {{ $winnerRegistrationId === $match->player_a_registration_id ? 'border-violet-500' : 'border-zinc-800' }} rounded-xl p-3.5 cursor-pointer hover:border-zinc-700 transition-colors">
                                         <input wire:model="winnerRegistrationId" type="radio" value="{{ $match->player_a_registration_id }}" class="h-4 w-4 text-violet-600 border-zinc-800 focus:ring-violet-500 focus:ring-offset-zinc-900">
-                                        <span class="text-sm font-semibold text-zinc-200">
-                                            {{ $match->playerARegistration?->team?->name ?: $match->playerARegistration?->user?->username }} (Side A)
-                                        </span>
+                                        <span class="text-sm font-semibold text-zinc-200">{{ __(':value1 (Side A)', ['value1' => ($match->playerARegistration?->team?->name ?: $match->playerARegistration?->user?->username)]) }}</span>
                                     </label>
                                 @endif
                                 
@@ -251,9 +247,7 @@
                                 @if($match->player_b_registration_id)
                                     <label class="player-result-option flex items-center space-x-3 bg-zinc-950 border {{ $winnerRegistrationId === $match->player_b_registration_id ? 'border-violet-500' : 'border-zinc-800' }} rounded-xl p-3.5 cursor-pointer hover:border-zinc-700 transition-colors">
                                         <input wire:model="winnerRegistrationId" type="radio" value="{{ $match->player_b_registration_id }}" class="h-4 w-4 text-violet-600 border-zinc-800 focus:ring-violet-500 focus:ring-offset-zinc-900">
-                                        <span class="text-sm font-semibold text-zinc-200">
-                                            {{ $match->playerBRegistration?->team?->name ?: $match->playerBRegistration?->user?->username }} (Side B)
-                                        </span>
+                                        <span class="text-sm font-semibold text-zinc-200">{{ __(':value1 (Side B)', ['value1' => ($match->playerBRegistration?->team?->name ?: $match->playerBRegistration?->user?->username)]) }}</span>
                                     </label>
                                 @endif
                             </div>
@@ -307,7 +301,7 @@
                             }
                         }">
                             @if((int) $match->tournament->workflow_version === 2 && !$activeAttempt?->result_deadline_at)
-                                <div class="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-zinc-500">The {{ $match->tournament->waiting_result_time ?: 5 }}-minute response timer starts after the first submission.</div>
+                                <div class="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-zinc-500">{{ __('The :value1-minute response timer starts after the first submission.', ['value1' => ($match->tournament->waiting_result_time ?: 5)]) }}</div>
                             @else
                                 <div class="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-zinc-500">SUBMISSION DEADLINE: <span class="text-amber-400" x-text="formatTime(timeLeft)"></span></div>
                             @endif
@@ -477,9 +471,7 @@
                 @foreach($match->resultSubmissions as $sub)
                     <div class="bg-zinc-950 border border-zinc-850 rounded-xl p-4 flex items-start justify-between gap-4">
                         <div class="space-y-1">
-                            <span class="block text-xs font-bold text-zinc-300">
-                                Submitted by: {{ $sub->user?->username }}
-                            </span>
+                            <span class="block text-xs font-bold text-zinc-300">{{ __('Submitted by: :value1', ['value1' => ($sub->user?->username)]) }}</span>
                             @if($sub->notes)
                                 <p class="text-xs text-zinc-500 italic leading-relaxed">
                                     "{{ $sub->notes }}"
@@ -519,9 +511,7 @@
                 @foreach($match->disputes as $disp)
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-zinc-300">
-                                Dispute #{{ $disp->id }} (Opened: {{ $disp->created_at?->format('M d, Y') }})
-                            </span>
+                            <span class="text-xs font-bold text-zinc-300">{{ __('Dispute #:value1 (Opened: :value2)', ['value1' => ($disp->id), 'value2' => ($disp->created_at?->format('M d, Y'))]) }}</span>
                             <span class="text-[10px] font-bold uppercase tracking-wider border rounded px-2 py-0.5 {{ $disp->status->value === 'RESOLVED' ? 'bg-zinc-800 text-zinc-400 border-zinc-800' : 'bg-red-950/30 text-red-400 border-red-900/40' }}">
                                 {{ $disp->status->value }}
                             </span>
@@ -535,11 +525,11 @@
                                         <i data-lucide="{{ $ev->file_path ? 'image' : 'message-square-text' }}" class="w-4 h-4 text-violet-400"></i>
                                         <div class="truncate">
                                             @if($ev->file_path)
-                                                <a href="/storage/{{ $ev->file_path }}" target="_blank" class="block text-xs font-semibold text-zinc-300 hover:text-violet-400 transition-colors truncate">Evidence File #{{ $ev->id }}</a>
+                                                <a href="/storage/{{ $ev->file_path }}" target="_blank" class="block text-xs font-semibold text-zinc-300 hover:text-violet-400 transition-colors truncate">{{ __('Evidence File #:value1', ['value1' => ($ev->id)]) }}</a>
                                             @else
-                                                <span class="block text-xs font-semibold text-zinc-300">Dispute response #{{ $ev->id }} (no screenshot attached)</span>
+                                                <span class="block text-xs font-semibold text-zinc-300">{{ __('Dispute response #:value1 (no screenshot attached)', ['value1' => ($ev->id)]) }}</span>
                                             @endif
-                                            <span class="block text-[9px] text-zinc-600">Uploaded by: {{ $ev->uploadedBy?->username ?? 'Player' }}</span>
+                                            <span class="block text-[9px] text-zinc-600">{{ __('Uploaded by: :value1', ['value1' => ($ev->uploadedBy?->username ?? 'Player')]) }}</span>
                                         </div>
                                     </div>
                                     @if($ev->reason)

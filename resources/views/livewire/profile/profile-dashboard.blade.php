@@ -32,7 +32,7 @@
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-300 font-orbitron">Player Card</p>
-                        <h2 class="mt-2 text-2xl font-black uppercase tracking-wide text-white font-orbitron break-words">{{ $playerName }}</h2>
+                        <h2 class="mt-2 text-2xl font-black uppercase tracking-wide text-white font-orbitron break-words" translate="no">{{ $playerName }}</h2>
                         <p class="mt-1 text-xs font-semibold text-zinc-450">{{ '@'.$user->username }}</p>
                     </div>
                     <span class="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-250 font-orbitron">
@@ -88,7 +88,7 @@
                                 {{ $kycVerified ? 'View' : 'Verify' }}
                             </button>
                         </div>
-                        <p class="mt-2 text-[11px] font-semibold text-zinc-500">Current review state: {{ str_replace('_', ' ', $kycStatus) }}</p>
+                        <p class="mt-2 text-[11px] font-semibold text-zinc-500">{{ __('Current review state: :value1', ['value1' => (str_replace('_', ' ', $kycStatus))]) }}</p>
                     </div>
 
                     <div class="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
@@ -160,7 +160,7 @@
                                 :class="isEditingProfile ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white' : 'border-cyan-400/30 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 shadow-[0_0_12px_rgba(34,211,238,0.1)]'"
                             >
                                 <i :data-lucide="isEditingProfile ? 'x' : 'pencil'" class="w-3.5 h-3.5"></i>
-                                <span x-text="isEditingProfile ? 'Cancel' : 'Edit Profile'"></span>
+                                <span x-text="isEditingProfile ? @js(__('Cancel')) : @js(__('Edit Profile'))"></span>
                             </button>
                         </div>
 
@@ -184,7 +184,7 @@
                                 </div>
                                 <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/70 p-4">
                                     <p class="text-[9px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">Display Name</p>
-                                    <p class="mt-1 text-sm font-bold text-white font-orbitron">{{ $displayName ?: $user->username }}</p>
+                                    <p class="mt-1 text-sm font-bold text-white font-orbitron" translate="no">{{ $displayName ?: $user->username }}</p>
                                     <p class="mt-1 text-[10px] text-zinc-500">Visible publicly on tournament brackets and leaderboards.</p>
                                 </div>
                                 <div class="rounded-lg border border-zinc-800/80 bg-zinc-950/70 p-4">
@@ -313,7 +313,7 @@
                                 :class="isEditingAccount ? 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white' : 'border-fuchsia-400/30 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/20 shadow-[0_0_12px_rgba(217,70,239,0.1)]'"
                             >
                                 <i :data-lucide="isEditingAccount ? 'x' : 'pencil'" class="w-3.5 h-3.5"></i>
-                                <span x-text="isEditingAccount ? 'Cancel' : 'Edit Account'"></span>
+                                <span x-text="isEditingAccount ? @js(__('Cancel')) : @js(__('Edit Account'))"></span>
                             </button>
                         </div>
 

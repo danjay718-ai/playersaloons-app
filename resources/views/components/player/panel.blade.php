@@ -5,7 +5,7 @@
 
 <section {{ $attributes->class(['player-panel', $padding]) }}>
     @if($title)
-        <h3 class="player-panel-title">{{ $title }}</h3>
+        <h3 class="player-panel-title">{{ __($title) }}</h3>
     @endif
 
     {{ $slot }}

@@ -32,13 +32,9 @@
     <!-- Tabs -->
     <div class="player-status-tabs flex items-center space-x-2 bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 p-1.5 rounded-2xl max-w-fit">
         <button wire:click="$set('tSubTab', 'active')" 
-                class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 {{ $tSubTab === 'active' ? 'player-status-tab-active bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300' }}">
-            Active ({{ $activeCount }})
-        </button>
+                class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 {{ $tSubTab === 'active' ? 'player-status-tab-active bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300' }}">{{ __('Active (:value1)', ['value1' => ($activeCount)]) }}</button>
         <button wire:click="$set('tSubTab', 'history')" 
-                class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 {{ $tSubTab === 'history' ? 'player-status-tab-active bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300' }}">
-            History ({{ $historyCount }})
-        </button>
+                class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 {{ $tSubTab === 'history' ? 'player-status-tab-active bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300' }}">{{ __('History (:value1)', ['value1' => ($historyCount)]) }}</button>
     </div>
 
     <!-- Active Tournaments Tab -->
@@ -58,7 +54,7 @@
                             $opponent = (int) $match->creator_user_id === (int) auth()->id() ? $match->opponent : $match->creator;
                         @endphp
                         <a href="/head-to-head?activeTab=active#duel-{{ $match->uuid }}" wire:navigate wire:key="h2h-match-room-{{ $match->uuid }}" class="player-match-room-link flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-3 transition hover:border-cyan-500/40">
-                            <div class="min-w-0"><p class="truncate text-xs font-bold text-zinc-100">{{ $match->game?->localizedName() }} vs {{ $opponent?->username ?? 'Opponent' }}</p><p class="mt-1 text-[9px] font-black uppercase tracking-wider text-cyan-400">{{ str_replace('_', ' ', $match->status->value) }}</p></div>
+                            <div class="min-w-0"><p class="truncate text-xs font-bold text-zinc-100">{{ __(':value1 vs :value2', ['value1' => ($match->game?->localizedName()), 'value2' => ($opponent?->username ?? 'Opponent')]) }}</p><p class="mt-1 text-[9px] font-black uppercase tracking-wider text-cyan-400">{{ str_replace('_', ' ', $match->status->value) }}</p></div>
                             <span class="shrink-0 text-[9px] font-black uppercase text-cyan-300">Open →</span>
                         </a>
                     @endforeach
@@ -78,12 +74,10 @@
                 <div class="player-empty-icon">
                     <i data-lucide="ghost" class="w-10 h-10"></i>
                 </div>
-                <h3 class="text-xl font-black text-zinc-200 font-orbitron tracking-wider">NO ACTIVE {{ $competitionTab === 'head_to_head' ? 'HEAD-TO-HEAD MATCHES' : 'TOURNAMENTS' }}</h3>
-                <p class="mt-2 text-sm text-zinc-500 max-w-sm mx-auto font-medium">
-                    You haven't joined any active {{ $competitionTab === 'head_to_head' ? 'head-to-head matches' : 'tournaments' }} yet.
-                </p>
+                <h3 class="text-xl font-black text-zinc-200 font-orbitron tracking-wider">{{ __('NO ACTIVE :value1', ['value1' => ($competitionTab === 'head_to_head' ? __('Head-to-Head Matches') : __('Tournaments'))]) }}</h3>
+                <p class="mt-2 text-sm text-zinc-500 max-w-sm mx-auto font-medium">{{ __('You haven\'t joined any active :value1 yet.', ['value1' => ($competitionTab === 'head_to_head' ? __('Head-to-Head Matches') : __('Tournaments'))]) }}</p>
                 <a href="{{ $competitionTab === 'head_to_head' ? route('platform-h2h') : route('tournaments.browse', ['frequency' => 'daily']) }}" wire:navigate class="mt-6 inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold uppercase tracking-widest text-white rounded-xl transition-all shadow-lg">
-                    <span>Browse {{ $competitionTab === 'head_to_head' ? 'Head-to-Head' : 'Tournaments' }}</span>
+                    <span>{{ __('Browse :value1', ['value1' => ($competitionTab === 'head_to_head' ? __('Head-to-Head') : __('Tournaments'))]) }}</span>
                     <i data-lucide="chevron-right" class="w-4 h-4"></i>
                 </a>
             </div>
@@ -113,7 +107,7 @@
                         </div>
                         <div class="mt-4">
                             <p class="text-[10px] font-black uppercase tracking-wider text-zinc-500">{{ $historyMatch['game'] }}{{ $historyMatch['round'] ? ' · Round '.$historyMatch['round'] : '' }}</p>
-                            <h3 class="mt-1 truncate text-base font-black text-white">vs {{ $historyMatch['opponent'] }}</h3>
+                            <h3 class="mt-1 truncate text-base font-black text-white">{{ __('vs :value1', ['value1' => ($historyMatch['opponent'])]) }}</h3>
                             @if($historyMatch['tournament'])<p class="mt-1 truncate text-xs text-zinc-500">{{ $historyMatch['tournament'] }}</p>@endif
                         </div>
                         <div class="mt-4 flex items-center justify-between border-t border-zinc-800/70 pt-3 text-[10px] font-bold uppercase tracking-wider text-zinc-600">

@@ -72,7 +72,7 @@
                                 <button type="button" @click="team.joined ? openTeam(team.uuid) : requestJoinTeam(team)" class="flex items-center justify-between rounded-lg border border-cyan-500/20 bg-cyan-950/10 px-3 py-2 text-left hover:border-cyan-400/40">
                                     <span class="min-w-0">
                                         <span class="block truncate text-xs font-bold text-cyan-100" x-text="team.name"></span>
-                                        <span class="block text-[9px] uppercase tracking-widest" :class="team.joined ? 'text-emerald-300' : 'text-zinc-600'" x-text="team.joined ? 'Joined' : 'Join to chat'"></span>
+                                        <span class="block text-[9px] uppercase tracking-widest" :class="team.joined ? 'text-emerald-300' : 'text-zinc-600'" x-text="team.joined ? @js(__('Joined')) : @js(__('Join to chat'))"></span>
                                     </span>
                                     <i :data-lucide="team.joined ? 'radio' : 'log-in'" class="h-3.5 w-3.5 text-cyan-300"></i>
                                 </button>
@@ -110,8 +110,8 @@
         <section class="flex min-h-[680px] flex-col overflow-hidden rounded-xl border border-purple-500/20 bg-[#070412]/95 shadow-[0_0_35px_rgba(88,28,135,0.18)]">
             <header class="flex items-center justify-between gap-3 border-b border-purple-500/15 bg-gradient-to-r from-purple-950/40 via-zinc-950 to-cyan-950/20 p-4">
                 <div class="min-w-0">
-                    <p class="font-orbitron text-[9px] font-bold uppercase tracking-[0.35em] text-purple-300" x-text="selected?.type === 'direct' ? 'Secure P2P Link' : selected?.type === 'team' ? 'Squad Channel' : 'Global Relay'"></p>
-                    <h3 class="mt-1 truncate font-orbitron text-base font-black uppercase tracking-widest text-zinc-100" x-text="selected?.title || 'Loading channel...'"></h3>
+                    <p class="font-orbitron text-[9px] font-bold uppercase tracking-[0.35em] text-purple-300" x-text="selected?.type === 'direct' ? @js(__('Secure P2P Link')) : selected?.type === 'team' ? @js(__('Squad Channel')) : @js(__('Global Relay'))"></p>
+                    <h3 class="mt-1 truncate font-orbitron text-base font-black uppercase tracking-widest text-zinc-100" x-text="selected?.title || @js(__('Loading channel...'))"></h3>
                 </div>
             </header>
 
@@ -235,11 +235,11 @@
                             <span class="font-bold text-zinc-200" x-text="selectedPlayer?.followers || 0"></span>
                             followers
                             <span class="mx-2 text-zinc-700">/</span>
-                            joined <span x-text="selectedPlayer?.joined || 'recently'"></span>
+                            joined <span x-text="selectedPlayer?.joined || @js(__('recently'))"></span>
                         </div>
                         <div class="flex gap-2">
                             <button type="button" x-show="!selectedPlayer?.is_self" @click="followSelectedPlayer()" class="rounded-lg border border-emerald-400/30 bg-emerald-600/15 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-200">
-                                <span x-text="selectedPlayer?.is_following ? 'Following' : 'Follow'"></span>
+                                <span x-text="selectedPlayer?.is_following ? @js(__('Following')) : @js(__('Follow'))"></span>
                             </button>
                             <button type="button" x-show="!selectedPlayer?.is_self" @click="messageSelectedPlayer()" class="rounded-lg border border-fuchsia-400/30 bg-fuchsia-600/20 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-fuchsia-100">
                                 Message
@@ -255,7 +255,7 @@
         <div @click.outside="teamJoinModalOpen = false" class="w-full max-w-lg overflow-hidden rounded-2xl border border-cyan-500/25 bg-[#080516] shadow-[0_0_50px_rgba(34,211,238,0.18)]">
             <div class="border-b border-cyan-500/15 bg-cyan-950/20 p-5">
                 <p class="font-orbitron text-[10px] font-black uppercase tracking-[0.3em] text-cyan-300">Join Team Channel</p>
-                <h3 class="mt-1 font-orbitron text-lg font-black uppercase tracking-widest text-zinc-100" x-text="pendingTeamJoin?.name || 'Team Channel'"></h3>
+                <h3 class="mt-1 font-orbitron text-lg font-black uppercase tracking-widest text-zinc-100" x-text="pendingTeamJoin?.name || @js(__('Team Channel'))"></h3>
             </div>
             <div class="space-y-4 p-5">
                 <p class="text-sm leading-relaxed text-zinc-300">

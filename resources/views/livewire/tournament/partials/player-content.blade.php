@@ -133,15 +133,13 @@
                         {{ $tournament->game->localizedName() }}
                     </span>
                     <span class="text-[10px] font-black uppercase tracking-[0.2em] border rounded-full px-4 py-1.5 {{ $statusColorClass }}">
-                        {{ str_replace('_', ' ', $statusValue) }}
+                        {{ $tournament->status->label() }}
                     </span>
                     <span class="text-[10px] font-black uppercase tracking-[0.15em] rounded-full border border-zinc-800 bg-zinc-950/60 px-4 py-1.5 text-zinc-400">
                         Europe/Amsterdam
                     </span>
                     @if(($tournament->team_size ?? 1) > 1)
-                        <span class="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] bg-violet-950/30 border border-violet-800/60 rounded-full px-4 py-1.5">
-                            {{ $tournament->team_size }}v{{ $tournament->team_size }} Teams
-                        </span>
+                        <span class="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] bg-violet-950/30 border border-violet-800/60 rounded-full px-4 py-1.5">{{ __(':value1 v :value2 Teams', ['value1' => ($tournament->team_size), 'value2' => ($tournament->team_size)]) }}</span>
                     @endif
                 </div>
                 
@@ -177,7 +175,7 @@
                 @if((int) $tournament->workflow_version === 2)
                     <p class="-mt-3 text-xs text-zinc-500">{{ __('Estimated prize until entries close. Final prize amounts may be adjusted if the tournament starts below capacity. Prizes are set and administered by PlayerSaloons.') }}</p>
                 @else
-                    <p class="-mt-3 text-xs text-zinc-500">Based on {{ $prizeCalculation['confirmed_count'] }} confirmed of {{ $tournament->max_participants }} players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.</p>
+                    <p class="-mt-3 text-xs text-zinc-500">{{ __('Based on :value1 confirmed of :value2 players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.', ['value1' => ($prizeCalculation['confirmed_count']), 'value2' => ($tournament->max_participants)]) }}</p>
                 @endif
             </div>
 
@@ -200,7 +198,7 @@
                             };
                             $currentMatchStatusLabel = (int) $tournament->workflow_version === 2 && $currentMatchStatus === 'waiting_for_confirmation'
                                 ? ($currentMatchHasSubmittedResult ? 'Waiting for opponent result' : __('Waiting for your result'))
-                                : str_replace('_', ' ', $currentMatchStatus);
+                                : $currentMatch->status->label();
                         @endphp
                         @if((int) $tournament->workflow_version === 2)
                             <button type="button" wire:click="openMatch('{{ $currentMatch->uuid }}')" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
@@ -213,7 +211,7 @@
                                 <span>Open Match Room &amp; Report Result</span>
                             </a>
                         @endif
-                        <p class="text-center text-[10px] font-bold uppercase tracking-wider text-cyan-400">Round {{ $currentMatch->round?->round_number ?? '—' }} · {{ $currentMatchStatusLabel }}</p>
+                        <p class="text-center text-[10px] font-bold uppercase tracking-wider text-cyan-400">{{ __('Round :value1 · :value2', ['value1' => ($currentMatch->round?->round_number ?? '—'), 'value2' => ($currentMatchStatusLabel)]) }}</p>
                     @elseif($isChampion)
                         <div role="status" class="w-full rounded-2xl border border-amber-400/40 bg-amber-400/10 px-6 py-5 text-center shadow-[0_0_20px_rgba(251,191,36,0.12)]">
                             <div class="flex items-center justify-center gap-2 text-amber-300">
@@ -227,7 +225,7 @@
                                 <i data-lucide="medal" class="h-5 w-5"></i>
                                 <span class="text-xs font-black uppercase tracking-[0.2em]">Second Place</span>
                             </div>
-                            <p class="mt-2 text-xs font-bold text-amber-300">Second prize: ${{ number_format((float) $secondPlacePrize, 2) }}</p>
+                            <p class="mt-2 text-xs font-bold text-amber-300">{{ __('Second prize: $:value1', ['value1' => (number_format((float) $secondPlacePrize, 2))]) }}</p>
                         </div>
                     @elseif($awaitingNextMatch)
                         <div role="status" class="w-full rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-6 py-5 text-center">
@@ -253,7 +251,7 @@
                             <div role="status" class="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 px-6 py-3 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">{{ __('Cancellation is available only before the tournament starts.') }}</div>
                         @endif
                         @if($pendingCancellationRequest && in_array((int) Auth::id(), array_map('intval', $pendingCancellationRequest->eligible_voter_ids ?? []), true) && !$pendingCancellationRequest->votes->contains('voter_id', Auth::id()))
-                            <div class="rounded-xl border border-amber-700/40 bg-amber-950/20 p-4 text-left"><p class="text-xs font-bold text-amber-200">{{ $pendingCancellationRequest->requester?->username }} requested to cancel.</p><div class="mt-3 grid grid-cols-2 gap-2"><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, true)" class="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase text-white">Approve</button><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, false)" class="rounded-lg border border-zinc-700 px-3 py-2 text-[10px] font-black uppercase text-zinc-300">Reject</button></div></div>
+                            <div class="rounded-xl border border-amber-700/40 bg-amber-950/20 p-4 text-left"><p class="text-xs font-bold text-amber-200">{{ __(':value1 requested to cancel.', ['value1' => ($pendingCancellationRequest->requester?->username)]) }}</p><div class="mt-3 grid grid-cols-2 gap-2"><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, true)" class="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase text-white">Approve</button><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, false)" class="rounded-lg border border-zinc-700 px-3 py-2 text-[10px] font-black uppercase text-zinc-300">Reject</button></div></div>
                         @endif
                     @elseif($tournament->status->value === 'REGISTRATION_OPEN')
                         @if($isRegistered)
@@ -269,8 +267,8 @@
                             @endif
                             @if($pendingCancellationRequest && in_array((int) Auth::id(), array_map('intval', $pendingCancellationRequest->eligible_voter_ids ?? []), true) && !$pendingCancellationRequest->votes->contains('voter_id', Auth::id()))
                                 <div class="rounded-xl border border-amber-700/40 bg-amber-950/20 p-4 text-left">
-                                    <p class="text-xs font-bold text-amber-200">{{ $pendingCancellationRequest->requester?->username }} requested to cancel their entry.</p>
-                                    <p class="mt-1 text-[10px] text-zinc-400">{{ $pendingCancellationRequest->required_approvals }} approval(s) are required. Votes are final.</p>
+                                    <p class="text-xs font-bold text-amber-200">{{ __(':value1 requested to cancel their entry.', ['value1' => ($pendingCancellationRequest->requester?->username)]) }}</p>
+                                    <p class="mt-1 text-[10px] text-zinc-400">{{ __(':value1 approval(s) are required. Votes are final.', ['value1' => ($pendingCancellationRequest->required_approvals)]) }}</p>
                                     <div class="mt-3 grid grid-cols-2 gap-2">
                                         <button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, true)" class="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase text-white">Approve</button>
                                         <button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, false)" class="rounded-lg border border-zinc-700 px-3 py-2 text-[10px] font-black uppercase text-zinc-300">Reject</button>
@@ -285,9 +283,9 @@
                                         <span>{{ $userTournamentTeam && (int) $userTournamentTeam->leader_user_id === (int) Auth::id() ? 'Register Team' : ($userSquad ? 'Create Team From Squad' : ($isSearchingForTeam ? 'Still Finding a Team' : 'Find a Team')) }}</span>
                                     </button>
                                     @if($userTournamentTeam)
-                                        <p class="text-center text-[10px] text-zinc-500 font-medium">{{ $userTournamentTeam->name }} · {{ $userTournamentTeam->members->count() }}/{{ $tournament->team_size }} players · {{ (int) $userTournamentTeam->leader_user_id === (int) Auth::id() ? 'You are Team Leader' : 'Waiting for Team Leader' }}</p>
+                                        <p class="text-center text-[10px] text-zinc-500 font-medium">{{ __(':value1 · :value2/:value3 players · :value4', ['value1' => ($userTournamentTeam->name), 'value2' => ($userTournamentTeam->members->count()), 'value3' => ($tournament->team_size), 'value4' => ((int) $userTournamentTeam->leader_user_id === (int) Auth::id() ? 'You are Team Leader' : 'Waiting for Team Leader')]) }}</p>
                                         @if((int) $userTournamentTeam->leader_user_id === (int) Auth::id())
-                                            <div class="flex flex-wrap justify-center gap-1.5">@foreach($userTournamentTeam->members->where('user_id', '!=', Auth::id()) as $member)<button wire:click="transferTournamentTeamLeadership({{ $member->user_id }})" wire:confirm="Make {{ $member->user?->username }} the Team Leader?" class="rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-[9px] text-zinc-500 hover:text-cyan-300">Make {{ $member->user?->username }} Leader</button>@endforeach</div>
+                                            <div class="flex flex-wrap justify-center gap-1.5">@foreach($userTournamentTeam->members->where('user_id', '!=', Auth::id()) as $member)<button wire:click="transferTournamentTeamLeadership({{ $member->user_id }})" wire:confirm="Make {{ $member->user?->username }} the Team Leader?" class="rounded border border-zinc-800 bg-zinc-950 px-2 py-1 text-[9px] text-zinc-500 hover:text-cyan-300">{{ __('Make :value1 Leader', ['value1' => ($member->user?->username)]) }}</button>@endforeach</div>
                                         @endif
                                     @elseif(!$userSquad)
                                         <p class="text-center text-[10px] text-zinc-500 font-medium">Players are grouped for this tournament only. No charge until the team is complete.</p>
@@ -317,7 +315,7 @@
                         @endif
                     @else
                         <div class="w-full bg-zinc-950/60 border border-zinc-800 text-zinc-500 rounded-2xl py-5 px-8 text-center text-xs font-black uppercase tracking-[0.2em]">
-                            {{ str_replace('_', ' ', $tournament->status->value ?? $tournament->status) }}
+                            {{ $tournament->status->label() }}
                         </div>
                     @endif
                 @endauth
@@ -520,7 +518,7 @@
                                         <i data-lucide="users" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Team Size</span>
                                     </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $tournament->team_size }} Players</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ __(':value1 Players', ['value1' => ($tournament->team_size)]) }}</span>
                                 </div>
                             @endif
 
@@ -540,7 +538,7 @@
                                         <i data-lucide="star" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Win Points</span>
                                     </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">+{{ $tournament->winning_points }} pts</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ __('+:value1 pts', ['value1' => ($tournament->winning_points)]) }}</span>
                                 </div>
                             @endif
 
@@ -550,7 +548,7 @@
                                         <i data-lucide="clock" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">Match Timeout</span>
                                     </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $tournament->waiting_time }} min</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ __(':value1 min', ['value1' => ($tournament->waiting_time)]) }}</span>
                                 </div>
                             @endif
 
@@ -568,9 +566,7 @@
                         @if($isV2Registration)
                             <div class="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-800/50 bg-cyan-950/20 p-4 text-xs leading-relaxed text-cyan-100/75">
                                 <i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0 text-cyan-400"></i>
-                                <p>
-                                    This is the estimated payout if all {{ $tournament->max_participants }} teams join. The final prize is based on the actual entry pool when the tournament starts. If the tournament starts below capacity, the bracket uses automatic BYEs and the final prize is adjusted based on confirmed entries.
-                                </p>
+                                <p>{{ __('This is the estimated payout if all :value1 teams join. The final prize is based on the actual entry pool when the tournament starts. If the tournament starts below capacity, the bracket uses automatic BYEs and the final prize is adjusted based on confirmed entries.', ['value1' => ($tournament->max_participants)]) }}</p>
                             </div>
                         @endif
                     </div>
@@ -674,7 +670,7 @@
                         @if($tournament->waiting_result_time)
                             <div class="flex items-center justify-between text-sm">
                                 <span class="text-zinc-600 font-medium">Result Timeout</span>
-                                <span class="text-zinc-300 font-bold">{{ $tournament->waiting_result_time }} min</span>
+                                <span class="text-zinc-300 font-bold">{{ __(':value1 min', ['value1' => ($tournament->waiting_result_time)]) }}</span>
                             </div>
                         @endif
                         @if((int) $tournament->workflow_version === 2)
@@ -760,11 +756,9 @@
                 <div class="flex items-center space-x-3 mb-6">
                     <span class="w-1.5 h-8 bg-amber-500 rounded-full"></span>
                     <h2 class="text-2xl font-black font-orbitron tracking-widest text-white">TEAM LOBBY</h2>
-                    <span class="text-[10px] font-black text-amber-400 bg-amber-950/30 border border-amber-800/50 rounded-full px-3 py-1 uppercase tracking-widest">{{ $tournament->team_size }}v{{ $tournament->team_size }}</span>
+                    <span class="text-[10px] font-black text-amber-400 bg-amber-950/30 border border-amber-800/50 rounded-full px-3 py-1 uppercase tracking-widest">{{ __(':value1 v :value2', ['value1' => ($tournament->team_size), 'value2' => ($tournament->team_size)]) }}</span>
                 </div>
-                <p class="text-zinc-400 text-sm font-medium mb-8 leading-relaxed">
-                    Players waiting to be placed on a random team. A team is formed when enough players ({{ $tournament->team_size }}) are grouped together. Join the lobby and the system will match you with other solo players.
-                </p>
+                <p class="text-zinc-400 text-sm font-medium mb-8 leading-relaxed">{{ __('Players waiting to be placed on a random team. A team is formed when enough players (:value1) are grouped together. Join the lobby and the system will match you with other solo players.', ['value1' => ($tournament->team_size)]) }}</p>
 
                 @php
                     $soloPlayers = $tournament->registrations->filter(fn($r) => !$r->team_id);
@@ -772,7 +766,7 @@
                 @endphp
 
                 @if($soloPlayers->count() > 0)
-                    <h3 class="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4">Solo Players Waiting ({{ $soloPlayers->count() }})</h3>
+                    <h3 class="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4">{{ __('Solo Players Waiting (:value1)', ['value1' => ($soloPlayers->count())]) }}</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
                         @foreach($soloPlayers as $reg)
                             <div class="bg-zinc-950/60 border border-amber-800/30 rounded-2xl p-4 flex items-center space-x-3 hover:border-amber-600/50 transition-colors">
@@ -784,7 +778,7 @@
                                     @endif
                                 </div>
                                 <div class="truncate">
-                                    <span class="block text-sm font-bold text-white truncate">{{ $reg->user->profile?->display_name ?: $reg->user->username }}</span>
+                                    <span class="block text-sm font-bold text-white truncate" translate="no">{{ $reg->user->profile?->display_name ?: $reg->user->username }}</span>
                                     <span class="block text-[10px] text-amber-600 font-bold uppercase tracking-widest">Waiting for team</span>
                                 </div>
                             </div>
@@ -798,7 +792,7 @@
                 @endif
 
                 @if($formedTeams->count() > 0)
-                    <h3 class="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4 border-t border-zinc-800/60 pt-6">Registered Teams ({{ $formedTeams->count() }})</h3>
+                    <h3 class="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4 border-t border-zinc-800/60 pt-6">{{ __('Registered Teams (:value1)', ['value1' => ($formedTeams->count())]) }}</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @foreach($formedTeams as $reg)
                             <div class="bg-zinc-950/60 border border-violet-800/30 rounded-2xl p-4 flex items-center space-x-3 hover:border-violet-600/50 transition-colors">
@@ -813,7 +807,7 @@
                                 </div>
                                 <div class="truncate">
                                     <span class="block text-sm font-bold text-white truncate">{{ $reg->team->name }}</span>
-                                    <span class="block text-[10px] text-violet-500 font-bold uppercase tracking-widest">Captain: {{ $reg->user->username }}</span>
+                                    <span class="block text-[10px] text-violet-500 font-bold uppercase tracking-widest">{{ __('Captain: :value1', ['value1' => ($reg->user->username)]) }}</span>
                                 </div>
                             </div>
                         @endforeach
@@ -841,7 +835,7 @@
                     <span class="w-1.5 h-8 bg-indigo-500 rounded-full"></span>
                     <span>MATCH FIXTURES</span>
                 </h2>
-                <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{{ $allMatches->count() }} matches total</span>
+                <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{{ __(':value1 matches total', ['value1' => ($allMatches->count())]) }}</span>
             </div>
 
             @if($allMatches->count() > 0)
@@ -900,7 +894,7 @@
                                                     @if($playerAAvatar)<img src="{{ $playerAAvatar }}" alt="{{ $playerA->username }}" class="w-full h-full object-cover" loading="lazy">@else{{ strtoupper(substr($playerA?->username ?? '??', 0, 2)) }}@endif
                                                 </div>
                                                 <div class="min-w-0">
-                                                    <span class="block text-sm font-bold {{ $winnerA ? 'text-emerald-400' : ($playerA ? 'text-white' : 'text-zinc-700 italic') }} truncate">
+                                                    <span class="block text-sm font-bold {{ $winnerA ? 'text-emerald-400' : ($playerA ? 'text-white' : 'text-zinc-700 italic') }} truncate" translate="no">
                                                         {{ $playerA?->username ?? 'TBD' }}
                                                     </span>
                                                     @if($winnerA)
@@ -925,7 +919,7 @@
                                                     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 mr-auto shrink-0"></i>
                                                 @endif
                                                 <div class="min-w-0">
-                                                    <span class="block text-sm font-bold {{ $winnerB ? 'text-emerald-400' : ($playerB ? 'text-white' : 'text-zinc-700 italic') }} truncate">
+                                                    <span class="block text-sm font-bold {{ $winnerB ? 'text-emerald-400' : ($playerB ? 'text-white' : 'text-zinc-700 italic') }} truncate" translate="no">
                                                         {{ $playerB?->username ?? 'TBD' }}
                                                     </span>
                                                     @if($winnerB)
@@ -972,7 +966,7 @@
                         <span class="w-1.5 h-8 bg-violet-500 rounded-full"></span>
                         <span>TOURNAMENT BRACKET</span>
                     </h2>
-                    <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{{ $rounds->count() }} rounds</span>
+                    <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{{ __(':value1 rounds', ['value1' => ($rounds->count())]) }}</span>
                 </div>
 
                 <!-- Bracket Scroll Container -->
@@ -1056,7 +1050,7 @@
                                                             <div class="w-6 h-6 rounded-md bg-zinc-950 border {{ $isPlayerAWinner ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0 overflow-hidden text-[8px] font-black text-zinc-300">
                                                                 @if($playerAAvatar)<img src="{{ $playerAAvatar }}" alt="{{ $playerAUser->username }}" class="w-full h-full object-cover" loading="lazy">@else{{ strtoupper(substr($playerAUser?->username ?? '??', 0, 2)) }}@endif
                                                             </div>
-                                                            <span class="text-xs font-bold truncate {{ $isPlayerAWinner ? 'text-emerald-400' : ($playerAUser ? 'text-zinc-200' : 'text-zinc-600 italic') }}" style="max-width: 120px;">
+                                                            <span class="text-xs font-bold truncate {{ $isPlayerAWinner ? 'text-emerald-400' : ($playerAUser ? 'text-zinc-200' : 'text-zinc-600 italic') }}" style="max-width: 120px;" translate="no">
                                                                 {{ $playerAUser?->username ?? 'Waiting...' }}
                                                             </span>
                                                             @if($viewerIsA)<span class="text-[8px] font-black uppercase text-cyan-400">You</span>@endif
@@ -1078,7 +1072,7 @@
                                                             <div class="w-6 h-6 rounded-md bg-zinc-950 border {{ $isPlayerBWinner ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0 overflow-hidden text-[8px] font-black text-zinc-300">
                                                                 @if($playerBAvatar)<img src="{{ $playerBAvatar }}" alt="{{ $playerBUser->username }}" class="w-full h-full object-cover" loading="lazy">@else{{ strtoupper(substr($playerBUser?->username ?? '??', 0, 2)) }}@endif
                                                             </div>
-                                                            <span class="text-xs font-bold truncate {{ $isPlayerBWinner ? 'text-emerald-400' : ($playerBUser ? 'text-zinc-200' : 'text-zinc-600 italic') }}" style="max-width: 120px;">
+                                                            <span class="text-xs font-bold truncate {{ $isPlayerBWinner ? 'text-emerald-400' : ($playerBUser ? 'text-zinc-200' : 'text-zinc-600 italic') }}" style="max-width: 120px;" translate="no">
                                                                 {{ $playerBUser?->username ?? 'Waiting...' }}
                                                             </span>
                                                             @if($viewerIsB)<span class="text-[8px] font-black uppercase text-cyan-400">You</span>@endif
@@ -1209,7 +1203,7 @@
                                 </div>
                             </div>
                             <a href="{{ $stream['url'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-300 transition hover:border-zinc-600 hover:text-white">
-                                <span>Open on {{ $stream['label'] }}</span>
+                                <span>{{ __('Open on :value1', ['value1' => ($stream['label'])]) }}</span>
                                 <i data-lucide="external-link" class="w-4 h-4"></i>
                             </a>
                         </div>
@@ -1232,9 +1226,7 @@
             </div>
             <div class="space-y-2 text-center">
                 <h3 class="text-xl font-black uppercase tracking-widest text-white font-orbitron">Tournament Started Under Capacity</h3>
-                <p class="text-sm leading-relaxed text-zinc-400">
-                    {{ $prizeCalculation['confirmed_count'] }} of {{ $tournament->max_participants }} teams joined. Automatic BYEs have been applied where needed, and the final prize has been adjusted based on confirmed paid entries.
-                </p>
+                <p class="text-sm leading-relaxed text-zinc-400">{{ __(':value1 of :value2 teams joined. Automatic BYEs have been applied where needed, and the final prize has been adjusted based on confirmed paid entries.', ['value1' => ($prizeCalculation['confirmed_count']), 'value2' => ($tournament->max_participants)]) }}</p>
             </div>
             <button type="button" @click="showUnderfilledNotice = false" class="w-full rounded-xl bg-amber-500 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-950 transition hover:bg-amber-400">
                 Understood
@@ -1255,7 +1247,7 @@
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <p class="text-[10px] font-black uppercase tracking-widest text-cyan-400">Registration details</p>
-                            <h2 id="join-tournament-title" class="mt-1 font-orbitron text-xl font-black text-white">Join {{ $tournament->name }}</h2>
+                            <h2 id="join-tournament-title" class="mt-1 font-orbitron text-xl font-black text-white">{{ __('Join :value1', ['value1' => ($tournament->name)]) }}</h2>
                         </div>
                         <button type="button" @click="showJoinModal = false" aria-label="Close registration" class="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white">✕</button>
                     </div>
@@ -1283,7 +1275,7 @@
                             @error('gameIdValue')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
                             @if(!empty($gameIdSettings['instructions']))<p class="mt-2 text-xs leading-relaxed text-zinc-500">{{ $gameIdSettings['instructions'] }}</p>@endif
                         </div>
-                        <p class="text-xs leading-relaxed text-zinc-500">Your match starts automatically when the tournament begins. {{ (int) $tournament->workflow_version === 2 ? 'Open Submit Result to play and report your result.' : 'Open the Match Room to play and submit your result.' }}</p>
+                        <p class="text-xs leading-relaxed text-zinc-500">{{ __('Your match starts automatically when the tournament begins. :value1', ['value1' => ((int) $tournament->workflow_version === 2 ? 'Open Submit Result to play and report your result.' : 'Open the Match Room to play and submit your result.')]) }}</p>
                         <div class="flex gap-3 pt-2">
                             <button type="button" @click="showJoinModal = false" class="flex-1 rounded-xl border border-zinc-700 px-4 py-3 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800">Cancel</button>
                             <button type="submit" wire:loading.attr="disabled" wire:target="register" class="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 disabled:opacity-60">{{ ($tournament->team_size ?? 1) > 1 ? ($userTournamentTeam || $userSquad ? 'Register Team' : 'Find a Team') : $joinLabel }}</button>

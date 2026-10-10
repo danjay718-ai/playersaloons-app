@@ -87,15 +87,15 @@
                     <h1 class="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight line-clamp-2" x-text="currentFeatured()?.title"></h1>
 
                     {{-- Streamer --}}
-                    <p class="text-zinc-400 text-sm" x-text="'by ' + (currentFeatured()?.streamer ?? '')"></p>
+                    <p class="text-zinc-400 text-sm" x-text="@js(__('by :name')).replace(':name', currentFeatured()?.streamer ?? '')"></p>
 
                     {{-- Viewers --}}
                     <div class="flex items-center gap-4 text-sm">
                         <span class="flex items-center gap-1.5 text-red-400 font-bold">
                             <i data-lucide="eye" class="w-4 h-4"></i>
-                            <span x-text="formatViewers(currentFeatured()?.viewer_count ?? 0) + ' viewers'"></span>
+                            <span x-text="@js(__(':count viewers')).replace(':count', formatViewers(currentFeatured()?.viewer_count ?? 0))"></span>
                         </span>
-                        <span class="text-zinc-500 text-xs" x-text="formatViewers(currentFeatured()?.total_views ?? 0) + ' total views'"></span>
+                        <span class="text-zinc-500 text-xs" x-text="@js(__(':count total views')).replace(':count', formatViewers(currentFeatured()?.total_views ?? 0))"></span>
                     </div>
 
                     {{-- CTA --}}
@@ -203,9 +203,7 @@
                     <h1 class="mt-2 text-3xl md:text-4xl font-extrabold tracking-tight text-white uppercase">Stream Moderation</h1>
                     <p class="mt-2 max-w-2xl text-sm text-slate-400">Review player-created streams and take down abusive or invalid broadcasts.</p>
                 </div>
-                <div class="rounded-2xl border border-slate-700 bg-slate-900 text-slate-400 px-4 py-3 text-[10px] font-black uppercase tracking-widest">
-                    {{ $playerStreams->total() }} stream{{ $playerStreams->total() === 1 ? '' : 's' }}
-                </div>
+                <div class="rounded-2xl border border-slate-700 bg-slate-900 text-slate-400 px-4 py-3 text-[10px] font-black uppercase tracking-widest">{{ __($playerStreams->total() === 1 ? ':count stream' : ':count streams', ['count' => $playerStreams->total()]) }}</div>
             </div>
         @endif
 
@@ -222,7 +220,7 @@
                     class="flex items-center gap-2 mb-4 text-sm font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors"
                 >
                     <i data-lucide="settings-2" class="w-4 h-4"></i>
-                    <span x-text="open ? 'Hide My Stream Settings' : 'Set Up My Stream'"></span>
+                    <span x-text="open ? @js(__('Hide My Stream Settings')) : @js(__('Set Up My Stream'))"></span>
                     <i data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" :class="open && 'rotate-180'"></i>
                 </button>
 
@@ -249,7 +247,7 @@
                         <div class="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-200">
                             Your stream is currently taken down by admin review.
                             @if($ownStream?->takedown_reason)
-                                <span class="block text-xs text-rose-200/80 mt-1">Reason: {{ $ownStream->takedown_reason }}</span>
+                                <span class="block text-xs text-rose-200/80 mt-1">{{ __('Reason: :value1', ['value1' => ($ownStream->takedown_reason)]) }}</span>
                             @endif
                         </div>
                     @endif
@@ -337,7 +335,7 @@
                 <h2 class="text-lg font-black font-orbitron text-white uppercase tracking-widest">
                     {{ $isAdminView ? 'All Streams' : 'Browse Streams' }}
                 </h2>
-                <span class="text-xs text-zinc-500">{{ $playerStreams->total() }} stream{{ $playerStreams->total() === 1 ? '' : 's' }}</span>
+                <span class="text-xs text-zinc-500">{{ __($playerStreams->total() === 1 ? ':count stream' : ':count streams', ['count' => $playerStreams->total()]) }}</span>
             </div>
 
             {{-- ── Tab bar ── --}}
@@ -448,9 +446,7 @@
                                     {{-- Stats --}}
                                     <div class="flex items-center gap-3 text-[10px] text-zinc-600 mt-auto pt-1 border-t border-zinc-800/50">
                                         <span class="flex items-center gap-1">
-                                            <i data-lucide="eye" class="w-3 h-3"></i>
-                                            {{ $playerStream->formattedTotalViews() }} views
-                                        </span>
+                                            <i data-lucide="eye" class="w-3 h-3"></i>{{ __(':value1 views', ['value1' => ($playerStream->formattedTotalViews())]) }}</span>
                                         @if($canModerateStreams && $isTakenDown)
                                             <span class="flex items-center gap-1 text-rose-400">
                                                 <i data-lucide="ban" class="w-3 h-3"></i>
@@ -545,7 +541,7 @@
             <div class="flex items-center gap-3">
                 <h2 class="text-lg font-black font-orbitron text-white uppercase tracking-widest">Tournament Broadcasts</h2>
                 @if($tournaments->isNotEmpty())
-                    <span class="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">{{ $tournaments->count() }} active</span>
+                    <span class="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">{{ __(':value1 active', ['value1' => ($tournaments->count())]) }}</span>
                 @endif
             </div>
 
@@ -609,7 +605,7 @@
             <div class="theme-player fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="delete-player-stream-title" x-on:keydown.escape.window="$wire.cancelDeletePlayerStream()">
                 <button type="button" wire:click="cancelDeletePlayerStream" class="absolute inset-0 bg-black/75" aria-label="Close delete stream dialog"></button>
                 <div class="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-900 p-5 text-zinc-200 shadow-xl">
-                    <h2 id="delete-player-stream-title" class="text-lg font-semibold">Delete {{ $deletePlayerStreamTitle }}?</h2>
+                    <h2 id="delete-player-stream-title" class="text-lg font-semibold">{{ __('Delete :value1?', ['value1' => ($deletePlayerStreamTitle)]) }}</h2>
                     <p class="mt-3 text-sm leading-6 text-zinc-400">This hides this stream from the list and makes its watch page unavailable. Chat messages, viewer history, and uploaded files are preserved. Other streams and tournaments are unaffected.</p>
                     <div class="mt-5 flex justify-end gap-3">
                         <button type="button" wire:click="cancelDeletePlayerStream" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm">Cancel</button>

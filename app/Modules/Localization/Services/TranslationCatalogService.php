@@ -18,6 +18,8 @@ use App\Modules\Tournament\Models\TournamentScheduleSlot;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 
 final class TranslationCatalogService
@@ -31,7 +33,7 @@ final class TranslationCatalogService
      */
     public function supportedLanguages(): array
     {
-        return config('localization.supported', []);
+        return app(LanguageRegistry::class)->supported();
     }
 
     public function syncFromJsonFiles(): int
@@ -39,45 +41,69 @@ final class TranslationCatalogService
         $synced = 0;
         $now = now();
 
-        foreach (array_keys($this->supportedLanguages()) as $locale) {
-            $path = lang_path($locale.'.json');
-            $translations = File::exists($path)
-                ? json_decode((string) File::get($path), true)
-                : [];
+        $path = lang_path('en.json');
+        $translations = File::exists($path)
+            ? json_decode((string) File::get($path), true)
+            : [];
 
-            if (! is_array($translations)) {
-                $translations = [];
+        if (! is_array($translations)) {
+            $translations = [];
+        }
+
+        $rows = [];
+        foreach ($translations as $key => $text) {
+            if (! is_string($key)) {
+                continue;
             }
 
-            $rows = [];
-            foreach ($translations as $key => $text) {
-                if (! is_string($key)) {
-                    continue;
-                }
+            $rows[] = [
+                'key' => $key,
+                'locale' => 'en',
+                'text' => is_scalar($text) ? (string) $text : null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+            $synced++;
 
-                $rows[] = [
-                    'key' => $key,
-                    'locale' => $locale,
-                    'text' => is_scalar($text) ? (string) $text : null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-                $synced++;
-
-                if (count($rows) === self::WRITE_BATCH_SIZE) {
-                    TranslationString::query()->upsert($rows, ['key', 'locale'], ['text', 'updated_at']);
-                    $rows = [];
-                }
-            }
-
-            if ($rows !== []) {
+            if (count($rows) === self::WRITE_BATCH_SIZE) {
                 TranslationString::query()->upsert($rows, ['key', 'locale'], ['text', 'updated_at']);
+                $rows = [];
             }
         }
 
-        $this->createMissingLocaleRows();
+        if ($rows !== []) {
+            TranslationString::query()->upsert($rows, ['key', 'locale'], ['text', 'updated_at']);
+        }
+
+        TranslationCatalogCache::invalidate('en');
+
+        $synced += $this->syncInterfacePhrases(app(InterfaceTranslationCatalog::class)->phrases());
 
         return $synced;
+    }
+
+    private function syncInterfacePhrases(iterable $phrases): int
+    {
+        $rows = [];
+        $count = 0;
+        $now = now();
+        foreach ($phrases as $phrase) {
+            // Interface keys must match __() and browser labels exactly, even
+            // when one label contains multiple sentences.
+            $rows[$phrase] = ['key' => $phrase, 'locale' => 'en', 'text' => $phrase, 'created_at' => $now, 'updated_at' => $now];
+            if (count($rows) === self::WRITE_BATCH_SIZE) {
+                $count += TranslationString::query()->insertOrIgnore(array_values($rows));
+                $rows = [];
+            }
+        }
+        if ($rows !== []) {
+            $count += TranslationString::query()->insertOrIgnore(array_values($rows));
+        }
+        if ($count > 0) {
+            TranslationCatalogCache::invalidate('en');
+        }
+
+        return $count;
     }
 
     public function syncFromDatabaseContent(): int
@@ -131,83 +157,104 @@ final class TranslationCatalogService
     /** @param iterable<mixed> $content */
     public function syncContent(iterable $content): int
     {
-        $phrases = [];
+        $rows = [];
+        $count = 0;
+        $now = now();
         foreach ($content as $text) {
-            if (is_string($text)) {
-                foreach ($this->segments->phrases($text) as $phrase) {
-                    $phrases[$phrase] = true;
+            if (! is_string($text)) {
+                continue;
+            }
+            foreach ($this->segments->phrases($text) as $phrase) {
+                $rows[$phrase] = [
+                    'key' => $phrase, 'locale' => 'en', 'text' => $phrase,
+                    'created_at' => $now, 'updated_at' => $now,
+                ];
+                if (count($rows) >= self::WRITE_BATCH_SIZE) {
+                    $count += TranslationString::query()->insertOrIgnore(array_values($rows));
+                    $rows = [];
                 }
             }
         }
-        $rows = [];
-        $now = now();
-        foreach (array_keys($phrases) as $phrase) {
-            foreach (array_keys($this->supportedLanguages()) as $locale) {
-                $rows[] = [
-                    'key' => $phrase,
-                    'locale' => $locale,
-                    'text' => $locale === 'en' ? $phrase : null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
+        if ($rows !== []) {
+            $count += TranslationString::query()->insertOrIgnore(array_values($rows));
         }
-        $count = 0;
-        foreach (array_chunk($rows, 100) as $batch) {
-            // The unique key protects simultaneous saves too. Keep existing values
-            // and soft-deleted phrases intact; only insert genuinely new rows.
-            $count += TranslationString::query()->insertOrIgnore($batch);
+        if ($count > 0) {
+            TranslationCatalogCache::invalidate('en');
         }
 
         return $count;
     }
 
-    public function createMissingLocaleRows(): void
+    public function sourceCatalog(): array
     {
-        $keys = TranslationString::query()
-            ->where('locale', 'en')
-            ->select(['id', 'key'])
-            ->lazyById(self::WRITE_BATCH_SIZE);
+        $source = TranslationString::query()->where('locale', 'en')->orderBy('key')->pluck('text', 'key')->all();
+        $source = self::normalizeSource($source);
+        ksort($source, SORT_STRING);
 
-        $now = now();
-        $rows = [];
-        $locales = array_keys($this->supportedLanguages());
+        return $source;
+    }
 
-        foreach ($keys as $source) {
-            foreach ($locales as $locale) {
-                $rows[] = [
-                    'key' => $source->key,
-                    'locale' => $locale,
-                    'text' => $locale === 'en' ? $source->key : null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-
-                if (count($rows) === self::WRITE_BATCH_SIZE) {
-                    TranslationString::query()->insertOrIgnore($rows);
-                    $rows = [];
-                }
+    public static function normalizeSource(array $source): array
+    {
+        foreach ($source as $key => $text) {
+            if ($text === null || $text === '') {
+                $source[$key] = (string) $key;
             }
         }
 
-        if ($rows !== []) {
-            // Keep existing translations, timestamps, and soft deletions intact.
-            TranslationString::query()->insertOrIgnore($rows);
+        return $source;
+    }
+
+    public function englishExport(): array
+    {
+        $source = $this->sourceCatalog();
+        $entries = [];
+        foreach ($source as $key => $text) {
+            $entries[] = ['key' => (string) $key, 'source' => $text, 'translation' => $text];
         }
+
+        return [
+            'version' => 1, 'source_locale' => 'en',
+            'source_hash' => self::sourceHash($source), 'entries' => $entries,
+        ];
+    }
+
+    public static function sourceHash(array $source): string
+    {
+        ksort($source, SORT_STRING);
+
+        return hash('sha256', json_encode($source, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+    }
+
+    public function statistics(): array
+    {
+        return Cache::remember('localization.catalog_statistics', 300, function (): array {
+            $total = TranslationString::query()->where('locale', 'en')->count();
+            $translated = DB::table('translation_strings as translated')
+                ->join('translation_strings as source', function ($join): void {
+                    $join->on('source.key', '=', 'translated.key')->where('source.locale', 'en')->whereNull('source.deleted_at');
+                })
+                ->whereNull('translated.deleted_at')->whereNotNull('translated.text')->where('translated.text', '!=', '')
+                ->selectRaw('translated.locale, COUNT(*) as total')->groupBy('translated.locale')
+                ->pluck('total', 'translated.locale')->all();
+            $missing = [];
+            foreach (array_keys($this->supportedLanguages()) as $locale) {
+                $missing[$locale] = max(0, $total - ($translated[$locale] ?? 0));
+            }
+
+            return ['total' => $total, 'missing' => $missing];
+        });
     }
 
     public function createKey(string $key): void
     {
         $key = trim($key);
 
-        foreach (array_keys($this->supportedLanguages()) as $locale) {
-            $row = TranslationString::withTrashed()->firstOrCreate(
-                ['key' => $key, 'locale' => $locale],
-                ['text' => $locale === 'en' ? $key : null],
-            );
-            if ($row->trashed()) {
-                $row->restore();
-            }
+        $row = TranslationString::withTrashed()->firstOrCreate(
+            ['key' => $key, 'locale' => 'en'], ['text' => $key],
+        );
+        if ($row->trashed()) {
+            $row->restore();
         }
     }
 
@@ -216,60 +263,30 @@ final class TranslationCatalogService
      */
     public function saveKey(string $key, array $values): void
     {
-        foreach (array_keys($this->supportedLanguages()) as $locale) {
-            TranslationString::query()->updateOrCreate(
-                ['key' => $key, 'locale' => $locale],
-                ['text' => $values[$locale] ?? null],
-            );
+        foreach ($values as $locale => $text) {
+            $this->saveTranslation($key, $locale, $text);
         }
     }
 
     public function saveTranslation(string $key, string $locale, ?string $text): void
     {
         abort_unless(array_key_exists($locale, $this->supportedLanguages()), 422);
+        abort_unless(TranslationString::query()->where('key', $key)->where('locale', 'en')->exists(), 404);
+        if ($locale !== 'en' && ($text === null || trim($text) === '')) {
+            $row = TranslationString::query()->where('key', $key)->where('locale', $locale)->first();
+            $row?->delete();
 
-        TranslationString::query()->updateOrCreate(
-            ['key' => $key, 'locale' => $locale],
-            ['text' => $text],
-        );
+            return;
+        }
+        $row = TranslationString::withTrashed()->firstOrNew(['key' => $key, 'locale' => $locale]);
+        $row->text = $text;
+        $row->exists && $row->trashed() ? $row->restore() : $row->save();
     }
 
     public function deleteKey(string $key): void
     {
         TranslationString::query()->where('key', $key)->delete();
-    }
-
-    public function fillMissingWithEnglishFallback(): int
-    {
-        $filled = 0;
-        $englishRows = TranslationString::query()
-            ->where('locale', 'en')
-            ->pluck('text', 'key');
-
-        foreach (array_keys($this->supportedLanguages()) as $locale) {
-            if ($locale === 'en') {
-                continue;
-            }
-
-            foreach ($englishRows as $key => $englishText) {
-                if ($englishText === null || $englishText === '') {
-                    continue;
-                }
-
-                $row = TranslationString::query()->firstOrCreate(
-                    ['key' => $key, 'locale' => $locale],
-                    ['text' => null],
-                );
-
-                if ($row->text === null || $row->text === '') {
-                    $row->text = $englishText;
-                    $row->save();
-                    $filled++;
-                }
-            }
-        }
-
-        return $filled;
+        TranslationCatalogCache::invalidate();
     }
 
     public function exportJsonFiles(): void
@@ -297,10 +314,8 @@ final class TranslationCatalogService
     public function missingKeysForLocale(string $locale): Collection
     {
         return TranslationString::query()
-            ->where('locale', $locale)
-            ->where(function ($query): void {
-                $query->whereNull('text')->orWhere('text', '');
-            })
+            ->where('locale', 'en')
+            ->whereNotIn('key', TranslationString::query()->select('key')->where('locale', $locale)->whereNotNull('text')->where('text', '!=', ''))
             ->pluck('key');
     }
 }

@@ -79,7 +79,7 @@
                     <span class="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-950 text-zinc-400">
                         <i data-lucide="user" class="h-4 w-4"></i>
                     </span>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-zinc-300">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-zinc-300" translate="no">
                         {{ $currentUser->profile?->display_name ?? $currentUser->username }}
                     </span>
                 </a>

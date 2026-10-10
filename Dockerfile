@@ -46,6 +46,7 @@ COPY docker/nginx/prod.conf /etc/nginx/http.d/default.conf
 # Copy startup script
 COPY docker/start.sh /start.sh
 COPY docker/healthcheck.sh /healthcheck.sh
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 RUN chmod +x /start.sh /healthcheck.sh
 
 # Permissions

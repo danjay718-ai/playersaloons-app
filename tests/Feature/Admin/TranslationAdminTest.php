@@ -7,6 +7,7 @@ namespace Tests\Feature\Admin;
 use App\Livewire\Admin\TranslationAdmin;
 use App\Modules\Identity\Models\User;
 use App\Modules\Localization\Models\TranslationString;
+use App\Modules\Localization\Services\LanguageRegistry;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
@@ -15,8 +16,10 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 final class TranslationAdminTest extends TestCase
@@ -64,6 +67,39 @@ final class TranslationAdminTest extends TestCase
             'locale' => 'en',
             'text' => 'Dashboard',
         ]);
+    }
+
+    public function test_language_availability_is_global_and_keeps_translations_editable(): void
+    {
+        $registry = app(LanguageRegistry::class);
+        self::assertArrayHasKey('fr', $registry->available());
+        TranslationString::query()->create(['key' => 'Hello', 'locale' => 'fr', 'text' => 'Bonjour']);
+        $component = Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
+            ->call('setLanguageAvailability', 'fr', false)->assertHasNoErrors();
+        self::assertArrayNotHasKey('fr', $registry->available());
+        self::assertArrayHasKey('fr', $registry->supported());
+        self::assertDatabaseHas('translation_strings', ['locale' => 'fr', 'text' => 'Bonjour']);
+        $component->set('localeFilter', 'fr')->assertSet('localeFilter', 'fr')
+            ->call('setLanguageAvailability', 'fr', true)->assertHasNoErrors();
+        self::assertArrayHasKey('fr', $registry->available());
+    }
+
+    public function test_english_cannot_be_disabled(): void
+    {
+        Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
+            ->call('setLanguageAvailability', 'en', false)->assertStatus(422);
+        self::assertArrayHasKey('en', app(LanguageRegistry::class)->available());
+    }
+
+    public function test_view_only_admin_cannot_change_language_availability(): void
+    {
+        $role = Role::findOrCreate('TRANSLATION_REVIEWER', 'web');
+        $role->givePermissionTo('translations.view');
+        $this->admin->syncRoles([$role]);
+        Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
+            ->assertDontSee('data-player-language=', false)
+            ->call('setLanguageAvailability', 'fr', false)->assertForbidden();
+        self::assertArrayHasKey('fr', app(LanguageRegistry::class)->available());
     }
 
     public function test_translation_manager_can_filter_missing_locale_rows(): void
@@ -118,7 +154,9 @@ final class TranslationAdminTest extends TestCase
         foreach (['en' => 'Greeting source', 'fr' => 'Salut unique', 'es' => 'Hola unique'] as $locale => $text) {
             $this->assertDatabaseHas('translation_strings', ['key' => 'Greeting source', 'locale' => $locale, 'text' => $text]);
         }
-        $this->assertSame('Salut unique', json_decode(File::get(lang_path('fr.json')), true)['Greeting source']);
+        app()->setLocale('fr');
+        $this->assertSame('Salut unique', __('Greeting source'));
+        $this->assertArrayNotHasKey('Greeting source', json_decode(File::get(lang_path('fr.json')), true));
     }
 
     public function test_missing_filter_includes_absent_rows_and_searches_selected_language(): void
@@ -159,66 +197,60 @@ final class TranslationAdminTest extends TestCase
             ->set('localeFilter', 'invalid')->assertStatus(422);
     }
 
-    public function test_languages_can_be_hidden_and_restored_without_removing_translations(): void
+    public function test_language_visibility_controls_use_client_state_without_livewire_requests(): void
     {
-        TranslationString::query()->create(['key' => 'Greeting source', 'locale' => 'fr', 'text' => 'Bonjour unique']);
         Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
-            ->assertSee('data-translation-language="fr"', false)
-            ->call('toggleLanguage', 'fr')
-            ->assertSet('hiddenLanguages', ['fr'])
-            ->assertDontSee('data-translation-language="fr"', false)
-            ->assertSee('data-translation-language="en"', false)
-            ->call('toggleLanguage', 'fr')
-            ->assertSee('data-translation-language="fr"', false);
-        $this->assertDatabaseHas('translation_strings', ['key' => 'Greeting source', 'locale' => 'fr', 'text' => 'Bonjour unique']);
-        $this->assertArrayHasKey('fr', config('localization.supported'));
+            ->assertSee('translationLanguageVisibility(', false)
+            ->assertSee('@click="toggleLanguage(', false)
+            ->assertSee('@click="showAllLanguages()"', false)
+            ->assertDontSee('wire:click="toggleLanguage', false)
+            ->assertDontSee('wire:click="showAllLanguages', false)
+            ->assertDontSee('delete-translation-', false);
     }
 
-    public function test_hiding_selected_language_closes_editor_and_returns_to_english(): void
+    public function test_admin_can_add_a_language_without_creating_placeholder_rows(): void
     {
-        TranslationString::query()->create(['key' => 'Greeting source', 'locale' => 'en', 'text' => 'Greeting source']);
+        TranslationString::query()->create(['key' => 'Hello', 'locale' => 'en', 'text' => 'Hello']);
         Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
-            ->set('localeFilter', 'fr')
-            ->call('editKey', 'Greeting source')
-            ->assertSet('showEditModal', true)
-            ->call('toggleLanguage', 'fr')
-            ->assertSet('localeFilter', 'en')
-            ->assertSet('showEditModal', false)
-            ->assertSet('editingKey', '')
-            ->assertSet('values', []);
+            ->set('code', 'fil')->set('english', 'Filipino')->set('native', 'Filipino')->set('flag', 'ph')
+            ->call('addLanguage')->assertHasNoErrors()
+            ->assertDispatched('translation-language-added', locale: 'fil')
+            ->assertSee('data-translation-language="fil"', false);
+        self::assertDatabaseHas('translation_languages', ['code' => 'fil', 'english' => 'Filipino', 'flag' => 'ph']);
+        self::assertSame('ph', app(LanguageRegistry::class)->supported()['fil']['flag']);
+        $this->actingAs($this->admin)->get('/admin/translations')->assertOk()->assertSee('fi-ph', false);
+        self::assertDatabaseMissing('translation_strings', ['locale' => 'fil']);
+        $this->actingAs($this->admin)->post(route('language.update'), ['locale' => 'fil'])->assertSessionHas('locale', 'fil');
+        self::assertSame('fil', $this->admin->fresh()->locale);
     }
 
-    public function test_hidden_languages_are_remembered_for_the_admin_session_and_can_all_be_restored(): void
+    public function test_language_creation_handles_missing_setup_and_invalid_flags_without_a_server_error(): void
     {
         Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
-            ->call('toggleLanguage', 'fr')
-            ->call('toggleLanguage', 'es');
+            ->set('code', 'fil')->set('english', 'Filipino')->set('native', 'Filipino')->set('flag', '../invalid')
+            ->call('addLanguage')->assertHasErrors('flag');
+        self::assertDatabaseMissing('translation_languages', ['code' => 'fil']);
+
+        Schema::drop('translation_languages');
         Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
-            ->assertSet('hiddenLanguages', ['fr', 'es'])
-            ->assertDontSee('data-translation-language="fr"', false)
-            ->call('showAllLanguages')
-            ->assertSet('hiddenLanguages', [])
-            ->assertSee('data-translation-language="fr"', false)
-            ->assertSee('data-translation-language="es"', false);
-        Livewire::actingAs($this->admin)->test(TranslationAdmin::class)->assertSet('hiddenLanguages', []);
+            ->assertSet('languageTableReady', false)
+            ->set('code', 'fil')->set('english', 'Filipino')->set('native', 'Filipino')->set('flag', 'ph')
+            ->call('addLanguage')->assertHasErrors('code')
+            ->assertSee('Adding languages is unavailable until the application update is complete. No language was added.');
     }
 
-    public function test_language_visibility_preferences_are_isolated_between_admins(): void
+    public function test_flag_setup_is_required_and_native_name_can_default_to_the_language_name(): void
     {
-        Livewire::actingAs($this->admin)->test(TranslationAdmin::class)->call('toggleLanguage', 'fr');
-        $otherAdmin = $this->createUserWithRole('ADMIN', 'other-translations-admin@example.com');
-        Livewire::actingAs($otherAdmin)->test(TranslationAdmin::class)
-            ->assertSet('hiddenLanguages', [])
-            ->assertSee('data-translation-language="fr"', false);
-    }
-
-    public function test_invalid_languages_and_hiding_english_are_rejected(): void
-    {
-        Livewire::actingAs($this->admin)->test(TranslationAdmin::class)->call('toggleLanguage', 'invalid')->assertStatus(422);
-        Livewire::actingAs($this->admin)->test(TranslationAdmin::class)->call('toggleLanguage', 'en')->assertStatus(422);
         Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
-            ->call('toggleLanguage', 'fr')
-            ->set('localeFilter', 'fr')->assertStatus(422);
+            ->set('code', 'fil')->set('english', 'Filipino')->set('flag', 'ph')
+            ->call('addLanguage')->assertHasNoErrors()
+            ->assertSet('flag', 'un');
+        self::assertDatabaseHas('translation_languages', ['code' => 'fil', 'native' => 'Filipino', 'flag' => 'ph']);
+        Schema::table('translation_languages', fn ($table) => $table->dropColumn('flag'));
+        Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
+            ->assertSet('languageTableReady', false)
+            ->set('code', 'hi')->set('english', 'Hindi')
+            ->call('addLanguage')->assertHasErrors('code');
     }
 
     protected function tearDown(): void

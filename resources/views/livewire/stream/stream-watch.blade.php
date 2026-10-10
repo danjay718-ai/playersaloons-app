@@ -189,7 +189,7 @@
                         </div>
                         <div class="hidden sm:flex items-center gap-1.5 {{ $isAdminView ? 'text-slate-500' : 'text-zinc-500' }}">
                             <i data-lucide="play-circle" class="w-4 h-4"></i>
-                            <span>{{ $streamChannel->formattedTotalViews() }} views</span>
+                            <span>{{ __(':value1 views', ['value1' => ($streamChannel->formattedTotalViews())]) }}</span>
                         </div>
                     </div>
                 </div>
@@ -222,7 +222,7 @@
                             :class="showChat && '{{ $isAdminView ? 'bg-indigo-900/30 border-indigo-600/50 text-indigo-300' : 'bg-purple-900/30 border-purple-600/50 text-purple-300' }}'"
                         >
                             <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-                            <span x-text="showChat ? 'Hide Chat' : 'Show Chat'"></span>
+                            <span x-text="showChat ? @js(__('Hide Chat')) : @js(__('Show Chat'))"></span>
                         </button>
 
                         {{-- Back --}}
@@ -356,7 +356,7 @@
                 </div>
                 <div class="flex items-center gap-1.5 text-[10px] {{ $isAdminView ? 'text-slate-500' : 'text-zinc-500' }}">
                     <i data-lucide="users" class="w-3.5 h-3.5"></i>
-                    <span x-text="formatViewers(viewerCount) + ' watching'"></span>
+                    <span x-text="@js(__(':count watching')).replace(':count', formatViewers(viewerCount))"></span>
                 </div>
             </div>
 

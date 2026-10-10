@@ -18,13 +18,10 @@
                 <div class="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
                     <span class="rounded bg-purple-950/60 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-purple-400 ring-1 ring-inset ring-purple-500/30">{{ $gameName }}</span>
                     <span class="rounded bg-zinc-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 ring-1 ring-inset ring-zinc-700">{{ str_replace('_', ' ', $match->status->value) }}</span>
-                    <span class="rounded bg-emerald-950/60 px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider text-emerald-400 ring-1 ring-inset ring-emerald-500/30">
-                        ${{ number_format((float) $match->stake_amount, 2) }} Stake
-                    </span>
+                    <span class="rounded bg-emerald-950/60 px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider text-emerald-400 ring-1 ring-inset ring-emerald-500/30">{{ __('$:value1 Stake', ['value1' => (number_format((float) $match->stake_amount, 2))]) }}</span>
                     @if($match->match_timer_minutes)
                         <span class="rounded bg-orange-950/60 px-2.5 py-1 text-[10px] font-bold text-orange-400 ring-1 ring-inset ring-orange-500/30">
-                            <i data-lucide="timer" class="inline-block h-3 w-3 mr-1"></i>{{ $match->match_timer_minutes }}m
-                        </span>
+                            <i data-lucide="timer" class="inline-block h-3 w-3 mr-1"></i>{{ __(':value1 min', ['value1' => ($match->match_timer_minutes)]) }}</span>
                     @endif
                 </div>
 
@@ -46,7 +43,7 @@
                     <div class="flex-1 text-center lg:text-left">
                         <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Opponent</p>
                         <p class="font-orbitron text-lg font-black text-cyan-400">{{ $opponentHandle ?? 'Waiting...' }}</p>
-                        <p class="text-[10px] text-zinc-400">{{ $opponent?->username ?? 'TBD' }}</p>
+                        <p class="text-[10px] text-zinc-400" translate="no">{{ $opponent?->username ?? 'TBD' }}</p>
                     </div>
                 </div>
             </div>
@@ -74,7 +71,7 @@
                     <div class="space-y-4 text-xs text-zinc-400">
                         <div class="rounded-xl border border-zinc-800 bg-black/40 p-3 text-center">
                             <p class="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Reported Winner</p>
-                            <p class="font-orbitron mt-1 text-sm font-black text-white">
+                            <p class="font-orbitron mt-1 text-sm font-black text-white" translate="no">
                                 {{ $match->winner_user_id === $match->creator_user_id ? $match->creator?->username : $match->opponent?->username }}
                             </p>
                         </div>
@@ -116,7 +113,7 @@
                         </div>
                         <p class="font-orbitron font-black text-red-400 uppercase tracking-widest">Under Admin Review</p>
                         @if($match->disputer)
-                            <p class="text-[10px]">Disputed by <strong class="text-white">{{ $match->disputer->username }}</strong></p>
+                            <p class="text-[10px]">Disputed by <strong class="text-white" translate="no">{{ $match->disputer->username }}</strong></p>
                         @endif
                         @if($match->dispute_proof_path)
                             <a href="/storage/{{ $match->dispute_proof_path }}" target="_blank" class="mx-auto mt-2 flex w-max items-center gap-1 rounded bg-zinc-800 px-3 py-1.5 text-cyan-300 hover:bg-zinc-700">
@@ -131,7 +128,7 @@
                                 <i data-lucide="trophy" class="h-4 w-4 text-emerald-400"></i>
                             </div>
                             <p class="text-zinc-400">Winner</p>
-                            <p class="font-orbitron text-lg font-black text-emerald-400">{{ $match->winner->username }}</p>
+                            <p class="font-orbitron text-lg font-black text-emerald-400" translate="no">{{ $match->winner->username }}</p>
                         @elseif($match->dispute_resolution?->value === 'refund')
                             <i data-lucide="undo" class="h-6 w-6 text-amber-500 mb-1"></i>
                             <p class="font-orbitron font-black text-amber-400 uppercase tracking-wider">Voided & Refunded</p>
@@ -142,9 +139,7 @@
                         @endif
                         
                         @if($match->dispute_resolution)
-                            <span class="mt-2 inline-block rounded bg-zinc-900 px-2 py-1 text-[9px] font-bold text-zinc-500">
-                                Resolved: {{ str_replace('_', ' ', $match->dispute_resolution->value) }}
-                            </span>
+                            <span class="mt-2 inline-block rounded bg-zinc-900 px-2 py-1 text-[9px] font-bold text-zinc-500">{{ __('Resolved: :value1', ['value1' => (str_replace('_', ' ', $match->dispute_resolution->value))]) }}</span>
                         @endif
                     </div>
                 @endif

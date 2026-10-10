@@ -67,7 +67,7 @@ final class CompetitionContentTranslationTest extends TestCase
         $this->tournament(['description' => 'Keep your account safe.', 'rules' => $rules]);
         $this->tournament(['description' => 'Keep your account safe.', 'rules' => $rules]);
         foreach (['Translation Cup', 'Keep your account safe.', 'Report your results promptly.'] as $phrase) {
-            $this->assertSame(count(config('localization.supported')), TranslationString::query()->where('key', $phrase)->count());
+            $this->assertSame(1, TranslationString::query()->where('key', $phrase)->count());
         }
         $this->assertSame(3, TranslationString::query()->where('locale', 'en')->count());
         $this->assertDatabaseMissing('translation_strings', ['key' => 'Keep']);

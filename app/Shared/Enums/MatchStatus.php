@@ -12,4 +12,18 @@ enum MatchStatus: string
     case COMPLETED = 'completed';
     case DISPUTED = 'disputed';
     case FORFEITED = 'forfeited';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::PENDING => __('Pending'),
+            self::READY => __('Ready'),
+            self::IN_PROGRESS => __('In progress'),
+            self::RESULT_SUBMITTED => __('Result submitted'),
+            self::WAITING_FOR_CONFIRMATION => __('Waiting for confirmation'),
+            self::COMPLETED => __('Completed'),
+            self::DISPUTED => __('Disputed'),
+            self::FORFEITED => __('Forfeited'),
+        };
+    }
 }

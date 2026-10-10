@@ -349,7 +349,7 @@
                                 <span class="flex h-8 w-8 items-center justify-center rounded-full bg-fuchsia-500/10 text-xs font-black text-fuchsia-300">
                                     {{ mb_strtoupper(mb_substr($playerName, 0, 1)) }}
                                 </span>
-                                <p class="min-w-0 break-words text-[10px] font-black uppercase tracking-[0.2em] text-fuchsia-300">{{ $playerName }}</p>
+                                <p class="min-w-0 break-words text-[10px] font-black uppercase tracking-[0.2em] text-fuchsia-300" translate="no">{{ $playerName }}</p>
                             </div>
                         </article>
                     @empty

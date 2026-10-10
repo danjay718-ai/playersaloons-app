@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Identity\Models\Role;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-use App\Modules\Identity\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
@@ -95,6 +95,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'roles.manage',
         'translations.view',
         'translations.manage',
+        'translations.reset',
         'advertisements.view',
         'advertisements.manage',
         'newsletters.view',
@@ -321,6 +322,11 @@ class RolesAndPermissionsSeeder extends Seeder
                 // SUPER_ADMIN gets every permission
                 $role->syncPermissions(Permission::all());
             } else {
+                // Reset is opt-in for staff. Keep its configured grant across
+                // deployment seeding without granting it to new staff roles.
+                if ($role->hasPermissionTo('translations.reset')) {
+                    $permissions[] = 'translations.reset';
+                }
                 $role->syncPermissions($permissions);
             }
         }

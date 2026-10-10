@@ -4,30 +4,31 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Modules\Localization\Actions\AddTranslationLanguageAction;
+use App\Modules\Localization\Actions\ImportTranslationsAction;
+use App\Modules\Localization\Actions\ResetTranslationsAction;
 use App\Modules\Localization\Models\TranslationString;
+use App\Modules\Localization\Services\LanguageRegistry;
 use App\Modules\Localization\Services\TranslationCatalogService;
+use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Operations\Services\AdminDeletionService;
 use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 final class TranslationAdmin extends AdminComponent
 {
+    use WithFileUploads;
     use WithPagination;
-
-    public function boot(): void
-    {
-        parent::boot();
-        abort_unless($this->actor()->can('translations.view'), 403);
-    }
 
     public string $search = '';
 
     public string $localeFilter = 'en';
-
-    /** @var list<string> */
-    #[Locked]
-    public array $hiddenLanguages = [];
 
     #[Locked]
     public string $editingLocale = 'en';
@@ -36,51 +37,51 @@ final class TranslationAdmin extends AdminComponent
 
     public bool $showEditModal = false;
 
+    #[Locked]
     public string $editingKey = '';
 
     public string $newKey = '';
 
-    /** @var array<string, string|null> */
     public array $values = [];
 
+    #[Locked]
     public bool $translationTableReady = true;
 
+    #[Locked]
+    public bool $resetTableReady = true;
+
+    #[Locked]
+    public bool $languageTableReady = true;
+
+    public ?TemporaryUploadedFile $importFile = null;
+
+    public string $importLocale = '';
+
+    public string $resetLocale = 'all';
+
+    public string $resetConfirmation = '';
+
+    public string $code = '';
+
+    public string $english = '';
+
+    public string $native = '';
+
+    public string $flag = 'un';
+
     protected $paginationTheme = 'tailwind';
+
+    public function boot(): void
+    {
+        parent::boot();
+        abort_unless($this->actor()->can('translations.view'), 403);
+    }
 
     public function mount(): void
     {
         $this->translationTableReady = Schema::hasTable('translation_strings');
-        $stored = session()->get($this->visibilitySessionKey(), []);
-        $supported = config('localization.supported', []);
-        $this->hiddenLanguages = is_array($stored)
-            ? array_values(array_unique(array_filter($stored, fn ($locale): bool => is_string($locale) && $locale !== 'en' && array_key_exists($locale, $supported))))
-            : [];
-    }
-
-    public function toggleLanguage(string $locale): void
-    {
-        abort_unless($locale !== 'en' && array_key_exists($locale, config('localization.supported', [])), 422);
-        if (in_array($locale, $this->hiddenLanguages, true)) {
-            $this->hiddenLanguages = array_values(array_diff($this->hiddenLanguages, [$locale]));
-        } else {
-            $this->hiddenLanguages[] = $locale;
-        }
-        session()->put($this->visibilitySessionKey(), $this->hiddenLanguages);
-        if (in_array($this->localeFilter, $this->hiddenLanguages, true)) {
-            $this->localeFilter = 'en';
-            $this->updatedLocaleFilter();
-        }
-    }
-
-    public function showAllLanguages(): void
-    {
-        $this->hiddenLanguages = [];
-        session()->forget($this->visibilitySessionKey());
-    }
-
-    private function visibilitySessionKey(): string
-    {
-        return 'translation_hidden_languages.'.$this->actor()->getAuthIdentifier();
+        $this->resetTableReady = Schema::hasTable('translation_language_resets');
+        $this->languageTableReady = Schema::hasTable('translation_languages') && Schema::hasColumn('translation_languages', 'flag');
     }
 
     public function updatedSearch(): void
@@ -88,32 +89,38 @@ final class TranslationAdmin extends AdminComponent
         $this->resetPage();
     }
 
+    public function updatedMissingOnly(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedLocaleFilter(): void
     {
         $this->assertSupportedLocale();
-        $this->showEditModal = false;
-        $this->editingKey = '';
-        $this->values = [];
+        $this->reset('showEditModal', 'editingKey', 'values');
         $this->resetPage();
     }
 
     private function assertSupportedLocale(): void
     {
-        abort_unless(array_key_exists($this->localeFilter, config('localization.supported', []))
-            && ! in_array($this->localeFilter, $this->hiddenLanguages, true), 422);
+        abort_unless(array_key_exists($this->localeFilter, app(LanguageRegistry::class)->supported()), 422);
     }
 
-    public function updatedMissingOnly(): void
+    public function setLanguageAvailability(string $locale, bool $enabled): void
     {
-        $this->resetPage();
+        abort_unless($this->actor()->can('translations.manage'), 403);
+        abort_unless($locale !== 'en' && array_key_exists($locale, app(LanguageRegistry::class)->supported()), 422);
+        SystemSetting::query()->updateOrCreate(['key' => 'language.disabled.'.$locale], [
+            'value' => $enabled ? '0' : '1', 'updated_by' => $this->actor()->id,
+        ]);
+        Cache::forget('localization.disabled_languages');
     }
 
     public function syncFromJson(TranslationCatalogService $catalog): void
     {
         abort_unless($this->actor()->can('translations.manage'), 403);
         $count = $catalog->syncFromJsonFiles();
-
-        session()->flash('success', "Synced {$count} translations from JSON files.");
+        session()->flash('success', __('Synced :count English phrases.', ['count' => $count]));
     }
 
     public function syncFromDatabase(TranslationCatalogService $catalog): void
@@ -121,54 +128,69 @@ final class TranslationAdmin extends AdminComponent
         abort_unless($this->actor()->can('translations.manage'), 403);
         $catalog->syncFromDatabaseContent();
         $this->resetPage();
-
         session()->flash('success', __('Database phrases synced.'));
     }
 
-    public function exportJson(TranslationCatalogService $catalog): void
+    public function exportEnglish(TranslationCatalogService $catalog)
     {
         abort_unless($this->actor()->can('translations.manage'), 403);
-        $catalog->exportJsonFiles();
+        $export = $catalog->englishExport();
 
-        session()->flash('success', 'Translation JSON files exported successfully.');
+        return response()->streamDownload(function () use ($export): void {
+            echo json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        }, 'english-translations.json', ['Content-Type' => 'application/json']);
     }
 
-    public function fillMissingWithEnglish(TranslationCatalogService $catalog): void
+    public function importTranslations(ImportTranslationsAction $import): void
     {
         abort_unless($this->actor()->can('translations.manage'), 403);
-        $count = $catalog->fillMissingWithEnglishFallback();
-        $catalog->exportJsonFiles();
+        $this->validate([
+            'importFile' => ['required', 'file', 'extensions:json', 'max:10240'],
+            'importLocale' => ['required', Rule::in(array_diff(array_keys(app(LanguageRegistry::class)->supported()), ['en']))],
+        ]);
+        $count = $import->execute($this->actor(), $this->importLocale, $this->importFile->get());
+        $this->reset('importFile');
+        $this->localeFilter = $this->importLocale;
+        $this->updatedLocaleFilter();
+        session()->flash('success', __('Imported :count translations. All English entries matched.', ['count' => $count]));
+    }
 
-        session()->flash('success', "Filled {$count} missing translations with English fallback text and exported JSON.");
+    public function addLanguage(AddTranslationLanguageAction $add): void
+    {
+        $add->execute($this->actor(), strtolower(trim($this->code)), trim($this->english), trim($this->native) ?: trim($this->english), $this->flag);
+        $this->dispatch('translation-language-added', locale: strtolower(trim($this->code)));
+        $this->reset('code', 'english', 'native', 'flag');
+        session()->flash('success', __('Language added. Export English and import its translations to get started.'));
+    }
+
+    public function resetTranslations(ResetTranslationsAction $reset): void
+    {
+        $count = $reset->execute($this->actor(), $this->resetLocale, $this->resetConfirmation);
+        $this->reset('resetConfirmation', 'showEditModal', 'editingKey', 'values');
+        $this->resetPage();
+        $this->dispatch('translation-reset-completed');
+        session()->flash('success', __('Translations reset. :count stored entries removed. English phrases are unchanged.', ['count' => $count]));
     }
 
     public function createKey(TranslationCatalogService $catalog): void
     {
         abort_unless($this->actor()->can('translations.manage'), 403);
-        $this->validate([
-            'newKey' => ['required', 'string', 'max:500'],
-        ]);
-
+        $this->validate(['newKey' => ['required', 'string', 'max:500']]);
         $catalog->createKey($this->newKey);
-        $catalog->exportJsonFiles();
-
-        $this->newKey = '';
+        $this->reset('newKey');
         $this->resetPage();
-
-        session()->flash('success', 'Translation key created.');
+        session()->flash('success', __('English phrase created.'));
     }
 
     public function editKey(string $key): void
     {
         abort_unless($this->actor()->can('translations.manage'), 403);
         $this->assertSupportedLocale();
+        abort_unless(TranslationString::query()->where('key', $key)->where('locale', 'en')->exists(), 404);
         $this->editingKey = $key;
         $this->editingLocale = $this->localeFilter;
-        $this->values = [$this->editingLocale => TranslationString::query()
-            ->where('key', $key)
-            ->where('locale', $this->editingLocale)
-            ->value('text')];
-
+        $this->values = [$this->editingLocale => TranslationString::query()->where('key', $key)
+            ->where('locale', $this->editingLocale)->value('text')];
         $this->showEditModal = true;
     }
 
@@ -178,103 +200,49 @@ final class TranslationAdmin extends AdminComponent
         if ($this->editingKey === '') {
             return;
         }
-
-        $this->validate([
-            'values.'.$this->editingLocale => ['nullable', 'string'],
-        ]);
+        $this->validate(['values.'.$this->editingLocale => [$this->editingLocale === 'en' ? 'required' : 'nullable', 'string', 'max:20000']]);
         $catalog->saveTranslation($this->editingKey, $this->editingLocale, $this->values[$this->editingLocale] ?? null);
-        $catalog->exportJsonFiles();
-
-        $this->showEditModal = false;
-        $this->editingKey = '';
-        $this->values = [];
-
-        session()->flash('success', 'Translation saved and exported.');
+        $this->reset('showEditModal', 'editingKey', 'values');
+        session()->flash('success', __('Translation saved.'));
     }
 
-    public function deleteKey(TranslationCatalogService $catalog, string $key): void
+    public function deleteKey(AdminDeletionService $deletion, string $key): void
     {
-        abort_unless($this->actor()->can('translations.delete'), 403);
-        $catalog->deleteKey($key);
-        $catalog->exportJsonFiles();
-
-        session()->flash('success', 'Translation key deleted.');
+        $row = TranslationString::query()->where('key', $key)->where('locale', 'en')->firstOrFail();
+        $deletion->delete('translations', [$row->id], $this->actor());
+        session()->flash('success', __('English phrase deleted.'));
     }
 
     public function render(): Renderable
     {
         $this->assertSupportedLocale();
-        $languages = config('localization.supported', []);
-        $visibleLanguages = array_diff_key($languages, array_flip($this->hiddenLanguages));
-        $supportedLocales = array_keys($visibleLanguages);
-
-        if (! $this->translationTableReady) {
-            return view('livewire.admin.translation-admin', [
-                'keys' => collect(),
-                'rows' => collect(),
-                'languages' => $languages,
-                'visibleLanguages' => $visibleLanguages,
-                'missingCounts' => [],
-            ])->layout('components.layouts.admin', [
-                'title' => 'Translations | GamersRival',
-                'admin_title' => 'Translations',
-            ]);
-        }
-
-        $baseQuery = TranslationString::query()
-            ->select('id', 'key', 'text')
-            ->where('locale', 'en')
-            ->when($this->search !== '', function ($query): void {
-                $query->where(function ($nested): void {
-                    $nested->where('key', 'like', '%'.$this->search.'%')
-                        ->orWhere('text', 'like', '%'.$this->search.'%')
-                        ->orWhereIn('key', TranslationString::query()
-                            ->select('key')
-                            ->where('locale', $this->localeFilter)
-                            ->where('text', 'like', '%'.$this->search.'%'));
-                });
-            })
-            ->when($this->missingOnly, function ($query): void {
-                $query->whereNotIn('key', TranslationString::query()
-                    ->select('key')
-                    ->where('locale', $this->localeFilter)
-                    ->whereNotNull('text')
-                    ->where('text', '!=', ''));
-            })
-            ->orderBy('key');
-
-        $keys = $baseQuery->paginate(20);
-        $rows = TranslationString::query()
-            ->whereIn('key', $keys->pluck('key')->all())
-            ->whereIn('locale', ['en', $this->localeFilter])
-            ->get()
-            ->groupBy('key');
-
+        $catalog = app(TranslationCatalogService::class);
+        $languages = $catalog->supportedLanguages();
+        $availableLanguages = app(LanguageRegistry::class)->available();
+        $keys = collect();
+        $rows = collect();
         $missingCounts = [];
-        foreach ($supportedLocales as $locale) {
-            if ($locale === 'en') {
-                continue;
-            }
-
-            $missingCounts[$locale] = TranslationString::query()
-                ->where('locale', 'en')
-                ->whereNotIn('key', TranslationString::query()
-                    ->select('key')
-                    ->where('locale', $locale)
-                    ->whereNotNull('text')
-                    ->where('text', '!=', ''))
-                ->count();
+        if ($this->translationTableReady) {
+            $statistics = $catalog->statistics();
+            $keys = TranslationString::query()->select('id', 'key', 'text')->where('locale', 'en')
+                ->when($this->search !== '', function ($query): void {
+                    $query->where(function ($nested): void {
+                        $nested->where('key', 'like', '%'.$this->search.'%')->orWhere('text', 'like', '%'.$this->search.'%')
+                            ->orWhereIn('key', TranslationString::query()->select('key')->where('locale', $this->localeFilter)
+                                ->where('text', 'like', '%'.$this->search.'%'));
+                    });
+                })
+                ->when($this->missingOnly, function ($query): void {
+                    $query->whereNotIn('key', TranslationString::query()->select('key')->where('locale', $this->localeFilter)
+                        ->whereNotNull('text')->where('text', '!=', ''));
+                })
+                ->orderBy('key')->paginate(20, total: $this->search === '' && ! $this->missingOnly ? $statistics['total'] : null);
+            $rows = TranslationString::query()->whereIn('key', $keys->pluck('key')->all())
+                ->whereIn('locale', ['en', $this->localeFilter])->get()->groupBy('key');
+            $missingCounts = $statistics['missing'];
         }
 
-        return view('livewire.admin.translation-admin', [
-            'keys' => $keys,
-            'rows' => $rows,
-            'languages' => $languages,
-            'visibleLanguages' => $visibleLanguages,
-            'missingCounts' => $missingCounts,
-        ])->layout('components.layouts.admin', [
-            'title' => 'Translations | GamersRival',
-            'admin_title' => 'Translations',
-        ]);
+        return view('livewire.admin.translation-admin', compact('keys', 'rows', 'languages', 'missingCounts', 'availableLanguages'))
+            ->layout('components.layouts.admin', ['title' => 'Translations | GamersRival', 'admin_title' => 'Translations']);
     }
 }
