@@ -11,6 +11,7 @@ if [ "$SERVICE_TYPE" = "web" ]; then
     php artisan db:seed --class=PolicyPageSeeder --force
     php artisan db:seed --class=LandingPageSeeder --force
     php artisan db:seed --class=PublicNavigationSeeder --force
+    echo "Synchronizing translation catalog..."
     php artisan db:seed --class=TranslationStringSeeder --force
     php artisan db:seed --class=SystemSettingsSeeder --force
     php artisan storage:link || true

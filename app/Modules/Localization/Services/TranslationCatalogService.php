@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\File;
 
 final class TranslationCatalogService
 {
+    private const WRITE_BATCH_SIZE = 100;
+
     public function __construct(private readonly ContentTranslationSegments $segments) {}
 
     /**
@@ -61,6 +63,11 @@ final class TranslationCatalogService
                     'updated_at' => $now,
                 ];
                 $synced++;
+
+                if (count($rows) === self::WRITE_BATCH_SIZE) {
+                    TranslationString::query()->upsert($rows, ['key', 'locale'], ['text', 'updated_at']);
+                    $rows = [];
+                }
             }
 
             if ($rows !== []) {
@@ -159,26 +166,33 @@ final class TranslationCatalogService
     {
         $keys = TranslationString::query()
             ->where('locale', 'en')
-            ->pluck('key');
+            ->select(['id', 'key'])
+            ->lazyById(self::WRITE_BATCH_SIZE);
 
         $now = now();
         $rows = [];
+        $locales = array_keys($this->supportedLanguages());
 
-        foreach ($keys as $key) {
-            foreach (array_keys($this->supportedLanguages()) as $locale) {
+        foreach ($keys as $source) {
+            foreach ($locales as $locale) {
                 $rows[] = [
-                    'key' => $key,
+                    'key' => $source->key,
                     'locale' => $locale,
-                    'text' => $locale === 'en' ? $key : null,
+                    'text' => $locale === 'en' ? $source->key : null,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
+
+                if (count($rows) === self::WRITE_BATCH_SIZE) {
+                    TranslationString::query()->insertOrIgnore($rows);
+                    $rows = [];
+                }
             }
         }
 
         if ($rows !== []) {
-            // Only insert if missing — don't overwrite existing translations
-            TranslationString::query()->upsert($rows, ['key', 'locale'], []);
+            // Keep existing translations, timestamps, and soft deletions intact.
+            TranslationString::query()->insertOrIgnore($rows);
         }
     }
 
