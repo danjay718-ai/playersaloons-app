@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Modules\CMS\Services\AboutContentFormatter;
 use App\Modules\Operations\Models\SystemSetting;
 use Livewire\Component;
 
@@ -22,7 +23,7 @@ class AboutPage extends Component
         return view('livewire.about-page', [
             'title' => $title,
             'subtitle' => $subtitle,
-            'body' => $body,
+            'body' => app(AboutContentFormatter::class)->format($body),
         ])->layout('components.layouts.landing', ['title' => 'About Us - GamersRival']);
     }
 }

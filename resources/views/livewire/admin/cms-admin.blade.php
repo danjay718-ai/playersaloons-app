@@ -756,6 +756,7 @@
                     <div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden focus-within:border-indigo-500 transition-colors">
                         <textarea wire:model="aboutBody" rows="15" class="w-full bg-transparent px-4 py-3 text-sm text-slate-200 focus:outline-none resize-y" placeholder="<p>Write your about us content here...</p>"></textarea>
                     </div>
+                    <p class="mt-2 text-xs text-slate-400">{{ __('For plain text, leave a blank line between paragraphs. For HTML, wrap each paragraph in <p> tags.') }}</p>
                     @error('aboutBody') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                 </div>
 

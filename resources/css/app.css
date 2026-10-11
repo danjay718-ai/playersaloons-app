@@ -19,10 +19,21 @@ body {
     --font-orbitron: 'Orbitron', sans-serif;
 }
 
+.about-content {
+    width: 100%;
+    max-width: 56rem;
+    margin-inline: auto;
+    text-align: justify;
+    font-size: 1rem;
+    line-height: 2;
+    color: #d4d4d8;
+    overflow-wrap: break-word;
+}
+
 .about-content p {
     margin: 0;
     padding-block: 0.625rem;
-    text-align: justify;
+    text-align: justify !important;
     overflow-wrap: break-word;
 }
 
@@ -38,6 +49,8 @@ body {
     font-weight: 800;
     line-height: 1.4;
     color: #fff;
+    text-align: center !important;
+    break-after: avoid-column;
 }
 
 .about-content h2 { font-size: 1.5em; }

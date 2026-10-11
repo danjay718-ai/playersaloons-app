@@ -45,8 +45,22 @@ class LandingPageTest extends TestCase
         );
 
         $this->get('/about')->assertOk()
-            ->assertSee('about-content relative mx-auto max-w-3xl text-base leading-8', escape: false)
+            ->assertSee('mx-auto mb-10 max-w-3xl text-center', escape: false)
+            ->assertSee('landing-card relative mx-auto w-full max-w-5xl', escape: false)
+            ->assertSee('about-content relative', escape: false)
             ->assertSeeInOrder(['<h2>Our Mission</h2>', '<p>Competitive gaming for everyone.</p>', '<p>Play together and grow.</p>'], escape: false);
+    }
+
+    public function test_about_page_renders_plain_text_blank_lines_as_separate_paragraphs(): void
+    {
+        SystemSetting::query()->updateOrCreate(
+            ['key' => 'about.body'],
+            ['value' => "Play & compete.\r\nGrow together.\r\n\r\n   \r\nEveryone is welcome."],
+        );
+
+        $this->get('/about')->assertOk()
+            ->assertSee("<p>Play &amp; compete.<br>\nGrow together.</p>", escape: false)
+            ->assertSee('<p>Everyone is welcome.</p>', escape: false);
     }
 
     public function test_landing_page_renders_seeded_content_video_and_games(): void
