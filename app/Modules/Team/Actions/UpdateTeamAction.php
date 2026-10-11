@@ -15,6 +15,7 @@ class UpdateTeamAction
      */
     public function execute(Team $team, array $data, User $updatedBy): Team
     {
+        abort_unless((int) $team->captain_user_id === (int) $updatedBy->id, 403);
         if (isset($data['name'])) {
             $team->name = $data['name'];
         }

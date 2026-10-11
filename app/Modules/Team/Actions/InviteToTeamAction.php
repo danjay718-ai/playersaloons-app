@@ -16,14 +16,19 @@ class InviteToTeamAction
 {
     public function execute(Team $team, User $invitedUser, User $inviter): TeamInvitation
     {
-        if ($team->members()->where('user_id', $invitedUser->id)->exists()) {
+        abort_unless((int) $team->captain_user_id === (int) $inviter->id, 403);
+        if ($team->status !== 'active' || $invitedUser->status->value !== 'active' || ! $invitedUser->hasRole('PLAYER')) {
+            throw new LogicException('This player is not available for squad invitations.');
+        }
+        if ($team->members()->where('user_id', $invitedUser->id)->where('status', 'active')->exists()) {
             throw new LogicException('User is already a member of this team.');
         }
 
         if ($team->invitations()->where('invited_user_id', $invitedUser->id)
             ->where('status', TeamInvitationStatus::PENDING)
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->exists()) {
-            throw new LogicException('User already has a pending invitation to this team.');
+            throw new LogicException('This player already has a pending invitation to your squad.');
         }
 
         return tap(TeamInvitation::create([

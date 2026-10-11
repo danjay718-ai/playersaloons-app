@@ -22,12 +22,15 @@ use App\Modules\Team\Models\TeamMember;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TeamInvitationStatus;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use LogicException;
+use Throwable;
 
 class TeamDashboard extends Component
 {
@@ -45,6 +48,23 @@ class TeamDashboard extends Component
     public string $squadSearch = '';
 
     public string $joinRequestMessage = '';
+
+    public function updatedInviteUsername(): void
+    {
+        $this->resetValidation('inviteUsername');
+    }
+
+    private function squadError(Throwable $exception, string $fallback): string
+    {
+        if ($exception instanceof LogicException) {
+            return __($exception->getMessage());
+        }
+        if ($exception instanceof InvalidStateTransitionException) {
+            return __('This invitation is no longer available. Refresh the page to see your current invitations.');
+        }
+
+        return $this->safeError($exception, __($fallback));
+    }
 
     public function mount(): void
     {
@@ -75,8 +95,8 @@ class TeamDashboard extends Component
             $action->execute(['name' => $this->teamName], $user);
             session()->flash('message', 'Team created successfully!');
             $this->reset('teamName');
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to create the team.'));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to create the team.'));
         }
     }
 
@@ -94,14 +114,14 @@ class TeamDashboard extends Component
 
         $this->validate([
             'editName' => ['required', 'string', 'min:3', 'max:50', 'unique:teams,name,'.$team->id],
-        ]);
+        ], [], ['editName' => __('squad name')]);
 
         try {
-            $action->execute($team, ['name' => $this->editName]);
+            $action->execute($team, ['name' => $this->editName], $user);
             session()->flash('message', 'Team updated successfully!');
             $this->reset('editName');
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to update the team.'));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to update the team.'));
         }
     }
 
@@ -118,10 +138,10 @@ class TeamDashboard extends Component
         }
 
         try {
-            $action->execute($team);
+            $action->execute($team, $user);
             session()->flash('message', 'Team disbanded successfully!');
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to delete the team.'));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to delete the team.'));
         }
     }
 
@@ -139,15 +159,17 @@ class TeamDashboard extends Component
 
         $this->validate([
             'inviteUsername' => ['required', 'string', 'exists:users,username'],
-        ]);
+        ], ['inviteUsername.exists' => __('Choose a player from the search results.')]);
 
         try {
             $invitedUser = User::query()->where('username', $this->inviteUsername)->firstOrFail();
             $action->execute($team, $invitedUser, $user);
             session()->flash('message', "Invitation sent to {$invitedUser->username}!");
             $this->reset('inviteUsername');
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to invite that player.'));
+        } catch (LogicException $e) {
+            $this->addError('inviteUsername', __($e->getMessage()));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to invite that player.'));
         }
     }
 
@@ -167,8 +189,8 @@ class TeamDashboard extends Component
             $invitation = TeamInvitation::query()->where('uuid', $invitationUuid)->firstOrFail();
             $action->execute($invitation);
             session()->flash('message', 'Invitation revoked.');
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to accept the invitation.'));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to revoke the invitation.'));
         }
     }
 
@@ -187,7 +209,7 @@ class TeamDashboard extends Component
                 ->firstOrFail();
 
             // Check if user is already in a team
-            $existingMember = TeamMember::query()->where('user_id', $user->id)->first();
+            $existingMember = TeamMember::query()->where('user_id', $user->id)->where('status', 'active')->first();
             if ($existingMember) {
                 session()->flash('error', 'You must leave your current team first.');
 
@@ -196,8 +218,8 @@ class TeamDashboard extends Component
 
             $action->execute($invitation);
             session()->flash('message', 'Invitation accepted! Welcome to the team.');
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to decline the invitation.'));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to accept the invitation.'));
         }
     }
 
@@ -217,8 +239,8 @@ class TeamDashboard extends Component
 
             $action->execute($invitation);
             session()->flash('message', 'Invitation declined.');
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to remove the team member.'));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to decline the invitation.'));
         }
     }
 
@@ -238,8 +260,8 @@ class TeamDashboard extends Component
             $memberUser = User::query()->where('username', $username)->firstOrFail();
             $action->execute($team, $memberUser, $user);
             session()->flash('message', "{$memberUser->username} was removed from the team.");
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to change the team captain.'));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to remove the team member.'));
         }
     }
 
@@ -262,8 +284,8 @@ class TeamDashboard extends Component
         try {
             $action->execute($team, $user, $user);
             session()->flash('message', 'You have left the team.');
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to leave the team.'));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to leave the team.'));
         }
     }
 
@@ -283,8 +305,8 @@ class TeamDashboard extends Component
             $newCaptain = User::query()->where('username', $username)->firstOrFail();
             $action->execute($team, $newCaptain);
             session()->flash('message', "Captaincy transferred to {$newCaptain->username}.");
-        } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to update the team member.'));
+        } catch (Throwable $e) {
+            session()->flash('error', $this->squadError($e, 'Unable to change the team captain.'));
         }
     }
 
@@ -337,7 +359,7 @@ class TeamDashboard extends Component
                 ->firstOrFail();
 
             if ($approve && TeamMember::query()->where('user_id', $request->user_id)->where('status', 'active')->exists()) {
-                throw new \LogicException('This player has already joined another squad.');
+                throw new LogicException('This player has already joined another squad.');
             }
 
             if ($approve) {
@@ -390,6 +412,7 @@ class TeamDashboard extends Component
             ->with('team')
             ->where('user_id', $user->id)
             ->where('status', 'active')
+            ->whereHas('team', fn ($query) => $query->where('status', 'active'))
             ->first()
             ?->team;
     }
@@ -421,6 +444,7 @@ class TeamDashboard extends Component
                 'teamJoinRequests' => collect(),
                 'squadDirectory' => collect(),
                 'teamFinderTournaments' => collect(),
+                'recruitPlayers' => collect(),
             ]);
         }
 
@@ -430,6 +454,7 @@ class TeamDashboard extends Component
         $myPendingInvites = TeamInvitation::query()
             ->where('invited_user_id', $user->id)
             ->where('status', TeamInvitationStatus::PENDING)
+            ->whereHas('team', fn ($query) => $query->where('status', 'active'))
             ->where(function ($query) {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
@@ -440,9 +465,23 @@ class TeamDashboard extends Component
         $teamMembers = collect();
         $teamPendingInvites = collect();
         $teamJoinRequests = collect();
+        $recruitPlayers = collect();
 
         if ($team) {
-            $teamMembers = $team->members()->with('user.profile')->get();
+            $teamMembers = $team->members()->where('status', 'active')->with('user.profile')->get();
+            if ((int) $team->captain_user_id === (int) $user->id && trim($this->inviteUsername) !== '') {
+                $recruitPlayers = User::query()
+                    ->where('status', 'active')
+                    ->role('PLAYER')
+                    ->whereKeyNot($user->id)
+                    ->whereNotIn('id', TeamMember::query()->select('user_id')->where('team_id', $team->id)->where('status', 'active'))
+                    ->where(function ($query): void {
+                        $search = '%'.trim($this->inviteUsername).'%';
+                        $query->where('username', 'like', $search)
+                            ->orWhereHas('profile', fn ($profile) => $profile->where('display_name', 'like', $search));
+                    })
+                    ->with('profile')->orderBy('username')->limit(8)->get();
+            }
             $teamPendingInvites = $team->invitations()
                 ->where('status', TeamInvitationStatus::PENDING)
                 ->where(function ($query) {
@@ -500,6 +539,7 @@ class TeamDashboard extends Component
             'teamJoinRequests' => $teamJoinRequests,
             'squadDirectory' => $squadDirectory,
             'teamFinderTournaments' => $teamFinderTournaments,
+            'recruitPlayers' => $recruitPlayers,
         ]);
 
         return $this->resolveView($view)->layout('components.layouts.dashboard', [

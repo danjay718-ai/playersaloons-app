@@ -13,7 +13,8 @@ class RemoveTeamMemberAction
 {
     public function execute(Team $team, User $user, User $removedBy): void
     {
-        if ($team->captain_user_id === $user->id) {
+        abort_unless((int) $team->captain_user_id === (int) $removedBy->id || $user->is($removedBy), 403);
+        if ((int) $team->captain_user_id === (int) $user->id) {
             throw new LogicException('Cannot remove the team captain. Transfer captaincy first.');
         }
 

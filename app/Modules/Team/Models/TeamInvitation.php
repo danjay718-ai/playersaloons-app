@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $expires_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Team $team
+ * @property-read Team|null $team
  * @property-read User $invitee
  * @property-read User $inviter
  *

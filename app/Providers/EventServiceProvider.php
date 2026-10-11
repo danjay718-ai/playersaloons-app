@@ -28,6 +28,8 @@ use App\Modules\Match\Listeners\NotifyDisputeRulingListener;
 use App\Modules\Match\Listeners\NotifyParticipantsListener;
 use App\Modules\Match\Listeners\PrepareMatchRoomListener;
 use App\Modules\Operations\Services\ErrorIncidentReporter;
+use App\Modules\Team\Events\TeamMemberInvited;
+use App\Modules\Team\Listeners\NotifyTeamInvitationListener;
 use App\Modules\Tournament\Events\TournamentCancelled;
 use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Events\TournamentSeatReleased;
@@ -197,6 +199,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Event::listen(TeamMemberInvited::class, NotifyTeamInvitationListener::class);
         foreach ($this->listen as $event => $listeners) {
             foreach ($listeners as $listener) {
                 Event::listen($event, $listener);

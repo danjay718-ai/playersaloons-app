@@ -49,6 +49,11 @@ class Team extends Model implements HasMedia
         'status',
     ];
 
+    protected function casts(): array
+    {
+        return ['captain_user_id' => 'integer'];
+    }
+
     /**
      * Get the team's members.
      *
