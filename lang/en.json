@@ -212,6 +212,8 @@
     "Reset is unavailable until the application update is complete. No translations were changed.": "Reset is unavailable until the application update is complete. No translations were changed.",
     "Flag icon": "Flag icon",
     "Neutral flag": "Neutral flag",
+    "Winner": "Winner",
+    "Loser": "Loser",
     "Choose the flag shown beside this language in the language selector.": "Choose the flag shown beside this language in the language selector.",
     "Adding languages is unavailable until the application update is complete. No language was added.": "Adding languages is unavailable until the application update is complete. No language was added.",
     "For plain text, leave a blank line between paragraphs. For HTML, wrap each paragraph in <p> tags.": "For plain text, leave a blank line between paragraphs. For HTML, wrap each paragraph in <p> tags."

@@ -170,6 +170,28 @@ class MatchModuleTest extends TestCase
         return $user;
     }
 
+    public function test_embedded_matchup_labels_both_players_after_a_winner_is_recorded(): void
+    {
+        $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
+
+        Livewire::actingAs($this->playerA)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->assertDontSee('<span>Winner</span>', escape: false)
+            ->assertDontSee('<span>Loser</span>', escape: false);
+
+        foreach ([$match->player_a_registration_id, $match->player_b_registration_id] as $winnerId) {
+            $match->forceFill(['status' => MatchStatus::COMPLETED, 'winner_registration_id' => $winnerId])->save();
+
+            $labels = $winnerId === $match->player_a_registration_id
+                ? ['<span>Winner</span>', '<span>Loser</span>']
+                : ['<span>Loser</span>', '<span>Winner</span>'];
+
+            Livewire::actingAs($this->playerA)
+                ->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+                ->assertSeeInOrder($labels, escape: false);
+        }
+    }
+
     public function test_ready_match_opens_results_when_both_players_are_ready(): void
     {
         $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();

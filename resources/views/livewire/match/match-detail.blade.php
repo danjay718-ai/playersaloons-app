@@ -74,7 +74,12 @@
                     @if($match->winner_registration_id === $match->player_a_registration_id && $match->winner_registration_id)
                         <span class="inline-flex items-center space-x-1 text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-950/40 border border-emerald-900/60 rounded px-2.5 py-0.5 mt-2">
                             <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                            <span>Winner</span>
+                            <span>{{ __('Winner') }}</span>
+                        </span>
+                    @elseif($match->player_a_registration_id && $match->winner_registration_id && $match->winner_registration_id === $match->player_b_registration_id)
+                        <span class="inline-flex items-center space-x-1 text-xs font-bold text-rose-400 uppercase tracking-wider bg-rose-950/40 border border-rose-900/60 rounded px-2.5 py-0.5 mt-2">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            <span>{{ __('Loser') }}</span>
                         </span>
                     @endif
                 </div>
@@ -108,7 +113,12 @@
                     @if($match->winner_registration_id === $match->player_b_registration_id && $match->winner_registration_id)
                         <span class="inline-flex items-center space-x-1 text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-950/40 border border-emerald-900/60 rounded px-2.5 py-0.5 mt-2">
                             <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                            <span>Winner</span>
+                            <span>{{ __('Winner') }}</span>
+                        </span>
+                    @elseif($match->player_b_registration_id && $match->winner_registration_id && $match->winner_registration_id === $match->player_a_registration_id)
+                        <span class="inline-flex items-center space-x-1 text-xs font-bold text-rose-400 uppercase tracking-wider bg-rose-950/40 border border-rose-900/60 rounded px-2.5 py-0.5 mt-2">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            <span>{{ __('Loser') }}</span>
                         </span>
                     @endif
                 </div>
