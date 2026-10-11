@@ -238,5 +238,8 @@
     "Unable to leave the team.": "Unable to leave the team.",
     "Unable to change the team captain.": "Unable to change the team captain.",
     "User is already a member of this team.": "User is already a member of this team.",
-    "Cannot accept or decline an expired invitation.": "Cannot accept or decline an expired invitation."
+    "Cannot accept or decline an expired invitation.": "Cannot accept or decline an expired invitation.",
+    "Internal note (optional)": "Internal note (optional)",
+    "Only visible to administrators.": "Only visible to administrators.",
+    "internal note": "internal note"
 }

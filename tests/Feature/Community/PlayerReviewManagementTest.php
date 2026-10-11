@@ -72,6 +72,40 @@ class PlayerReviewManagementTest extends TestCase
         $this->get('/')->assertOk()->assertSee('Excellent competitive platform experience.')->assertSee('★★★★★');
     }
 
+    public function test_moderation_notes_are_independent_and_preserve_other_review_drafts(): void
+    {
+        $admin = $this->user('notes-admin@example.com', 'ADMIN');
+        $firstPlayer = $this->user('first-reviewer@example.com', 'PLAYER');
+        $secondPlayer = $this->user('second-reviewer@example.com', 'PLAYER');
+        $first = PlayerReview::query()->create(['uuid' => Str::uuid(), 'user_id' => $firstPlayer->id, 'rating' => 5, 'review' => 'First player feedback.', 'status' => 'pending']);
+        $second = PlayerReview::query()->create(['uuid' => Str::uuid(), 'user_id' => $secondPlayer->id, 'rating' => 4, 'review' => 'Second player feedback.', 'status' => 'pending']);
+
+        Livewire::actingAs($admin)->test(PlayerReviewAdmin::class)
+            ->set('notes.'.$first->id, 'First internal note')
+            ->assertSet('notes.'.$second->id, '')
+            ->set('notes.'.$second->id, 'Second internal note')
+            ->call('moderate', $first->id, 'approved')->assertHasNoErrors()
+            ->assertSet('notes.'.$second->id, 'Second internal note')
+            ->call('moderate', $second->id, 'rejected')->assertHasNoErrors();
+
+        $this->assertSame('First internal note', $first->fresh()->moderation_notes);
+        $this->assertSame('Second internal note', $second->fresh()->moderation_notes);
+        $this->get('/')->assertSee('First player feedback.')->assertDontSee('First internal note');
+    }
+
+    public function test_admin_sees_saved_notes_and_can_clear_them(): void
+    {
+        $admin = $this->user('saved-notes-admin@example.com', 'ADMIN');
+        $player = $this->user('saved-notes-player@example.com', 'PLAYER');
+        $review = PlayerReview::query()->create(['uuid' => Str::uuid(), 'user_id' => $player->id, 'rating' => 5, 'review' => 'Saved feedback.', 'status' => 'pending', 'moderation_notes' => 'Existing internal note']);
+
+        Livewire::actingAs($admin)->test(PlayerReviewAdmin::class)
+            ->assertSet('notes.'.$review->id, 'Existing internal note')
+            ->set('notes.'.$review->id, '')->call('moderate', $review->id, 'approved')
+            ->assertHasNoErrors();
+        $this->assertNull($review->fresh()->moderation_notes);
+    }
+
     public function test_rejected_review_is_not_public(): void
     {
         $player = $this->user('hidden-reviewer@example.com', 'PLAYER');
