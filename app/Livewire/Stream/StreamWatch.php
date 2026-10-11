@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Stream;
 
+use App\Modules\Operations\Services\AdminDeletionService;
 use App\Modules\Stream\Events\StreamMessageDeleted;
 use App\Modules\Stream\Events\StreamMessageSent;
 use App\Modules\Stream\Events\StreamViewerCountUpdated;
@@ -103,18 +104,21 @@ class StreamWatch extends Component
 
     public function loadMessages(): void
     {
+        $lastMessageId = (int) StreamChatMessage::query()
+            ->where('stream_channel_id', $this->streamChannel->id)->max('id');
         $this->recentMessages = StreamChatMessage::query()
             ->with(['user.profile', 'user.roles'])
             ->where('stream_channel_id', $this->streamChannel->id)
             ->where('is_deleted', false)
-            ->latest()
+            ->where('id', '<=', $lastMessageId)
+            ->latest('id')
             ->limit(60)
             ->get()
             ->reverse()
             ->map(fn ($msg) => [
                 'id' => $msg->id,
                 'user_id' => $msg->user_id,
-                'username' => $msg->user->profile?->display_name ?? $msg->user->username,
+                'username' => $msg->user->profile->display_name ?? $msg->user->username,
                 'message' => $msg->message,
                 'color' => $msg->user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT_AGENT']) ? '#10b981' : $msg->color,
                 'is_mod' => $msg->user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'SUPPORT_AGENT']),
@@ -122,6 +126,8 @@ class StreamWatch extends Component
             ])
             ->values()
             ->toArray();
+
+        $this->dispatch('stream-chat-synced', streamId: $this->streamChannel->id, messages: $this->recentMessages, lastMessageId: $lastMessageId);
     }
 
     public function sendMessage(): void
@@ -161,19 +167,18 @@ class StreamWatch extends Component
         $messageData = [
             'id' => $msg->id,
             'user_id' => $user->id,
-            'username' => $user->profile?->display_name ?? $user->username,
+            'username' => $user->profile->display_name ?? $user->username,
             'message' => $message,
             'color' => $isMod ? '#10b981' : self::CHAT_COLORS[$colorIndex],
             'is_mod' => $isMod,
             'time' => $msg->created_at?->format('H:i'),
         ];
 
-        $this->broadcastSafely(new StreamMessageSent($this->streamChannel->id, $messageData), 'message_sent');
-
         $this->chatMessage = '';
-        $this->recentMessages[] = $messageData;
+        $this->loadMessages();
 
-        $this->dispatch('chat-updated');
+        // Return the sender's updated chat before contacting the websocket server.
+        app()->terminating(fn () => $this->broadcastSafely(new StreamMessageSent($this->streamChannel->id, $messageData), 'message_sent'));
     }
 
     public function muteUser(int $userId): void
@@ -207,6 +212,7 @@ class StreamWatch extends Component
             ->save();
 
         $this->deleteMessageId = null;
+        $this->dispatch('stream-chat-message-deleted', streamId: $this->streamChannel->id, messageId: $messageId);
         $this->loadMessages();
 
         $this->broadcastSafely(new StreamMessageDeleted($this->streamChannel->id, $messageId), 'message_deleted');
@@ -288,7 +294,7 @@ class StreamWatch extends Component
         }
 
         $redirectUrl = $this->isAdminView ? '/admin/streams' : '/streams';
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('streams', [$this->streamChannel->id], $admin);
+        app(AdminDeletionService::class)->delete('streams', [$this->streamChannel->id], $admin);
 
         $this->redirect($redirectUrl, navigate: true);
     }
@@ -388,8 +394,8 @@ class StreamWatch extends Component
         return view('livewire.stream.stream-watch', [
             'stream' => $stream,
             'embedUrl' => $stream['embed_url'],
-            'streamerName' => $this->streamChannel->user?->profile?->display_name
-                ?? $this->streamChannel->user?->username
+            'streamerName' => $this->streamChannel->user->profile->display_name
+                ?? $this->streamChannel->user->username
                 ?? 'Stream',
             'gameStreams' => $gameStreams,
             'gameCompetitions' => $gameCompetitions,

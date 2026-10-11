@@ -10,6 +10,7 @@ use App\Livewire\Stream\StreamWatch;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
+use App\Modules\Stream\Events\StreamMessageSent;
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Stream\Models\StreamChatMessage;
 use App\Modules\Tournament\Models\Tournament;
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -421,6 +423,63 @@ class StreamIntegrationTest extends TestCase
         ]);
 
         $this->assertSame(1, StreamChatMessage::query()->count());
+    }
+
+    public function test_player_and_admin_chat_send_responses_include_each_message_once(): void
+    {
+        $stream = StreamChannel::query()->create([
+            'user_id' => $this->player->id, 'provider' => 'youtube',
+            'source_url' => 'https://youtu.be/dQw4w9WgXcQ', 'is_public' => true,
+        ]);
+
+        foreach ([$this->player, $this->admin] as $sender) {
+            $component = Livewire::actingAs($sender)->test(StreamWatch::class, ['id' => $stream->id]);
+            $component->set('chatMessage', 'hello')->call('sendMessage')->assertHasNoErrors()
+                ->assertSet('chatMessage', '')->assertDispatched('stream-chat-synced');
+            $component->set('chatMessage', 'second')->call('sendMessage')->assertHasNoErrors();
+            $messages = collect($component->get('recentMessages'))->where('user_id', $sender->id);
+            $this->assertSame(['hello', 'second'], $messages->pluck('message')->values()->all());
+            $this->assertTrue($messages->every(fn ($message) => $message['is_mod'] === ($sender->id === $this->admin->id)));
+        }
+        $this->assertDatabaseCount('stream_chat_messages', 4);
+    }
+
+    public function test_admin_send_updates_chat_before_broadcasting(): void
+    {
+        Event::fake([StreamMessageSent::class]);
+        $stream = StreamChannel::query()->create([
+            'user_id' => $this->player->id, 'provider' => 'youtube',
+            'source_url' => 'https://youtu.be/dQw4w9WgXcQ', 'is_public' => true,
+        ]);
+
+        $this->actingAs($this->admin);
+        $component = new StreamWatch;
+        $component->streamChannel = $stream;
+        $component->chatMessage = 'Immediate admin message';
+        $component->sendMessage();
+        $this->assertSame('Immediate admin message', $component->recentMessages[0]['message']);
+        $this->assertSame('', $component->chatMessage);
+
+        Event::assertNotDispatched(StreamMessageSent::class);
+        $this->app->terminate();
+        Event::assertDispatched(StreamMessageSent::class, fn ($event) => $event->message['message'] === 'Immediate admin message');
+    }
+
+    public function test_chat_refresh_includes_new_admin_messages_and_removes_deleted_messages(): void
+    {
+        $stream = StreamChannel::query()->create([
+            'user_id' => $this->player->id, 'provider' => 'youtube',
+            'source_url' => 'https://youtu.be/dQw4w9WgXcQ', 'is_public' => true,
+        ]);
+        $viewer = Livewire::actingAs($this->player)->test(StreamWatch::class, ['id' => $stream->id]);
+        $message = StreamChatMessage::query()->create([
+            'stream_channel_id' => $stream->id, 'user_id' => $this->admin->id, 'message' => 'Admin update',
+        ]);
+        $viewer->call('loadMessages')->assertDispatched('stream-chat-synced')
+            ->assertSet('recentMessages.0.message', 'Admin update')
+            ->assertSet('recentMessages.0.is_mod', true);
+        $message->update(['is_deleted' => true]);
+        $viewer->call('loadMessages')->assertSet('recentMessages', []);
     }
 
     private function createUserWithRole(string $role, string $email): User

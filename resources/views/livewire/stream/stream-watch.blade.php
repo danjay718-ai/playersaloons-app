@@ -2,57 +2,10 @@
 {{-- Supports both Player layout and Admin layout --}}
 <div
     class="flex flex-col {{ $isAdminView ? '' : 'lg:flex-row' }} gap-0 {{ $isAdminView ? '' : '-mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8' }} min-h-[calc(100vh-5rem)]"
-    x-data="{
-        showChat: true,
-        messages: @js($recentMessages),
-        viewerCount: {{ $viewerCount }},
-        heartbeatTimer: null,
-
-        init() {
-            // Heartbeat every 30s to update viewer presence
-            this.heartbeatTimer = setInterval(() => {
-                $wire.heartbeat();
-            }, 30000);
-            this.$nextTick(() => this.scrollChat());
-
-            // Reverb WebSockets
-            if (typeof window.Echo !== 'undefined') {
-                window.Echo.channel('stream.{{ $streamChannel->id }}')
-                    .listen('.StreamMessageSent', (e) => {
-                        this.syncMessages([...this.messages, e.message]);
-                        this.$nextTick(() => this.scrollChat());
-                    })
-                    .listen('.StreamMessageDeleted', (e) => {
-                        this.messages = this.messages.filter(m => m.id !== e.messageId);
-                    })
-                    .listen('.StreamViewerCountUpdated', (e) => {
-                        this.viewerCount = e.viewerCount;
-                    });
-            }
-        },
-        destroy() {
-            clearInterval(this.heartbeatTimer);
-            window.Echo?.leave('stream.{{ $streamChannel->id }}');
-        },
-        scrollChat() {
-            const el = this.$refs.chatBox;
-            if (el) el.scrollTop = el.scrollHeight;
-        },
-        syncMessages(messages) {
-            const uniqueMessages = new Map();
-            for (const message of messages || []) {
-                if (message?.id === undefined || message?.id === null) continue;
-                uniqueMessages.set(String(message.id), message);
-            }
-            this.messages = Array.from(uniqueMessages.values());
-        },
-        formatViewers(n) {
-            if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-            if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-            return String(n);
-        }
-    }"
-    @chat-updated.window="syncMessages($wire.recentMessages); $nextTick(() => scrollChat())"
+    x-data="streamChat($wire, @js($streamChannel->id), @js($recentMessages), @js($viewerCount))"
+    wire:poll.5s.visible="loadMessages"
+    @stream-chat-synced.window="syncSnapshot($event.detail)"
+    @stream-chat-message-deleted.window="onMessageDeleted($event.detail)"
 >
     <x-ui.toasts />
 
@@ -362,6 +315,7 @@
 
             {{-- Messages --}}
             <div
+                wire:ignore
                 x-ref="chatBox"
                 class="flex-1 overflow-y-auto px-3 py-3 space-y-1.5 scroll-smooth"
                 style="min-height: 200px;"
@@ -423,7 +377,6 @@
                             placeholder="Send a message..."
                             maxlength="300"
                             class="flex-1 min-w-0 {{ $isAdminView ? 'bg-slate-900 border-slate-700' : 'bg-zinc-900 border-zinc-700' }} border rounded-xl px-3 py-2.5 text-xs text-zinc-100 placeholder-zinc-600 focus:border-purple-500 focus:outline-none transition-colors"
-                            @keydown.enter.prevent="$wire.sendMessage()"
                         >
                         <button
                             type="submit"

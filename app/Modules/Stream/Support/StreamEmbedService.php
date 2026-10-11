@@ -21,7 +21,7 @@ class StreamEmbedService
     }
 
     /**
-     * @return list<array{provider: string, label: string, url: string, embed_url: string, icon: string}>
+     * @return array{provider: string, label: string, url: string, embed_url: string, icon: string}|null
      */
     public function streamForChannel(StreamChannel $streamChannel): ?array
     {
