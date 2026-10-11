@@ -17,7 +17,22 @@
     </section>
     <section class="space-y-3">
         @forelse($advertisements as $ad)
-            <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4"><div class="flex justify-between gap-4"><div><div class="flex items-center gap-2"><h3 class="font-bold text-white">{{ $ad->title }}</h3><span class="rounded-full px-2 py-0.5 text-[10px] font-bold {{ $ad->is_active ? 'bg-emerald-500/10 text-emerald-300' : 'bg-slate-800 text-slate-500' }}">{{ $ad->is_active ? 'ACTIVE' : 'INACTIVE' }}</span></div><p class="mt-2 text-xs text-slate-500">{{ $ad->description }}</p><p class="mt-2 text-[11px] text-slate-600">{{ $ad->starts_at?->format('M d, Y H:i') ?? 'Immediately' }} → {{ $ad->ends_at?->format('M d, Y H:i') ?? 'No end date' }} · {{ $ad->clicks }} clicks</p></div><div class="flex gap-2"><button wire:click="edit({{ $ad->id }})" class="text-xs text-indigo-300">Edit</button><livewire:admin.recoverable-delete resource="advertisements" :record-id="$ad->id" :key="'delete-advertisements-'.$ad->id" /></div></div></div>
+            <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <div class="flex flex-col items-start justify-between gap-4 sm:flex-row">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h3 class="break-words font-bold text-white">{{ $ad->title }}</h3>
+                            <span class="rounded-full px-2 py-0.5 text-[10px] font-bold {{ $ad->is_active ? 'bg-emerald-500/10 text-emerald-300' : 'bg-slate-800 text-slate-500' }}">{{ $ad->is_active ? 'ACTIVE' : 'INACTIVE' }}</span>
+                        </div>
+                        <p class="mt-2 break-words text-xs text-slate-500">{{ $ad->description }}</p>
+                        <p class="mt-2 text-[11px] text-slate-600">{{ $ad->starts_at?->format('M d, Y H:i') ?? 'Immediately' }} → {{ $ad->ends_at?->format('M d, Y H:i') ?? 'No end date' }} · {{ $ad->clicks }} clicks</p>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-2">
+                        <button type="button" wire:click="edit({{ $ad->id }})" class="rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-sm font-semibold text-indigo-300 hover:bg-indigo-500/20">Edit</button>
+                        <livewire:admin.recoverable-delete resource="advertisements" :record-id="$ad->id" :key="'delete-advertisements-'.$ad->id" />
+                    </div>
+                </div>
+            </div>
         @empty<p class="rounded-xl border border-slate-800 p-8 text-center text-sm text-slate-500">No advertisements or promotions yet.</p>@endforelse
     </section>
     <x-admin.deletion-actions resource="advertisements" />
