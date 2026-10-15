@@ -40,6 +40,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property Carbon|null $checkin_open_at
  * @property Carbon|null $checkin_close_at
  * @property Carbon|null $start_at
+ * @property Carbon|null $end_at
  * @property Carbon|null $completed_at
  * @property Carbon|null $cancelled_at
  * @property int $created_by

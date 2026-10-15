@@ -36,3 +36,20 @@ test('card countdown starts immediately and is cleaned up on navigation', () => 
     assert.ok(countdown.now >= 1000);
     countdown.destroy();
 });
+
+test('list and detail countdowns wait five minutes independent of browser clock and timezone', async (t) => {
+    const { countdownTimer } = await import('../../resources/js/slot-picker.js');
+    const serverNow = Date.parse('2026-10-13T17:15:00+02:00');
+    const target = Date.parse('2026-10-13T17:20:00+02:00');
+    t.mock.method(Date, 'now', () => serverNow - 5 * 3600000);
+    t.mock.method(globalThis.performance, 'now', () => 1000);
+    const detail = countdownTimer(target, serverNow);
+    detail.start();
+    assert.deepEqual([detail.days, detail.hours, detail.minutes, detail.seconds], [0, 0, 5, 0]);
+    assert.equal(formatSlotCountdown(target, 'REGISTRATION_OPEN', serverNow, labels), 'Starts in 00h 05m 00s');
+    t.mock.method(globalThis.performance, 'now', () => 301000);
+    detail.tick();
+    assert.equal(detail.expired, true);
+    assert.equal(detail.interval, null);
+    assert.deepEqual([detail.hours, detail.minutes, detail.seconds], [0, 0, 0]);
+});

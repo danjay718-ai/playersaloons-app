@@ -66,6 +66,7 @@ final class V2TournamentOccurrenceController extends Controller
         return view('admin.tournaments.v2-edit-occurrence', [
             'tournament' => $tournament,
             'hasRegistrations' => $tournament->registrations()->exists(),
+            'endDate' => $this->inclusiveEndDate($tournament)->format('Y-m-d'),
         ]);
     }
 
@@ -98,7 +99,7 @@ final class V2TournamentOccurrenceController extends Controller
                 'max_teams' => ['required', 'integer', 'min:2', 'max:128'],
                 'entry_fee' => ['required', 'regex:/^\d+(?:\.\d{1,2})?$/'],
                 'start_at' => ['required', 'date'],
-                'end_date' => ['required', 'date'],
+                'end_date' => ['required', 'date_format:Y-m-d'],
                 'waiting_result_time' => ['required', 'integer', 'min:1', 'max:120'],
                 'winning_points' => ['required', 'integer', 'min:0', 'max:100000'],
             ];
@@ -113,7 +114,11 @@ final class V2TournamentOccurrenceController extends Controller
             abort_if($tournament->competition_type === CompetitionType::HEAD_TO_HEAD && (int) $data['max_teams'] !== 2, 422, 'Head-to-Head occurrences always have two players.');
             $platformIds = CompetitionPlatforms::ids($data);
             $start = CarbonImmutable::parse($data['start_at'], $tournament->timezone)->utc();
-            $end = CarbonImmutable::parse($data['end_date'], $tournament->timezone)->addDay()->startOfDay()->utc();
+            // Keep the saved local end time, including exclusive midnight boundaries.
+            $endLocal = $this->localEnd($tournament);
+            $days = (int) $this->inclusiveEndDate($tournament)->startOfDay()
+                ->diffInDays(CarbonImmutable::parse($data['end_date'], $tournament->timezone)->startOfDay(), false);
+            $end = $endLocal->addDays($days)->utc();
             abort_if($end->lessThanOrEqualTo($start), 422, 'End Date must be after Start Date and Time.');
             $sponsoredPrizes->configure(
                 $tournament,
@@ -207,6 +212,22 @@ final class V2TournamentOccurrenceController extends Controller
         activity()->causedBy($request->user())->performedOn($tournament)->withProperties(['recoverable' => true])->log('tournament_v2_archived');
 
         return redirect()->route('admin.tournaments')->with('success', 'Tournament archived from normal lists; its history remains stored.');
+    }
+
+    private function localEnd(Tournament $tournament): CarbonImmutable
+    {
+        if ($tournament->end_at === null) {
+            abort(422, 'End Date must be after Start Date and Time.');
+        }
+
+        return CarbonImmutable::instance($tournament->end_at)->setTimezone($tournament->timezone);
+    }
+
+    private function inclusiveEndDate(Tournament $tournament): CarbonImmutable
+    {
+        $end = $this->localEnd($tournament);
+
+        return $end->isStartOfDay() ? $end->subDay() : $end;
     }
 
     private function authorizeEdit(Tournament $tournament): void

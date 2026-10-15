@@ -3,7 +3,8 @@
  */
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
-import { tournamentCountdown } from './slot-picker';
+import { systemClock } from './system-clock';
+import { countdownTimer, tournamentCountdown } from './slot-picker';
 import { tournamentListRealtime, refreshAdminHeadToHead } from './tournament-list-realtime';
 import { scrollToTournamentContent, scrollToMatchContent } from './tournament-content-navigation';
 import { translationLanguageVisibility } from './translation-language-visibility';
@@ -11,6 +12,8 @@ import { translationImportUpload } from './translation-import-upload';
 import { interfaceText } from './interface-text';
 import { streamChat } from './stream-chat';
 
+window.systemClock = systemClock;
+window.countdownTimer = countdownTimer;
 window.tournamentCountdown = tournamentCountdown;
 window.tournamentListRealtime = tournamentListRealtime;
 window.refreshAdminHeadToHead = refreshAdminHeadToHead;
@@ -283,38 +286,6 @@ window.imageCropUpload = function (config) {
     };
 };
 
-window.systemClock = function (config) {
-    const serverEpoch = Date.parse(config.now);
-    const browserEpoch = Date.now();
-
-    return {
-        timezone: config.timezone,
-        currentEpoch: Number.isNaN(serverEpoch) ? browserEpoch : serverEpoch,
-        timer: null,
-        init() {
-            this.tick();
-            this.timer = window.setInterval(() => this.tick(), 1000);
-        },
-        tick() {
-            this.currentEpoch = (Number.isNaN(serverEpoch) ? browserEpoch : serverEpoch) + (Date.now() - browserEpoch);
-        },
-        get time() {
-            return new Intl.DateTimeFormat(undefined, {
-                timeZone: this.timezone,
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
-            }).format(new Date(this.currentEpoch));
-        },
-        get date() {
-            return new Intl.DateTimeFormat(undefined, {
-                timeZone: this.timezone,
-                month: 'short', day: '2-digit', year: 'numeric',
-            }).format(new Date(this.currentEpoch));
-        },
-        destroy() {
-            if (this.timer) window.clearInterval(this.timer);
-        },
-    };
-};
 
 window.gameManagementUi = function (wire) {
     const setDeferred = (property, value) => wire.$set(property, value, false);

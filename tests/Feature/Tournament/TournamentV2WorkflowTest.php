@@ -69,6 +69,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Js;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use LogicException;
@@ -2090,6 +2091,100 @@ final class TournamentV2WorkflowTest extends TestCase
         return [
             'summer time' => ['2026-09-12', '21:00:00', '20:00:00'],
             'winter time' => ['2026-12-12', '22:00:00', '21:00:00'],
+        ];
+    }
+
+    #[DataProvider('netherlandsScheduleDates')]
+    public function test_form_defaults_use_the_sidebar_schedule_timezone_and_current_minute(string $date): void
+    {
+        $this->travelTo(CarbonImmutable::parse($date.' 17:20:35', 'Europe/Amsterdam')->utc());
+        config()->set('app.tournament_timezone', 'UTC');
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Europe/Amsterdam']);
+
+        foreach (['admin.tournaments.v2.create', 'admin.h2h.v2.create'] as $route) {
+            $response = $this->actingAs($this->admin)->get(route($route))->assertOk();
+            $response->assertSee('Europe/Amsterdam')->assertSee('17:20');
+            $response->assertSee('systemClock('.Js::from([
+                'now' => now('Europe/Amsterdam')->toIso8601String(), 'timezone' => 'Europe/Amsterdam',
+            ]).')', false);
+            $local = now('Europe/Amsterdam');
+            $response->assertSee((string) Js::from([[
+                'label' => '', 'local_start_time' => '17:20',
+                'schedule_start_at' => $date.'T17:20', 'schedule_end_at' => $date.'T23:59',
+                'day_of_week' => $local->dayOfWeekIso - 1, 'day_of_month' => $local->day,
+            ]]), false);
+            self::assertStringNotContainsString('18:21', $response->getContent());
+        }
+    }
+
+    public function test_sidebar_and_form_use_a_configured_timezone_other_than_amsterdam(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-15 09:20:00', 'UTC'));
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Asia/Singapore']);
+        $this->actingAs($this->admin)->get(route('admin.tournaments.v2.create'))->assertOk()
+            ->assertSee('systemClock('.Js::from([
+                'now' => '2026-10-15T17:20:00+08:00', 'timezone' => 'Asia/Singapore',
+            ]).')', false)
+            ->assertSee('17:20');
+    }
+
+    #[DataProvider('scheduleEndTimes')]
+    public function test_create_edit_round_trip_preserves_schedule_and_serializes_five_minute_wait(string $date, string $endTime, string $endDate): void
+    {
+        $this->travelTo(CarbonImmutable::parse($date.' 17:15:00', 'Europe/Amsterdam')->utc());
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Europe/Amsterdam']);
+        $payload = $this->multiPlatformPayload([$this->platform->id]);
+        $payload['slots'][0] = [
+            'local_start_time' => '17:20',
+            'schedule_start_at' => $date.'T17:20',
+            'schedule_end_at' => $endDate.'T'.$endTime,
+        ];
+        $this->actingAs($this->admin)->post(route('admin.tournaments.v2.store'), $payload)
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $tournament = Tournament::query()->firstOrFail();
+        self::assertSame(CarbonImmutable::parse($date.'T17:20', 'Europe/Amsterdam')->utc()->format('Y-m-d H:i:s'), $tournament->getRawOriginal('start_at'));
+        self::assertSame(CarbonImmutable::parse($endDate.'T'.$endTime, 'Europe/Amsterdam')->utc()->format('Y-m-d H:i:s'), $tournament->getRawOriginal('end_at'));
+        $originalStart = $tournament->start_at->toIso8601String();
+        $originalEnd = $tournament->end_at->toIso8601String();
+        self::assertSame(300, $tournament->start_at->timestamp - now()->timestamp);
+        self::assertSame($tournament->start_at->timestamp, $tournament->scheduleSlot->schedule_start_at->timestamp);
+        $inclusiveDate = $endTime === '00:00'
+            ? CarbonImmutable::parse($endDate)->subDay()->format('Y-m-d') : $endDate;
+        $this->get(route('admin.tournaments.v2.occurrences.edit', $tournament))->assertOk()
+            ->assertSee('name="start_at" type="datetime-local" value="'.$date.'T17:20"', false)
+            ->assertSee('name="end_date" type="date" value="'.$inclusiveDate.'"', false);
+        $this->put(route('admin.tournaments.v2.occurrences.update', $tournament), [
+            'name' => $tournament->name, 'platform_ids' => [$this->platform->id],
+            'max_teams' => 4, 'entry_fee' => '0.00', 'start_at' => $date.'T17:20',
+            'end_date' => $inclusiveDate, 'waiting_result_time' => 5, 'winning_points' => 15,
+        ])->assertSessionHasNoErrors()->assertRedirect();
+        $tournament->refresh();
+        self::assertSame($originalStart, $tournament->start_at->toIso8601String());
+        self::assertSame($originalEnd, $tournament->end_at->toIso8601String());
+        self::assertTrue($tournament->end_at->greaterThan($tournament->start_at));
+        $this->put(route('admin.tournaments.v2.occurrences.update', $tournament), [
+            'name' => $tournament->name, 'platform_ids' => [$this->platform->id],
+            'max_teams' => 4, 'entry_fee' => '0.00', 'start_at' => $date.'T17:20',
+            'end_date' => CarbonImmutable::parse($date)->subDay()->format('Y-m-d'),
+            'waiting_result_time' => 5, 'winning_points' => 15,
+        ])->assertStatus(422);
+        self::assertSame($originalEnd, $tournament->fresh()->end_at->toIso8601String());
+
+        $html = view('components.player.tournament-card', ['tournament' => $tournament])->render();
+        self::assertStringContainsString((string) $tournament->start_at->getTimestampMs(), $html);
+        $this->withoutMiddleware(TranslateRenderedHtml::class);
+        Livewire::test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSee('countdownTimer('.$tournament->start_at->getTimestampMs().', '.now()->getTimestampMs().')', false);
+    }
+
+    public static function scheduleEndTimes(): array
+    {
+        return [
+            'daily summer end' => ['2026-10-13', '23:59', '2026-10-13'],
+            'winter end' => ['2026-12-13', '23:59', '2026-12-13'],
+            'exclusive midnight' => ['2026-10-13', '00:00', '2026-10-14'],
+            'multi day end' => ['2026-10-13', '23:59', '2026-10-20'],
+            'DST transition' => ['2026-10-24', '23:59', '2026-10-26'],
         ];
     }
 

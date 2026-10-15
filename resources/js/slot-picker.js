@@ -40,3 +40,34 @@ export function tournamentCountdown(serverNow, labels) {
         },
     };
 }
+
+export function countdownTimer(targetEpoch, serverNow) {
+    const clockStartedAt = performance.now();
+
+    return {
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+        expired: false,
+        interval: null,
+        start() {
+            this.tick();
+            if (!this.expired) this.interval = setInterval(() => this.tick(), 1000);
+        },
+        tick() {
+            const now = serverNow + performance.now() - clockStartedAt;
+            const remaining = Math.max(0, Math.ceil((targetEpoch - now) / 1000));
+            this.expired = remaining === 0;
+            this.days = Math.floor(remaining / 86400);
+            this.hours = Math.floor((remaining % 86400) / 3600);
+            this.minutes = Math.floor((remaining % 3600) / 60);
+            this.seconds = remaining % 60;
+            if (this.expired) this.destroy();
+        },
+        destroy() {
+            clearInterval(this.interval);
+            this.interval = null;
+        },
+    };
+}

@@ -11,8 +11,8 @@
             ]];
         });
         $initialBannerUrl = $gameOptions[(string) old('game_id', '')]['banner_url'] ?? null;
-        $minimumScheduleAt = now($timezone)->addMinute()->second(0);
-        $defaultStartAt = $minimumScheduleAt->copy()->addHour();
+        $minimumScheduleAt = now($timezone)->startOfMinute();
+        $defaultStartAt = $minimumScheduleAt->copy();
         $defaultSlots = [[
             'label' => '',
             'local_start_time' => $defaultStartAt->format('H:i'),

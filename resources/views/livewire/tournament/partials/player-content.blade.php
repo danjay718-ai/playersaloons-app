@@ -348,7 +348,7 @@
     @if($timerLabel && $timerTarget && $timerTarget > $now)
         <template x-teleport="#tournament-top-timer">
         <div class="bg-amber-950/35 backdrop-blur-xl border border-amber-500/50 rounded-2xl px-5 py-7 sm:p-7 flex flex-col sm:flex-row items-center gap-5 sm:gap-6 shadow-[0_12px_35px_-18px_rgba(245,158,11,0.45)]"
-             x-data="countdownTimer('{{ $timerTarget->toIso8601String() }}')"
+             x-data="countdownTimer(@js($timerTarget->getTimestampMs()), @js($now->getTimestampMs()))"
              x-init="start()">
             <div class="flex items-center space-x-3 text-amber-300">
                 <i data-lucide="timer" class="w-7 h-7"></i>
@@ -1352,34 +1352,3 @@
     </template>
 
 </div>
-
-<script>
-function countdownTimer(targetDate) {
-    return {
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-        expired: false,
-        interval: null,
-        start() {
-            this.tick();
-            this.interval = setInterval(() => this.tick(), 1000);
-        },
-        tick() {
-            const now = new Date().getTime();
-            const target = new Date(targetDate).getTime();
-            const diff = target - now;
-            if (diff <= 0) {
-                this.expired = true;
-                clearInterval(this.interval);
-                return;
-            }
-            this.days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            this.hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            this.minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            this.seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        }
-    }
-}
-</script>
