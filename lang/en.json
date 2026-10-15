@@ -242,7 +242,6 @@
     "Internal note (optional)": "Internal note (optional)",
     "Only visible to administrators.": "Only visible to administrators.",
     "internal note": "internal note",
-    "Schedule time": "Schedule time",
     "The scheduled end time is preserved when changing this date.": "The scheduled end time is preserved when changing this date.",
     "Suspend Account": "Suspend Account",
     "Ban Account": "Ban Account",
@@ -258,5 +257,11 @@
     "Confirm status change": "Confirm status change",
     "Only suspended accounts can be unsuspended.": "Only suspended accounts can be unsuspended.",
     "Account restored by an administrator.": "Account restored by an administrator.",
-    "Your account is restricted. Contact support for assistance.": "Your account is restricted. Contact support for assistance."
+    "Your account is restricted. Contact support for assistance.": "Your account is restricted. Contact support for assistance.",
+    "Netherlands Time": "Netherlands Time",
+    "One row per tournament schedule, showing its next occurrence.": "One row per tournament schedule, showing its next occurrence.",
+    "Configured slots and their current occurrences are managed directly here.": "Configured slots and their current occurrences are managed directly here.",
+    "Times use :timezone.": "Times use :timezone.",
+    "Start (:timezone)": "Start (:timezone)",
+    "Exact start time (:timezone)": "Exact start time (:timezone)"
 }

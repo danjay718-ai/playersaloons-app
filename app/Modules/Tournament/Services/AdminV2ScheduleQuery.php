@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 final class AdminV2ScheduleQuery
 {
+    public function __construct(private readonly TournamentScheduleFilters $scheduleFilters) {}
+
     /** @param array<string, string> $filters */
     public function query(CompetitionType $type, string $statusTab, array $filters): Builder
     {
@@ -28,18 +30,7 @@ final class AdminV2ScheduleQuery
             if (($filters['platform_id'] ?? '') !== '') {
                 $query->forPlatform((int) $filters['platform_id']);
             }
-            if (($filters['tab'] ?? 'all') === 'daily') {
-                if (($filters['start_time'] ?? '') !== '') {
-                    $query->whereTime('start_at', $filters['start_time'].':00');
-                }
-            } else {
-                if (($filters['start_date'] ?? '') !== '') {
-                    $query->whereDate('start_at', '>=', $filters['start_date']);
-                }
-                if (($filters['end_date'] ?? '') !== '') {
-                    $query->whereDate('start_at', '<=', $filters['end_date']);
-                }
-            }
+            $this->scheduleFilters->apply($query, $filters);
         };
 
         $query = TournamentTemplate::query()

@@ -9,6 +9,8 @@ use DateTimeZone;
 
 final class TournamentTimezone
 {
+    public const AMSTERDAM = 'Europe/Amsterdam';
+
     public function value(): string
     {
         $timezone = (string) (SystemSetting::query()->where('key', 'tournament.timezone')->value('value')

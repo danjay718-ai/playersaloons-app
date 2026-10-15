@@ -20,6 +20,7 @@ use App\Modules\Tournament\Actions\StartTournamentAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Tournament\Services\AdminV2ScheduleQuery;
+use App\Modules\Tournament\Services\TournamentScheduleFilters;
 use App\Modules\Tournament\StateMachines\TournamentStateMachine;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
@@ -378,8 +379,9 @@ class TournamentAdmin extends AdminComponent
                 'start_date' => $this->startDateFilter,
                 'end_date' => $this->endDateFilter,
             ];
+            $scheduleQueryService = app(AdminV2ScheduleQuery::class);
             foreach (['active', 'completed', 'cancelled', 'all'] as $tab) {
-                $scheduleQueries[$tab] = app(AdminV2ScheduleQuery::class)->query(CompetitionType::TOURNAMENT, $tab, $filters);
+                $scheduleQueries[$tab] = $scheduleQueryService->query(CompetitionType::TOURNAMENT, $tab, $filters);
             }
             $scheduleQuery = $scheduleQueries[$this->statusTab] ?? $scheduleQueries['all'];
             $v2Templates = (clone $scheduleQuery)
@@ -456,18 +458,11 @@ class TournamentAdmin extends AdminComponent
             $query->where('frequency', $this->activeTab === 'one-time' ? 'one_time' : $this->activeTab);
         }
 
-        if ($this->activeTab === 'daily' && $this->startTimeFilter !== '') {
-            $query->whereTime('start_at', $this->startTimeFilter.':00');
-
-            return;
-        }
-
-        if ($this->startDateFilter) {
-            $query->whereDate('start_at', '>=', $this->startDateFilter);
-        }
-
-        if ($this->endDateFilter) {
-            $query->whereDate('start_at', '<=', $this->endDateFilter);
-        }
+        app(TournamentScheduleFilters::class)->apply($query, [
+            'tab' => $this->activeTab,
+            'start_time' => $this->startTimeFilter,
+            'start_date' => $this->startDateFilter,
+            'end_date' => $this->endDateFilter,
+        ]);
     }
 }

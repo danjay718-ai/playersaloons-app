@@ -126,7 +126,7 @@
             </select>
 
             @if($activeTab === 'daily')
-                <div><label class="sr-only" for="tournament-start-time">Exact UTC start time</label><input id="tournament-start-time" type="time" wire:model.live="startTimeFilter" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500"><p class="mt-1 text-[10px] text-slate-500">Exact UTC start time</p></div>
+                <div><label class="sr-only" for="tournament-start-time">{{ __('Exact start time (:timezone)', ['timezone' => \App\Modules\Tournament\Services\TournamentTimezone::AMSTERDAM]) }}</label><input id="tournament-start-time" type="time" wire:model.live="startTimeFilter" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500"><p class="mt-1 text-[10px] text-slate-500">{{ __('Exact start time (:timezone)', ['timezone' => \App\Modules\Tournament\Services\TournamentTimezone::AMSTERDAM]) }}</p></div>
             @else
             <div class="flex items-center gap-2">
                 <input type="date" wire:model.live="startDateFilter" 

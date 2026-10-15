@@ -51,6 +51,7 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentCancellationRequest;
 use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentTemplate;
+use App\Modules\Tournament\Services\AdminV2ScheduleQuery;
 use App\Modules\Tournament\Services\CancelledOccurrenceRetention;
 use App\Modules\Tournament\Services\V2TournamentDiscoveryService;
 use App\Modules\Tournament\Services\V2TournamentLifecycle;
@@ -2184,14 +2185,15 @@ final class TournamentV2WorkflowTest extends TestCase
         }
     }
 
-    public function test_sidebar_and_form_use_a_configured_timezone_other_than_amsterdam(): void
+    public function test_sidebar_stays_in_amsterdam_when_tournament_default_setting_differs(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-15 09:20:00', 'UTC'));
         DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Asia/Singapore']);
         $this->actingAs($this->admin)->get(route('admin.tournaments.v2.create'))->assertOk()
             ->assertSee('systemClock('.Js::from([
-                'now' => '2026-10-15T17:20:00+08:00', 'timezone' => 'Asia/Singapore',
+                'now' => '2026-10-15T11:20:00+02:00', 'timezone' => 'Europe/Amsterdam',
             ]).')', false)
+            ->assertSee('Netherlands Time')
             ->assertSee('17:20');
     }
 
@@ -2213,6 +2215,14 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(CarbonImmutable::parse($endDate.'T'.$endTime, 'Europe/Amsterdam')->utc()->format('Y-m-d H:i:s'), $tournament->getRawOriginal('end_at'));
         $originalStart = $tournament->start_at->toIso8601String();
         $originalEnd = $tournament->end_at->toIso8601String();
+        Livewire::actingAs($this->admin)->test(TournamentAdmin::class)
+            ->set('activeTab', 'daily')->set('startTimeFilter', '17:20')
+            ->assertViewHas('v2Templates', fn ($templates) => $templates->total() === 1)
+            ->assertSee($date.' 17:20:00')->assertSee('Start (Europe/Amsterdam)')
+            ->assertDontSee('Start (UTC)')->assertDontSee('Exact UTC start time')
+            ->set('startTimeFilter', $tournament->start_at->copy()->utc()->format('H:i'))
+            ->assertViewHas('v2Templates', fn ($templates) => $templates->total() === 0);
+
         self::assertSame(300, $tournament->start_at->timestamp - now()->timestamp);
         self::assertSame($tournament->start_at->timestamp, $tournament->scheduleSlot->schedule_start_at->timestamp);
         $inclusiveDate = $endTime === '00:00'
@@ -2253,6 +2263,48 @@ final class TournamentV2WorkflowTest extends TestCase
             'multi day end' => ['2026-10-13', '23:59', '2026-10-20'],
             'DST transition' => ['2026-10-24', '23:59', '2026-10-26'],
         ];
+    }
+
+    public function test_amsterdam_time_filter_matches_summer_and_winter_occurrences_together(): void
+    {
+        foreach (['2026-09-12', '2026-12-12'] as $date) {
+            $template = $this->template('daily', 4, '17:20');
+            $template->update(['timezone' => 'Europe/Amsterdam']);
+            app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin,
+                CarbonImmutable::parse($date.' 10:00:00', 'Europe/Amsterdam'));
+        }
+        $service = app(AdminV2ScheduleQuery::class);
+        self::assertSame(2, $service->query(CompetitionType::TOURNAMENT, 'active', ['tab' => 'daily', 'start_time' => '17:20'])->count());
+        self::assertSame(0, $service->query(CompetitionType::TOURNAMENT, 'active', ['tab' => 'daily', 'start_time' => '15:20'])->count());
+        self::assertSame(0, $service->query(CompetitionType::TOURNAMENT, 'active', ['tab' => 'daily', 'start_time' => '16:20'])->count());
+    }
+
+    public function test_amsterdam_date_filters_include_local_midnight_on_the_previous_utc_day(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-25 00:20:00', 'Europe/Amsterdam')->utc());
+        $template = $this->template('daily', 4, '00:30');
+        $template->update(['timezone' => 'Europe/Amsterdam']);
+        $occurrence = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
+        self::assertSame('2026-10-24', $occurrence->start_at->copy()->utc()->toDateString());
+        Livewire::actingAs($this->admin)->test(TournamentAdmin::class)
+            ->set('startDateFilter', '2026-10-25')->set('endDateFilter', '2026-10-25')
+            ->assertViewHas('v2Templates', fn ($templates) => $templates->total() === 1)
+            ->assertSee('2026-10-25 00:30:00')
+            ->set('startDateFilter', '2026-10-24')->set('endDateFilter', '2026-10-24')
+            ->assertViewHas('v2Templates', fn ($templates) => $templates->total() === 0);
+    }
+
+    public function test_head_to_head_schedule_displays_and_filters_amsterdam_time(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-15 10:00:00', 'UTC'));
+        $template = $this->template('daily', 2, '17:20', [], CompetitionType::HEAD_TO_HEAD);
+        $template->update(['timezone' => 'Europe/Amsterdam']);
+        app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
+        $this->actingAs($this->admin)->get(route('admin.h2h.index', ['tab' => 'daily', 'start_time' => '17:20']))
+            ->assertOk()->assertSee($template->name)->assertSee('2026-10-15 17:20:00 Europe/Amsterdam')
+            ->assertDontSee('Exact UTC start time')->assertDontSee('All timestamps are UTC.');
+        $this->get(route('admin.h2h.index', ['tab' => 'daily', 'start_time' => '15:20']))
+            ->assertOk()->assertDontSee($template->name);
     }
 
     private function multiPlatformPayload(array $ids, string $type = 'tournament'): array

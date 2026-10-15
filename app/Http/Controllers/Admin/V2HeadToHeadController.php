@@ -40,8 +40,9 @@ final class V2HeadToHeadController extends Controller
             'start_date' => $startDate, 'end_date' => $endDate,
         ];
         $queries = [];
+        $scheduleQueryService = app(AdminV2ScheduleQuery::class);
         foreach (['active', 'completed', 'cancelled', 'all'] as $tab) {
-            $queries[$tab] = app(AdminV2ScheduleQuery::class)->query(CompetitionType::HEAD_TO_HEAD, $tab, $filters);
+            $queries[$tab] = $scheduleQueryService->query(CompetitionType::HEAD_TO_HEAD, $tab, $filters);
         }
         $templates = (clone $queries[$statusTab])->orderByDesc('updated_at')->paginate($perPage)->withQueryString();
         $countActive = $queries['active']->count();
