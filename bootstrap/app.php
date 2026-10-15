@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureAdminRole;
 use App\Http\Middleware\EnsureNotComplianceBlocked;
 use App\Http\Middleware\EnsurePlayerRole;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->appendToGroup('web', SanitizeBroadcastSocketId::class);
         $middleware->appendToGroup('web', SetLocale::class);
+        $middleware->appendToGroup('web', EnsureAccountIsActive::class);
         $middleware->appendToGroup('web', UpdateUserOnlineStatus::class);
         $middleware->appendToGroup('web', TranslateRenderedHtml::class);
         $middleware->alias([

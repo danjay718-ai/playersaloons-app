@@ -243,5 +243,20 @@
     "Only visible to administrators.": "Only visible to administrators.",
     "internal note": "internal note",
     "Schedule time": "Schedule time",
-    "The scheduled end time is preserved when changing this date.": "The scheduled end time is preserved when changing this date."
+    "The scheduled end time is preserved when changing this date.": "The scheduled end time is preserved when changing this date.",
+    "Suspend Account": "Suspend Account",
+    "Ban Account": "Ban Account",
+    "Restore Account": "Restore Account",
+    "Automatic dispute ban": "Automatic dispute ban",
+    "Administrator": "Administrator",
+    "Account status updated.": "Account status updated.",
+    "Unable to update account status.": "Unable to update account status.",
+    "Account status details": "Account status details",
+    "No recorded reason is available for this account status.": "No recorded reason is available for this account status.",
+    "Dispute strike #:number": "Dispute strike #:number",
+    "Change Account Status": "Change Account Status",
+    "Confirm status change": "Confirm status change",
+    "Only suspended accounts can be unsuspended.": "Only suspended accounts can be unsuspended.",
+    "Account restored by an administrator.": "Account restored by an administrator.",
+    "Your account is restricted. Contact support for assistance.": "Your account is restricted. Contact support for assistance."
 }

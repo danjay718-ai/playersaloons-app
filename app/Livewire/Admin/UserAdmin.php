@@ -6,6 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Modules\Compliance\Services\CountryEligibilityService;
 use App\Modules\Identity\Actions\AssignRoleAction;
+use App\Modules\Identity\Actions\ChangeUserStatusAction;
 use App\Modules\Identity\Actions\RegisterUserAction;
 use App\Modules\Identity\Actions\RevokeRoleAction;
 use App\Modules\Identity\Actions\SuspendUserAction;
@@ -15,8 +16,10 @@ use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Services\UserPresenceService;
+use App\Modules\Identity\Services\UserStatusDetails;
 use App\Modules\Operations\Services\AdminDeletionService;
 use App\Modules\Tournament\Models\TournamentRegistration;
+use App\Shared\Enums\UserStatus;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -69,6 +72,8 @@ class UserAdmin extends AdminComponent
 
     // Forms
     public string $suspendReason = '';
+
+    public string $statusReason = '';
 
     public string $selectedRole = '';
 
@@ -452,6 +457,33 @@ class UserAdmin extends AdminComponent
         $this->dispatch('user-deleted');
     }
 
+    public function prepareStatusChange(int $id): void
+    {
+        $this->authorize('changeStatus', User::findOrFail($id));
+        $this->resetValidation();
+        $this->statusReason = '';
+    }
+
+    public function changeStatus(ChangeUserStatusAction $action, int $id, string $status, string $reason): void
+    {
+        $target = User::findOrFail($id);
+        $this->authorize('changeStatus', $target);
+        $this->statusReason = trim($reason);
+        $validated = validator(['status' => $status, 'statusReason' => $this->statusReason], [
+            'status' => [Rule::enum(UserStatus::class)],
+            'statusReason' => ['required', 'string', 'min:5', 'max:255'],
+        ])->validate();
+
+        try {
+            $action->execute($target, $this->actor(), UserStatus::from($validated['status']), $validated['statusReason']);
+            $this->resetValidation();
+            $this->dispatch('user-status-updated');
+            session()->flash('success', __('Account status updated.'));
+        } catch (\Exception $e) {
+            $this->addError('statusReason', $this->safeError($e, __('Unable to update account status.')));
+        }
+    }
+
     public function setSuspendId(int $id): void
     {
         $this->resetValidation();
@@ -631,7 +663,7 @@ class UserAdmin extends AdminComponent
         }
     }
 
-    public function render(UserPresenceService $presence, CountryEligibilityService $countries)
+    public function render(UserPresenceService $presence, CountryEligibilityService $countries, UserStatusDetails $statusDetails)
     {
         // One sorted-set read serves filtering and every row indicator. This
         // avoids Redis KEYS (blocking at scale) and per-row presence calls.
@@ -737,6 +769,7 @@ class UserAdmin extends AdminComponent
             'roles' => $roles,
             'eligibleCountries' => $eligibleCountries,
             'selectedUser' => $selectedUser,
+            'statusDetails' => $selectedUser ? $statusDetails->forUser($selectedUser) : null,
             'userKyc' => $userKyc,
             'walletHistory' => $walletHistory,
             'tournamentHistory' => $tournamentHistory,

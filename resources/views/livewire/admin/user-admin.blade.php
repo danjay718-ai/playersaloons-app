@@ -5,6 +5,7 @@
     passwordModal: { open: false, id: null, username: '', password: '', passwordConfirmation: '', showPassword: false, showPasswordConfirmation: false },
     deleteModal: { open: false, id: null, username: '' },
     suspendModal: { open: false, id: null, username: '', reason: '' },
+    statusModal: { open: false, id: null, username: '', status: '', reason: '' },
     roleModal: { open: false, id: null, username: '', action: 'assign', role: '' },
     transferModal: { open: false, id: null, username: '', confirm: '' },
 
@@ -35,10 +36,13 @@
         this.passwordModal.open = false;
         this.deleteModal.open = false;
         this.suspendModal.open = false;
+        this.statusModal.open = false;
         this.roleModal.open = false;
         this.transferModal.open = false;
     }
 }"
+x-on:open-account-status.window="statusModal = { open: true, id: $event.detail.id, username: $event.detail.username, status: $event.detail.status, reason: '' }; $wire.prepareStatusChange($event.detail.id)"
+x-on:user-status-updated.window="statusModal.open = false"
 x-on:open-create.window="openCreate($event.detail?.mode)"
 x-on:open-edit.window="openEdit($event.detail.id, $event.detail.username, $event.detail.email, $event.detail.displayName, $event.detail.countryCode)"
 x-on:open-password.window="openPassword($event.detail.id, $event.detail.username)"
@@ -235,6 +239,7 @@ x-on:keydown.escape.window="closeAll()">
                                                 Reset Password
                                             </button>
                                         @endcan
+                                        <x-admin.user-status-actions :user="$usr" :menu-item="true" />
                                         @can('delete', $usr)
                                             @if(! $usr->hasRole('SUPER_ADMIN') && $usr->id !== auth()->id())
                                                 <livewire:admin.recoverable-delete resource="users" :menu-item="true" :record-id="$usr->id" :key="'delete-users-'.$usr->id" />
@@ -599,6 +604,18 @@ x-on:keydown.escape.window="closeAll()">
                         </div>
                     </div>
 
+                    <section class="rounded-xl border border-slate-800 bg-slate-900 p-4" data-account-status-details>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">{{ __('Account status details') }}</h3>
+                        <p class="mt-2 text-xs font-bold uppercase text-slate-300">{{ $selectedUser->status->value }}</p>
+                        @if($statusDetails)
+                            <p class="mt-2 whitespace-pre-wrap break-words text-sm text-slate-200">{{ $statusDetails['reason'] ?: __('No recorded reason is available for this account status.') }}</p>
+                            <p class="mt-2 text-xs text-slate-400">{{ $statusDetails['source'] }}@if($statusDetails['strike_number']) · {{ __('Dispute strike #:number', ['number' => $statusDetails['strike_number']]) }}@endif</p>
+                            <p class="mt-1 text-xs text-slate-500">{{ $statusDetails['actor'] ?? __('Unknown') }} · {{ $statusDetails['at']?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('Y-m-d H:i T') }}</p>
+                        @else
+                            <p class="mt-2 text-xs text-slate-400">{{ __('No recorded reason is available for this account status.') }}</p>
+                        @endif
+                    </section>
+
                     <!-- Ledger / Tournaments history split -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Wallet Ledger Entries -->
@@ -663,15 +680,7 @@ x-on:keydown.escape.window="closeAll()">
 
                 <div class="px-6 py-4 border-t border-slate-800 bg-[#0b0f19] flex justify-between items-center">
                     <div>
-                        @if($selectedUser->status === \App\Shared\Enums\UserStatus::ACTIVE)
-                            <button type="button" @click="$dispatch('open-suspend', { id: {{ $selectedUser->id }}, username: @js($selectedUser->username) })" class="bg-red-950 hover:bg-red-900 border border-red-900/50 text-red-400 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                                Suspend Account
-                            </button>
-                        @elseif($selectedUser->status === \App\Shared\Enums\UserStatus::SUSPENDED)
-                            <button wire:click="unsuspend" wire:loading.attr="disabled" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
-                                Unsuspend Account
-                            </button>
-                        @endif
+                        <x-admin.user-status-actions :user="$selectedUser" />
                     </div>
                     <button type="button" @click="open = false; $wire.set('showDetailModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg transition-colors">
                         Close Directory
@@ -680,6 +689,23 @@ x-on:keydown.escape.window="closeAll()">
             </div>
         </div>
     @endif
+
+    <div x-cloak x-show="statusModal.open" class="fixed inset-0 z-[70] flex items-center justify-center p-4" data-account-status-modal>
+        <div class="fixed inset-0 bg-black/75 backdrop-blur-sm" @click="statusModal.open = false"></div>
+        <form @submit.prevent="$wire.changeStatus(statusModal.id, statusModal.status, statusModal.reason)" class="relative w-full max-w-lg space-y-4 rounded-xl border border-slate-700 bg-slate-900 p-6">
+            <h3 class="text-lg font-bold text-white">{{ __('Change Account Status') }}</h3>
+            <p class="text-sm text-slate-300"><span x-text="statusModal.username"></span> → <strong class="uppercase" x-text="statusModal.status"></strong></p>
+            <label class="block text-sm text-slate-300">{{ __('Reason') }}
+                <textarea x-model="statusModal.reason" required minlength="5" maxlength="255" class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white" rows="3"></textarea>
+            </label>
+            @error('statusReason')<p class="text-sm text-red-400">{{ $message }}</p>@enderror
+            @error('status')<p class="text-sm text-red-400">{{ $message }}</p>@enderror
+            <div class="flex justify-end gap-3">
+                <button type="button" @click="statusModal.open = false" class="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white">{{ __('Cancel') }}</button>
+                <button type="submit" wire:loading.attr="disabled" wire:target="changeStatus" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white">{{ __('Confirm status change') }}</button>
+            </div>
+        </form>
+    </div>
 
     <!-- Suspend Reason Modal -->
     <div x-cloak x-show="suspendModal.open" class="fixed inset-0 z-[60] flex items-center justify-center p-4">

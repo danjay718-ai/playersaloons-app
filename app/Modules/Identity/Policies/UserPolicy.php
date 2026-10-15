@@ -13,7 +13,7 @@ class UserPolicy
      */
     public function before(User $user, string $ability): ?bool
     {
-        if ($ability === 'delete') {
+        if (in_array($ability, ['delete', 'changeStatus'], true)) {
             return null;
         }
 
@@ -53,6 +53,13 @@ class UserPolicy
         }
 
         return $user->hasPermissionTo('users.delete');
+    }
+
+    public function changeStatus(User $user, User $target): bool
+    {
+        return $user->hasAnyRole(['ADMIN', 'SUPER_ADMIN'])
+            && ! $user->is($target)
+            && ! $target->hasRole('SUPER_ADMIN');
     }
 
     public function resetPassword(User $user, User $target): bool

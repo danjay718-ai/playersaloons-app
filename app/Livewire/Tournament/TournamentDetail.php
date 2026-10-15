@@ -35,6 +35,7 @@ use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use LogicException;
@@ -62,6 +63,14 @@ class TournamentDetail extends Component
 
     /** @var array<string, bool> */
     public array $loadedSections = [];
+
+    #[Locked]
+    public bool $defaultResultTabPending = false;
+
+    public function updatedActiveTab(): void
+    {
+        $this->defaultResultTabPending = false;
+    }
 
     public string $gameIdValue = '';
 
@@ -91,6 +100,13 @@ class TournamentDetail extends Component
         }
 
         $tournament = $this->getTournamentQuery()->where('uuid', $uuid)->firstOrFail();
+        $this->defaultResultTabPending = $user?->hasRole('PLAYER')
+            && $this->viewMode !== 'guest'
+            && (int) $tournament->workflow_version === 2
+            && ! request()->query->has('activeTab')
+            && ! request()->query->has('bracketView')
+            && ! request()->query->has('match');
+
         if ($user?->can('viewRestrictedDetails', $tournament)) {
             $this->loadSection($this->activeTab);
         } elseif (! in_array($this->activeTab, ['overview', 'streams'], true)) {
@@ -439,7 +455,7 @@ class TournamentDetail extends Component
         $currentMatchHasSubmittedResult = false;
         $displayMatch = null;
         if ($user && $userRegistration) {
-            // Always expose the participant's actionable match on the overview.
+            // Always expose the participant's actionable match independently of the bracket.
             // Bracket data remains lazy-loaded, so this focused indexed lookup
             // avoids loading every round just to provide the result submission link.
             $currentMatch = GameMatch::query()
@@ -530,6 +546,16 @@ class TournamentDetail extends Component
                 }
             }
 
+        }
+
+        if ($this->defaultResultTabPending && $isRegistered
+            && $tournament->status === TournamentStatus::ONGOING && $currentMatch !== null) {
+            $this->activeTab = 'submit-results';
+            $this->selectedMatchUuid = $currentMatch->uuid;
+            $this->defaultResultTabPending = false;
+            $this->dispatch('tournament-content-opened', tournamentUuid: $this->uuid,
+                matchUuid: $currentMatch->uuid, tab: 'submit-results',
+                focus: $currentMatch->status === MatchStatus::DISPUTED ? 'dispute' : null);
         }
 
         // Reuse the already eager-loaded bracket graph for both tabs. The old

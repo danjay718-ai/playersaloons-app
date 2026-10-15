@@ -6,6 +6,7 @@ namespace App\Modules\Identity\Actions;
 
 use App\Modules\Identity\Models\PlayerDisputeStrike;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\StateMachines\UserStateMachine;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Tournament\Models\Tournament;
@@ -70,8 +71,14 @@ final class IssueDisputeStrikeAction
                 );
             }
 
-            if ($number >= 3) {
-                $lockedPlayer->update(['status' => UserStatus::BANNED]);
+            if ($number >= 3 && $lockedPlayer->status !== UserStatus::BANNED) {
+                $from = $lockedPlayer->status;
+                app(UserStateMachine::class)->transition($lockedPlayer, UserStatus::BANNED);
+                activity()->causedBy($admin)->performedOn($lockedPlayer)->withProperties([
+                    'from_status' => $from->value, 'to_status' => UserStatus::BANNED->value,
+                    'reason' => $reason, 'source' => 'dispute_strikes',
+                    'strike_id' => $strike->id, 'strike_number' => $number,
+                ])->log('user_banned');
             }
 
             return $strike;

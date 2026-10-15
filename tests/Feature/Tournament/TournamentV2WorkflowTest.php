@@ -7,6 +7,7 @@ namespace Tests\Feature\Tournament;
 use App\Http\Middleware\TranslateRenderedHtml;
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\TournamentAdmin;
+use App\Livewire\Admin\UserAdmin;
 use App\Livewire\Game\GameShow;
 use App\Livewire\Match\MatchDetail;
 use App\Livewire\Tournament\PlatformHeadToHeadList;
@@ -18,6 +19,7 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameHeadToHeadDefault;
 use App\Modules\CMS\Models\GameTournamentDefault;
 use App\Modules\CMS\Models\Platform;
+use App\Modules\Identity\Actions\IssueDisputeStrikeAction;
 use App\Modules\Identity\Models\PlayerProgression;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserGameAccount;
@@ -32,6 +34,7 @@ use App\Modules\Match\Jobs\ResolveV2ResultTimeoutsJob;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Services\V2StalledMatchService;
+use App\Modules\Operations\Models\Activity;
 use App\Modules\Tournament\Actions\AwardV2PrizesAction;
 use App\Modules\Tournament\Actions\CancelTournamentAction;
 use App\Modules\Tournament\Actions\ConvertTournamentSchedulesTimezoneAction;
@@ -58,6 +61,7 @@ use App\Shared\Enums\DisputeResolution;
 use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
+use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
 use App\Shared\Support\DecimalMoney;
 use Carbon\CarbonImmutable;
@@ -868,6 +872,7 @@ final class TournamentV2WorkflowTest extends TestCase
         $first = $firstRound[0];
         $third = $firstRound[2];
         $page = Livewire::actingAs($first->playerARegistration->user)
+            ->withQueryParams(['activeTab' => 'matches'])
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
             ->assertSet('activeTab', 'matches')
             ->assertViewHas('bracketLoaded', true);
@@ -960,12 +965,12 @@ final class TournamentV2WorkflowTest extends TestCase
         return $cases;
     }
 
-    public function test_tournament_tabs_default_to_the_bracket_and_put_overview_and_activity_last(): void
+    public function test_tournament_tabs_default_to_results_for_active_players_and_bracket_for_admins(): void
     {
         [$match, $player] = $this->activeTwoPlayerMatch();
         foreach ([$player, $this->admin] as $viewer) {
             Livewire::actingAs($viewer)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
-                ->assertSet('activeTab', 'matches')
+                ->assertSet('activeTab', $viewer->is($player) ? 'submit-results' : 'matches')
                 ->assertViewHas('bracketLoaded', true)
                 ->assertSeeInOrder(['Fixtures & Bracket', 'Players (', 'Overview', 'Activity']);
         }
@@ -974,6 +979,68 @@ final class TournamentV2WorkflowTest extends TestCase
         Livewire::actingAs($player)->withQueryParams(['activeTab' => 'overview'])
             ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
             ->assertSet('activeTab', 'overview');
+    }
+
+    public function test_result_default_respects_explicit_tab_selection_and_refresh(): void
+    {
+        [$match, $player] = $this->activeTwoPlayerMatch();
+        Livewire::actingAs($player)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSet('activeTab', 'submit-results')->assertSet('selectedMatchUuid', $match->uuid)
+            ->assertSee('Submit Match Results')
+            ->set('activeTab', 'overview')->call('$refresh')->assertSet('activeTab', 'overview');
+        Livewire::withQueryParams(['activeTab' => 'matches'])
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSet('activeTab', 'matches');
+        $outsider = $this->user('default-outsider@example.com', 'defaultoutsider', 'PLAYER');
+        Livewire::actingAs($outsider)->withQueryParams([])
+            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSet('activeTab', 'overview')->assertDontSeeHtml("selectTab('submit-results')");
+    }
+
+    public function test_default_view_switches_to_results_when_the_players_match_starts_on_refresh(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-12 10:00:00', 'UTC'));
+        $template = $this->template('daily', 4, '12:00');
+        $tournament = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
+        $first = $this->user('first-default@example.com', 'firstdefault', 'PLAYER');
+        $second = $this->user('second-default@example.com', 'seconddefault', 'PLAYER');
+        $register = app(RegisterForV2TournamentAction::class);
+        $register->execute($tournament, $first, null, 'first');
+        $register->execute($tournament->fresh(), $second, null, 'second');
+        $page = Livewire::actingAs($first)->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSet('activeTab', 'matches');
+        $this->travelTo($tournament->start_at->copy()->addSecond());
+        app(V2TournamentLifecycle::class)->reconcile($tournament->fresh());
+        $page->call('$refresh')->assertSet('activeTab', 'submit-results')->assertSee('Submit Match Results');
+    }
+
+    public function test_directory_explains_automatic_third_strike_bans_including_historical_records(): void
+    {
+        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        $dispute = $match->disputes()->firstOrFail();
+        $strikeAction = app(IssueDisputeStrikeAction::class);
+        foreach (range(1, 3) as $number) {
+            $strikeMatch = $match->replicate();
+            $strikeMatch->uuid = Str::uuid();
+            $strikeMatch->save();
+            $strikeDispute = $dispute->replicate();
+            $strikeDispute->uuid = Str::uuid();
+            $strikeDispute->match_id = $strikeMatch->id;
+            $strikeDispute->save();
+            $strikeAction->execute($strikeDispute, $second, $this->admin, 'Verified false report number '.$number);
+        }
+        self::assertSame(UserStatus::BANNED, $second->fresh()->status);
+        Livewire::actingAs($this->admin)->test(UserAdmin::class)
+            ->call('selectUser', $second->id)->assertSee('Verified false report number 3')
+            ->assertSee('Automatic dispute ban')->assertSee('Dispute strike #3');
+        // Before the directory fix, only the strike record held the ban reason.
+        Activity::where('description', 'user_banned')->forceDelete();
+        Livewire::test(UserAdmin::class)
+            ->call('selectUser', $second->id)->assertSee('Verified false report number 3')
+            ->assertSee('Automatic dispute ban')->assertSee('Dispute strike #3');
     }
 
     private function completeV2Match(GameMatch $match): void

@@ -9,7 +9,12 @@ use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon $created_at
+ * @property-read User|null $issuer
+ */
 final class PlayerDisputeStrike extends Model
 {
     public $timestamps = false;
