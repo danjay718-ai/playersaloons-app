@@ -93,8 +93,7 @@ final class MaterializeV2OccurrenceAction
                 : $template->game->tournamentDefaults;
 
             $entryFee = (string) ($settings['entry_fee'] ?? $template->entry_fee);
-            $isSponsored = $template->competition_type === CompetitionType::TOURNAMENT
-                && (float) $entryFee === 0.0;
+            $isSponsored = (float) $entryFee === 0.0;
             $occurrence = Tournament::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'workflow_version' => 2,

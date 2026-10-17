@@ -111,10 +111,10 @@ final class V2TournamentTemplateSlotsController extends Controller
         }
         $effectiveFee = (float) (($data['entry_fee'] ?? null) !== null && $data['entry_fee'] !== '' ? $data['entry_fee'] : $template->entry_fee);
         $hasSponsored = filled($data['free_prize_1st'] ?? null) || filled($data['free_prize_2nd'] ?? null);
-        if (($template->competition_type === CompetitionType::HEAD_TO_HEAD || $effectiveFee > 0) && $hasSponsored) {
-            return back()->withErrors(['free_prize_1st' => 'Sponsored prizes are available only for free tournaments.']);
+        if ($effectiveFee > 0 && $hasSponsored) {
+            return back()->withErrors(['free_prize_1st' => __('Sponsored prizes are available only for free competitions.')]);
         }
-        if ($template->competition_type !== CompetitionType::HEAD_TO_HEAD && $effectiveFee === 0.0
+        if ($effectiveFee === 0.0
             && (float) $template->entry_fee > 0 && ! filled($data['free_prize_1st'] ?? null)) {
             return back()->withErrors(['free_prize_1st' => 'First Prize is required for a free slot.']);
         }

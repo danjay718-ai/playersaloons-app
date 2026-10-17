@@ -78,7 +78,6 @@ final class V2TournamentOccurrenceController extends Controller
             $request->merge(['platform_ids' => [$request->input('platform_id')]]);
         }
         if (! $hasRegistrations
-            && $tournament->competition_type === CompetitionType::TOURNAMENT
             && (float) $request->input('entry_fee', $tournament->entry_fee) === 0.0
             && ! $request->exists('free_prize_1st')) {
             $request->merge([
@@ -103,10 +102,9 @@ final class V2TournamentOccurrenceController extends Controller
                 'waiting_result_time' => ['required', 'integer', 'min:1', 'max:120'],
                 'winning_points' => ['required', 'integer', 'min:0', 'max:100000'],
             ];
-            $freeTournament = $tournament->competition_type === CompetitionType::TOURNAMENT
-                && (float) $request->input('entry_fee', $tournament->entry_fee) === 0.0;
-            $rules['free_prize_1st'] = [$freeTournament ? 'required' : 'prohibited', 'nullable', 'numeric', 'min:0'];
-            $rules['free_prize_2nd'] = [$freeTournament ? 'nullable' : 'prohibited', 'numeric', 'min:0'];
+            $freeCompetition = (float) $request->input('entry_fee', $tournament->entry_fee) === 0.0;
+            $rules['free_prize_1st'] = [$freeCompetition ? 'required' : 'prohibited', 'nullable', 'numeric', 'min:0'];
+            $rules['free_prize_2nd'] = [$freeCompetition ? 'nullable' : 'prohibited', 'numeric', 'min:0'];
         }
         $data = $request->validate($rules);
         if (! $hasRegistrations) {

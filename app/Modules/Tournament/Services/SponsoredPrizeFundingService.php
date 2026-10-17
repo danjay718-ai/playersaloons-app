@@ -27,6 +27,9 @@ final readonly class SponsoredPrizeFundingService
             $total = DecimalMoney::toMinor((string) $locked->prize_1st) + DecimalMoney::toMinor((string) $locked->prize_2nd);
             $platform = $this->platformUser();
             if ($total > 0) {
+                // The row lock and funding_state guard make this cycle
+                // idempotent. A fixed lifetime key would skip a new reserve
+                // after an administrator switches from paid back to free.
                 $this->wallets->debitAllowingLiability(
                     $platform->wallet,
                     DecimalMoney::format($total),
@@ -34,7 +37,6 @@ final readonly class SponsoredPrizeFundingService
                     Tournament::class,
                     (string) $locked->id,
                     "Sponsored prize reserve: {$locked->name}",
-                    "tournament-v2:{$locked->id}:sponsored-reserve",
                 );
             }
             $locked->forceFill([
@@ -51,8 +53,7 @@ final readonly class SponsoredPrizeFundingService
             if ($locked->registrations()->exists()) {
                 throw new LogicException('Prize funding is locked after the first registration.');
             }
-            $sponsored = $locked->competition_type->value === 'tournament'
-                && DecimalMoney::toMinor($entryFee) === 0;
+            $sponsored = DecimalMoney::toMinor($entryFee) === 0;
 
             if ($locked->prize_funding_mode === 'sponsored' && $sponsored) {
                 $this->adjust($locked, (string) $first, $second);
@@ -120,7 +121,7 @@ final readonly class SponsoredPrizeFundingService
             }
             $amount = (string) $locked->reserved_prize_amount;
             if (DecimalMoney::toMinor($amount) > 0) {
-                $this->wallets->credit($this->platformUser()->wallet, $amount, LedgerType::SPONSORED_PRIZE_RELEASE, Tournament::class, (string) $locked->id, "Sponsored prize reserve released: {$locked->name}", "tournament-v2:{$locked->id}:sponsored-release");
+                $this->wallets->credit($this->platformUser()->wallet, $amount, LedgerType::SPONSORED_PRIZE_RELEASE, Tournament::class, (string) $locked->id, "Sponsored prize reserve released: {$locked->name}");
             }
             $locked->forceFill(['funding_state' => 'released', 'reserved_prize_amount' => '0.00'])->save();
         }, 3);

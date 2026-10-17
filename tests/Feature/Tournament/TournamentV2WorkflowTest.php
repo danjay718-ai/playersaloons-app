@@ -2402,13 +2402,115 @@ final class TournamentV2WorkflowTest extends TestCase
         $this->get(route('admin.tournaments.v2.occurrences.edit', $occurrence))->assertOk();
     }
 
+    public function test_free_h2h_can_create_edit_and_override_sponsored_prizes(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-17 10:00:00', 'Europe/Amsterdam')->utc());
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Europe/Amsterdam']);
+        $payload = $this->multiPlatformPayload([$this->platform->id], 'head_to_head');
+        $payload['free_prize_1st'] = '25.00';
+        $payload['free_prize_2nd'] = '5.00';
+        $this->actingAs($this->admin)->get(route('admin.h2h.v2.create'))
+            ->assertOk()->assertSee('Sponsored First Prize')->assertSee('Sponsored Second Prize');
+        $this->post(route('admin.h2h.v2.store'), $payload)->assertSessionHasNoErrors()->assertRedirect(route('admin.h2h.index'));
+        $occurrence = Tournament::query()->firstOrFail();
+        self::assertSame('0.00', $occurrence->entry_fee);
+        self::assertSame('sponsored', $occurrence->prize_funding_mode);
+        self::assertSame('30.00', $occurrence->reserved_prize_amount);
+        self::assertSame('25.00', $occurrence->prize_1st);
+        self::assertSame('5.00', $occurrence->prize_2nd);
+        self::assertSame(2, $occurrence->max_participants);
+        $this->get(route('admin.tournaments.v2.templates.slots', $occurrence->template_id))
+            ->assertOk()->assertSee('Sponsored First Prize');
+        $this->get(route('admin.tournaments.v2.occurrences.edit', $occurrence))
+            ->assertOk()->assertSee('Sponsored First Prize')->assertSee('name="max_teams" value="2"', false);
+        $edit = [
+            'name' => $occurrence->name, 'max_teams' => 2, 'entry_fee' => '0.00',
+            'platform_ids' => [$this->platform->id], 'waiting_result_time' => 5, 'winning_points' => 15,
+            'start_at' => '2026-10-17T23:00', 'end_date' => '2026-10-18',
+            'free_prize_1st' => '40.00', 'free_prize_2nd' => '10.00',
+        ];
+        $this->put(route('admin.tournaments.v2.occurrences.update', $occurrence), $edit)->assertSessionHasNoErrors()->assertRedirect();
+        self::assertSame('50.00', $occurrence->fresh()->reserved_prize_amount);
+        $paidEdit = [...$edit, 'entry_fee' => '1.00'];
+        unset($paidEdit['free_prize_1st'], $paidEdit['free_prize_2nd']);
+        $this->put(route('admin.tournaments.v2.occurrences.update', $occurrence), $paidEdit)->assertSessionHasNoErrors();
+        self::assertSame('entry_fees', $occurrence->fresh()->prize_funding_mode);
+        self::assertSame('0.00', $occurrence->fresh()->reserved_prize_amount);
+        $this->put(route('admin.tournaments.v2.occurrences.update', $occurrence), $edit)->assertSessionHasNoErrors();
+        self::assertSame('sponsored', $occurrence->fresh()->prize_funding_mode);
+        self::assertSame('50.00', $occurrence->fresh()->reserved_prize_amount);
+        self::assertSame('-50.00', User::query()->where('email', 'platform@playersaloons.com')->firstOrFail()->wallet->cached_balance);
+        $slot = $occurrence->scheduleSlot;
+        $this->put(route('admin.tournaments.v2.templates.slots.update', [$occurrence->template_id, $slot]), [
+            'free_prize_1st' => '15.00', 'free_prize_2nd' => '3.00',
+        ])->assertSessionHasNoErrors();
+        self::assertSame('15.00', $slot->fresh()->overrides_json['free_prize_1st']);
+        self::assertSame('40.00', $occurrence->fresh()->prize_1st);
+        $this->post(route('admin.tournaments.v2.templates.slots.store', $occurrence->template_id), [
+            'schedule_start_at' => '2026-10-17T22:00', 'schedule_end_at' => '2026-10-17T23:59',
+            'free_prize_1st' => '12.00', 'free_prize_2nd' => '2.00',
+        ])->assertSessionHasNoErrors()->assertRedirect();
+        $added = Tournament::query()->latest('id')->firstOrFail();
+        self::assertSame('sponsored', $added->prize_funding_mode);
+        self::assertSame('14.00', $added->reserved_prize_amount);
+        self::assertSame(2, $added->max_participants);
+        $this->put(route('admin.tournaments.v2.occurrences.update', $occurrence), $paidEdit)->assertSessionHasNoErrors();
+        self::assertSame('-14.00', User::query()->where('email', 'platform@playersaloons.com')->firstOrFail()->wallet->cached_balance);
+    }
+
+    public function test_free_h2h_pays_sponsored_prizes_once_without_entry_fees_or_commission(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-17 10:00:00', 'UTC'));
+        [$match, $winner, $runnerUp] = $this->activeTwoPlayerMatch([
+            'overrides' => ['free_prize_1st' => '25.00', 'free_prize_2nd' => '5.00'],
+        ], CompetitionType::HEAD_TO_HEAD);
+        $this->walletFor($winner);
+        $this->walletFor($runnerUp);
+        self::assertSame('25.00', $match->tournament->fresh()->finalized_first_prize);
+        self::assertSame('5.00', $match->tournament->fresh()->finalized_second_prize);
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $winner->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $runnerUp->id, MatchOutcome::LOSS);
+        app(AwardV2PrizesAction::class)->execute($match->tournament->fresh());
+        $tournament = $match->tournament->fresh();
+        self::assertSame(TournamentStatus::COMPLETED, $tournament->status);
+        self::assertSame('paid', $tournament->payout_status);
+        self::assertSame('paid', $tournament->funding_state);
+        self::assertSame('0.00', $tournament->reserved_prize_amount);
+        self::assertSame('0.00', $tournament->finalized_commission_amount);
+        self::assertSame('25.00', $winner->fresh()->wallet->cached_balance);
+        self::assertSame('5.00', $runnerUp->fresh()->wallet->cached_balance);
+        self::assertSame(2, DB::table('prize_distributions')->where('tournament_id', $tournament->id)->count());
+    }
+
+    public function test_h2h_sponsored_prizes_are_required_for_free_entries_and_rejected_for_paid_entries(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-17 10:00:00', 'UTC'));
+        $payload = $this->multiPlatformPayload([$this->platform->id], 'head_to_head');
+        unset($payload['free_prize_1st']);
+        $this->actingAs($this->admin)->post(route('admin.h2h.v2.store'), $payload)->assertSessionHasErrors('free_prize_1st');
+        $payload['free_prize_1st'] = '10.00';
+        $payload['entry_fee'] = '1.00';
+        $this->post(route('admin.h2h.v2.store'), $payload)->assertSessionHasErrors(['free_prize_1st', 'free_prize_2nd']);
+        unset($payload['free_prize_1st'], $payload['free_prize_2nd']);
+        $this->post(route('admin.h2h.v2.store'), $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $occurrence = Tournament::query()->firstOrFail();
+        self::assertSame('entry_fees', $occurrence->prize_funding_mode);
+        $slotPayload = ['entry_fee' => '0.00', 'schedule_start_at' => '2026-10-17T20:00', 'schedule_end_at' => '2026-10-17T23:59'];
+        $this->post(route('admin.tournaments.v2.templates.slots.store', $occurrence->template_id), $slotPayload)
+            ->assertSessionHasErrors('free_prize_1st');
+        $this->post(route('admin.tournaments.v2.templates.slots.store', $occurrence->template_id), [...$slotPayload, 'free_prize_1st' => '15.00'])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        self::assertSame('15.00', Tournament::query()->latest('id')->firstOrFail()->reserved_prize_amount);
+    }
+
     private function multiPlatformPayload(array $ids, string $type = 'tournament'): array
     {
         return [
             'name' => 'Multiple Platforms '.$type, 'competition_type' => $type,
             'game_id' => $this->game->id, 'platform_ids' => $ids,
             'frequency' => 'daily', 'max_teams' => 4, 'entry_fee' => '0.00',
-            ...($type === 'tournament' ? ['free_prize_1st' => '0.00', 'free_prize_2nd' => '0.00'] : []),
+            'free_prize_1st' => '0.00', 'free_prize_2nd' => '0.00',
             'winning_points' => 15, 'waiting_result_time' => 5,
             'full_first_percent' => 90, 'full_second_percent' => 0,
             'slots' => [[

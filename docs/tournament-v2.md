@@ -19,7 +19,7 @@ The removed five-hour closing warning is intentionally absent. `end_at` is the o
 
 ## Payout policy
 
-Payouts use actual confirmed paid entries, never an advertised fixed pool. A full 2- or 4-team occurrence uses 10% platform commission and awards the remaining 90% to First Place. A full occurrence with 6 or more teams uses 10% platform commission, 75% First Place, and 15% Second Place. Any underfilled occurrence that starts with at least two teams uses 15% platform commission and awards 85% to First Place only; the bracket visibly applies BYEs where required. Free-entry occurrences always have a $0.00 payout.
+Paid-entry payouts use actual confirmed paid entries, never an advertised fixed pool. A full 2- or 4-team occurrence uses 10% platform commission and awards the remaining 90% to First Place. A full occurrence with 6 or more teams uses 10% platform commission, 75% First Place, and 15% Second Place. Any underfilled occurrence that starts with at least two teams uses 15% platform commission and awards 85% to First Place only; the bracket visibly applies BYEs where required. Free-entry tournaments and platform Head-to-Head occurrences can use fixed sponsored First and optional Second Prizes. Sponsored prizes are reserved from the platform wallet, paid without commission, and released if the occurrence is cancelled.
 
 This policy is snapshotted and finalized before bracket progression. Any future change must be introduced as a new policy version rather than recalculating historical occurrences.
 

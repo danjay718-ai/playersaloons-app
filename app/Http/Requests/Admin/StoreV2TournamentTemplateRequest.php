@@ -31,11 +31,11 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
             'max_teams' => ['required', 'integer', 'min:2', 'max:128'],
             'entry_fee' => ['required', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'free_prize_1st' => [
-                $this->isFreeTournament() ? 'required' : 'prohibited',
+                $this->isFreeCompetition() ? 'required' : 'prohibited',
                 'nullable', 'numeric', 'min:0', 'max:9999999999999999.99',
             ],
             'free_prize_2nd' => [
-                $this->isFreeTournament() ? 'nullable' : 'prohibited',
+                $this->isFreeCompetition() ? 'nullable' : 'prohibited',
                 'numeric', 'min:0', 'max:9999999999999999.99',
             ],
             'winning_points' => ['required', 'integer', 'min:0', 'max:100000'],
@@ -125,12 +125,9 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
                 }
                 $effectiveFee = (float) ($slot['entry_fee'] ?? $this->input('entry_fee', 0));
                 $hasSponsoredFields = filled($slot['free_prize_1st'] ?? null) || filled($slot['free_prize_2nd'] ?? null);
-                if ($this->input('competition_type') === 'head_to_head' && $hasSponsoredFields) {
-                    $validator->errors()->add("slots.{$index}.free_prize_1st", 'Sponsored prizes are available only for free tournaments.');
-                } elseif ($effectiveFee > 0 && $hasSponsoredFields) {
+                if ($effectiveFee > 0 && $hasSponsoredFields) {
                     $validator->errors()->add("slots.{$index}.free_prize_1st", 'Paid slots cannot define sponsored prizes.');
-                } elseif ($this->input('competition_type') !== 'head_to_head'
-                    && $effectiveFee === 0.0
+                } elseif ($effectiveFee === 0.0
                     && (float) $this->input('entry_fee', 0) > 0
                     && ! filled($slot['free_prize_1st'] ?? null)) {
                     $validator->errors()->add("slots.{$index}.free_prize_1st", 'First Prize is required when a paid schedule overrides this slot to free.');
@@ -150,9 +147,8 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
         });
     }
 
-    private function isFreeTournament(): bool
+    private function isFreeCompetition(): bool
     {
-        return $this->input('competition_type', 'tournament') !== 'head_to_head'
-            && (float) $this->input('entry_fee', 0) === 0.0;
+        return (float) $this->input('entry_fee', 0) === 0.0;
     }
 }

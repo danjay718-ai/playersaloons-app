@@ -150,7 +150,7 @@ final class TournamentV2EnhancementsTest extends TestCase
 
     public function test_admin_request_accepts_free_sponsored_prizes_and_rejects_them_for_paid_tournaments(): void
     {
-        $this->travelTo(CarbonImmutable::parse('2026-09-27 10:00:00', 'UTC'));
+        $this->travelTo(CarbonImmutable::parse('2026-09-27 09:00:00', 'UTC'));
         $this->platformWallet()->update(['cached_balance' => '100.00']);
         $payload = [
             'competition_type' => 'tournament',

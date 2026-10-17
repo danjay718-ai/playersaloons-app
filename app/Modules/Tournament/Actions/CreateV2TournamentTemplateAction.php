@@ -77,9 +77,9 @@ final class CreateV2TournamentTemplateAction
                     'full_platform_bps' => 1000,
                     'underfilled_first_bps' => 8500,
                     'underfilled_platform_bps' => 1500,
-                    'free_prize_1st' => $competitionType === CompetitionType::TOURNAMENT && (float) $data['entry_fee'] === 0.0
+                    'free_prize_1st' => (float) $data['entry_fee'] === 0.0
                         ? ($data['free_prize_1st'] ?? '0.00') : null,
-                    'free_prize_2nd' => $competitionType === CompetitionType::TOURNAMENT && (float) $data['entry_fee'] === 0.0
+                    'free_prize_2nd' => (float) $data['entry_fee'] === 0.0
                         ? ($data['free_prize_2nd'] ?? '0.00') : null,
                 ],
             ]);

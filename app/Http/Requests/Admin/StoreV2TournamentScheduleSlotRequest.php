@@ -35,11 +35,9 @@ final class StoreV2TournamentScheduleSlotRequest extends FormRequest
             }
             $effectiveFee = (float) ($this->input('entry_fee') !== null ? $this->input('entry_fee') : $template->entry_fee);
             $hasSponsoredFields = $this->filled('free_prize_1st') || $this->filled('free_prize_2nd');
-            if ($template->competition_type === CompetitionType::HEAD_TO_HEAD && $hasSponsoredFields) {
-                $validator->errors()->add('free_prize_1st', 'Sponsored prizes are available only for free tournaments.');
-            } elseif ($effectiveFee > 0 && $hasSponsoredFields) {
+            if ($effectiveFee > 0 && $hasSponsoredFields) {
                 $validator->errors()->add('free_prize_1st', 'Paid slots cannot define sponsored prizes.');
-            } elseif ($template->competition_type !== CompetitionType::HEAD_TO_HEAD && $effectiveFee === 0.0
+            } elseif ($effectiveFee === 0.0
                 && (float) $template->entry_fee > 0 && ! $this->filled('free_prize_1st')) {
                 $validator->errors()->add('free_prize_1st', 'First Prize is required for a free slot.');
             }
