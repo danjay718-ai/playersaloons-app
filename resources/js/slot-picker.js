@@ -1,3 +1,5 @@
+import { serverClock } from './server-clock.js';
+
 export function formatSlotCountdown(startAt, status, now, labels) {
     if (status === 'ONGOING') return labels.ongoing;
     if (status === 'COMPLETED') return labels.completed;
@@ -16,19 +18,20 @@ export function formatSlotCountdown(startAt, status, now, labels) {
 }
 
 export function tournamentCountdown(serverNow, labels) {
-    const clockStartedAt = performance.now();
+    const now = serverClock(serverNow);
 
     return {
-        now: serverNow,
+        now: now(),
         clockTimer: null,
 
         init() {
+            this.destroy();
             this.updateClock();
             this.clockTimer = setInterval(() => this.updateClock(), 1000);
         },
 
         updateClock() {
-            this.now = serverNow + performance.now() - clockStartedAt;
+            this.now = now();
         },
 
         countdown(startAt, status) {
@@ -37,12 +40,13 @@ export function tournamentCountdown(serverNow, labels) {
 
         destroy() {
             clearInterval(this.clockTimer);
+            this.clockTimer = null;
         },
     };
 }
 
 export function countdownTimer(targetEpoch, serverNow) {
-    const clockStartedAt = performance.now();
+    const currentTime = serverClock(serverNow);
 
     return {
         days: 0,
@@ -52,11 +56,12 @@ export function countdownTimer(targetEpoch, serverNow) {
         expired: false,
         interval: null,
         start() {
+            this.destroy();
             this.tick();
             if (!this.expired) this.interval = setInterval(() => this.tick(), 1000);
         },
         tick() {
-            const now = serverNow + performance.now() - clockStartedAt;
+            const now = currentTime();
             const remaining = Math.max(0, Math.ceil((targetEpoch - now) / 1000));
             this.expired = remaining === 0;
             this.days = Math.floor(remaining / 86400);

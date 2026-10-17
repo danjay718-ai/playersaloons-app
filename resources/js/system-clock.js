@@ -1,18 +1,19 @@
+import { serverClock } from './server-clock.js';
+
 export function systemClock(config) {
-    const serverEpoch = Date.parse(config.now);
-    const browserEpoch = Date.now();
-    const clockStartedAt = performance.now();
+    const now = serverClock(Date.parse(config.now));
 
     return {
         timezone: config.timezone,
-        currentEpoch: Number.isNaN(serverEpoch) ? browserEpoch : serverEpoch,
+        currentEpoch: now(),
         timer: null,
         init() {
+            this.destroy();
             this.tick();
             this.timer = window.setInterval(() => this.tick(), 1000);
         },
         tick() {
-            this.currentEpoch = (Number.isNaN(serverEpoch) ? browserEpoch : serverEpoch) + (performance.now() - clockStartedAt);
+            this.currentEpoch = now();
         },
         get time() {
             return new Intl.DateTimeFormat(undefined, {
@@ -28,6 +29,7 @@ export function systemClock(config) {
         },
         destroy() {
             if (this.timer) window.clearInterval(this.timer);
+            this.timer = null;
         },
     };
 }
