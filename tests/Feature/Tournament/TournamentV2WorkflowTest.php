@@ -2301,7 +2301,7 @@ final class TournamentV2WorkflowTest extends TestCase
         $template->update(['timezone' => 'Europe/Amsterdam']);
         app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
         $this->actingAs($this->admin)->get(route('admin.h2h.index', ['tab' => 'daily', 'start_time' => '17:20']))
-            ->assertOk()->assertSee($template->name)->assertSee('2026-10-15 17:20:00 Europe/Amsterdam')
+            ->assertOk()->assertSee($template->name)->assertSee('2026-10-15 17:20:00')->assertSee('Start (Europe/Amsterdam)')
             ->assertDontSee('Exact UTC start time')->assertDontSee('All timestamps are UTC.');
         $this->get(route('admin.h2h.index', ['tab' => 'daily', 'start_time' => '15:20']))
             ->assertOk()->assertDontSee($template->name);
@@ -2357,6 +2357,49 @@ final class TournamentV2WorkflowTest extends TestCase
         $this->actingAs($this->admin)->post($route, [...$payload, 'schedule_start_at' => '2026-10-15T10:21'])
             ->assertSessionHasNoErrors()->assertRedirect();
         self::assertSame(TournamentStatus::REGISTRATION_OPEN, Tournament::query()->where('template_id', $template->id)->firstOrFail()->status);
+    }
+
+    public function test_admin_h2h_creation_derives_its_type_from_the_endpoint_and_accepts_blank_optional_fields(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-17 10:00:00', 'Europe/Amsterdam')->utc());
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Europe/Amsterdam']);
+        $this->actingAs($this->admin)->get(route('admin.h2h.v2.create'))
+            ->assertOk()->assertSee('const initialMax = Number(2);', false)
+            ->assertSee('Back to Head-to-Head');
+        $payload = $this->multiPlatformPayload([$this->platform->id], 'head_to_head');
+        unset($payload['competition_type']);
+        $payload['max_teams'] = '2';
+        $payload['description'] = '';
+        $payload['rules'] = '';
+        $payload['round_duration_value'] = '';
+        $payload['round_duration_unit'] = '';
+        $payload['slots'][0] = [
+            'label' => '', 'local_start_time' => '12:00',
+            'schedule_start_at' => '2026-10-17T12:00', 'schedule_end_at' => '2026-10-17T23:59',
+            'name' => '', 'entry_fee' => '', 'waiting_result_time' => '',
+        ];
+        $this->actingAs($this->admin)->postJson(route('admin.h2h.v2.store'), $payload)
+            ->assertRedirect(route('admin.h2h.index'));
+        $occurrence = Tournament::query()->firstOrFail();
+        self::assertSame(CompetitionType::HEAD_TO_HEAD, $occurrence->competition_type);
+        self::assertSame(TournamentStatus::REGISTRATION_OPEN, $occurrence->status);
+        self::assertSame(2, $occurrence->max_participants);
+    }
+
+    public function test_admin_h2h_list_uses_the_tournament_table_and_links_to_the_h2h_editor(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-17 10:00:00', 'UTC'));
+        $template = $this->template('daily', 2, '12:00', [], CompetitionType::HEAD_TO_HEAD);
+        $occurrence = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->firstOrFail(), $this->admin);
+
+        $this->actingAs($this->admin)->get(route('admin.h2h.index'))
+            ->assertOk()->assertSee('<table', false)->assertSee('Registrations')
+            ->assertSee('Time left')->assertSee('Edit H2H')
+            ->assertSee(route('admin.tournaments.v2.occurrences.edit', $occurrence))
+            ->assertDontSee('Edit Tournament')->assertDontSee('Cancel Tournament')
+            ->assertSee('One row per Head-to-Head schedule, showing its next occurrence.');
+
+        $this->get(route('admin.tournaments.v2.occurrences.edit', $occurrence))->assertOk();
     }
 
     private function multiPlatformPayload(array $ids, string $type = 'tournament'): array

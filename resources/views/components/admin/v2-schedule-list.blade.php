@@ -17,14 +17,14 @@
     };
 @endphp
 
-<div class="overflow-hidden rounded-xl border {{ $headToHead ? 'border-fuchsia-900/50' : 'border-indigo-900/50' }} bg-[#0f172a] shadow-sm">
+<div class="overflow-hidden rounded-xl border border-indigo-900/50 bg-[#0f172a] shadow-sm">
     <div class="border-b border-slate-800 p-4">
-        <div class="flex items-start justify-between gap-3"><div><h2 class="text-sm font-bold text-white">{{ $headToHead ? 'Head-to-Head List' : 'Tournament List' }}</h2><p class="mt-1 text-xs text-slate-500">{{ $parentList ? __('One row per tournament schedule, showing its next occurrence.') : __('Configured slots and their current occurrences are managed directly here.') }} {{ __('Times use :timezone.', ['timezone' => $displayTimezone]) }}</p></div>@if($parentList)<a href="{{ route('admin.tournaments.v2.archived') }}" class="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-300 hover:bg-slate-800"><i data-lucide="archive" class="h-3.5 w-3.5"></i>Archived</a>@endif</div>
+        <div class="flex items-start justify-between gap-3"><div><h2 class="text-sm font-bold text-white">{{ $headToHead ? 'Head-to-Head List' : 'Tournament List' }}</h2><p class="mt-1 text-xs text-slate-500">{{ $parentList ? ($headToHead ? __('One row per Head-to-Head schedule, showing its next occurrence.') : __('One row per tournament schedule, showing its next occurrence.')) : __('Configured slots and their current occurrences are managed directly here.') }} {{ __('Times use :timezone.', ['timezone' => $displayTimezone]) }}</p></div>@if($parentList && !$headToHead)<a href="{{ route('admin.tournaments.v2.archived') }}" class="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-300 hover:bg-slate-800"><i data-lucide="archive" class="h-3.5 w-3.5"></i>Archived</a>@endif</div>
     </div>
     @if($parentList)
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
-                <thead><tr class="border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400"><th class="p-4">Tournament</th><th class="p-4">Game</th><th class="p-4">Frequency</th><th class="p-4">Status</th><th class="p-4">Registrations</th><th class="p-4">{{ __('Start (:timezone)', ['timezone' => $displayTimezone]) }}</th><th class="p-4">Time left</th><th class="p-4 text-right">Actions</th></tr></thead>
+                <thead><tr class="border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-400"><th class="p-4">{{ $headToHead ? __('Head-to-Head') : 'Tournament' }}</th><th class="p-4">Game</th><th class="p-4">Frequency</th><th class="p-4">Status</th><th class="p-4">Registrations</th><th class="p-4">{{ __('Start (:timezone)', ['timezone' => $displayTimezone]) }}</th><th class="p-4">Time left</th><th class="p-4 text-right">Actions</th></tr></thead>
                 <tbody class="divide-y divide-slate-800/60">
                     @forelse($templates as $template)
                         @php
@@ -56,18 +56,20 @@
                                 @if($occurrence)
                                     <x-admin.action-dropdown>
                                         <div class="py-1">
-                                            <a href="{{ route('admin.tournaments.v2.occurrences.edit', $occurrence) }}" class="flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><i data-lucide="edit" class="mr-2 h-3.5 w-3.5 text-slate-500"></i>Edit Tournament</a>
+                                            <a href="{{ route('admin.tournaments.v2.occurrences.edit', $occurrence) }}" class="flex items-center px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><i data-lucide="edit" class="mr-2 h-3.5 w-3.5 text-slate-500"></i>{{ $headToHead ? __('Edit H2H') : 'Edit Tournament' }}</a>
+                                            @unless($headToHead)
                                             <form method="POST" action="{{ route('admin.tournaments.v2.occurrences.feature', $occurrence) }}">@csrf<input type="hidden" name="is_featured" value="{{ $occurrence->is_featured ? '0' : '1' }}"><button type="submit" class="flex w-full items-center px-4 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white"><i data-lucide="{{ $occurrence->is_featured ? 'star-off' : 'star' }}" class="mr-2 h-3.5 w-3.5 text-amber-400"></i>{{ $occurrence->is_featured ? 'Unfeature Tournament' : 'Feature Tournament' }}</button></form>
                                             @if($statusChoices !== [])<div class="my-1 border-t border-slate-800"></div><p class="px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-500">Change status</p>@foreach($statusChoices as $statusChoice)<form method="POST" action="{{ route('admin.tournaments.v2.occurrences.status', $occurrence) }}">@csrf<input type="hidden" name="status" value="{{ $statusChoice }}"><button type="submit" class="flex w-full items-center px-4 py-2 text-left text-xs text-slate-300 hover:bg-slate-800 hover:text-white">{{ str_replace('_', ' ', $statusChoice) }}</button></form>@endforeach @endif
                                             @if(! in_array($status, ['CANCELLED', 'REFUNDED', 'COMPLETED'], true))<form method="POST" action="{{ route('admin.tournaments.v2.occurrences.cancel', $occurrence) }}" onsubmit="return confirm('Cancel this tournament occurrence? Paid entry fees will be refunded and the prize reserve released.')">@csrf<input type="hidden" name="return_to" value="list"><button type="submit" class="flex w-full items-center px-4 py-2 text-left text-xs text-orange-300 hover:bg-slate-800"><i data-lucide="x-circle" class="mr-2 h-3.5 w-3.5"></i>Cancel Tournament</button></form>@endif
                                             @if(in_array($status, ['CANCELLED', 'REFUNDED', 'COMPLETED'], true))<form method="POST" action="{{ route('admin.tournaments.v2.occurrences.archive', $occurrence) }}" onsubmit="return confirm('Archive this tournament occurrence? It will be hidden from normal lists while its history is retained.')">@csrf<button type="submit" class="flex w-full items-center px-4 py-2 text-left text-xs text-slate-400 hover:bg-slate-800"><i data-lucide="archive" class="mr-2 h-3.5 w-3.5"></i>Archive</button></form>@endif
+                                            @endunless
                                         </div>
                                     </x-admin.action-dropdown>
                                 @else<span class="text-[10px] text-slate-600">Awaiting recurrence</span>@endif
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="p-8 text-center text-slate-500">No V2 tournament schedules match the filters.</td></tr>
+                        <tr><td colspan="8" class="p-8 text-center text-slate-500">{{ $headToHead ? __('No Head-to-Head schedules match the filters.') : 'No V2 tournament schedules match the filters.' }}</td></tr>
                     @endforelse
                 </tbody>
             </table>

@@ -75,8 +75,11 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
         if (! $this->exists('platform_ids') && $this->filled('platform_id')) {
             $this->merge(['platform_ids' => [$this->input('platform_id')]]);
         }
-        // The dedicated platform H2H form posts this value as a hidden field.
-        // Keeping the invariant here makes direct HTTP requests fail safely too.
+        // The dedicated endpoint determines the competition type even when
+        // a client omits or changes the hidden form field.
+        if ($this->routeIs('admin.h2h.v2.store')) {
+            $this->merge(['competition_type' => 'head_to_head']);
+        }
         if ($this->input('competition_type') === 'head_to_head') {
             $this->merge(['max_teams' => 2]);
         }
