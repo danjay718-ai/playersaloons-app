@@ -18,6 +18,7 @@ use App\Modules\Wallet\Models\LedgerEntry;
 use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\MatchStatus;
+use App\Shared\Support\Currency;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -297,7 +298,7 @@ class ChatController extends Controller
                 'win_rate' => $matches > 0 ? round(($wins / $matches) * 100).'%' : '0%',
                 'tournament_wins' => $tournamentStats['wins'],
                 'h2h_wins' => $h2hStats['wins'],
-                'prize_total' => '$'.number_format((float) $prizeTotal, 2),
+                'prize_total' => Currency::symbol().number_format((float) $prizeTotal, 2),
             ],
         ];
     }

@@ -152,7 +152,7 @@
                         <span class="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{{ $isPlayerView ? __("Current Winner's Prize") : 'Current Prize Pool' }}</span>
                         <div class="flex items-center space-x-2">
                             <i data-lucide="crown" class="w-5 h-5 text-fuchsia-500"></i>
-                            <span class="text-2xl font-black text-fuchsia-500 font-orbitron leading-none">${{ number_format((float) ($isPlayerView ? ($prizeCalculation['distributions'][1] ?? 0) : $prizeCalculation['prize_pool']), 2) }}</span>
+                            <span class="text-2xl font-black text-fuchsia-500 font-orbitron leading-none">@currencySymbol{{ number_format((float) ($isPlayerView ? ($prizeCalculation['distributions'][1] ?? 0) : $prizeCalculation['prize_pool']), 2) }}</span>
                         </div>
                     </div>
                     <div class="h-10 w-[1px] bg-zinc-800/60 hidden sm:block"></div>
@@ -160,7 +160,7 @@
                         <span class="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Entry Fee</span>
                         <div class="flex items-center space-x-2">
                             <i data-lucide="zap" class="w-5 h-5 text-cyan-400"></i>
-                            <span class="text-xl font-black text-white font-orbitron leading-none">{{ (float)$tournament->entry_fee > 0 ? '$'.number_format((float)$tournament->entry_fee, 2) : 'FREE' }}</span>
+                            <span class="text-xl font-black text-white font-orbitron leading-none">{{ (float)$tournament->entry_fee > 0 ? \App\Shared\Support\Currency::symbol().number_format((float)$tournament->entry_fee, 2) : 'FREE' }}</span>
                         </div>
                     </div>
                     <div class="h-10 w-[1px] bg-zinc-800/60 hidden sm:block"></div>
@@ -225,7 +225,7 @@
                                 <i data-lucide="medal" class="h-5 w-5"></i>
                                 <span class="text-xs font-black uppercase tracking-[0.2em]">Second Place</span>
                             </div>
-                            <p class="mt-2 text-xs font-bold text-amber-300">{{ __('Second prize: $:value1', ['value1' => (number_format((float) $secondPlacePrize, 2))]) }}</p>
+                            <p class="mt-2 text-xs font-bold text-amber-300">{{ __('Second prize: :amount', ['amount' => \App\Shared\Support\Currency::format($secondPlacePrize)]) }}</p>
                         </div>
                     @elseif($awaitingNextMatch)
                         <div role="status" class="w-full rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-6 py-5 text-center">
@@ -482,7 +482,7 @@
                                     @php
                                         $firstPrize = $displayPrizeCalculation['first'] ?? $prizeCalculation['distributions'][1] ?? '0.00';
                                     @endphp
-                                    ${{ number_format((float) $firstPrize, 2) }}
+                                    @currencySymbol{{ number_format((float) $firstPrize, 2) }}
                                     @if($isV2Registration)
                                         <span class="text-[9px] text-zinc-600 tracking-normal font-sans">(full est.)</span>
                                     @endif
@@ -498,7 +498,7 @@
                                         <i data-lucide="medal" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">2nd Prize</span>
                                     </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float) $secondPrize, 2) }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">@currencySymbol{{ number_format((float) $secondPrize, 2) }}</span>
                                 </div>
                             @endif
 
@@ -508,7 +508,7 @@
                                         <i data-lucide="trophy" class="w-4 h-4"></i>
                                         <span class="text-[10px] font-black uppercase tracking-widest">3rd Prize</span>
                                     </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">${{ number_format((float)$prizeCalculation['distributions'][3], 2) }}</span>
+                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">@currencySymbol{{ number_format((float)$prizeCalculation['distributions'][3], 2) }}</span>
                                 </div>
                             @endif
 
@@ -664,7 +664,7 @@
                         @if($tournament->entry_fee > 0)
                             <div class="flex items-center justify-between text-sm">
                                 <span class="text-zinc-600 font-medium">Entry Fee</span>
-                                <span class="text-cyan-400 font-bold">${{ number_format((float)$tournament->entry_fee, 2) }}</span>
+                                <span class="text-cyan-400 font-bold">@currencySymbol{{ number_format((float)$tournament->entry_fee, 2) }}</span>
                             </div>
                         @endif
                         @if($tournament->waiting_result_time)
@@ -1319,12 +1319,12 @@
                             {{ __('Confirming cancels your registration immediately and credits the refund to your wallet.') }}
                             {{ __('Requests made less than 30 minutes before start incur a cancellation fee of 10% of the entry fee. At least 30 minutes before start, there is no cancellation fee.') }}
                             @if($tournament->entry_fee > 0)
-                                <span role="status" class="mt-2 block rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-amber-200">{{ __('Cancellation fee: $:fee. Refund: $:refund.', $cancellationAmounts) }}</span>
+                                <span role="status" class="mt-2 block rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-amber-200">{{ __('Cancellation fee: :fee. Refund: :refund.', array_map(fn ($amount) => \App\Shared\Support\Currency::format($amount), $cancellationAmounts)) }}</span>
                             @endif
                         @elseif((int) $tournament->workflow_version === 2)
                             {{ __('Cancellation is unavailable because the tournament has started or another request is pending.') }}
                         @elseif($tournament->entry_fee > 0)
-                            Your entry fee of <strong class="text-cyan-400">${{ number_format((float)$tournament->entry_fee, 2) }}</strong> will be refunded to your wallet.
+                            Your entry fee of <strong class="text-cyan-400">@currencySymbol{{ number_format((float)$tournament->entry_fee, 2) }}</strong> will be refunded to your wallet.
                         @endif
                     </p>
                 </div>

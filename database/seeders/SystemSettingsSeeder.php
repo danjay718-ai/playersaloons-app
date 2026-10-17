@@ -13,6 +13,7 @@ class SystemSettingsSeeder extends Seeder
     public function run(): void
     {
         $settings = [
+            ['key' => 'currency.code', 'value' => config('app.currency', 'EUR'), 'created_at' => now(), 'updated_at' => now()],
             [
                 'key' => 'platform.rake_percentage',
                 'value' => '10',

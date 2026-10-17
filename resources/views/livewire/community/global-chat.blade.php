@@ -226,7 +226,7 @@
                         </div>
                         <div class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
                             <p class="text-[9px] uppercase tracking-widest text-zinc-600">Prizes</p>
-                            <p class="mt-1 font-orbitron text-lg font-black text-fuchsia-300" x-text="selectedPlayer?.stats?.prize_total || '$0.00'"></p>
+                            <p class="mt-1 font-orbitron text-lg font-black text-fuchsia-300" x-text="selectedPlayer?.stats?.prize_total || @js(\App\Shared\Support\Currency::format(0))"></p>
                         </div>
                     </div>
 

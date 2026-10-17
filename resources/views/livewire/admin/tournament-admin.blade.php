@@ -207,10 +207,10 @@
                                 {{ $tournament->game->translations->first()?->name ?? $tournament->game->slug }}
                             </td>
                             <td class="p-4 text-slate-300">
-                                ${{ number_format((float)$tournament->entry_fee, 2) }}
+                                @currencySymbol{{ number_format((float)$tournament->entry_fee, 2) }}
                             </td>
                             <td class="p-4 text-slate-300">
-                                ${{ number_format((float)$tournament->prize_pool, 2) }}
+                                @currencySymbol{{ number_format((float)$tournament->prize_pool, 2) }}
                             </td>
                             <td class="p-4 text-slate-300">
                                 {{ $tournament->registrations_count }} / {{ $tournament->max_participants }}
@@ -541,11 +541,11 @@
                         </div>
                         <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
                             <span class="text-slate-500 font-medium block">Entry Fee</span>
-                            <span class="text-slate-200 font-semibold mt-1 block">${{ number_format((float)$selectedTournament->entry_fee, 2) }}</span>
+                            <span class="text-slate-200 font-semibold mt-1 block">@currencySymbol{{ number_format((float)$selectedTournament->entry_fee, 2) }}</span>
                         </div>
                         <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
                             <span class="text-slate-500 font-medium block">Prize Pool</span>
-                            <span class="text-slate-200 font-semibold mt-1 block">${{ number_format((float)$selectedTournament->prize_pool, 2) }}</span>
+                            <span class="text-slate-200 font-semibold mt-1 block">@currencySymbol{{ number_format((float)$selectedTournament->prize_pool, 2) }}</span>
                         </div>
                         <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
                             <span class="text-slate-500 font-medium block">Player Cap</span>
@@ -569,7 +569,7 @@
                         </div>
                         <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
                             <span class="text-slate-500 font-medium block">1st Prize</span>
-                            <span class="text-slate-200 font-semibold mt-1 block">{{ $selectedTournament->prize_1st ? '$'.number_format((float)$selectedTournament->prize_1st, 2) : 'N/A' }}</span>
+                            <span class="text-slate-200 font-semibold mt-1 block">{{ $selectedTournament->prize_1st ? \App\Shared\Support\Currency::symbol().number_format((float)$selectedTournament->prize_1st, 2) : 'N/A' }}</span>
                         </div>
                         <div class="bg-slate-900/40 border border-slate-800/60 p-3 rounded-lg">
                             <span class="text-slate-500 font-medium block">Wait Time</span>

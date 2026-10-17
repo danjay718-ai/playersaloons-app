@@ -98,7 +98,7 @@
                                     </div>
                                     <div class="mt-3 flex flex-wrap items-center gap-2">
                                         <span class="rounded border border-fuchsia-900/40 bg-fuchsia-950/40 px-2 py-0.5 font-orbitron text-[8px] font-bold text-fuchsia-400">{{ $gameName }}</span>
-                                        <span class="font-mono text-xs font-black text-emerald-400">${{ number_format((float) $challenge->stake_amount, 2) }}</span>
+                                        <span class="font-mono text-xs font-black text-emerald-400">@currencySymbol{{ number_format((float) $challenge->stake_amount, 2) }}</span>
                                     </div>
                                     <p class="mt-2 text-[10px] text-zinc-500">
                                         {{ $challenge->platform?->name ?? 'Any platform' }}
@@ -223,7 +223,7 @@
                 <div class="space-y-2">
                     <label for="stakeAmount" class="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Stake</label>
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 font-mono font-black text-emerald-400">$</span>
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 font-mono font-black text-emerald-400">@currencySymbol</span>
                         <input wire:model="stakeAmount" id="stakeAmount" type="number" min="1" max="1000" step="1"
                                class="w-full rounded-xl border border-emerald-500/30 bg-zinc-950 pl-8 pr-4 py-3 font-orbitron text-sm font-black text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)] focus:border-emerald-500 focus:outline-none">
                     </div>

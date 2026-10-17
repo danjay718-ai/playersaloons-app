@@ -8,6 +8,7 @@ use App\Modules\Match\Models\GameMatch;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\MatchStatus;
+use App\Shared\Support\Currency;
 use Livewire\Component;
 
 class LeaderboardList extends Component
@@ -98,7 +99,7 @@ class LeaderboardList extends Component
                     'wins' => $row['wins'],
                     'losses' => $row['losses'],
                     'winrate' => $winRate.'%',
-                    'cash' => '$'.number_format($row['prize_total'], 2),
+                    'cash' => Currency::symbol().number_format($row['prize_total'], 2),
                     'tier' => $this->tierForWins($row['wins']),
                 ];
             })

@@ -43,7 +43,7 @@
             ['label' => 'Active Events', 'value' => $stats['active_tournaments'], 'icon' => 'calendar-check', 'color' => 'text-cyan-300', 'border' => 'border-cyan-500/20'],
             ['label' => 'Match Record', 'value' => $stats['wins'].'W · '.$stats['losses'].'L', 'icon' => 'swords', 'color' => 'text-violet-300', 'border' => 'border-violet-500/20'],
             ['label' => 'Win Rate', 'value' => $winRate.'%', 'icon' => 'target', 'color' => 'text-fuchsia-300', 'border' => 'border-fuchsia-500/20'],
-            ['label' => 'Prize Earnings', 'value' => '$'.number_format($stats['earnings'], 2), 'icon' => 'badge-dollar-sign', 'color' => 'text-emerald-300', 'border' => 'border-emerald-500/20'],
+            ['label' => 'Prize Earnings', 'value' => \App\Shared\Support\Currency::symbol().number_format($stats['earnings'], 2), 'icon' => 'coins', 'color' => 'text-emerald-300', 'border' => 'border-emerald-500/20'],
         ] as $metric)
             <article class="player-stat-card min-w-[15rem] snap-start rounded-2xl border {{ $metric['border'] }} bg-zinc-950/65 p-5 shadow-lg sm:min-w-0">
                 <div class="flex items-center justify-between gap-3"><p class="text-[9px] font-black uppercase tracking-widest text-zinc-600">{{ __($metric['label']) }}</p><span class="player-stat-icon"><i data-lucide="{{ $metric['icon'] }}" class="h-5 w-5 {{ $metric['color'] }}"></i></span></div>
@@ -121,7 +121,7 @@
             </section>
 
             <div class="player-dashboard-quick-links flex w-full max-w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0">
-                <a href="/wallet" wire:navigate class="player-dashboard-quick-card player-dashboard-balance min-w-[13rem] snap-start rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4 transition hover:bg-emerald-500/10 sm:min-w-0"><i data-lucide="wallet" class="h-5 w-5 text-emerald-400"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-600">Balance</p><p class="mt-1 break-words font-orbitron text-lg font-black text-emerald-300">${{ number_format($stats['balance'], 2) }}</p></a>
+                <a href="/wallet" wire:navigate class="player-dashboard-quick-card player-dashboard-balance min-w-[13rem] snap-start rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4 transition hover:bg-emerald-500/10 sm:min-w-0"><i data-lucide="wallet" class="h-5 w-5 text-emerald-400"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-600">Balance</p><p class="mt-1 break-words font-orbitron text-lg font-black text-emerald-300">@currencySymbol{{ number_format($stats['balance'], 2) }}</p></a>
                 <a href="/profile" wire:navigate class="player-dashboard-quick-card player-dashboard-completed min-w-[13rem] snap-start rounded-2xl border border-cyan-500/15 bg-cyan-500/5 p-4 transition hover:bg-cyan-500/10 sm:min-w-0"><i data-lucide="shield-check" class="h-5 w-5 text-cyan-400"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-600">Completed</p><p class="mt-1 break-words font-orbitron text-lg font-black text-cyan-300">{{ __(':value1 events', ['value1' => ($progression->tournaments_completed)]) }}</p></a>
             </div>
         </aside>

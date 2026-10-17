@@ -24,7 +24,7 @@
                     <div class="sm:col-span-2">
                         <p class="font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Available Balance</p>
                         <div class="mt-2 font-orbitron text-4xl font-black tracking-wide text-white md:text-5xl">
-                            ${{ number_format((float)($wallet?->cached_balance ?? 0.00), 2) }}
+                            @currencySymbol{{ number_format((float)($wallet?->cached_balance ?? 0.00), 2) }}
                         </div>
                     </div>
                     <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
@@ -79,7 +79,7 @@
                     <div>
                         <label for="depositAmount" class="mb-2 block font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Amount</label>
                         <div class="relative">
-                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-emerald-300">$</span>
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-emerald-300">@currencySymbol</span>
                             <input wire:model.live.debounce.250ms="depositAmount" id="depositAmount" type="number" step="0.01" min="1" required
                                 class="h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900/70 pl-9 pr-4 font-orbitron text-sm font-bold text-white outline-none transition-colors placeholder:text-zinc-700 focus:border-emerald-400/60"
                                 placeholder="0.00">
@@ -89,9 +89,9 @@
 
                     @if((float) $depositBreakdown['credit'] > 0)
                         <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs">
-                            <div class="flex justify-between text-zinc-400"><span>Wallet credit</span><span class="font-bold text-white">${{ $depositBreakdown['credit'] }}</span></div>
-                            <div class="mt-2 flex justify-between text-zinc-400"><span>Processing fee</span><span class="font-bold text-amber-300">${{ $depositBreakdown['fee'] }}</span></div>
-                            <div class="mt-3 flex justify-between border-t border-zinc-800 pt-3 text-zinc-300"><span class="font-bold">Total Stripe charge</span><span class="font-black text-emerald-300">${{ $depositBreakdown['total'] }}</span></div>
+                            <div class="flex justify-between text-zinc-400"><span>Wallet credit</span><span class="font-bold text-white">@currencySymbol{{ $depositBreakdown['credit'] }}</span></div>
+                            <div class="mt-2 flex justify-between text-zinc-400"><span>Processing fee</span><span class="font-bold text-amber-300">@currencySymbol{{ $depositBreakdown['fee'] }}</span></div>
+                            <div class="mt-3 flex justify-between border-t border-zinc-800 pt-3 text-zinc-300"><span class="font-bold">Total Stripe charge</span><span class="font-black text-emerald-300">@currencySymbol{{ $depositBreakdown['total'] }}</span></div>
                         </div>
                     @endif
 
@@ -99,7 +99,7 @@
                         @foreach([10, 25, 50, 100] as $suggestedAmount)
                             <button type="button" @click="$wire.set('depositAmount', '{{ $suggestedAmount }}')"
                                 class="h-10 rounded-lg border border-zinc-800 bg-zinc-900/70 font-orbitron text-[10px] font-black text-zinc-300 transition-colors hover:border-emerald-400/40 hover:text-emerald-200">
-                                ${{ $suggestedAmount }}
+                                @currencySymbol{{ $suggestedAmount }}
                             </button>
                         @endforeach
                     </div>
@@ -131,7 +131,7 @@
                     <div>
                         <label for="amount" class="mb-2 block font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Withdrawal Amount</label>
                         <div class="relative">
-                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-fuchsia-300">$</span>
+                            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-fuchsia-300">@currencySymbol</span>
                             <input wire:model="amount" id="amount" type="number" step="0.01" min="1" required
                                 class="h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900/70 pl-9 pr-4 font-orbitron text-sm font-bold text-white outline-none transition-colors placeholder:text-zinc-700 focus:border-fuchsia-400/60"
                                 placeholder="0.00">
@@ -234,9 +234,9 @@
 
                             <div class="text-left sm:text-right">
                                 <div class="font-orbitron text-base font-black {{ $isCredit ? 'text-emerald-300' : 'text-red-300' }}">
-                                    {{ $isCredit ? '+' : '-' }}${{ number_format(abs((float)$entry->amount), 2) }}
+                                    {{ $isCredit ? '+' : '-' }}@currencySymbol{{ number_format(abs((float)$entry->amount), 2) }}
                                 </div>
-                                <div class="mt-1 font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-600">{{ __('Bal $:value1', ['value1' => (number_format((float)$entry->running_balance, 2))]) }}</div>
+                                <div class="mt-1 font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-600">{{ __('Balance: :amount', ['amount' => \App\Shared\Support\Currency::format($entry->running_balance)]) }}</div>
                             </div>
                         </div>
                     @endforeach

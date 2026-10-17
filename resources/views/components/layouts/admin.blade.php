@@ -16,6 +16,7 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
     <x-localization.interface-messages />
+    <x-currency-config />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
@@ -72,7 +73,7 @@
                                 ['label' => 'Streams', 'icon' => 'tv', 'url' => '/admin/streams', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
                                 ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc', 'permission' => 'kyc.view'],
                                 ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals', 'permission' => 'withdrawals.view'],
-                                ['label' => 'Escrow & Cashflow', 'icon' => 'landmark', 'url' => '/admin/escrow-cashflow', 'permission' => 'withdrawals.view'],
+                                ['label' => 'Wallets & Transactions', 'icon' => 'landmark', 'url' => '/admin/escrow-cashflow', 'permission' => 'withdrawals.view'],
                                 ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users', 'permission' => 'users.view'],
                                 ['label' => 'Roles & Permissions', 'icon' => 'key', 'url' => '/admin/roles-permissions', 'permission' => 'roles.view'],
                                 ['label' => 'Compliance', 'icon' => 'shield-alert', 'url' => '/admin/compliance', 'permission' => 'users.suspend'],

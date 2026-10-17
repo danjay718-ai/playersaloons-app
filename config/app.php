@@ -69,6 +69,8 @@ return [
     // default tournament wall-clock timezone independently through TOURNAMENT_TIMEZONE.
     'timezone' => 'UTC',
 
+    'currency' => env('APP_CURRENCY', 'EUR'),
+
     'tournament_timezone' => env('TOURNAMENT_TIMEZONE', 'Europe/Amsterdam'),
 
     /*

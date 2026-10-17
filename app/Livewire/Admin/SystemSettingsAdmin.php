@@ -7,12 +7,15 @@ namespace App\Livewire\Admin;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Actions\ConvertTournamentSchedulesTimezoneAction;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
+use App\Shared\Support\Currency;
 use DateTimeZone;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class SystemSettingsAdmin extends AdminComponent
 {
+    public string $currencyCode = 'EUR';
+
     public bool $referralEnabled = true;
 
     public string $referrerReward = '5.00';
@@ -55,6 +58,7 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function mount(): void
     {
+        $this->currencyCode = Currency::code();
         $settings = SystemSetting::query()->whereIn('key', ['referral.enabled', 'referral.referrer_reward', 'referral.referred_reward'])->pluck('value', 'key');
         $this->referralEnabled = filter_var($settings['referral.enabled'] ?? true, FILTER_VALIDATE_BOOL);
         $this->referrerReward = (string) ($settings['referral.referrer_reward'] ?? '5.00');
@@ -84,6 +88,19 @@ class SystemSettingsAdmin extends AdminComponent
         $notificationSettings = SystemSetting::query()->whereIn('key', ['notifications.dispute_email', 'notifications.dispute_name'])->pluck('value', 'key');
         $this->disputeNotificationEmail = (string) ($notificationSettings['notifications.dispute_email'] ?? 'info@playersaloons.com');
         $this->disputeNotificationName = (string) ($notificationSettings['notifications.dispute_name'] ?? 'PlayerSaloons Disputes');
+    }
+
+    public function saveCurrencySettings(): void
+    {
+        $this->authorizeManagement();
+        $this->validate(['currencyCode' => ['required', 'in:EUR,GBP,USD']]);
+        SystemSetting::query()->updateOrCreate(
+            ['key' => 'currency.code'],
+            ['value' => $this->currencyCode, 'updated_by' => Auth::id()]
+        );
+        Currency::forget();
+        session()->flash('success', __('Currency settings updated.'));
+        $this->redirect('/admin/system-settings');
     }
 
     public function saveTournamentSettings(ConvertTournamentSchedulesTimezoneAction $convertSchedules): void

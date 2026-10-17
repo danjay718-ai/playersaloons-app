@@ -594,7 +594,7 @@ x-on:keydown.escape.window="closeAll()">
                             <div class="bg-slate-950 border border-slate-850 p-4 rounded-lg text-center">
                                 <span class="text-slate-500 text-[10px] font-bold uppercase block tracking-wider">AVAILABLE FUNDS</span>
                                 <span class="text-2xl font-black text-emerald-450 mt-1 block">
-                                    ${{ number_format((float)($selectedUser->wallet?->cached_balance ?? 0.00), 2) }}
+                                    @currencySymbol{{ number_format((float)($selectedUser->wallet?->cached_balance ?? 0.00), 2) }}
                                 </span>
                             </div>
                             <div class="text-[10px] text-slate-500 space-y-1">
@@ -642,8 +642,8 @@ x-on:keydown.escape.window="closeAll()">
                                                         {{ $entry->type }}
                                                     </span>
                                                 </td>
-                                                <td class="py-2 text-slate-300">${{ number_format($entry->amount, 2) }}</td>
-                                                <td class="py-2 text-slate-450">${{ number_format($entry->running_balance, 2) }}</td>
+                                                <td class="py-2 text-slate-300">@currencySymbol{{ number_format($entry->amount, 2) }}</td>
+                                                <td class="py-2 text-slate-450">@currencySymbol{{ number_format($entry->running_balance, 2) }}</td>
                                             </tr>
                                         @empty
                                             <tr>

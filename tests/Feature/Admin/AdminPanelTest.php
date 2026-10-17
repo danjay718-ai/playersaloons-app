@@ -159,7 +159,7 @@ class AdminPanelTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/admin');
         $response->assertStatus(200);
         $response->assertSee('Dashboard Overview');
-        $response->assertSee('User Wallet Liability');
+        $response->assertSee('Money in user wallets');
     }
 
     public function test_admin_dashboard_shows_correct_system_status(): void

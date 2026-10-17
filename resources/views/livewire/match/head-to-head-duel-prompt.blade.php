@@ -26,7 +26,7 @@
                         </div>
                         <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-3">
                             <p class="font-orbitron text-[8px] font-black uppercase tracking-widest text-zinc-600">Stake</p>
-                            <p class="mt-1 text-xs font-black text-emerald-300">${{ $prompt['stake'] }}</p>
+                            <p class="mt-1 text-xs font-black text-emerald-300">@currencySymbol{{ $prompt['stake'] }}</p>
                         </div>
                     </div>
 

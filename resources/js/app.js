@@ -4,6 +4,7 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { systemClock } from './system-clock';
+import { formatMoney } from './currency';
 import { countdownTimer, tournamentCountdown } from './slot-picker';
 import { tournamentListRealtime, refreshAdminHeadToHead } from './tournament-list-realtime';
 import { scrollToTournamentContent, scrollToMatchContent } from './tournament-content-navigation';
@@ -13,6 +14,7 @@ import { interfaceText } from './interface-text';
 import { streamChat } from './stream-chat';
 
 window.systemClock = systemClock;
+window.formatMoney = formatMoney;
 window.countdownTimer = countdownTimer;
 window.tournamentCountdown = tournamentCountdown;
 window.tournamentListRealtime = tournamentListRealtime;

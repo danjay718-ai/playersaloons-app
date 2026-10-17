@@ -29,6 +29,7 @@ use App\Modules\Wallet\Policies\WalletPolicy;
 use App\Modules\Wallet\Policies\WithdrawalPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -50,6 +51,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Blade::directive('currencySymbol', fn () => '<?php echo e(\App\Shared\Support\Currency::symbol()); ?>');
+        Blade::directive('money', fn ($expression) => '<?php echo e(\App\Shared\Support\Currency::format('.$expression.')); ?>');
+
         // Livewire requests use a shared update endpoint. Persist this route
         // middleware so an account blocked during an active session cannot
         // keep submitting player actions through that endpoint.

@@ -6,7 +6,9 @@ namespace App\Http\Controllers;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Actions\ProcessDepositAction;
+use App\Modules\Wallet\Models\Deposit;
 use App\Modules\Wallet\Models\Wallet;
+use App\Shared\Support\Currency;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -60,6 +62,15 @@ class StripeWebhookController extends Controller
 
         $chargedTotal = $this->amountFromSession($session);
         $metadata = $this->metadata($session);
+        // Repeated events for a credited deposit stay idempotent after a settings change.
+        if (Deposit::query()->where('provider', 'stripe')->where('provider_reference', (string) $session->id)->exists()) {
+            return response()->json(['received' => true, 'handled' => true]);
+        }
+        $paidCurrency = strtoupper((string) ($session->currency ?? ''));
+        if ($paidCurrency !== Currency::code()
+            || (isset($metadata['currency']) && strtoupper((string) $metadata['currency']) !== $paidCurrency)) {
+            return response()->json(['message' => 'Payment currency does not match the wallet currency.'], 422);
+        }
         $creditAmount = isset($metadata['wallet_credit_amount']) && is_numeric($metadata['wallet_credit_amount'])
             ? (float) $metadata['wallet_credit_amount']
             : $chargedTotal;

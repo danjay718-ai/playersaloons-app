@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\WalletStatus;
+use App\Shared\Support\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,6 +28,7 @@ class WalletResource extends JsonResource
     {
         return [
             'uuid' => $this->uuid,
+            'currency' => Currency::code(),
             'balance' => $this->cached_balance,
             'status' => $this->status,
         ];

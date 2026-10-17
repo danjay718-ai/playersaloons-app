@@ -70,7 +70,7 @@
         <dl class="grid grid-cols-2 gap-x-4 gap-y-3 border-y border-zinc-800/60 py-3">
             <div>
                 <dt class="text-[9px] font-bold uppercase tracking-widest text-zinc-600">{{ __('Entry fee') }}</dt>
-                <dd class="mt-1 font-orbitron text-sm font-black text-violet-300">{{ (float) $tournament->entry_fee > 0 ? '$'.number_format((float) $tournament->entry_fee, 2) : __('Free') }}</dd>
+                <dd class="mt-1 font-orbitron text-sm font-black text-violet-300">{{ (float) $tournament->entry_fee > 0 ? \App\Shared\Support\Currency::symbol().number_format((float) $tournament->entry_fee, 2) : __('Free') }}</dd>
             </div>
             <div class="text-right">
                 <dt class="text-[9px] font-bold uppercase tracking-widest text-zinc-600">{{ __('Joined players') }}</dt>

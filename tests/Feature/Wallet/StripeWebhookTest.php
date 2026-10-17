@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Wallet;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Wallet\Models\Deposit;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
@@ -119,7 +120,38 @@ class StripeWebhookTest extends TestCase
     /**
      * @param  array<string, string>  $metadata
      */
-    private function checkoutSessionPayload(string $sessionId, int $amountTotal, array $metadata): string
+    public function test_webhook_accepts_euro_and_pound_and_keeps_retries_idempotent_after_a_currency_change(): void
+    {
+        $wallet = $this->createWallet('0.00');
+        foreach (['EUR', 'GBP'] as $code) {
+            SystemSetting::query()->updateOrCreate(['key' => 'currency.code'], ['value' => $code]);
+            $payload = $this->checkoutSessionPayload('cs_currency_'.$code, 1000, [
+                'wallet_id' => (string) $wallet->id, 'currency' => $code,
+            ], strtolower($code));
+            $this->postStripeWebhook($payload)->assertOk();
+            $this->postStripeWebhook($payload)->assertOk();
+        }
+        self::assertSame('20.00', $wallet->fresh()->cached_balance);
+        $euroRetry = $this->checkoutSessionPayload('cs_currency_EUR', 1000, [
+            'wallet_id' => (string) $wallet->id, 'currency' => 'EUR',
+        ], 'eur');
+        $this->postStripeWebhook($euroRetry)->assertOk();
+        self::assertSame('20.00', $wallet->fresh()->cached_balance);
+    }
+
+    public function test_webhook_rejects_a_payment_in_another_currency_without_crediting_the_wallet(): void
+    {
+        $wallet = $this->createWallet('0.00');
+        SystemSetting::query()->updateOrCreate(['key' => 'currency.code'], ['value' => 'EUR']);
+        $payload = $this->checkoutSessionPayload('cs_currency_wrong', 1000, [
+            'wallet_id' => (string) $wallet->id, 'currency' => 'GBP',
+        ], 'gbp');
+        $this->postStripeWebhook($payload)->assertStatus(422);
+        self::assertSame('0.00', $wallet->fresh()->cached_balance);
+        self::assertSame(0, Deposit::query()->count());
+    }
+
+    private function checkoutSessionPayload(string $sessionId, int $amountTotal, array $metadata, string $currency = 'usd'): string
     {
         return json_encode([
             'id' => 'evt_'.$sessionId,
@@ -130,7 +162,7 @@ class StripeWebhookTest extends TestCase
                     'id' => $sessionId,
                     'object' => 'checkout.session',
                     'amount_total' => $amountTotal,
-                    'currency' => 'usd',
+                    'currency' => $currency,
                     'payment_status' => 'paid',
                     'metadata' => $metadata,
                 ],

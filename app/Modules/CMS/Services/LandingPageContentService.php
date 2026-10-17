@@ -7,6 +7,7 @@ namespace App\Modules\CMS\Services;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Models\LandingSectionItem;
+use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Wallet\Models\LedgerEntry;
@@ -14,6 +15,7 @@ use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\UserStatus;
+use App\Shared\Support\Currency;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -63,7 +65,7 @@ class LandingPageContentService
                 GameMatch::query()->whereIn('status', [MatchStatus::COMPLETED->value, MatchStatus::FORFEITED->value])->count()
                 + HeadToHeadMatch::query()->where('status', HeadToHeadMatchStatus::COMPLETED->value)->count()
             ),
-            'winnings_paid' => '$'.number_format((float) LedgerEntry::query()
+            'winnings_paid' => Currency::symbol().number_format((float) LedgerEntry::query()
                 ->whereIn('type', [LedgerType::PRIZE->value, LedgerType::H2H_PAYOUT->value])
                 ->sum('amount'), 2),
             'active_players' => (string) DB::table('users')->whereNull('deleted_at')
@@ -72,7 +74,7 @@ class LandingPageContentService
                     $query->selectRaw('1')->from('model_has_roles')
                         ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
                         ->whereColumn('model_has_roles.model_id', 'users.id')
-                        ->where('model_has_roles.model_type', \App\Modules\Identity\Models\User::class)
+                        ->where('model_has_roles.model_type', User::class)
                         ->whereIn('roles.name', ['PLAYER', 'TEAM_CAPTAIN'])
                         ->whereNull('roles.deleted_at');
                 })
@@ -167,7 +169,7 @@ class LandingPageContentService
                     'avatar' => $row['avatar'],
                     'wins' => $row['wins'],
                     'winrate' => $winRate.'%',
-                    'cash' => '$'.number_format($row['prize_total'], 2),
+                    'cash' => Currency::symbol().number_format($row['prize_total'], 2),
                 ];
             })
             ->all();

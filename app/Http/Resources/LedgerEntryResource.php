@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Shared\Enums\LedgerType;
+use App\Shared\Support\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Carbon;
@@ -31,6 +32,7 @@ class LedgerEntryResource extends JsonResource
     {
         return [
             'uuid' => $this->uuid,
+            'currency' => Currency::code(),
             'type' => $this->type->value ?? $this->type,
             'amount' => $this->amount,
             'running_balance' => $this->running_balance,

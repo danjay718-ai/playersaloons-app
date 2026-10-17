@@ -18,6 +18,7 @@
 
     <!-- Tailwind CSS & Fonts -->
     <x-localization.interface-messages />
+    <x-currency-config />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />

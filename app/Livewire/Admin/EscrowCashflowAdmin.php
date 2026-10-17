@@ -6,9 +6,11 @@ namespace App\Livewire\Admin;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Wallet\Models\Deposit;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\LedgerType;
+use App\Shared\Support\DecimalMoney;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\WithPagination;
 
@@ -72,6 +74,19 @@ final class EscrowCashflowAdmin extends AdminComponent
             ->sum('reserved_prize_amount');
 
         $flowQuery = $this->filteredLedgerQuery();
+        $serviceFeeIncome = LedgerEntry::query()
+            ->where('wallet_id', $platformWalletId)
+            ->where('type', LedgerType::PLATFORM_COMMISSION->value)
+            ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo))
+            ->sum('amount');
+        $topUpFeeIncome = Deposit::query()->where('status', 'completed')
+            ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo))
+            ->sum('fee_amount');
+        $totalFeeIncome = DecimalMoney::format(
+            DecimalMoney::toMinor((string) $serviceFeeIncome) + DecimalMoney::toMinor((string) $topUpFeeIncome)
+        );
         $flowByType = (clone $flowQuery)
             ->selectRaw('type, SUM(amount) as net_amount, SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as inflow, SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as outflow, COUNT(*) as entry_count')
             ->groupBy('type')
@@ -100,7 +115,10 @@ final class EscrowCashflowAdmin extends AdminComponent
             'userWalletLiability' => $userWalletLiability,
             'platformPosition' => $platformPosition,
             'sponsoredCommitments' => $sponsoredCommitments,
-        ])->layout('components.layouts.admin', ['admin_title' => 'Escrow & Cashflow']);
+            'serviceFeeIncome' => $serviceFeeIncome,
+            'topUpFeeIncome' => $topUpFeeIncome,
+            'totalFeeIncome' => $totalFeeIncome,
+        ])->layout('components.layouts.admin', ['admin_title' => __('Wallets & Transactions')]);
     }
 
     /** @return Builder<LedgerEntry> */

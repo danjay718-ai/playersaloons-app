@@ -255,7 +255,7 @@
                         <tr class="bg-red-950/25 hover:bg-red-950/40 border-l-2 border-red-500 transition-colors" wire:key="h2h-dispute-{{ $h2h->id }}">
                             <td class="p-4">
                                 <span class="block font-semibold text-slate-200">{{ $h2hGameName }}</span>
-                                <span class="block text-[10px] text-emerald-400 mt-0.5">${{ number_format((float) $h2h->stake_amount, 2) }} each</span>
+                                <span class="block text-[10px] text-emerald-400 mt-0.5">@currencySymbol{{ number_format((float) $h2h->stake_amount, 2) }} each</span>
                                 @if($h2h->platform)
                                     <span class="block text-[10px] text-slate-500 mt-0.5">{{ $h2h->platform->name }}</span>
                                 @endif
@@ -781,7 +781,7 @@
                                 <span class="inline-block px-2 py-0.5 rounded border text-[9px] font-bold uppercase bg-red-500/10 text-red-400 border-red-500/20">
                                     disputed
                                 </span>
-                                <span class="text-[10px] text-emerald-400 font-bold">${{ number_format((float) $h2hMatch->stake_amount, 2) }} each</span>
+                                <span class="text-[10px] text-emerald-400 font-bold">@currencySymbol{{ number_format((float) $h2hMatch->stake_amount, 2) }} each</span>
                             </div>
                             <div>
                                 <span class="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Opponent</span>

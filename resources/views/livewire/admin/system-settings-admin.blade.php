@@ -3,6 +3,20 @@
         <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{{ session('success') }}</div>
     @endif
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+        <h2 class="text-xl font-bold text-white">{{ __('App currency') }}</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-400">{{ __('Used for wallets, prizes, entry fees and new payments across admin and player pages. Existing amounts are not converted.') }}</p>
+        <form wire:submit="saveCurrencySettings" class="mt-5 space-y-4">
+            <label class="block text-xs font-bold text-slate-400" for="currencyCode">{{ __('Currency') }}</label>
+            <select id="currencyCode" wire:model="currencyCode" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                <option value="EUR">{{ __('Euro (EUR €)') }}</option>
+                <option value="GBP">{{ __('British Pound (GBP £)') }}</option>
+                <option value="USD">{{ __('US Dollar (USD $)') }}</option>
+            </select>
+            @error('currencyCode')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
+            <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-3 text-xs font-bold text-white hover:bg-indigo-500">{{ __('Save currency') }}</button>
+        </form>
+    </section>
+    <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <p class="text-[11px] font-bold uppercase tracking-wider text-violet-300">Authentication</p>
         <h2 class="mt-1 text-xl font-bold text-white">Sign-in protection</h2>
         <p class="mt-2 text-sm leading-6 text-slate-500">Temporarily locks repeated failed sign-ins. This avoids permanent account denial-of-service while slowing credential stuffing and brute-force attempts.</p>
@@ -53,7 +67,7 @@
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <p class="text-[11px] font-bold uppercase tracking-wider text-orange-300">Payouts</p>
         <h2 class="mt-1 text-xl font-bold text-white">Platform Commission</h2>
-        <p class="mt-2 text-sm leading-6 text-slate-500">Applied to every winning Head-to-Head payout and tournament prize. For example, a $100 award with a 10% commission pays $90 to the player and records the $10 deduction as a platform commission in their wallet history.</p>
+        <p class="mt-2 text-sm leading-6 text-slate-500">Applied to every winning Head-to-Head payout and tournament prize. For example, a @money(100) award with a 10% commission pays @money(90) to the player and records the @money(10) deduction as a platform commission in their wallet history.</p>
         <form wire:submit="savePlatformCommissionSettings" class="mt-6 space-y-5">
             <div>
                 <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Commission Percentage</label>
@@ -85,7 +99,7 @@
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-300">Payments</p>
         <h2 class="mt-1 text-xl font-bold text-white">Deposit processing fee</h2>
-        <p class="mt-2 text-sm leading-6 text-slate-500">This fee is added on top of the player’s requested wallet credit. For example, a $50 credit with a $1 fixed fee and 2% fee charges $52 total, while the wallet receives exactly $50.</p>
+        <p class="mt-2 text-sm leading-6 text-slate-500">This fee is added on top of the player’s requested wallet credit. For example, a @money(50) credit with a @money(1) fixed fee and 2% fee charges @money(52) total, while the wallet receives exactly @money(50).</p>
         <form wire:submit="saveDepositFeeSettings" class="mt-6 space-y-5">
             <label class="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-200">Charge deposit processing fees<input wire:model="depositFeeEnabled" type="checkbox" class="rounded border-slate-700 bg-slate-900 text-emerald-500"></label>
             <div class="grid gap-4 sm:grid-cols-2">

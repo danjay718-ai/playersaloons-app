@@ -9,6 +9,7 @@ use App\Modules\Operations\Services\ErrorIncidentReporter;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
 use App\Modules\Wallet\Services\DepositFeeCalculator;
 use App\Modules\Wallet\Services\StripeCheckoutService;
+use App\Shared\Support\Currency;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -82,7 +83,7 @@ class WalletDashboard extends Component
 
         try {
             $action->execute($user, (float) $this->amount);
-            session()->flash('message', 'Withdrawal request of $'.number_format((float) $this->amount, 2).' submitted successfully and is pending review!');
+            session()->flash('message', 'Withdrawal request of '.Currency::format($this->amount).' submitted successfully and is pending review!');
             $this->reset('amount');
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to create the withdrawal request.'));

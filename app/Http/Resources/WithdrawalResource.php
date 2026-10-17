@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Modules\Wallet\Models\Withdrawal;
+use App\Shared\Support\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,6 +23,7 @@ class WithdrawalResource extends JsonResource
     {
         return [
             'uuid' => $this->uuid,
+            'currency' => Currency::code(),
             'amount' => $this->amount,
             'status' => $this->status->value ?? $this->status,
             'created_at' => $this->created_at,

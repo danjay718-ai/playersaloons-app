@@ -18,7 +18,7 @@
                 <div class="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
                     <span class="rounded bg-purple-950/60 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-purple-400 ring-1 ring-inset ring-purple-500/30">{{ $gameName }}</span>
                     <span class="rounded bg-zinc-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 ring-1 ring-inset ring-zinc-700">{{ str_replace('_', ' ', $match->status->value) }}</span>
-                    <span class="rounded bg-emerald-950/60 px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider text-emerald-400 ring-1 ring-inset ring-emerald-500/30">{{ __('$:value1 Stake', ['value1' => (number_format((float) $match->stake_amount, 2))]) }}</span>
+                    <span class="rounded bg-emerald-950/60 px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider text-emerald-400 ring-1 ring-inset ring-emerald-500/30">{{ __(':amount Stake', ['amount' => \App\Shared\Support\Currency::format($match->stake_amount)]) }}</span>
                     @if($match->match_timer_minutes)
                         <span class="rounded bg-orange-950/60 px-2.5 py-1 text-[10px] font-bold text-orange-400 ring-1 ring-inset ring-orange-500/30">
                             <i data-lucide="timer" class="inline-block h-3 w-3 mr-1"></i>{{ __(':value1 min', ['value1' => ($match->match_timer_minutes)]) }}</span>

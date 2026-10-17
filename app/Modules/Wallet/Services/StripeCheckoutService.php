@@ -6,6 +6,7 @@ namespace App\Modules\Wallet\Services;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Models\Wallet;
+use App\Shared\Support\Currency;
 use LogicException;
 use Stripe\StripeClient;
 
@@ -25,6 +26,7 @@ class StripeCheckoutService
         }
 
         $breakdown = $this->feeCalculator->calculate($amount);
+        $currency = Currency::code();
         $stripe = new StripeClient($secret);
 
         $session = $stripe->checkout->sessions->create([
@@ -34,7 +36,7 @@ class StripeCheckoutService
             'line_items' => [
                 [
                     'price_data' => [
-                        'currency' => 'usd',
+                        'currency' => strtolower($currency),
                         'product_data' => [
                             'name' => 'GamersRival Wallet Deposit',
                         ],
@@ -51,6 +53,7 @@ class StripeCheckoutService
                 'wallet_uuid' => (string) $wallet->uuid,
                 'wallet_credit_amount' => $breakdown['credit'],
                 'processing_fee_amount' => $breakdown['fee'],
+                'currency' => $currency,
             ],
             'success_url' => route('wallet', ['stripe_deposit' => 'success'], true),
             'cancel_url' => route('wallet', ['stripe_deposit' => 'cancelled'], true),

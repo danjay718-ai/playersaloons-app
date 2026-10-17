@@ -58,7 +58,7 @@
                                 <span class="block text-[10px] text-slate-500 font-normal mt-0.5">{{ $withdrawal->user->email }}</span>
                             </td>
                             <td class="p-4 text-slate-200 font-bold">
-                                ${{ number_format((float)$withdrawal->amount, 2) }}
+                                @currencySymbol{{ number_format((float)$withdrawal->amount, 2) }}
                             </td>
                             <td class="p-4 text-slate-450">
                                 {{ $withdrawal->created_at->format('Y-m-d H:i') }}
@@ -151,7 +151,7 @@
                         </div>
                         <div>
                             <span class="text-slate-550 block">Amount Requested</span>
-                            <span class="text-2xl font-black text-slate-100 mt-1 block">${{ number_format((float)$selectedWithdrawal->amount, 2) }}</span>
+                            <span class="text-2xl font-black text-slate-100 mt-1 block">@currencySymbol{{ number_format((float)$selectedWithdrawal->amount, 2) }}</span>
                         </div>
                         <div>
                             <span class="text-slate-550 block">KYC Status</span>
@@ -219,10 +219,10 @@
                                                 </span>
                                             </td>
                                             <td class="p-3 text-slate-300">
-                                                ${{ number_format($entry->amount, 2) }}
+                                                @currencySymbol{{ number_format($entry->amount, 2) }}
                                             </td>
                                             <td class="p-3 text-slate-400 font-mono">
-                                                ${{ number_format($entry->running_balance, 2) }}
+                                                @currencySymbol{{ number_format($entry->running_balance, 2) }}
                                             </td>
                                             <td class="p-3 text-slate-500">
                                                 {{ $entry->created_at->format('M d, H:i') }}
