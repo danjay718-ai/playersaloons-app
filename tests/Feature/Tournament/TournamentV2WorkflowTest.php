@@ -8,6 +8,7 @@ use App\Http\Middleware\TranslateRenderedHtml;
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Admin\UserAdmin;
+use App\Livewire\Community\PlayerReviewPage;
 use App\Livewire\Game\GameShow;
 use App\Livewire\Match\MatchDetail;
 use App\Livewire\Tournament\PlatformHeadToHeadList;
@@ -1152,9 +1153,10 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(2, $match->attempts()->count());
     }
 
-    public function test_standalone_v2_match_room_redirects_to_the_exact_tournament_match(): void
+    #[DataProvider('competitionTypes')]
+    public function test_standalone_v2_match_room_redirects_to_the_exact_tournament_match(CompetitionType $type): void
     {
-        [$match, $player] = $this->activeTwoPlayerMatch();
+        [$match, $player] = $this->activeTwoPlayerMatch([], $type);
 
         Livewire::actingAs($player)
             ->test(MatchDetail::class, ['uuid' => $match->uuid])
@@ -1165,9 +1167,10 @@ final class TournamentV2WorkflowTest extends TestCase
                 ]));
     }
 
-    public function test_v2_participant_can_submit_results_inside_the_tournament_view(): void
+    #[DataProvider('competitionTypes')]
+    public function test_v2_participant_can_submit_results_inside_the_tournament_view(CompetitionType $type): void
     {
-        [$match, $player] = $this->activeTwoPlayerMatch();
+        [$match, $player] = $this->activeTwoPlayerMatch([], $type);
 
         Livewire::actingAs($player)
             ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
@@ -1179,6 +1182,65 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertSet('activeTab', 'submit-results')
             ->assertSet('selectedMatchUuid', $match->uuid)
             ->assertDispatched('tournament-content-opened', tournamentUuid: $match->tournament->uuid, matchUuid: $match->uuid, tab: 'submit-results', focus: null);
+    }
+
+    public function test_completed_head_to_head_prompts_both_players_to_review_but_not_spectators(): void
+    {
+        [$match, $winner, $opponent] = $this->activeTwoPlayerMatch([], CompetitionType::HEAD_TO_HEAD);
+        $uuid = $match->tournament->uuid;
+        $page = Livewire::actingAs($winner)->test(TournamentDetail::class, ['uuid' => $uuid])
+            ->assertDontSeeHtml('data-head-to-head-review');
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $winner->id, MatchOutcome::WIN);
+        $page->call('$refresh')->assertDontSeeHtml('data-head-to-head-review');
+        $submit->execute($match->fresh(), $opponent->id, MatchOutcome::LOSS);
+        self::assertSame(TournamentStatus::COMPLETED, $match->tournament->fresh()->status);
+        $page->call('$refresh')->assertSeeHtml('data-head-to-head-review')->assertSee('Leave a review');
+
+        foreach ([$winner, $opponent] as $player) {
+            Livewire::actingAs($player)->test(TournamentDetail::class, ['uuid' => $uuid])
+                ->assertSee('How was your Head-to-Head?')->assertSee('Leave a review')
+                ->assertSeeHtml('href="'.route('reviews').'"');
+        }
+        $spectator = $this->user('review-spectator@example.com', 'reviewspectator', 'PLAYER');
+        Livewire::actingAs($spectator)->test(TournamentDetail::class, ['uuid' => $uuid])
+            ->assertDontSeeHtml('data-head-to-head-review');
+        $this->actingAs($winner)->get(route('reviews'))->assertOk()->assertSee('Submit review');
+        Livewire::actingAs($winner)->test(PlayerReviewPage::class)
+            ->set('rating', 4)->set('review', 'The head-to-head was easy to play and report.')
+            ->call('submit')->assertHasNoErrors()->assertSee('submitted for moderation');
+        $this->assertDatabaseHas('player_reviews', ['user_id' => $winner->id, 'rating' => 4, 'status' => 'pending']);
+        auth()->logout();
+        $this->get(route('tournaments.view', ['uuid' => $uuid]))->assertOk()->assertDontSeeHtml('data-head-to-head-review');
+    }
+
+    public function test_head_to_head_view_uses_the_shared_result_workspace_with_two_player_copy(): void
+    {
+        [$match, $first, $second] = $this->activeTwoPlayerMatch([], CompetitionType::HEAD_TO_HEAD);
+        $tournament = $match->tournament;
+        self::assertSame(2, $tournament->max_participants);
+        self::assertSame(1, $tournament->team_size);
+        self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->count());
+
+        $this->actingAs($first)->get(route('tournaments.view', ['uuid' => $tournament->uuid]))
+            ->assertOk()->assertSee('HEAD-TO-HEAD DETAILS')->assertDontSee('TOURNAMENT DETAILS');
+        Livewire::actingAs($first)->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSet('activeTab', 'submit-results')
+            ->assertSee('Head-to-Head • 1v1')->assertSee('About this Head-to-Head')
+            ->assertSee('Maximum Players')->assertSee('1v1 • Two players')
+            ->assertSee('Submit Match Results')->assertSee('Game & Connection Details', escape: false)
+            ->assertDontSee('Maximum Teams')->assertDontSee('ABOUT THIS TOURNAMENT')
+            ->assertDontSee('the bracket uses automatic BYEs')->assertDontSee('Open Match Room');
+
+        Livewire::actingAs($first)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->set('resultOutcome', 'win')->call('submitResult')->assertHasNoErrors();
+        Livewire::actingAs($second)->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSet('activeTab', 'submit-results')->assertSee('Waiting for your result');
+        Livewire::actingAs($second)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->set('resultOutcome', 'loss')->call('submitResult')->assertHasNoErrors();
+        self::assertSame(MatchStatus::COMPLETED, $match->fresh()->status);
+        self::assertSame(TournamentStatus::COMPLETED, $tournament->fresh()->status);
+        self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->count());
     }
 
     #[DataProvider('competitionTypes')]
@@ -1228,9 +1290,10 @@ final class TournamentV2WorkflowTest extends TestCase
         ];
     }
 
-    public function test_player_result_view_combines_match_metadata_and_places_connection_details_after_results(): void
+    #[DataProvider('competitionTypes')]
+    public function test_player_result_view_combines_match_metadata_and_places_connection_details_after_results(CompetitionType $type): void
     {
-        [$match, $player] = $this->activeTwoPlayerMatch();
+        [$match, $player] = $this->activeTwoPlayerMatch([], $type);
         Livewire::actingAs($player)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
             ->assertDontSee('Match Header Card', escape: false)
             ->assertSee('data-match-content="matchup"', escape: false)
@@ -1241,13 +1304,18 @@ final class TournamentV2WorkflowTest extends TestCase
 
     public static function adminRematchResolutions(): array
     {
-        return [['rematch'], ['draw']];
+        return [
+            'tournament rematch' => ['rematch', CompetitionType::TOURNAMENT],
+            'tournament draw' => ['draw', CompetitionType::TOURNAMENT],
+            'head-to-head rematch' => ['rematch', CompetitionType::HEAD_TO_HEAD],
+            'head-to-head draw' => ['draw', CompetitionType::HEAD_TO_HEAD],
+        ];
     }
 
     #[DataProvider('adminRematchResolutions')]
-    public function test_admin_rematch_reopens_both_players_embedded_result_pages_and_delivers_the_ruling(string $resolution): void
+    public function test_admin_rematch_reopens_both_players_embedded_result_pages_and_delivers_the_ruling(string $resolution, CompetitionType $type): void
     {
-        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        [$match, $first, $second] = $this->activeTwoPlayerMatch([], $type);
         $submit = app(SubmitV2MatchResultAction::class);
         $submit->execute($match, $first->id, MatchOutcome::WIN);
         $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);

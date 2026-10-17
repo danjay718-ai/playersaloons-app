@@ -1,6 +1,7 @@
 @php
     $statusValue = $tournament->status->value ?? (string) $tournament->status;
-    $joinLabel = $tournament->competition_type === \App\Shared\Enums\CompetitionType::HEAD_TO_HEAD
+    $isHeadToHead = $tournament->competition_type === \App\Shared\Enums\CompetitionType::HEAD_TO_HEAD;
+    $joinLabel = $isHeadToHead
         ? __('Join Competition')
         : __('Join Tournament');
     $isPlayerView = ! (Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']));
@@ -138,6 +139,9 @@
                     <span class="text-[10px] font-black uppercase tracking-[0.15em] rounded-full border border-zinc-800 bg-zinc-950/60 px-4 py-1.5 text-zinc-400">
                         Europe/Amsterdam
                     </span>
+                    @if($isHeadToHead)
+                        <span class="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] bg-violet-950/30 border border-violet-800/60 rounded-full px-4 py-1.5">{{ __('Head-to-Head • 1v1') }}</span>
+                    @endif
                     @if(($tournament->team_size ?? 1) > 1)
                         <span class="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] bg-violet-950/30 border border-violet-800/60 rounded-full px-4 py-1.5">{{ __(':value1 v :value2 Teams', ['value1' => ($tournament->team_size), 'value2' => ($tournament->team_size)]) }}</span>
                     @endif
@@ -173,7 +177,7 @@
                     </div>
                 </div>
                 @if((int) $tournament->workflow_version === 2)
-                    <p class="-mt-3 text-xs text-zinc-500">{{ __('Estimated prize until entries close. Final prize amounts may be adjusted if the tournament starts below capacity. Prizes are set and administered by PlayerSaloons.') }}</p>
+                    <p class="-mt-3 text-xs text-zinc-500">{{ $isHeadToHead ? __('Two players compete in one match. Prizes are determined by PlayerSaloons and awarded based on match results according to the predefined prize structure.') : __('Estimated prize until entries close. Final prize amounts may be adjusted if the tournament starts below capacity. Prizes are set and administered by PlayerSaloons.') }}</p>
                 @else
                     <p class="-mt-3 text-xs text-zinc-500">{{ __('Based on :value1 confirmed of :value2 players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.', ['value1' => ($prizeCalculation['confirmed_count']), 'value2' => ($tournament->max_participants)]) }}</p>
                 @endif
@@ -248,7 +252,7 @@
                         @elseif($pendingCancellationRequest)
                             <div role="status" class="w-full rounded-xl border border-amber-700/40 bg-amber-950/20 px-6 py-3 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-amber-300">Cancellation request pending</div>
                         @else
-                            <div role="status" class="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 px-6 py-3 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">{{ __('Cancellation is available only before the tournament starts.') }}</div>
+                            <div role="status" class="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 px-6 py-3 text-center text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">{{ $isHeadToHead ? __('Cancellation is available only before the Head-to-Head starts.') : __('Cancellation is available only before the tournament starts.') }}</div>
                         @endif
                         @if($pendingCancellationRequest && in_array((int) Auth::id(), array_map('intval', $pendingCancellationRequest->eligible_voter_ids ?? []), true) && !$pendingCancellationRequest->votes->contains('voter_id', Auth::id()))
                             <div class="rounded-xl border border-amber-700/40 bg-amber-950/20 p-4 text-left"><p class="text-xs font-bold text-amber-200">{{ __(':value1 requested to cancel.', ['value1' => ($pendingCancellationRequest->requester?->username)]) }}</p><div class="mt-3 grid grid-cols-2 gap-2"><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, true)" class="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase text-white">Approve</button><button wire:click="voteOnCancellation({{ $pendingCancellationRequest->id }}, false)" class="rounded-lg border border-zinc-700 px-3 py-2 text-[10px] font-black uppercase text-zinc-300">Reject</button></div></div>
@@ -322,6 +326,19 @@
             </div>
         </div>
     </div>
+
+    @if($isHeadToHead && $isRegistered && Auth::user()?->hasRole('PLAYER') && $tournament->status === \App\Shared\Enums\TournamentStatus::COMPLETED)
+        <section data-head-to-head-review class="flex flex-col gap-4 rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="text-sm font-bold text-white">{{ __('How was your Head-to-Head?') }}</h2>
+                <p class="mt-1 text-xs text-zinc-400">{{ __('Share your experience. Reviews are checked before appearing publicly.') }}</p>
+            </div>
+            <a href="{{ route('reviews') }}" wire:navigate class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-fuchsia-600 px-5 py-3 text-xs font-bold text-white transition hover:bg-fuchsia-500">
+                <i data-lucide="star" class="h-4 w-4" aria-hidden="true"></i>
+                {{ __('Leave a review') }}
+            </a>
+        </section>
+    @endif
 
     <!-- ⏱️ Countdown Timer Section -->
     @php
@@ -398,7 +415,7 @@
     <div class="flex overflow-x-auto no-scrollbar items-center gap-1.5 bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 p-1.5 rounded-2xl w-full">
         @php
             $tabs = [
-                ['id' => 'matches', 'label' => 'Fixtures & Bracket', 'icon' => 'git-branch'],
+                ['id' => 'matches', 'label' => $isHeadToHead ? __('Match') : 'Fixtures & Bracket', 'icon' => 'git-branch'],
             ];
             if ((int) $tournament->workflow_version === 2 && $isRegistered) {
                 $tabs[] = ['id' => 'submit-results', 'label' => 'Submit Result', 'icon' => 'clipboard-check'];
@@ -438,7 +455,7 @@
 
         <div x-show="loadingSection !== null" x-cloak class="absolute inset-x-0 top-16 z-20 flex justify-center">
             <div class="rounded-xl border border-zinc-800 bg-zinc-950/90 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-400 shadow-2xl">
-                Loading tournament data…
+                {{ $isHeadToHead ? __('Loading Head-to-Head data…') : __('Loading tournament data…') }}
             </div>
         </div>
 
@@ -450,7 +467,7 @@
                 <section class="space-y-6">
                     <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
                         <span class="w-1.5 h-8 bg-cyan-500 rounded-full"></span>
-                        <span>ABOUT THIS TOURNAMENT</span>
+                        <span>{{ $isHeadToHead ? __('About this Head-to-Head') : __('ABOUT THIS TOURNAMENT') }}</span>
                     </h2>
                     <div class="decorated-card tournament-overview-card bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8 space-y-6">
                         <i data-lucide="trophy" aria-hidden="true" class="ui-card-watermark"></i>
@@ -463,7 +480,7 @@
                         <!-- Key stats grid -->
                         <div class="grid grid-cols-1 gap-3 pt-4 border-t border-zinc-800/60 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                             @php
-                                $format = $tournament->template?->format ?? 'Single Elimination';
+                                $format = $isHeadToHead ? __('1v1 • Two players') : ($tournament->template?->format ?? 'Single Elimination');
                             @endphp
                             <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
                                 <div class="flex items-center space-x-2 text-cyan-400">
@@ -566,7 +583,7 @@
                         @if($isV2Registration)
                             <div class="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-800/50 bg-cyan-950/20 p-4 text-xs leading-relaxed text-cyan-100/75">
                                 <i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0 text-cyan-400"></i>
-                                <p>{{ __('This is the estimated payout if all :value1 teams join. The final prize is based on the actual entry pool when the tournament starts. If the tournament starts below capacity, the bracket uses automatic BYEs and the final prize is adjusted based on confirmed entries.', ['value1' => ($tournament->max_participants)]) }}</p>
+                                <p>{{ $isHeadToHead ? __('Both players must register before the Head-to-Head can start. Play your match, then use Submit Result here to report Won, Lost or Draw. Conflicting results go to admin review.') : __('This is the estimated payout if all :value1 teams join. The final prize is based on the actual entry pool when the tournament starts. If the tournament starts below capacity, the bracket uses automatic BYEs and the final prize is adjusted based on confirmed entries.', ['value1' => ($tournament->max_participants)]) }}</p>
                             </div>
                         @endif
                     </div>
@@ -586,7 +603,7 @@
                             <!-- Default rules when none specified -->
                             <ul class="space-y-4">
                                 @foreach([
-                                    'Tournament entries lock when registration closes.',
+                                    $isHeadToHead ? __('Both players must register before the Head-to-Head can start.') : 'Tournament entries lock when registration closes.',
                                     'Standard competitive server parameters only.',
                                     'Instant result reporting required post-engagement.',
                                     'Disputes necessitate high-definition screenshot evidence.',
@@ -654,8 +671,8 @@
                             <span class="text-zinc-300 font-bold">{{ $tournament->min_participants }}</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
-                            <span class="text-zinc-600 font-medium">{{ (int) $tournament->workflow_version === 2 ? 'Maximum Teams' : 'Max Players' }}</span>
-                                <span class="text-zinc-300 font-bold">{{ $tournament->max_participants }} {{ (int) $tournament->workflow_version === 2 ? 'teams' : 'players' }}</span>
+                            <span class="text-zinc-600 font-medium">{{ $isHeadToHead ? __('Maximum Players') : ((int) $tournament->workflow_version === 2 ? 'Maximum Teams' : 'Max Players') }}</span>
+                                <span class="text-zinc-300 font-bold">{{ $tournament->max_participants }} {{ ! $isHeadToHead && (int) $tournament->workflow_version === 2 ? 'teams' : __('players') }}</span>
                         </div>
                         <div class="flex items-center justify-between text-sm">
                             <span class="text-zinc-600 font-medium">Registered</span>
@@ -964,7 +981,7 @@
                 <div class="flex items-center justify-between">
                     <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
                         <span class="w-1.5 h-8 bg-violet-500 rounded-full"></span>
-                        <span>TOURNAMENT BRACKET</span>
+                        <span>{{ $isHeadToHead ? __('Head-to-Head Match') : __('TOURNAMENT BRACKET') }}</span>
                     </h2>
                     <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{{ __(':value1 rounds', ['value1' => ($rounds->count())]) }}</span>
                 </div>
@@ -1121,8 +1138,8 @@
                 <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800 rounded-[2.5rem] p-24 text-center relative overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-indigo-950/10 pointer-events-none"></div>
                     <i data-lucide="git-branch" class="w-16 h-16 mx-auto text-zinc-800 mb-6"></i>
-                    <h3 class="text-xl font-black text-zinc-400 font-orbitron tracking-widest uppercase">Bracket Not Generated</h3>
-                    <p class="text-sm font-medium text-zinc-600 mt-4 max-w-sm mx-auto leading-relaxed">Brackets and result submission become available automatically after tournament entries lock.</p>
+                    <h3 class="text-xl font-black text-zinc-400 font-orbitron tracking-widest uppercase">{{ $isHeadToHead ? __('Waiting for both players') : __('Bracket Not Generated') }}</h3>
+                    <p class="text-sm font-medium text-zinc-600 mt-4 max-w-sm mx-auto leading-relaxed">{{ $isHeadToHead ? __('The match and result form become available when both players are registered and the competition starts.') : __('Brackets and result submission become available automatically after tournament entries lock.') }}</p>
                 </div>
             @endif
         </div>
@@ -1132,7 +1149,7 @@
             <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
                 <h2 class="text-2xl font-black font-orbitron tracking-widest text-white mb-8 flex items-center space-x-3">
                     <span class="w-1.5 h-8 bg-amber-500 rounded-full"></span>
-                    <span>TOURNAMENT ACTIVITY</span>
+                    <span>{{ $isHeadToHead ? __('Head-to-Head Activity') : __('TOURNAMENT ACTIVITY') }}</span>
                 </h2>
 
                 @if(isset($activityLogs) && $activityLogs->count() > 0)
@@ -1157,7 +1174,7 @@
                     <div class="text-center py-10">
                         <i data-lucide="activity" class="w-12 h-12 mx-auto text-zinc-700 mb-4"></i>
                         <h3 class="text-lg font-black text-zinc-400 font-orbitron tracking-widest uppercase">No Activity Yet</h3>
-                        <p class="text-sm font-medium text-zinc-600 mt-2">Activity feed will populate as the tournament progresses.</p>
+                        <p class="text-sm font-medium text-zinc-600 mt-2">{{ $isHeadToHead ? __('Activity will appear as the Head-to-Head progresses.') : __('Activity feed will populate as the tournament progresses.') }}</p>
                     </div>
                 @endif
             </div>
@@ -1275,7 +1292,7 @@
                             @error('gameIdValue')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
                             @if(!empty($gameIdSettings['instructions']))<p class="mt-2 text-xs leading-relaxed text-zinc-500">{{ $gameIdSettings['instructions'] }}</p>@endif
                         </div>
-                        <p class="text-xs leading-relaxed text-zinc-500">{{ __('Your match starts automatically when the tournament begins. :value1', ['value1' => ((int) $tournament->workflow_version === 2 ? 'Open Submit Result to play and report your result.' : 'Open the Match Room to play and submit your result.')]) }}</p>
+                        <p class="text-xs leading-relaxed text-zinc-500">{{ $isHeadToHead ? __('Once both players are registered, open Submit Result in this competition view to play and report your result.') : __('Your match starts automatically when the tournament begins. :value1', ['value1' => ((int) $tournament->workflow_version === 2 ? 'Open Submit Result to play and report your result.' : 'Open the Match Room to play and submit your result.')]) }}</p>
                         <div class="flex gap-3 pt-2">
                             <button type="button" @click="showJoinModal = false" class="flex-1 rounded-xl border border-zinc-700 px-4 py-3 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800">Cancel</button>
                             <button type="submit" wire:loading.attr="disabled" wire:target="register" class="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 disabled:opacity-60">{{ ($tournament->team_size ?? 1) > 1 ? ($userTournamentTeam || $userSquad ? 'Register Team' : 'Find a Team') : $joinLabel }}</button>
@@ -1322,7 +1339,7 @@
                                 <span role="status" class="mt-2 block rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-amber-200">{{ __('Cancellation fee: :fee. Refund: :refund.', array_map(fn ($amount) => \App\Shared\Support\Currency::format($amount), $cancellationAmounts)) }}</span>
                             @endif
                         @elseif((int) $tournament->workflow_version === 2)
-                            {{ __('Cancellation is unavailable because the tournament has started or another request is pending.') }}
+                            {{ $isHeadToHead ? __('Cancellation is unavailable because the Head-to-Head has started or another request is pending.') : __('Cancellation is unavailable because the tournament has started or another request is pending.') }}
                         @elseif($tournament->entry_fee > 0)
                             Your entry fee of <strong class="text-cyan-400">@currencySymbol{{ number_format((float)$tournament->entry_fee, 2) }}</strong> will be refunded to your wallet.
                         @endif
