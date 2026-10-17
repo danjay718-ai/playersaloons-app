@@ -6,7 +6,6 @@ namespace App\Http\Requests\Admin;
 
 use App\Modules\Tournament\Services\TournamentTimezone;
 use App\Modules\Tournament\Support\CompetitionPlatforms;
-use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 
@@ -48,7 +47,7 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
             'slots' => ['required', 'array', 'min:1', 'max:50'],
             'slots.*.label' => ['nullable', 'string', 'max:100'],
             'slots.*.local_start_time' => ['required', 'date_format:H:i'],
-            'slots.*.schedule_start_at' => ['required', 'date'],
+            'slots.*.schedule_start_at' => ['required', 'date', 'after:'.now(app(TournamentTimezone::class)->value())->format('Y-m-d H:i:s')],
             'slots.*.schedule_end_at' => ['required', 'date', 'after:slots.*.schedule_start_at'],
             'slots.*.day_of_week' => ['nullable', 'integer', 'between:0,6'],
             'slots.*.day_of_month' => ['nullable', 'integer', 'between:1,31'],
@@ -102,17 +101,6 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
                 $validator->errors()->add('max_teams', 'A Head-to-Head schedule always has exactly two player slots.');
             }
             foreach ((array) $this->input('slots', []) as $index => $slot) {
-                $timezone = app(TournamentTimezone::class)->value();
-                $start = isset($slot['schedule_start_at'])
-                    ? CarbonImmutable::parse($slot['schedule_start_at'], $timezone)
-                    : null;
-                $now = CarbonImmutable::now($timezone);
-                if ($start !== null && $start->startOfDay()->lessThan($now->startOfDay())) {
-                    $validator->errors()->add("slots.{$index}.schedule_start_at", 'Start date cannot be in the past.');
-                }
-                if ($this->input('frequency') === 'one_time' && $start !== null && $start->lessThan($now)) {
-                    $validator->errors()->add("slots.{$index}.schedule_start_at", 'A one-time tournament must start in the future.');
-                }
                 if (isset($slot['platform_id'])) {
                     $belongsToGame = DB::table('game_platform')
                         ->where('game_id', $this->integer('game_id'))

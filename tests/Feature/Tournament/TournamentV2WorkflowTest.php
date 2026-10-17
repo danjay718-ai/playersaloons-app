@@ -2163,7 +2163,7 @@ final class TournamentV2WorkflowTest extends TestCase
     }
 
     #[DataProvider('netherlandsScheduleDates')]
-    public function test_form_defaults_use_the_sidebar_schedule_timezone_and_current_minute(string $date): void
+    public function test_form_defaults_leave_slot_time_blank_and_use_the_sidebar_schedule_timezone(string $date): void
     {
         $this->travelTo(CarbonImmutable::parse($date.' 17:20:35', 'Europe/Amsterdam')->utc());
         config()->set('app.tournament_timezone', 'UTC');
@@ -2177,8 +2177,8 @@ final class TournamentV2WorkflowTest extends TestCase
             ]).')', false);
             $local = now('Europe/Amsterdam');
             $response->assertSee((string) Js::from([[
-                'label' => '', 'local_start_time' => '17:20',
-                'schedule_start_at' => $date.'T17:20', 'schedule_end_at' => $date.'T23:59',
+                'label' => '', 'local_start_time' => '',
+                'schedule_start_at' => '', 'schedule_end_at' => $date.'T23:59',
                 'day_of_week' => $local->dayOfWeekIso - 1, 'day_of_month' => $local->day,
             ]]), false);
             self::assertStringNotContainsString('18:21', $response->getContent());
@@ -2305,6 +2305,58 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertDontSee('Exact UTC start time')->assertDontSee('All timestamps are UTC.');
         $this->get(route('admin.h2h.index', ['tab' => 'daily', 'start_time' => '15:20']))
             ->assertOk()->assertDontSee($template->name);
+    }
+
+    public function test_creation_requires_an_explicit_future_slot_time_for_every_frequency(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-15 17:20:35', 'Europe/Amsterdam')->utc());
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Europe/Amsterdam']);
+
+        foreach (['tournament', 'head_to_head'] as $type) {
+            $route = $type === 'tournament' ? 'admin.tournaments.v2.store' : 'admin.h2h.v2.store';
+            foreach (['one_time', 'daily', 'weekly', 'monthly'] as $frequency) {
+                $payload = $this->multiPlatformPayload([$this->platform->id], $type);
+                $payload['frequency'] = $frequency;
+                $payload['slots'][0]['day_of_week'] = 3;
+                $payload['slots'][0]['day_of_month'] = 15;
+                $payload['slots'][0]['schedule_end_at'] = '2026-10-16T23:59';
+
+                $templateCount = TournamentTemplate::query()->count();
+                foreach (['', 'not-a-date', '2026-10-14T18:00', '2026-10-15T17:19', '2026-10-15T17:20'] as $start) {
+                    $payload['slots'][0]['local_start_time'] = $start === '' ? '' : '17:20';
+                    $payload['slots'][0]['schedule_start_at'] = $start;
+                    $response = $this->actingAs($this->admin)->post(route($route), $payload)
+                        ->assertSessionHasErrors('slots.0.schedule_start_at');
+                    if ($start === '') {
+                        $response->assertSessionHasErrors('slots.0.local_start_time');
+                    }
+                }
+                self::assertSame($templateCount, TournamentTemplate::query()->count());
+                $payload['slots'][0]['local_start_time'] = '17:21';
+                $payload['slots'][0]['schedule_start_at'] = '2026-10-15T17:21';
+                $this->actingAs($this->admin)->post(route($route), $payload)
+                    ->assertSessionHasNoErrors()->assertRedirect();
+                $occurrence = Tournament::query()->latest('id')->firstOrFail();
+                self::assertSame(TournamentStatus::REGISTRATION_OPEN, $occurrence->status);
+                self::assertSame('2026-10-15 15:21:00', $occurrence->start_at->utc()->format('Y-m-d H:i:s'));
+            }
+        }
+    }
+
+    public function test_adding_a_recurring_slot_requires_a_valid_future_start(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-15 10:20:35', 'UTC'));
+        $template = $this->template('daily', 4, '12:00');
+        $route = route('admin.tournaments.v2.templates.slots.store', $template);
+        $payload = ['schedule_end_at' => '2026-10-15T23:59'];
+        foreach (['', 'not-a-date', '2026-10-14T18:00', '2026-10-15T10:20'] as $start) {
+            $this->actingAs($this->admin)->post($route, [...$payload, 'schedule_start_at' => $start])
+                ->assertSessionHasErrors('schedule_start_at');
+        }
+        self::assertSame(1, $template->scheduleSlots()->count());
+        $this->actingAs($this->admin)->post($route, [...$payload, 'schedule_start_at' => '2026-10-15T10:21'])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        self::assertSame(TournamentStatus::REGISTRATION_OPEN, Tournament::query()->where('template_id', $template->id)->firstOrFail()->status);
     }
 
     private function multiPlatformPayload(array $ids, string $type = 'tournament'): array
