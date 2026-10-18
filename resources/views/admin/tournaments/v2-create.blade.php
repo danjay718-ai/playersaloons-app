@@ -33,6 +33,7 @@
 
         <form method="POST" action="{{ ($h2h ?? false) ? route('admin.h2h.v2.store') : route('admin.tournaments.v2.store') }}" enctype="multipart/form-data" class="space-y-5">
             @csrf
+            <input type="hidden" name="schedule_timezone" value="{{ $timezone }}">
             <input type="hidden" name="competition_type" value="{{ ($h2h ?? false) ? 'head_to_head' : 'tournament' }}">
             <section class="v2-card">
                 <div class="v2-section-heading"><div><h2>Game and presentation</h2><p>Defaults are copied to each new occurrence, so later game-template changes do not rewrite history.</p></div></div>

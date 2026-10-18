@@ -110,7 +110,7 @@ final class V2TournamentDiscoveryService
             $query->where('name', 'like', '%'.$filters['search'].'%');
         }
         if (($filters['start_date'] ?? '') !== '') {
-            $query->whereDate('start_at', '>=', $filters['start_date']);
+            app(TournamentScheduleFilters::class)->apply($query, ['start_date' => $filters['start_date']]);
         }
         foreach (['game_id', 'frequency', 'competition_type'] as $column) {
             if (($filters[$column] ?? '') !== '') {

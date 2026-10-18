@@ -212,13 +212,8 @@
                     <form wire:submit.prevent="submitResult" class="space-y-4">
                         @if((int) $match->tournament->workflow_version === 2 && $statusVal === 'waiting_for_confirmation')
                             <div role="alert" class="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100"
-                                 x-data="{
-                                     endTime: new Date('{{ $activeAttempt?->result_deadline_at?->toIso8601String() ?? '' }}').getTime(),
-                                     timeLeft: 0,
-                                     init() { this.updateTimer(); setInterval(() => this.updateTimer(), 1000); },
-                                     updateTimer() { this.timeLeft = Math.max(0, Math.ceil((this.endTime - Date.now()) / 1000)); },
-                                     formatTime(seconds) { return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; }
-                                 }">
+                                 wire:key="opponent-result-clock-{{ $match->uuid }}-{{ $activeAttempt?->result_deadline_at?->getTimestampMs() ?? 'none' }}"
+                                 x-data="matchResultTimer(@js($activeAttempt?->result_deadline_at?->getTimestampMs()), @js(now()->getTimestampMs()))">
                                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-300">
                                     <i data-lucide="triangle-alert" class="h-5 w-5"></i>
                                 </span>
@@ -290,26 +285,7 @@
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="flex flex-col space-y-4 pt-2 border-t border-zinc-800/50" x-data="{
-                            endTime: new Date('{{ ((int) $match->tournament->workflow_version === 2 ? $activeAttempt?->result_deadline_at : ($match->started_at ?? now())->addMinutes($match->tournament->waiting_result_time))?->toIso8601String() ?? '' }}').getTime(),
-                            timeLeft: 0,
-                            expired: false,
-                            init() {
-                                this.updateTimer();
-                                setInterval(() => this.updateTimer(), 1000);
-                            },
-                            updateTimer() {
-                                const now = new Date().getTime();
-                                const diff = this.endTime - now;
-                                this.expired = Number.isFinite(this.endTime) && diff <= 0;
-                                this.timeLeft = Math.max(0, Math.ceil(diff / 1000));
-                            },
-                            formatTime(seconds) {
-                                const m = Math.floor(seconds / 60);
-                                const s = seconds % 60;
-                                return `${m}m ${s}s`;
-                            }
-                        }">
+                        <div class="flex flex-col space-y-4 pt-2 border-t border-zinc-800/50" wire:key="submission-clock-{{ $match->uuid }}-{{ $activeAttempt?->attempt_number ?? 1 }}-{{ $activeAttempt?->result_deadline_at?->getTimestampMs() ?? 'none' }}" x-data="matchResultTimer(@js(((int) $match->tournament->workflow_version === 2 ? $activeAttempt?->result_deadline_at : ($match->started_at?->copy() ?? now())->addMinutes($match->tournament->waiting_result_time))?->getTimestampMs()), @js(now()->getTimestampMs()))">
                             @if((int) $match->tournament->workflow_version === 2 && !$activeAttempt?->result_deadline_at)
                                 <div class="mb-2 text-center text-[10px] font-bold uppercase tracking-widest text-zinc-500">{{ __('The :value1-minute response timer starts after the first submission.', ['value1' => ($match->tournament->waiting_result_time ?: 5)]) }}</div>
                             @else
@@ -349,24 +325,7 @@
 
                     </form>
                 @elseif((int) $match->tournament->workflow_version !== 2 && $statusVal === 'waiting_for_confirmation' && !$isSubmitter)
-                    <div class="space-y-4" x-data="{
-                        endTime: new Date('{{ $match->result_submitted_at?->addMinutes($match->tournament->waiting_result_time)->toIso8601String() ?? now()->toIso8601String() }}').getTime(),
-                        timeLeft: 0,
-                        init() {
-                            this.updateTimer();
-                            setInterval(() => this.updateTimer(), 1000);
-                        },
-                        updateTimer() {
-                            const now = new Date().getTime();
-                            const diff = this.endTime - now;
-                            this.timeLeft = Math.max(0, Math.floor(diff / 1000));
-                        },
-                        formatTime(seconds) {
-                            const m = Math.floor(seconds / 60);
-                            const s = seconds % 60;
-                            return `${m}m ${s}s`;
-                        }
-                    }">
+                    <div class="space-y-4" wire:key="legacy-confirmation-clock-{{ $match->uuid }}-{{ $match->result_submitted_at?->getTimestampMs() }}" x-data="matchResultTimer(@js($match->result_submitted_at?->copy()->addMinutes($match->tournament->waiting_result_time)->getTimestampMs() ?? now()->getTimestampMs()), @js(now()->getTimestampMs()))">
                         <p class="text-sm text-zinc-400">
                             Your opponent has submitted a match result. Please confirm it to finalize the match before time runs out: 
                             <span class="font-black text-amber-400" x-text="formatTime(timeLeft)"></span>.
@@ -521,7 +480,7 @@
                 @foreach($match->disputes as $disp)
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-zinc-300">{{ __('Dispute #:value1 (Opened: :value2)', ['value1' => ($disp->id), 'value2' => ($disp->created_at?->format('M d, Y'))]) }}</span>
+                            <span class="text-xs font-bold text-zinc-300">{{ __('Dispute #:value1 (Opened: :value2)', ['value1' => ($disp->id), 'value2' => ($disp->created_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, Y · H:i T'))]) }}</span>
                             <span class="text-[10px] font-bold uppercase tracking-wider border rounded px-2 py-0.5 {{ $disp->status->value === 'RESOLVED' ? 'bg-zinc-800 text-zinc-400 border-zinc-800' : 'bg-red-950/30 text-red-400 border-red-900/40' }}">
                                 {{ $disp->status->value }}
                             </span>

@@ -126,7 +126,7 @@
             </select>
 
             @if($activeTab === 'daily')
-                <div><label class="sr-only" for="tournament-start-time">{{ __('Exact start time (:timezone)', ['timezone' => \App\Modules\Tournament\Services\TournamentTimezone::AMSTERDAM]) }}</label><input id="tournament-start-time" type="time" wire:model.live="startTimeFilter" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500"><p class="mt-1 text-[10px] text-slate-500">{{ __('Exact start time (:timezone)', ['timezone' => \App\Modules\Tournament\Services\TournamentTimezone::AMSTERDAM]) }}</p></div>
+                <div><label class="sr-only" for="tournament-start-time">{{ __('Exact start time (:timezone)', ['timezone' => app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value()]) }}</label><input id="tournament-start-time" type="time" wire:model.live="startTimeFilter" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500"><p class="mt-1 text-[10px] text-slate-500">{{ __('Exact start time (:timezone)', ['timezone' => app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value()]) }}</p></div>
             @else
             <div class="flex items-center gap-2">
                 <input type="date" wire:model.live="startDateFilter" 
@@ -239,7 +239,7 @@
                                 </span>
                             </td>
                             <td class="p-4 text-slate-400">
-                                {{ $tournament->start_at?->setTimezone('Europe/Amsterdam')->format('M d, H:i') ?? 'N/A' }}
+                                {{ $tournament->start_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, H:i') ?? 'N/A' }}
                             </td>
                             <td class="p-4 text-right">
                                 <x-admin.action-dropdown>
@@ -601,15 +601,15 @@
                         <div class="bg-slate-900/40 border border-slate-800/60 rounded-lg p-4 space-y-2.5 text-xs text-slate-300">
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Registration Window</span>
-                                <span>{{ $selectedTournament->registration_open_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }} — {{ $selectedTournament->registration_close_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }}</span>
+                                <span>{{ $selectedTournament->registration_open_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('Y-m-d H:i') ?? 'N/A' }} — {{ $selectedTournament->registration_close_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('Y-m-d H:i') ?? 'N/A' }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Check-in Window</span>
-                                <span>{{ $selectedTournament->checkin_open_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }} — {{ $selectedTournament->checkin_close_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }}</span>
+                                <span>{{ $selectedTournament->checkin_open_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('Y-m-d H:i') ?? 'N/A' }} — {{ $selectedTournament->checkin_close_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('Y-m-d H:i') ?? 'N/A' }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Starts At</span>
-                                <span>{{ $selectedTournament->start_at?->setTimezone('Europe/Amsterdam')->format('Y-m-d H:i') ?? 'N/A' }} Europe/Amsterdam</span>
+                                <span>{{ $selectedTournament->start_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('Y-m-d H:i') ?? 'N/A' }} {{ app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value() }}</span>
                             </div>
                         </div>
                     </div>

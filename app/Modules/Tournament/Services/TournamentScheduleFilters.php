@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Validator;
 /** Apply admin schedule filters in the same wall-clock timezone as the sidebar. */
 final class TournamentScheduleFilters
 {
-    private ?array $offsetPeriods = null;
+    private array $offsetPeriods = [];
 
     /** @param array<string, string> $filters */
     public function apply(Builder|Relation $query, array $filters): void
@@ -45,7 +45,7 @@ final class TournamentScheduleFilters
             if (($values[$field] ?? '') === '') {
                 continue;
             }
-            $boundary = CarbonImmutable::createFromFormat('!Y-m-d', $values[$field], TournamentTimezone::AMSTERDAM);
+            $boundary = CarbonImmutable::createFromFormat('!Y-m-d', $values[$field], app(TournamentTimezone::class)->value());
             $query->where('start_at', $field === 'start_date' ? '>=' : '<',
                 ($field === 'start_date' ? $boundary : $boundary->addDay())->utc());
         }
@@ -55,7 +55,8 @@ final class TournamentScheduleFilters
     {
         // Each IANA transition supplies the actual UTC offset for its interval.
         // This works across summer/winter time without database timezone tables.
-        $periods = $this->offsetPeriods ??= $this->offsetPeriods();
+        $timezone = app(TournamentTimezone::class)->value();
+        $periods = $this->offsetPeriods[$timezone] ??= $this->offsetPeriods();
         if ($periods === []) {
             $query->whereRaw('1 = 0');
 
@@ -82,7 +83,7 @@ final class TournamentScheduleFilters
         }
         $start = CarbonImmutable::parse($bounds->getAttribute('earliest_start'), 'UTC');
         $end = CarbonImmutable::parse($bounds->getAttribute('latest_start'), 'UTC')->addSecond();
-        $transitions = (new DateTimeZone(TournamentTimezone::AMSTERDAM))->getTransitions($start->timestamp, $end->timestamp) ?: [];
+        $transitions = (new DateTimeZone(app(TournamentTimezone::class)->value()))->getTransitions($start->timestamp, $end->timestamp) ?: [];
         $periods = [];
         foreach ($transitions as $index => $transition) {
             $periods[] = [

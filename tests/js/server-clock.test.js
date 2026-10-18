@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { serverClock } from '../../resources/js/server-clock.js';
 import { systemClock } from '../../resources/js/system-clock.js';
-import { countdownTimer, tournamentCountdown } from '../../resources/js/slot-picker.js';
+import { countdownTimer, tournamentCountdown, matchResultTimer } from '../../resources/js/slot-picker.js';
 
 const labels = { startsIn: 'Starts in', reached: 'Start time reached' };
 
@@ -89,4 +89,45 @@ test('a cached sidebar timestamp cannot fall two hours behind a fresh H2H list',
     const sidebar = systemClock({ now: '2026-10-17T13:15:00+02:00', timezone: 'Europe/Amsterdam' });
     assert.equal(sidebar.time, '15:15:00');
     assert.equal(sidebar.currentEpoch, card.now);
+});
+
+for (const timestamp of ['2026-10-17T23:59:00+02:00', '2026-12-17T23:59:00+01:00']) {
+    test(`match result deadline follows sidebar and lists despite device clock skew: ${timestamp}`, (t) => {
+        const page = pageClock(t);
+        const epoch = Date.parse(timestamp);
+        const deadline = epoch + 5 * 60000;
+        const sidebar = systemClock({ now: timestamp, timezone: 'Europe/Amsterdam' });
+        page.advance(90000);
+        const result = matchResultTimer(deadline, epoch);
+        const list = tournamentCountdown(epoch, labels);
+        result.updateTimer();
+        sidebar.tick();
+        assert.equal(sidebar.time, '00:00:30');
+        assert.equal(result.timeLeft, 210);
+        assert.equal(result.expired, false);
+        assert.equal(list.countdown(deadline, 'REGISTRATION_OPEN'), 'Starts in 00h 03m 30s');
+        page.advance(210000);
+        result.updateTimer();
+        assert.equal(result.timeLeft, 0);
+        assert.equal(result.expired, true);
+    });
+}
+
+test('a match without a first submission has no active deadline', (t) => {
+    const page = pageClock(t);
+    const result = matchResultTimer(null, Date.parse('2026-10-17T10:00:00Z'));
+    page.advance(3600000);
+    result.updateTimer();
+    assert.equal(result.timeLeft, 0);
+    assert.equal(result.expired, false);
+});
+
+test('result timer releases its interval on Livewire component removal', (t) => {
+    pageClock(t);
+    const epoch = Date.parse('2026-10-17T10:00:00Z');
+    const result = matchResultTimer(epoch + 300000, epoch);
+    result.init();
+    assert.notEqual(result.timer, null);
+    result.destroy();
+    assert.equal(result.timer, null);
 });

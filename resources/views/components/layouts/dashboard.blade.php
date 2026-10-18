@@ -92,6 +92,8 @@
             }
         @endphp
 
+        <div class="mx-4 mb-3"><x-app-clock /></div>
+
         <!-- Grid of more items -->
         <div class="more-panel-grid">
             @foreach($moreItems as $item)
@@ -212,6 +214,7 @@
 
             <!-- Sidebar Bottom Action -->
             <div class="px-3">
+                <div x-show="sidebarExpanded" x-cloak class="mb-3"><x-app-clock /></div>
                 @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
                 <a href="/admin" wire:navigate data-sidebar-tooltip="{{ __('Admin Panel') }}"
                    class="w-full flex items-center h-12 px-3 mb-2 rounded-lg border border-amber-500/30 bg-amber-950/20 text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 hover:border-amber-400/50 transition-all duration-200">

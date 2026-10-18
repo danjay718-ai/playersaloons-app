@@ -137,7 +137,7 @@
                         {{ $tournament->status->label() }}
                     </span>
                     <span class="text-[10px] font-black uppercase tracking-[0.15em] rounded-full border border-zinc-800 bg-zinc-950/60 px-4 py-1.5 text-zinc-400">
-                        Europe/Amsterdam
+                        {{ app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value() }}
                     </span>
                     @if($isHeadToHead)
                         <span class="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] bg-violet-950/30 border border-violet-800/60 rounded-full px-4 py-1.5">{{ __('Head-to-Head • 1v1') }}</span>
@@ -649,8 +649,8 @@
                                 <div class="space-y-1 min-w-0">
                                     <span class="block text-[10px] font-black {{ $isPast ? 'text-zinc-700' : 'text-zinc-500' }} uppercase tracking-widest">{{ $item['label'] }}</span>
                                     <span class="text-sm font-bold {{ $isPast ? 'text-zinc-600 line-through' : 'text-zinc-300' }}">
-                                        {{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->setTimezone('Europe/Amsterdam')->format('M d, Y') : 'TBD' }}
-                                        <span class="text-xs text-zinc-500 ml-1 opacity-60">{{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->setTimezone('Europe/Amsterdam')->format('h:i A T') : '' }}</span>
+                                        {{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, Y') : 'TBD' }}
+                                        <span class="text-xs text-zinc-500 ml-1 opacity-60">{{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('h:i A T') : '' }}</span>
                                     </span>
                                     @if($item['time'] && !$isPast)
                                         <span class="text-[10px] text-zinc-600 font-medium">{{ \Illuminate\Support\Carbon::parse($item['time'])->diffForHumans() }}</span>

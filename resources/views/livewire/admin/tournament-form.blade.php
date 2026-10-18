@@ -201,7 +201,7 @@
         </section>
 
         <section data-step="4" x-show="step === 4" x-cloak class="p-5 md:p-8">
-            <div class="mb-6"><h2 class="text-lg font-black text-white">Dates & Timezone</h2><p class="mt-1 text-sm text-slate-500">Times below use the selected timezone. Player displays can convert them locally; storage remains UTC.</p></div>
+            <div class="mb-6"><h2 class="text-lg font-black text-white">Dates & Timezone</h2><p class="mt-1 text-sm text-slate-500">{{ __('Times below use the schedule timezone. Competition pages use the App timezone from Settings.') }}</p></div>
             <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <div class="lg:col-span-2"><label class="field-label">Tournament Timezone *</label><select wire:model.live="timezone" required class="form-field">@foreach($timezones as $zone)<option value="{{ $zone }}">{{ $zone }}</option>@endforeach</select>@error('timezone')<p class="field-error">{{ $message }}</p>@enderror</div>
                 <div><label class="field-label">Registration Starts *</label><input wire:model="registration_open_at" required type="datetime-local" class="form-field">@error('registration_open_at')<p class="field-error">{{ $message }}</p>@enderror</div>

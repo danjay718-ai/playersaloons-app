@@ -8,6 +8,7 @@ use App\Modules\Tournament\Services\TournamentTimezone;
 use App\Modules\Tournament\Support\CompetitionPlatforms;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 final class StoreV2TournamentTemplateRequest extends FormRequest
 {
@@ -20,6 +21,7 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'schedule_timezone' => ['required', Rule::in([app(TournamentTimezone::class)->value()])],
             'competition_type' => ['nullable', 'in:tournament,head_to_head'],
             'game_id' => ['required', 'integer', 'exists:games,id,deleted_at,NULL,is_active,1'],
             ...CompetitionPlatforms::rules($this->integer('game_id')),
@@ -67,6 +69,14 @@ final class StoreV2TournamentTemplateRequest extends FormRequest
             'slots.*.description' => ['nullable', 'string', 'max:10000'],
             'slots.*.rules' => ['nullable', 'string', 'max:20000'],
             'slots.*.banner' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'schedule_timezone.required' => __('The app timezone changed or is missing. Refresh this page and check the slot times before submitting.'),
+            'schedule_timezone.in' => __('The app timezone changed or is missing. Refresh this page and check the slot times before submitting.'),
         ];
     }
 

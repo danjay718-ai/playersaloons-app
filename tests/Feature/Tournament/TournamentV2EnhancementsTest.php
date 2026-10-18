@@ -17,6 +17,7 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Services\CancelledOccurrenceRetention;
 use App\Modules\Tournament\Services\CompetitionBannerResolver;
 use App\Modules\Tournament\Services\SponsoredPrizeFundingService;
+use App\Modules\Tournament\Services\TournamentTimezone;
 use App\Modules\Tournament\Services\V2TournamentLifecycle;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\CompetitionType;
@@ -153,6 +154,7 @@ final class TournamentV2EnhancementsTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-09-27 09:00:00', 'UTC'));
         $this->platformWallet()->update(['cached_balance' => '100.00']);
         $payload = [
+            'schedule_timezone' => app(TournamentTimezone::class)->value(),
             'competition_type' => 'tournament',
             'game_id' => $this->game->id,
             'platform_ids' => [$this->platform->id],

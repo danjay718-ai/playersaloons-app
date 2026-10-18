@@ -10,6 +10,7 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Tournament\Services\TournamentTimezone;
 use App\Modules\Wallet\Actions\ProcessDepositAction;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\StripeCheckoutService;
@@ -75,6 +76,7 @@ class CurrencyAndIncomeTest extends TestCase
             $this->actingAs($this->admin)->get(route($route.'.create'))->assertOk()
                 ->assertSee('<meta name="app-currency" content="GBP">', false);
             $this->post(route($route.'.store'), [
+                'schedule_timezone' => app(TournamentTimezone::class)->value(),
                 'name' => 'Currency '.$type, 'competition_type' => $type, 'game_id' => $game->id,
                 'platform_ids' => [$platform->id], 'frequency' => 'daily', 'max_teams' => $type === 'tournament' ? 4 : 2,
                 'entry_fee' => '5.00', 'winning_points' => 15, 'waiting_result_time' => 5,

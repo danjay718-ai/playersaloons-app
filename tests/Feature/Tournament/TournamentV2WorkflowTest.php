@@ -6,6 +6,7 @@ namespace Tests\Feature\Tournament;
 
 use App\Http\Middleware\TranslateRenderedHtml;
 use App\Livewire\Admin\MatchAdmin;
+use App\Livewire\Admin\SystemSettingsAdmin;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Admin\UserAdmin;
 use App\Livewire\Community\PlayerReviewPage;
@@ -54,6 +55,7 @@ use App\Modules\Tournament\Models\TournamentRegistration;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Tournament\Services\AdminV2ScheduleQuery;
 use App\Modules\Tournament\Services\CancelledOccurrenceRetention;
+use App\Modules\Tournament\Services\TournamentTimezone;
 use App\Modules\Tournament\Services\V2TournamentDiscoveryService;
 use App\Modules\Tournament\Services\V2TournamentLifecycle;
 use App\Modules\Wallet\Actions\ProcessDepositAction;
@@ -598,6 +600,7 @@ final class TournamentV2WorkflowTest extends TestCase
 
         $this->actingAs($this->admin)
             ->post('/admin/head-to-head', [
+                'schedule_timezone' => app(TournamentTimezone::class)->value(),
                 'competition_type' => 'head_to_head',
                 'game_id' => $this->game->id,
                 'platform_id' => $this->platform->id,
@@ -1280,6 +1283,162 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertViewHas('currentMatchHasSubmittedResult', false)
             ->assertSee('Submit Result')
             ->assertDontSee('View Result Status');
+    }
+
+    public static function competitionClockDates(): array
+    {
+        return [
+            'tournament summer midnight' => [CompetitionType::TOURNAMENT, '2026-09-13 22:59:00', 'Sep 14, 2026 · 00:59 CEST'],
+            'head to head summer midnight' => [CompetitionType::HEAD_TO_HEAD, '2026-09-13 22:59:00', 'Sep 14, 2026 · 00:59 CEST'],
+            'tournament winter midnight' => [CompetitionType::TOURNAMENT, '2026-12-13 23:59:00', 'Dec 14, 2026 · 00:59 CET'],
+            'head to head winter midnight' => [CompetitionType::HEAD_TO_HEAD, '2026-12-13 23:59:00', 'Dec 14, 2026 · 00:59 CET'],
+        ];
+    }
+
+    #[DataProvider('competitionClockDates')]
+    public function test_match_timers_and_player_admin_disputes_use_the_netherlands_clock(CompetitionType $type, string $utcNow, string $localDisplay): void
+    {
+        [$match, $first, $second] = $this->activeTwoPlayerMatch([], $type);
+        $this->travelTo(CarbonImmutable::parse($utcNow, 'UTC'));
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $deadline = $match->attempts()->where('attempt_number', $match->fresh()->active_attempt_number)->firstOrFail()->result_deadline_at;
+
+        Livewire::actingAs($second)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->assertSee('matchResultTimer('.Js::from($deadline->getTimestampMs()).', '.Js::from(now()->getTimestampMs()).')', escape: false)
+            ->assertSee('Europe/Amsterdam')
+            ->assertDontSee('Date.now()', escape: false)
+            ->assertDontSee('new Date()', escape: false);
+
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        Livewire::actingAs($second)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->assertSee($localDisplay);
+        Livewire::actingAs($this->admin)->test(MatchAdmin::class)
+            ->call('selectMatch', $match->id)
+            ->assertSee($localDisplay);
+
+        self::assertSame('UTC', $match->fresh()->disputes->firstOrFail()->created_at->timezoneName);
+    }
+
+    public function test_app_timezone_setting_preserves_existing_schedules_and_match_deadlines(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-12 10:00:00', 'UTC'));
+        [$match, $first] = $this->activeTwoPlayerMatch();
+        app(SubmitV2MatchResultAction::class)->execute($match, $first->id, MatchOutcome::WIN);
+        $future = $this->template('daily', 2, '23:59', [], CompetitionType::HEAD_TO_HEAD);
+        app(MaterializeV2OccurrenceAction::class)->execute($future->scheduleSlots->first(), $this->admin);
+        $tables = ['tournament_templates', 'tournament_schedule_slots', 'tournaments', 'matches', 'match_attempts'];
+        $before = [];
+        foreach ($tables as $table) {
+            $before[$table] = DB::table($table)->orderBy('id')->get()->toJson();
+        }
+
+        Livewire::actingAs($this->admin)->test(SystemSettingsAdmin::class)
+            ->set('tournamentTimezone', 'Asia/Singapore')->call('saveAppTimezoneSettings')
+            ->assertHasNoErrors()->assertRedirect('/admin/system-settings');
+        self::assertDatabaseHas('system_settings', ['key' => 'tournament.timezone', 'value' => 'Asia/Singapore', 'updated_by' => $this->admin->id]);
+        foreach ($tables as $table) {
+            self::assertSame($before[$table], DB::table($table)->orderBy('id')->get()->toJson(), $table.' must not change');
+        }
+        $this->actingAs($this->admin)->get(route('admin.tournaments.v2.templates.slots', $future))
+            ->assertOk()->assertSee('Timezone: UTC.')->assertSee('App time (Asia/Singapore)');
+        $tomorrow = app(MaterializeV2OccurrenceAction::class)->execute(
+            $future->scheduleSlots->first(), $this->admin, now()->toImmutable()->addDay()->setTime(10, 0),
+        );
+        self::assertSame('UTC', $tomorrow->timezone);
+        self::assertSame('23:59', $tomorrow->start_at->format('H:i'));
+    }
+
+    public function test_app_timezone_settings_reject_invalid_and_unauthorized_changes(): void
+    {
+        Livewire::actingAs($this->admin)->test(SystemSettingsAdmin::class)
+            ->set('tournamentTimezone', 'Invalid/Zone')->call('saveAppTimezoneSettings')
+            ->assertHasErrors('tournamentTimezone');
+        $reviewer = $this->user('timezone-reviewer@example.com', 'timezonereviewer', 'MODERATOR');
+        $reviewer->givePermissionTo('system_settings.view');
+        Livewire::actingAs($reviewer)->test(SystemSettingsAdmin::class)
+            ->set('tournamentTimezone', 'Asia/Singapore')->call('saveAppTimezoneSettings')->assertForbidden();
+        self::assertDatabaseMissing('system_settings', ['key' => 'tournament.timezone', 'value' => 'Asia/Singapore']);
+    }
+
+    #[DataProvider('competitionTypes')]
+    public function test_new_schedules_use_app_timezone_and_reject_stale_or_missing_form_timezones(CompetitionType $type): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-12 01:00:00', 'UTC'));
+        $route = $type === CompetitionType::HEAD_TO_HEAD ? 'admin.h2h.v2.store' : 'admin.tournaments.v2.store';
+        $payload = $this->multiPlatformPayload([$this->platform->id], $type->value);
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Asia/Singapore']);
+        $this->actingAs($this->admin)->post(route($route), $payload)->assertSessionHasErrors([
+            'schedule_timezone' => 'The app timezone changed or is missing. Refresh this page and check the slot times before submitting.',
+        ]);
+        $createRoute = $type === CompetitionType::HEAD_TO_HEAD ? 'admin.h2h.v2.create' : 'admin.tournaments.v2.create';
+        $this->get(route($createRoute))->assertOk()
+            ->assertSee('name="schedule_timezone" value="Asia/Singapore"', false);
+        $missing = $payload;
+        unset($missing['schedule_timezone']);
+        $this->post(route($route), $missing)->assertSessionHasErrors('schedule_timezone');
+        self::assertSame(0, TournamentTemplate::query()->count());
+        $payload['schedule_timezone'] = 'Asia/Singapore';
+        $this->post(route($route), $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $tournament = Tournament::query()->firstOrFail();
+        self::assertSame('Asia/Singapore', $tournament->timezone);
+        self::assertSame('2026-09-12 15:00:00', $tournament->getRawOriginal('start_at'));
+        self::assertSame('Asia/Singapore', $tournament->template->timezone);
+    }
+
+    #[DataProvider('netherlandsScheduleDates')]
+    public function test_app_timezone_filters_use_local_dates_and_times_for_admin_and_player_lists(string $date): void
+    {
+        $this->travelTo(CarbonImmutable::parse($date.' 10:00:00', 'UTC'));
+        $template = $this->template('daily', 4, '23:30');
+        $occurrence = app(MaterializeV2OccurrenceAction::class)->execute($template->scheduleSlots->first(), $this->admin);
+        $adminQuery = app(AdminV2ScheduleQuery::class);
+        foreach (['Europe/Amsterdam', 'Asia/Singapore', 'Europe/London'] as $timezone) {
+            DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => $timezone]);
+            $local = $occurrence->start_at->copy()->setTimezone($timezone);
+            self::assertSame(1, $adminQuery->query(CompetitionType::TOURNAMENT, 'active', ['tab' => 'daily', 'start_time' => $local->format('H:i')])->count());
+            self::assertSame(0, $adminQuery->query(CompetitionType::TOURNAMENT, 'active', ['tab' => 'daily', 'start_time' => $local->copy()->addMinute()->format('H:i')])->count());
+            self::assertSame(1, $adminQuery->query(CompetitionType::TOURNAMENT, 'active', ['start_date' => $local->toDateString(), 'end_date' => $local->toDateString()])->count());
+            self::assertSame(0, $adminQuery->query(CompetitionType::TOURNAMENT, 'active', ['start_date' => $local->copy()->addDay()->toDateString()])->count());
+            $discovery = app(V2TournamentDiscoveryService::class);
+            self::assertSame(1, $discovery->paginateOccurrences('upcoming', ['start_date' => $local->toDateString()])->total());
+            self::assertSame(0, $discovery->paginateOccurrences('upcoming', ['start_date' => $local->copy()->addDay()->toDateString()])->total());
+        }
+        self::assertSame('23:30', $occurrence->fresh()->start_at->format('H:i'));
+    }
+
+    public static function configuredClockCases(): array
+    {
+        return [
+            'Amsterdam summer' => ['Europe/Amsterdam', '2026-09-13 23:59:00', 'Sep 14, 2026 · 01:59 CEST', CompetitionType::TOURNAMENT],
+            'Amsterdam winter' => ['Europe/Amsterdam', '2026-12-13 23:59:00', 'Dec 14, 2026 · 00:59 CET', CompetitionType::HEAD_TO_HEAD],
+            'Singapore summer' => ['Asia/Singapore', '2026-09-13 23:59:00', 'Sep 14, 2026 · 07:59 +08', CompetitionType::TOURNAMENT],
+            'Singapore winter' => ['Asia/Singapore', '2026-12-13 23:59:00', 'Dec 14, 2026 · 07:59 +08', CompetitionType::HEAD_TO_HEAD],
+            'London summer' => ['Europe/London', '2026-09-13 23:59:00', 'Sep 14, 2026 · 00:59 BST', CompetitionType::TOURNAMENT],
+            'London winter' => ['Europe/London', '2026-12-13 23:59:00', 'Dec 13, 2026 · 23:59 GMT', CompetitionType::HEAD_TO_HEAD],
+        ];
+    }
+
+    #[DataProvider('configuredClockCases')]
+    public function test_configured_timezone_matches_admin_player_clocks_and_dispute_displays(string $timezone, string $utcNow, string $display, CompetitionType $type): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-12 10:00:00', 'UTC'));
+        [$match, $first, $second] = $this->activeTwoPlayerMatch([], $type);
+        $this->travelTo(CarbonImmutable::parse($utcNow, 'UTC'));
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => $timezone]);
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        Livewire::actingAs($second)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->assertSee($display)->assertSee($timezone);
+        Livewire::actingAs($this->admin)->test(MatchAdmin::class)->call('selectMatch', $match->id)->assertSee($display);
+        foreach (['admin.tournaments.v2.create', 'admin.h2h.v2.create'] as $route) {
+            $this->actingAs($this->admin)->get(route($route))->assertOk()
+                ->assertSee('systemClock('.Js::from(['now' => now($timezone)->toIso8601String(), 'timezone' => $timezone]).')', false)
+                ->assertSee('name="schedule_timezone" value="'.$timezone.'"', false);
+        }
+        $this->actingAs($second)->get('/my-tournaments')->assertOk()
+            ->assertSee('App time ('.$timezone.')');
     }
 
     public static function competitionTypes(): array
@@ -2253,15 +2412,15 @@ final class TournamentV2WorkflowTest extends TestCase
         }
     }
 
-    public function test_sidebar_stays_in_amsterdam_when_tournament_default_setting_differs(): void
+    public function test_sidebar_uses_the_configured_app_timezone(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-15 09:20:00', 'UTC'));
         DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Asia/Singapore']);
         $this->actingAs($this->admin)->get(route('admin.tournaments.v2.create'))->assertOk()
             ->assertSee('systemClock('.Js::from([
-                'now' => '2026-10-15T11:20:00+02:00', 'timezone' => 'Europe/Amsterdam',
+                'now' => '2026-10-15T17:20:00+08:00', 'timezone' => 'Asia/Singapore',
             ]).')', false)
-            ->assertSee('Netherlands Time')
+            ->assertSee('App time (Asia/Singapore)')
             ->assertSee('17:20');
     }
 
@@ -2575,6 +2734,7 @@ final class TournamentV2WorkflowTest extends TestCase
     private function multiPlatformPayload(array $ids, string $type = 'tournament'): array
     {
         return [
+            'schedule_timezone' => app(TournamentTimezone::class)->value(),
             'name' => 'Multiple Platforms '.$type, 'competition_type' => $type,
             'game_id' => $this->game->id, 'platform_ids' => $ids,
             'frequency' => 'daily', 'max_teams' => 4, 'entry_fee' => '0.00',

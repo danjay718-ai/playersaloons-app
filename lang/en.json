@@ -395,5 +395,17 @@
     "Bracket Not Generated": "Bracket Not Generated",
     "How was your Head-to-Head?": "How was your Head-to-Head?",
     "Share your experience. Reviews are checked before appearing publicly.": "Share your experience. Reviews are checked before appearing publicly.",
-    "Leave a review": "Leave a review"
+    "Leave a review": "Leave a review",
+    "Start (:timezone)": "Start (:timezone)",
+    "Archived at (:timezone)": "Archived at (:timezone)",
+    "App timezone": "App timezone",
+    "Save app timezone": "Save app timezone",
+    "App time (:timezone)": "App time (:timezone)",
+    "Used across admin and player pages. Changing this does not reschedule existing competitions. New schedules use the selected timezone. Refresh other open pages after saving.": "Used across admin and player pages. Changing this does not reschedule existing competitions. New schedules use the selected timezone. Refresh other open pages after saving.",
+    "App timezone updated. Refresh other open pages to use the new timezone.": "App timezone updated. Refresh other open pages to use the new timezone.",
+    "The app timezone changed or is missing. Refresh this page and check the slot times before submitting.": "The app timezone changed or is missing. Refresh this page and check the slot times before submitting.",
+    "Schedule timezone: :timezone. Existing schedules keep their original timezone.": "Schedule timezone: :timezone. Existing schedules keep their original timezone.",
+    "Times below use the schedule timezone. Competition pages use the App timezone from Settings.": "Times below use the schedule timezone. Competition pages use the App timezone from Settings.",
+    "Tournament timing settings updated.": "Tournament timing settings updated.",
+    "Recurs in :timezone": "Recurs in :timezone"
 }

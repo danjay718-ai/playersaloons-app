@@ -7,6 +7,7 @@ namespace App\Modules\Tournament\Actions;
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Events\TournamentCreated;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Services\TournamentTimezone;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\TournamentStatus;
 use Illuminate\Support\Facades\DB;
@@ -60,7 +61,7 @@ class CreateTournamentAction
                 'platform_id' => $data['platform_id'] ?? null,
                 'platform_ids' => $data['platform_ids'] ?? null,
                 'frequency' => $data['frequency'] ?? 'daily',
-                'timezone' => $data['timezone'] ?? config('app.tournament_timezone', 'Europe/Amsterdam'),
+                'timezone' => $data['timezone'] ?? app(TournamentTimezone::class)->value(),
                 'registration_duration_minutes' => $data['registration_duration_minutes'] ?? 10,
                 'extra_registration_minutes' => $data['extra_registration_minutes'] ?? 0,
                 'waiting_time' => $data['waiting_time'] ?? null,

@@ -111,7 +111,7 @@
                             @if($historyMatch['tournament'])<p class="mt-1 truncate text-xs text-zinc-500">{{ $historyMatch['tournament'] }}</p>@endif
                         </div>
                         <div class="mt-4 flex items-center justify-between border-t border-zinc-800/70 pt-3 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
-                            <span>{{ $historyMatch['date']?->format('M d, Y · g:i A') }}</span>
+                            <span>{{ $historyMatch['date']?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, Y · g:i A T') }}</span>
                             <span class="text-cyan-400">View Match</span>
                         </div>
                     </a>

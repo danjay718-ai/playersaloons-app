@@ -2,7 +2,7 @@
 
 @php
     $slots = $template->scheduleSlots ?? collect();
-    $timezone = $template->timezone ?: config('app.timezone');
+    $timezone = app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value();
     $start = $slots->filter(fn ($slot) => $slot->schedule_start_at !== null)->min('schedule_start_at');
     $end = $slots->filter(fn ($slot) => $slot->schedule_end_at !== null)->max('schedule_end_at');
     $frequency = $template->recurrence_frequency?->value ?? 'one_time';
@@ -17,9 +17,12 @@
 
 <div class="min-w-[150px]">
     @if($start)
-        <p class="font-medium text-slate-300">{{ $start->timezone($timezone)->format('M j, Y') }}@if($end) <span class="text-slate-600">→</span> {{ $end->timezone($timezone)->format('M j, Y') }}@endif</p>
+        <p class="font-medium text-slate-300">{{ $start->copy()->timezone($timezone)->format('M j, Y') }}@if($end) <span class="text-slate-600">→</span> {{ $end->copy()->timezone($timezone)->format('M j, Y') }}@endif</p>
     @else
         <p class="text-slate-500">Date not set</p>
     @endif
     <p class="mt-1 text-[10px] leading-relaxed text-slate-500">{{ $recurrenceDetail }}</p>
+    @if($template->timezone !== $timezone)
+        <p class="mt-1 text-[10px] text-slate-500">{{ __('Recurs in :timezone', ['timezone' => $template->timezone]) }}</p>
+    @endif
 </div>

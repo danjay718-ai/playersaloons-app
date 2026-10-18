@@ -1,7 +1,7 @@
 @props(['templates', 'headToHead' => false, 'livewire' => false, 'parentList' => false, 'statusFilter' => '', 'statusTab' => 'active', 'activeTab' => 'all', 'startDate' => '', 'endDate' => '', 'startTime' => ''])
 
 @php
-    $displayTimezone = \App\Modules\Tournament\Services\TournamentTimezone::AMSTERDAM;
+    $displayTimezone = app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value();
     $activeOccurrenceStatuses = ['DRAFT', 'PUBLISHED', 'REGISTRATION_OPEN', 'REGISTRATION_CLOSED', 'CHECKIN_OPEN', 'CHECKIN_CLOSED', 'BRACKET_GENERATED', 'ONGOING'];
     $matchesOccurrenceFilters = static function ($occurrence) use ($statusFilter, $statusTab, $activeOccurrenceStatuses, $activeTab, $startDate, $endDate, $startTime, $displayTimezone): bool {
         $status = $occurrence->status?->value ?? $occurrence->status;

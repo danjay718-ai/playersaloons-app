@@ -76,3 +76,32 @@ export function countdownTimer(targetEpoch, serverNow) {
         },
     };
 }
+
+// Result deadlines use the same server clock as sidebar and schedule countdowns.
+export function matchResultTimer(targetEpoch, serverNow) {
+    const now = serverClock(serverNow);
+    const hasDeadline = targetEpoch !== null && Number.isFinite(targetEpoch);
+
+    return {
+        timeLeft: 0,
+        expired: false,
+        timer: null,
+        init() {
+            this.destroy();
+            this.updateTimer();
+            this.timer = setInterval(() => this.updateTimer(), 1000);
+        },
+        updateTimer() {
+            const remaining = hasDeadline ? targetEpoch - now() : null;
+            this.expired = hasDeadline && remaining <= 0;
+            this.timeLeft = hasDeadline ? Math.max(0, Math.ceil(remaining / 1000)) : 0;
+        },
+        formatTime(seconds) {
+            return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+        },
+        destroy() {
+            clearInterval(this.timer);
+            this.timer = null;
+        },
+    };
+}

@@ -395,7 +395,7 @@
                                                 <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Filed By</span>
                                                 <span class="text-slate-200 font-semibold text-sm">{{ $disp->openedBy->username }}</span>
                                                 @if($disp->created_at)
-                                                    <span class="text-slate-600 text-[10px] block">{{ $disp->created_at->format('M d, Y · H:i') }}</span>
+                                                    <span class="text-slate-600 text-[10px] block">{{ $disp->created_at->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, Y · H:i T') }}</span>
                                                 @endif
                                             </div>
                                             <span class="inline-block shrink-0 px-2.5 py-1 rounded-lg border font-bold uppercase text-[9px] tracking-wider
@@ -453,7 +453,7 @@
                                                 </div>
                                                 <div>
                                                     <span class="text-slate-500 block">Resolved By (Admin ID)</span>
-                                                    <span class="text-slate-300 block mt-0.5">{{ $disp->resolved_by }} · {{ $disp->resolved_at?->format('M d, H:i') }}</span>
+                                                    <span class="text-slate-300 block mt-0.5">{{ $disp->resolved_by }} · {{ $disp->resolved_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, H:i T') }}</span>
                                                 </div>
                                             </div>
                                         @endif

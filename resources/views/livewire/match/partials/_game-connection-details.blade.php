@@ -3,7 +3,7 @@
         <i data-lucide="wifi" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div><h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-cyan-100">Game & Connection Details</h2><p class="mt-1 text-xs text-zinc-500">Everything needed to find the opponent and start this match.</p></div>
-            <span class="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ $match->tournament->timezone ?: config('app.tournament_timezone') }}</span>
+            <span class="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">{{ app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value() }}</span>
         </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4"><span class="block text-[9px] font-black uppercase tracking-widest text-zinc-600">Game / Platforms</span><strong class="mt-1 block text-sm text-white">{{ $match->tournament->game->localizedName() }}</strong><span class="text-xs text-zinc-500">{{ $match->tournament->platform_names ?: 'Platform not set' }}</span></div>

@@ -3,6 +3,18 @@
         <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{{ session('success') }}</div>
     @endif
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+        <h2 class="text-xl font-bold text-white">{{ __('App timezone') }}</h2>
+        <p class="mt-2 text-sm text-slate-500">{{ __('Used across admin and player pages. Changing this does not reschedule existing competitions. New schedules use the selected timezone. Refresh other open pages after saving.') }}</p>
+        <form wire:submit="saveAppTimezoneSettings" class="mt-6 space-y-4">
+            <label for="app-timezone" class="block text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('App timezone') }}</label>
+            <select id="app-timezone" wire:model="tournamentTimezone" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                @foreach($timezones as $timezone)<option value="{{ $timezone }}">{{ $timezone }}</option>@endforeach
+            </select>
+            @error('tournamentTimezone')<p class="text-xs text-red-400">{{ $message }}</p>@enderror
+            <button type="submit" class="rounded-lg bg-cyan-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white">{{ __('Save app timezone') }}</button>
+        </form>
+    </section>
+    <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <h2 class="text-xl font-bold text-white">{{ __('App currency') }}</h2>
         <p class="mt-2 text-sm leading-6 text-slate-400">{{ __('Used for wallets, prizes, entry fees and new payments across admin and player pages. Existing amounts are not converted.') }}</p>
         <form wire:submit="saveCurrencySettings" class="mt-5 space-y-4">
@@ -60,7 +72,7 @@
         <p class="mt-2 text-sm text-slate-500">New tournaments inherit this value. Organizers can override it on each tournament.</p>
         <form wire:submit="saveTournamentSettings" class="mt-6 space-y-4">
             <div><label class="text-xs font-bold uppercase tracking-wider text-slate-400">Default result response minutes</label><input wire:model="defaultWaitingResultTime" type="number" min="1" max="1440" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">@error('defaultWaitingResultTime')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror</div>
-            <div><label class="text-xs font-bold uppercase tracking-wider text-slate-400">Tournament timezone</label><select wire:model="tournamentTimezone" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">@foreach($timezones as $timezone)<option value="{{ $timezone }}">{{ $timezone }}</option>@endforeach</select>@error('tournamentTimezone')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror<p class="mt-1 text-[10px] text-slate-500">V2 schedules and midnight rollover use this Main Settings timezone.</p></div>
+
             <button type="submit" class="rounded-lg bg-cyan-600 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-cyan-500">Save tournament settings</button>
         </form>
     </section>
