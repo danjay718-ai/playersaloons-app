@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Identity\Jobs\ApplyPendingDisputeBansJob;
 use App\Modules\Match\Jobs\AutoForfeitJob;
 use App\Modules\Match\Jobs\ExpireHeadToHeadMatchesJob;
 use App\Modules\Match\Jobs\ReconcileMatchReadinessJob;
@@ -22,3 +23,5 @@ Schedule::command('tournaments:reconcile-lifecycle')->everyMinute()->withoutOver
 Schedule::command('tournaments:auto-generate')->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::command('tournaments:purge-empty-v2')->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::command('errors:prune --days=90')->dailyAt('03:30')->onOneServer();
+
+Schedule::job(new ApplyPendingDisputeBansJob)->everyMinute()->withoutOverlapping()->onOneServer();

@@ -81,6 +81,7 @@ class MatchResultSubmission extends Model
         return $this->belongsTo(GameMatch::class);
     }
 
+    /** @return BelongsTo<MatchAttempt, $this> */
     public function attempt(): BelongsTo
     {
         return $this->belongsTo(MatchAttempt::class, 'match_attempt_id');

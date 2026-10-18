@@ -6,13 +6,11 @@ namespace App\Modules\Identity\Actions;
 
 use App\Modules\Identity\Models\PlayerDisputeStrike;
 use App\Modules\Identity\Models\User;
-use App\Modules\Identity\StateMachines\UserStateMachine;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\WalletService;
-use App\Shared\Enums\UserStatus;
 use App\Shared\Support\DecimalMoney;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -55,7 +53,8 @@ final class IssueDisputeStrikeAction
                 'strike_number' => $number,
                 'reason' => $reason,
                 'balance_penalty' => DecimalMoney::format($minor),
-                'permanent_ban_applied' => $number >= 3,
+                'permanent_ban_applied' => false,
+                'ban_pending' => $number >= 3,
                 'created_at' => now(),
             ]);
 
@@ -71,17 +70,9 @@ final class IssueDisputeStrikeAction
                 );
             }
 
-            if ($number >= 3 && $lockedPlayer->status !== UserStatus::BANNED) {
-                $from = $lockedPlayer->status;
-                app(UserStateMachine::class)->transition($lockedPlayer, UserStatus::BANNED);
-                activity()->causedBy($admin)->performedOn($lockedPlayer)->withProperties([
-                    'from_status' => $from->value, 'to_status' => UserStatus::BANNED->value,
-                    'reason' => $reason, 'source' => 'dispute_strikes',
-                    'strike_id' => $strike->id, 'strike_number' => $number,
-                ])->log('user_banned');
-            }
+            app(ApplyPendingDisputeBanAction::class)->execute((int) $strike->id);
 
-            return $strike;
+            return $strike->refresh();
         }, 3);
     }
 }

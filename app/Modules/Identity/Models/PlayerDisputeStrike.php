@@ -21,7 +21,7 @@ final class PlayerDisputeStrike extends Model
 
     protected $fillable = [
         'uuid', 'user_id', 'tournament_id', 'match_id', 'dispute_id', 'issued_by',
-        'strike_number', 'reason', 'balance_penalty', 'permanent_ban_applied', 'created_at',
+        'strike_number', 'reason', 'balance_penalty', 'permanent_ban_applied', 'ban_pending', 'created_at',
     ];
 
     protected function casts(): array
@@ -30,6 +30,7 @@ final class PlayerDisputeStrike extends Model
             'strike_number' => 'integer',
             'balance_penalty' => 'decimal:2',
             'permanent_ban_applied' => 'boolean',
+            'ban_pending' => 'boolean',
             'created_at' => 'datetime',
         ];
     }

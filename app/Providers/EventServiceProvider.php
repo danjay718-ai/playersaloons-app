@@ -8,6 +8,7 @@ use App\Modules\Identity\Events\UserKycSubmitted;
 use App\Modules\Identity\Events\UserRegistered;
 use App\Modules\Identity\Events\UserSuspended;
 use App\Modules\Identity\Events\UserUnsuspended;
+use App\Modules\Identity\Listeners\ApplyPendingDisputeBansListener;
 use App\Modules\Identity\Listeners\NotifyAdminsOfKycSubmissionListener;
 use App\Modules\Identity\Listeners\QualifyReferralOnDepositListener;
 use App\Modules\Match\Events\HeadToHeadMatchDisputed;
@@ -26,6 +27,7 @@ use App\Modules\Match\Listeners\BroadcastBracketUpdateListener;
 use App\Modules\Match\Listeners\NotifyAdminsOfDisputeListener;
 use App\Modules\Match\Listeners\NotifyDisputeRulingListener;
 use App\Modules\Match\Listeners\NotifyParticipantsListener;
+use App\Modules\Match\Listeners\NotifyV2ResultResponseListener;
 use App\Modules\Match\Listeners\PrepareMatchRoomListener;
 use App\Modules\Operations\Services\ErrorIncidentReporter;
 use App\Modules\Team\Events\TeamMemberInvited;
@@ -122,6 +124,7 @@ class EventServiceProvider extends ServiceProvider
             ArmV2StalledMatchTimerListener::class,
         ],
         TournamentCompleted::class => [
+            ApplyPendingDisputeBansListener::class,
             AwardPrizesListener::class,
             AwardV2PrizesListener::class,
             AwardTournamentExperienceListener::class,
@@ -130,6 +133,7 @@ class EventServiceProvider extends ServiceProvider
             BroadcastTournamentUpdateListener::class,
         ],
         TournamentCancelled::class => [
+            ApplyPendingDisputeBansListener::class,
             IssueRefundsListener::class,
             BroadcastTournamentUpdateListener::class,
         ],
@@ -152,10 +156,12 @@ class EventServiceProvider extends ServiceProvider
             BroadcastTournamentUpdateListener::class,
         ],
         MatchResultSubmitted::class => [
+            NotifyV2ResultResponseListener::class,
             NotifyParticipantsListener::class,
             BroadcastTournamentUpdateListener::class,
         ],
         MatchCompleted::class => [
+            ApplyPendingDisputeBansListener::class,
             AdvanceWinnerListener::class,
             AwardV2EliminationExperienceListener::class,
             ArmV2StalledMatchTimerListener::class,
@@ -164,6 +170,7 @@ class EventServiceProvider extends ServiceProvider
             BroadcastTournamentUpdateListener::class,
         ],
         MatchForfeited::class => [
+            ApplyPendingDisputeBansListener::class,
             AdvanceWinnerListener::class,
             BroadcastBracketUpdateListener::class,
             NotifyParticipantsListener::class,

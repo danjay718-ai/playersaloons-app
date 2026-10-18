@@ -7,7 +7,13 @@ namespace App\Modules\Match\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $attempt_number
+ * @property string $status
+ * @property Carbon|null $result_deadline_at
+ */
 final class MatchAttempt extends Model
 {
     protected $fillable = [

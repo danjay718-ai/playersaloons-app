@@ -679,7 +679,7 @@
                             <div class="rounded-xl border border-red-900/50 bg-red-950/20 p-4 space-y-3">
                                 <div>
                                     <h4 class="text-xs font-bold uppercase tracking-wider text-red-300">{{ (int) $resolveDispute->match->tournament->workflow_version === 2 ? 'Dishonest-result strike' : 'Optional compliance ban' }}</h4>
-                                    <p class="mt-1 text-[10px] leading-relaxed text-red-300/70">{{ (int) $resolveDispute->match->tournament->workflow_version === 2 ? 'Use only for a confirmed deliberate false result. The third confirmed strike permanently bans the account.' : 'Use only when the reviewed proof establishes that a player deliberately submitted false evidence.' }}</p>
+                                    <p class="mt-1 text-[10px] leading-relaxed text-red-300/70">{{ (int) $resolveDispute->match->tournament->workflow_version === 2 ? __('Use only for a confirmed deliberate false result. The third confirmed strike schedules a permanent ban after the player is eliminated or the competition ends.') : 'Use only when the reviewed proof establishes that a player deliberately submitted false evidence.' }}</p>
                                 </div>
                                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                     <div class="sm:col-span-2">

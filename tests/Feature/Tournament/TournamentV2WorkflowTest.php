@@ -21,7 +21,13 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameHeadToHeadDefault;
 use App\Modules\CMS\Models\GameTournamentDefault;
 use App\Modules\CMS\Models\Platform;
+use App\Modules\Community\Models\Notification;
+use App\Modules\Identity\Actions\ApplyPendingDisputeBanAction;
+use App\Modules\Identity\Actions\ChangeUserStatusAction;
 use App\Modules\Identity\Actions\IssueDisputeStrikeAction;
+use App\Modules\Identity\Jobs\ApplyPendingDisputeBansJob;
+use App\Modules\Identity\Listeners\ApplyPendingDisputeBansListener;
+use App\Modules\Identity\Models\PlayerDisputeStrike;
 use App\Modules\Identity\Models\PlayerProgression;
 use App\Modules\Identity\Models\User;
 use App\Modules\Identity\Models\UserGameAccount;
@@ -31,8 +37,10 @@ use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
 use App\Modules\Match\Events\MatchCompleted;
+use App\Modules\Match\Events\MatchResultSubmitted;
 use App\Modules\Match\Jobs\ResolveV2ResultTimeoutJob;
 use App\Modules\Match\Jobs\ResolveV2ResultTimeoutsJob;
+use App\Modules\Match\Listeners\NotifyV2ResultResponseListener;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Services\V2StalledMatchService;
@@ -47,6 +55,7 @@ use App\Modules\Tournament\Actions\RegisterForV2TournamentAction;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use App\Modules\Tournament\Actions\VoteOnV2CancellationAction;
 use App\Modules\Tournament\Events\BroadcastTournamentUpdated;
+use App\Modules\Tournament\Events\TournamentCompleted;
 use App\Modules\Tournament\Jobs\NotifyV2CancellationVotersJob;
 use App\Modules\Tournament\Models\Round;
 use App\Modules\Tournament\Models\Tournament;
@@ -1037,6 +1046,11 @@ final class TournamentV2WorkflowTest extends TestCase
             $strikeDispute->save();
             $strikeAction->execute($strikeDispute, $second, $this->admin, 'Verified false report number '.$number);
         }
+        self::assertSame(UserStatus::ACTIVE, $second->fresh()->status);
+        $resolution = $match->playerARegistration->includesUser($first->id) ? DisputeResolution::PLAYER_A : DisputeResolution::PLAYER_B;
+        app(ResolveDisputeAction::class)->execute($dispute, $this->admin, $resolution);
+        app(ApplyPendingDisputeBansJob::class)
+            ->handle(app(ApplyPendingDisputeBanAction::class));
         self::assertSame(UserStatus::BANNED, $second->fresh()->status);
         Livewire::actingAs($this->admin)->test(UserAdmin::class)
             ->call('selectUser', $second->id)->assertSee('Verified false report number 3')
@@ -1046,6 +1060,134 @@ final class TournamentV2WorkflowTest extends TestCase
         Livewire::test(UserAdmin::class)
             ->call('selectUser', $second->id)->assertSee('Verified false report number 3')
             ->assertSee('Automatic dispute ban')->assertSee('Dispute strike #3');
+    }
+
+    public function test_third_strike_waits_through_rematch_and_applies_only_after_elimination(): void
+    {
+        Queue::fake();
+        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        $dispute = $match->disputes()->firstOrFail();
+        foreach (range(1, 3) as $number) {
+            $copyMatch = $match->replicate();
+            $copyMatch->uuid = Str::uuid();
+            $copyMatch->save();
+            $copy = $dispute->replicate();
+            $copy->match_id = $copyMatch->id;
+            $copy->uuid = Str::uuid();
+            $copy->save();
+            app(IssueDisputeStrikeAction::class)->execute($copy, $second, $this->admin, 'Verified false result '.$number);
+        }
+        $pending = PlayerDisputeStrike::query()->where('ban_pending', true)->firstOrFail();
+        self::assertFalse($pending->permanent_ban_applied);
+        self::assertSame(UserStatus::ACTIVE, $second->fresh()->status);
+        app(ResolveDisputeAction::class)->execute($dispute, $this->admin, DisputeResolution::REMATCH);
+        $apply = app(ApplyPendingDisputeBanAction::class);
+        $apply->execute($pending->id);
+        self::assertSame(UserStatus::ACTIVE, $second->fresh()->status);
+        $submit->execute($match->fresh(), $first->id, MatchOutcome::WIN);
+        $apply->execute($pending->id);
+        self::assertSame(UserStatus::ACTIVE, $second->fresh()->status);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::LOSS);
+        $event = new MatchCompleted($match->id, $match->tournament_id, $match->fresh()->winner_registration_id);
+        app(ApplyPendingDisputeBansListener::class)->handle($event);
+        self::assertSame(UserStatus::BANNED, $second->fresh()->status);
+        self::assertFalse($pending->fresh()->ban_pending);
+        self::assertTrue($pending->fresh()->permanent_ban_applied);
+        $second->fresh()->forceFill(['status' => UserStatus::ACTIVE])->save();
+        $apply->execute($pending->id);
+        self::assertSame(UserStatus::ACTIVE, $second->fresh()->status);
+    }
+
+    public function test_pending_ban_allows_a_winner_to_continue_and_applies_at_competition_end(): void
+    {
+        Queue::fake();
+        [$match, $first, $second] = $this->activeTwoPlayerMatch();
+        // A second semifinal and a final keep the winner's participation open.
+        GameMatch::query()->create([
+            'uuid' => Str::uuid(), 'tournament_id' => $match->tournament_id,
+            'round_id' => $match->round_id, 'status' => MatchStatus::PENDING,
+        ]);
+        $finalRound = Round::query()->create(['bracket_id' => $match->round->bracket_id, 'round_number' => $match->round->round_number + 1]);
+        GameMatch::query()->create([
+            'uuid' => Str::uuid(), 'tournament_id' => $match->tournament_id,
+            'round_id' => $finalRound->id, 'status' => MatchStatus::PENDING,
+        ]);
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        $pending = PlayerDisputeStrike::query()->create([
+            'uuid' => Str::uuid(), 'user_id' => $first->id, 'tournament_id' => $match->tournament_id,
+            'match_id' => $match->id, 'dispute_id' => $match->disputes()->firstOrFail()->id,
+            'issued_by' => $this->admin->id, 'strike_number' => 3, 'reason' => 'Verified false reporting',
+            'balance_penalty' => '0.00', 'permanent_ban_applied' => false, 'ban_pending' => true, 'created_at' => now(),
+        ]);
+        $resolution = $match->playerARegistration->includesUser($first->id) ? DisputeResolution::PLAYER_A : DisputeResolution::PLAYER_B;
+        app(ResolveDisputeAction::class)->execute($match->disputes()->firstOrFail(), $this->admin, $resolution);
+        app(ApplyPendingDisputeBanAction::class)->execute($pending->id);
+        self::assertSame(UserStatus::ACTIVE, $first->fresh()->status);
+        self::assertTrue($pending->fresh()->ban_pending);
+        $match->tournament->update(['status' => TournamentStatus::COMPLETED]);
+        app(ApplyPendingDisputeBansListener::class)->handle(new TournamentCompleted($match->tournament_id));
+        self::assertSame(UserStatus::BANNED, $first->fresh()->status);
+        self::assertTrue($pending->fresh()->permanent_ban_applied);
+    }
+
+    public function test_manual_admin_bans_remain_immediate_during_a_competition(): void
+    {
+        [$match, $first] = $this->activeTwoPlayerMatch();
+        app(ChangeUserStatusAction::class)
+            ->execute($first, $this->admin, UserStatus::BANNED, 'Manual administrator decision');
+        self::assertSame(UserStatus::BANNED, $first->fresh()->status);
+        self::assertSame(TournamentStatus::ONGOING, $match->tournament->fresh()->status);
+    }
+
+    public static function resultReminderCases(): array
+    {
+        return [
+            'tournament five minutes' => [CompetitionType::TOURNAMENT, 5],
+            'head-to-head configured timeout' => [CompetitionType::HEAD_TO_HEAD, 9],
+        ];
+    }
+
+    #[DataProvider('resultReminderCases')]
+    public function test_rematch_result_prompt_uses_the_new_attempt_deadline_without_a_notification_worker(CompetitionType $type, int $minutes): void
+    {
+        Queue::fake();
+        [$match, $first, $second] = $this->activeTwoPlayerMatch(['overrides' => ['waiting_result_time' => $minutes]], $type);
+        $submit = app(SubmitV2MatchResultAction::class);
+        $old = $submit->execute($match, $first->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::WIN);
+        app(ResolveDisputeAction::class)->execute($match->disputes()->firstOrFail(), $this->admin, DisputeResolution::REMATCH);
+        // Reproduce a player who was previously banned and then restored.
+        $first->forceFill(['status' => UserStatus::BANNED])->save();
+        $first->forceFill(['status' => UserStatus::ACTIVE])->save();
+        Notification::query()->where('title', 'Submit your match result')->delete();
+        $this->freezeTime();
+        $submission = $submit->execute($match->fresh(), $first->id, MatchOutcome::WIN);
+        $listener = app(NotifyV2ResultResponseListener::class);
+        // A delayed event for the previous attempt must not generate a new reminder.
+        $listener->handle(new MatchResultSubmitted($match->id, $old->id, $first->id, $old->winner_registration_id));
+        self::assertSame(1, Notification::query()->where('title', 'Submit your match result')->count());
+        $notification = Notification::query()->where('user_id', $second->id)->where('title', 'Submit your match result')->sole();
+        self::assertStringContainsString('within '.$minutes.' minutes', $notification->message);
+        self::assertStringContainsString(now()->addMinutes($minutes)->setTimezone(app(TournamentTimezone::class)->value())->format('M d, Y H:i:s T'), $notification->message);
+        self::assertSame("/tournaments/{$match->tournament->uuid}/view?activeTab=submit-results&match={$match->uuid}", $notification->action_url);
+        self::assertDatabaseMissing('notifications', ['user_id' => $first->id, 'title' => 'Submit your match result']);
+        $submit->execute($match->fresh(), $second->id, MatchOutcome::LOSS);
+        $listener->handle(new MatchResultSubmitted($match->id, $submission->id, $first->id, $submission->winner_registration_id));
+        self::assertSame(1, Notification::query()->where('title', 'Submit your match result')->count());
+    }
+
+    public function test_player_tournament_copy_uses_singular_match_and_hides_the_prize_note_and_participation_xp(): void
+    {
+        [$match, $player] = $this->activeTwoPlayerMatch();
+        Livewire::actingAs($player)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee('First Match')->assertDontSee('First Matches')
+            ->assertDontSee('First matches begin in')->assertDontSee('Participation XP')
+            ->assertDontSee('This is the estimated payout if all');
     }
 
     private function completeV2Match(GameMatch $match): void

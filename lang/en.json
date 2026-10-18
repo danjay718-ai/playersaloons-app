@@ -437,5 +437,8 @@
     "Each tournament counts once: Active, Victory, Defeat, or Closed. Victories mean tournament championships. Closed includes cancelled, refunded, withdrawn, or unresolved competitions.": "Each tournament counts once: Active, Victory, Defeat, or Closed. Victories mean tournament championships. Closed includes cancelled, refunded, withdrawn, or unresolved competitions.",
     "Match History counts individual matches, including each tournament round. It is separate from tournament totals.": "Match History counts individual matches, including each tournament round. It is separate from tournament totals.",
     "First match begins in": "First match begins in",
-    "First Match": "First Match"
+    "First Match": "First Match",
+    "Submit your match result": "Submit your match result",
+    "Your opponent submitted a result in :tournament. Submit your own result within :minutes minutes, by :deadline. Choose Won, Lost or Draw.": "Your opponent submitted a result in :tournament. Submit your own result within :minutes minutes, by :deadline. Choose Won, Lost or Draw.",
+    "Use only for a confirmed deliberate false result. The third confirmed strike schedules a permanent ban after the player is eliminated or the competition ends.": "Use only for a confirmed deliberate false result. The third confirmed strike schedules a permanent ban after the player is eliminated or the competition ends."
 }

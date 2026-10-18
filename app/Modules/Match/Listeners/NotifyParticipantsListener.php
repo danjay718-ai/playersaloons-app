@@ -92,6 +92,9 @@ class NotifyParticipantsListener implements ShouldQueueAfterCommit
                 $this->notificationService->send($recipient, 'match_started', 'Match Started', "Your match in tournament '{$tournament->name}' has started. Open Submit Result now.", $matchUrl);
             }
         } elseif ($event instanceof MatchResultSubmitted) {
+            if ((int) $tournament->workflow_version === 2) {
+                return; // V2 uses its immediate, deadline-aware response reminder.
+            }
             $opponents = $match->playerARegistration?->includesUser($event->submittedByUserId) ? $playerBUsers : $playerAUsers;
             foreach ($opponents as $opponent) {
                 $this->notificationService->send($opponent, 'match_result_submitted', 'Match Result Submitted', "A match result has been submitted for your match in tournament '{$tournament->name}'. Please verify or dispute it.", $matchUrl);
