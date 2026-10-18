@@ -159,6 +159,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     /**
      * Get the user's wallet.
+     *
+     * @return HasOne<Wallet, $this>
      */
     public function wallet(): HasOne
     {

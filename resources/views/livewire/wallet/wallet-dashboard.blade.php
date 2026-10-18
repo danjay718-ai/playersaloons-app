@@ -126,6 +126,12 @@
                 </div>
 
                 @if($emailVerified)
+                @unless($withdrawalKycApproved)
+                    <div role="alert" class="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-100">
+                        <p>{{ __('Your identity verification must be approved before you can withdraw. Check your verification status in Profile.') }}</p>
+                        <a href="{{ url('/profile') }}" wire:navigate class="mt-2 inline-block font-bold underline">{{ __('Check identity verification') }}</a>
+                    </div>
+                @endunless
                 <form wire:submit.prevent="withdraw" class="mt-6 space-y-4">
                     @csrf
                     <div>
@@ -146,8 +152,8 @@
                         </div>
                     </div>
 
-                    <button type="submit"
-                        class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500 px-4 font-orbitron text-xs font-black uppercase tracking-widest text-white shadow-[0_0_20px_rgba(217,70,239,0.22)] transition-colors hover:bg-fuchsia-400">
+                    <button type="submit" @disabled(!$withdrawalKycApproved) wire:loading.attr="disabled" wire:target="withdraw"
+                        class="disabled:cursor-not-allowed disabled:opacity-50 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500 px-4 font-orbitron text-xs font-black uppercase tracking-widest text-white shadow-[0_0_20px_rgba(217,70,239,0.22)] transition-colors hover:bg-fuchsia-400">
                         <i data-lucide="send" class="h-4 w-4"></i>
                         Request Withdrawal
                     </button>

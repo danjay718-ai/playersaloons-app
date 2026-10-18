@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace App\Livewire\Wallet;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
+use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Operations\Services\ErrorIncidentReporter;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
+use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
+use App\Modules\Wallet\Exceptions\WithdrawalEligibilityException;
 use App\Modules\Wallet\Services\DepositFeeCalculator;
 use App\Modules\Wallet\Services\StripeCheckoutService;
+use App\Shared\Enums\KycStatus;
 use App\Shared\Support\Currency;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -85,8 +89,15 @@ class WalletDashboard extends Component
             $action->execute($user, (float) $this->amount);
             session()->flash('message', 'Withdrawal request of '.Currency::format($this->amount).' submitted successfully and is pending review!');
             $this->reset('amount');
+        } catch (WithdrawalEligibilityException $e) {
+            $this->addError('amount', __($e->userMessage));
+        } catch (InsufficientBalanceException $e) {
+            $this->addError('amount', __('Your available balance is not enough for this withdrawal.'));
         } catch (\Exception $e) {
-            session()->flash('error', $this->safeError($e, 'Unable to create the withdrawal request.'));
+            session()->flash('error', $this->safeError($e, 'Unable to create the withdrawal request.', [
+                'operation' => 'wallet_withdrawal_request',
+                'user_id' => $user->getKey(),
+            ]));
         }
     }
 
@@ -111,6 +122,7 @@ class WalletDashboard extends Component
             'ledgerEntries' => $ledgerEntries,
             'depositBreakdown' => $feeCalculator->calculate(is_numeric($this->depositAmount) ? (float) $this->depositAmount : 0),
             'emailVerified' => $user->hasVerifiedEmail(),
+            'withdrawalKycApproved' => KycSubmission::query()->where('user_id', $user->getKey())->where('status', KycStatus::APPROVED)->exists(),
         ])->layout('components.layouts.dashboard', [
             'title' => 'Financial Terminal | GamersRival',
             'dashboard_title' => 'FINANCIAL TERMINAL',

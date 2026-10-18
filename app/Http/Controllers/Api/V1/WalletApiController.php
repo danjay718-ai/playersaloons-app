@@ -10,6 +10,7 @@ use App\Http\Resources\WalletResource;
 use App\Http\Resources\WithdrawalResource;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
+use App\Modules\Wallet\Exceptions\WithdrawalEligibilityException;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Http\JsonResponse;
@@ -85,7 +86,11 @@ class WalletApiController extends Controller
                 ->additional(['message' => 'Withdrawal request submitted successfully.'])
                 ->response()
                 ->setStatusCode(201);
-        } catch (InvalidArgumentException|InsufficientBalanceException|InvalidStateTransitionException|LogicException $e) {
+        } catch (WithdrawalEligibilityException $e) {
+            return response()->json(['message' => __($e->userMessage)], 422);
+        } catch (InsufficientBalanceException $e) {
+            return response()->json(['message' => __('Your available balance is not enough for this withdrawal.')], 422);
+        } catch (InvalidArgumentException|InvalidStateTransitionException|LogicException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);

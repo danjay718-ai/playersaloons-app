@@ -8,13 +8,13 @@ use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Events\WithdrawalRequested;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
+use App\Modules\Wallet\Exceptions\WithdrawalEligibilityException;
 use App\Modules\Wallet\Models\Withdrawal;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\WithdrawalStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use LogicException;
 
 class RequestWithdrawalAction
 {
@@ -26,7 +26,7 @@ class RequestWithdrawalAction
     public function execute(User $user, $amount): Withdrawal
     {
         if (! $user->hasVerifiedEmail()) {
-            throw new LogicException('Verify your email before requesting a withdrawal.');
+            throw new WithdrawalEligibilityException('Verify your email before requesting a withdrawal.');
         }
 
         $amountFloat = (float) $amount;
@@ -42,13 +42,16 @@ class RequestWithdrawalAction
                 ->first();
 
             if (! $kyc instanceof KycSubmission) {
-                throw new LogicException('KYC must be approved to request a withdrawal.');
+                throw new WithdrawalEligibilityException(
+                    'KYC must be approved to request a withdrawal.',
+                    'Your identity verification must be approved before you can withdraw. Check your verification status in Profile.'
+                );
             }
 
             // Verify sufficient balance
             $wallet = $user->wallet;
             if (! $wallet) {
-                throw new LogicException('User does not have a wallet.');
+                throw new WithdrawalEligibilityException('User does not have a wallet.', 'Your wallet is unavailable. Please contact support.');
             }
 
             $currentBalance = (float) $wallet->getAttribute('cached_balance');
