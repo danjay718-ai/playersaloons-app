@@ -412,5 +412,14 @@
     "Check identity verification": "Check identity verification",
     "Verify your email before requesting a withdrawal.": "Verify your email before requesting a withdrawal.",
     "Your wallet is unavailable. Please contact support.": "Your wallet is unavailable. Please contact support.",
-    "Your available balance is not enough for this withdrawal.": "Your available balance is not enough for this withdrawal."
+    "Your available balance is not enough for this withdrawal.": "Your available balance is not enough for this withdrawal.",
+    "Total Tournaments": "Total Tournaments",
+    "Closed": "Closed",
+    "Active Head-to-Head": "Active Head-to-Head",
+    "Match History": "Match History",
+    "Match Wins": "Match Wins",
+    "Match Losses": "Match Losses",
+    "Match History (:value1)": "Match History (:value1)",
+    "Each tournament counts once: Active, Victory, Defeat, or Closed. Victories mean tournament championships. Closed includes cancelled, refunded, withdrawn, or unresolved competitions.": "Each tournament counts once: Active, Victory, Defeat, or Closed. Victories mean tournament championships. Closed includes cancelled, refunded, withdrawn, or unresolved competitions.",
+    "Match History counts individual matches, including each tournament round. It is separate from tournament totals.": "Match History counts individual matches, including each tournament round. It is separate from tournament totals."
 }

@@ -7,6 +7,7 @@ namespace App\Livewire\Tournament;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Services\PlayerTournamentOutcomes;
 use App\Shared\Enums\CompetitionType;
 use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\MatchStatus;
@@ -43,68 +44,82 @@ class MyTournamentsList extends Component
         $this->resetPage('historyPage');
     }
 
-    public function render()
+    public function render(PlayerTournamentOutcomes $outcomes)
     {
         $user = Auth::user();
         $competitionType = $this->competitionTab === 'head_to_head'
             ? CompetitionType::HEAD_TO_HEAD
             : CompetitionType::TOURNAMENT;
 
-        // Calculate all lifetime match statistics in one grouped query. Joining
-        // only the current user's roster rows avoids growing IN (...) lists as a
-        // player's tournament history gets larger.
-        $matchStats = GameMatch::query()
-            ->join('tournaments as stats_tournaments', 'stats_tournaments.id', '=', 'matches.tournament_id')
-            ->leftJoin('tournament_registrations as player_a_reg', 'player_a_reg.id', '=', 'matches.player_a_registration_id')
-            ->leftJoin('tournament_registration_members as player_a_member', function (JoinClause $join) use ($user): void {
-                $join->on('player_a_member.registration_id', '=', 'matches.player_a_registration_id')
-                    ->where('player_a_member.user_id', '=', $user->id);
-            })
-            ->leftJoin('tournament_registrations as player_b_reg', 'player_b_reg.id', '=', 'matches.player_b_registration_id')
-            ->leftJoin('tournament_registration_members as player_b_member', function (JoinClause $join) use ($user): void {
-                $join->on('player_b_member.registration_id', '=', 'matches.player_b_registration_id')
-                    ->where('player_b_member.user_id', '=', $user->id);
-            })
-            ->leftJoin('tournament_registrations as winner_reg', 'winner_reg.id', '=', 'matches.winner_registration_id')
-            ->leftJoin('tournament_registration_members as winner_member', function (JoinClause $join) use ($user): void {
-                $join->on('winner_member.registration_id', '=', 'matches.winner_registration_id')
-                    ->where('winner_member.user_id', '=', $user->id);
-            })
-            ->whereIn('matches.status', [MatchStatus::COMPLETED->value, MatchStatus::FORFEITED->value])
-            ->where('stats_tournaments.competition_type', $competitionType->value)
-            ->where(function ($query) use ($user): void {
-                $query->where('player_a_reg.user_id', $user->id)
-                    ->orWhereNotNull('player_a_member.user_id')
-                    ->orWhere('player_b_reg.user_id', $user->id)
-                    ->orWhereNotNull('player_b_member.user_id');
-            })
-            ->selectRaw(
-                'matches.tournament_id,
-                 SUM(CASE WHEN winner_reg.user_id = ? OR winner_member.user_id IS NOT NULL THEN 1 ELSE 0 END) AS wins,
-                 SUM(CASE WHEN matches.winner_registration_id IS NOT NULL AND winner_reg.user_id <> ? AND winner_member.user_id IS NULL THEN 1 ELSE 0 END) AS losses',
-                [$user->id, $user->id],
-            )
-            ->groupBy('matches.tournament_id')
-            ->get();
-
-        $lostTournamentIds = $matchStats
-            ->filter(fn ($stats): bool => (int) $stats->losses > 0)
-            ->pluck('tournament_id')
-            ->all();
-        $matchWins = (int) $matchStats->sum('wins');
-        $matchLosses = (int) $matchStats->sum('losses');
-
-        $activeTournamentCount = Tournament::query()
-            ->whereHas('registrations', function ($q) use ($user) {
-                $q->where(function ($registration) use ($user) {
-                    $registration->where('user_id', $user->id)->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
+        $matchWins = 0;
+        $matchLosses = 0;
+        $lostTournamentIds = [];
+        $activeTournamentCount = 0;
+        if ($competitionType === CompetitionType::HEAD_TO_HEAD) {
+            // Calculate all lifetime match statistics in one grouped query. Joining
+            // only the current user's roster rows avoids growing IN (...) lists as a
+            // player's tournament history gets larger.
+            $matchStats = GameMatch::query()
+                ->join('tournaments as stats_tournaments', 'stats_tournaments.id', '=', 'matches.tournament_id')
+                ->leftJoin('tournament_registrations as player_a_reg', 'player_a_reg.id', '=', 'matches.player_a_registration_id')
+                ->leftJoin('tournament_registration_members as player_a_member', function (JoinClause $join) use ($user): void {
+                    $join->on('player_a_member.registration_id', '=', 'matches.player_a_registration_id')
+                        ->where('player_a_member.user_id', '=', $user->id);
                 })
-                    ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
-            })
-            ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
-            ->where('competition_type', $competitionType->value)
-            ->whereNotIn('id', $lostTournamentIds)
-            ->count();
+                ->leftJoin('tournament_registrations as player_b_reg', 'player_b_reg.id', '=', 'matches.player_b_registration_id')
+                ->leftJoin('tournament_registration_members as player_b_member', function (JoinClause $join) use ($user): void {
+                    $join->on('player_b_member.registration_id', '=', 'matches.player_b_registration_id')
+                        ->where('player_b_member.user_id', '=', $user->id);
+                })
+                ->leftJoin('tournament_registrations as winner_reg', 'winner_reg.id', '=', 'matches.winner_registration_id')
+                ->leftJoin('tournament_registration_members as winner_member', function (JoinClause $join) use ($user): void {
+                    $join->on('winner_member.registration_id', '=', 'matches.winner_registration_id')
+                        ->where('winner_member.user_id', '=', $user->id);
+                })
+                ->whereIn('matches.status', [MatchStatus::COMPLETED->value, MatchStatus::FORFEITED->value])
+                ->where('stats_tournaments.competition_type', $competitionType->value)
+                ->where(function ($query) use ($user): void {
+                    $query->where('player_a_reg.user_id', $user->id)
+                        ->orWhereNotNull('player_a_member.user_id')
+                        ->orWhere('player_b_reg.user_id', $user->id)
+                        ->orWhereNotNull('player_b_member.user_id');
+                })
+                ->selectRaw(
+                    'matches.tournament_id,
+                     SUM(CASE WHEN winner_reg.user_id = ? OR winner_member.user_id IS NOT NULL THEN 1 ELSE 0 END) AS wins,
+                     SUM(CASE WHEN matches.winner_registration_id IS NOT NULL AND winner_reg.user_id <> ? AND winner_member.user_id IS NULL THEN 1 ELSE 0 END) AS losses',
+                    [$user->id, $user->id],
+                )
+                ->groupBy('matches.tournament_id')
+                ->get();
+
+            $lostTournamentIds = $matchStats
+                ->filter(fn ($stats): bool => (int) $stats->losses > 0)
+                ->pluck('tournament_id')
+                ->all();
+            $matchWins = (int) $matchStats->sum('wins');
+            $matchLosses = (int) $matchStats->sum('losses');
+
+            $activeTournamentCount = Tournament::query()
+                ->whereHas('registrations', function ($q) use ($user) {
+                    $q->where(function ($registration) use ($user) {
+                        $registration->where('user_id', $user->id)->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
+                    })
+                        ->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
+                })
+                ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+                ->where('competition_type', $competitionType->value)
+                ->whereNotIn('id', $lostTournamentIds)
+                ->count();
+        }
+
+        $tournamentOutcomes = $competitionType === CompetitionType::TOURNAMENT
+            ? $outcomes->forPlayer((int) $user->id)
+            : collect();
+        $activeTournamentIds = $tournamentOutcomes->filter(fn (string $outcome): bool => $outcome === 'active')->keys()->all();
+        if ($competitionType === CompetitionType::TOURNAMENT) {
+            $activeTournamentCount = count($activeTournamentIds);
+        }
 
         $activeHeadToHeadMatches = collect();
         if ($competitionType === CompetitionType::HEAD_TO_HEAD) {
@@ -139,18 +154,28 @@ class MyTournamentsList extends Component
                 ->count();
         }
 
+        if ($competitionType === CompetitionType::TOURNAMENT) {
+            $matchWins = $tournamentOutcomes->filter(fn (string $outcome): bool => $outcome === 'victory')->count();
+            $matchLosses = $tournamentOutcomes->filter(fn (string $outcome): bool => $outcome === 'defeat')->count();
+        }
+
         $tournaments = new LengthAwarePaginator([], $activeTournamentCount, 10, 1, ['pageName' => 'tournamentPage']);
         $userMatches = collect();
         if ($this->tSubTab === 'active') {
             $tournaments = Tournament::query()
-                ->whereHas('registrations', function ($q) use ($user) {
-                    $q->where(function ($registration) use ($user) {
-                        $registration->where('user_id', $user->id)->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
-                    })->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
-                })
-                ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
-                ->where('competition_type', $competitionType->value)
-                ->whereNotIn('id', $lostTournamentIds)
+                ->when($competitionType === CompetitionType::TOURNAMENT,
+                    fn ($query) => $query->whereIn('id', $activeTournamentIds),
+                    function ($query) use ($user, $competitionType, $lostTournamentIds): void {
+                        $query
+                            ->whereHas('registrations', function ($q) use ($user) {
+                                $q->where(function ($registration) use ($user) {
+                                    $registration->where('user_id', $user->id)->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->id));
+                                })->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
+                            })
+                            ->whereNotIn('status', [TournamentStatus::COMPLETED->value, TournamentStatus::CANCELLED->value, TournamentStatus::REFUNDED->value])
+                            ->where('competition_type', $competitionType->value)
+                            ->whereNotIn('id', $lostTournamentIds);
+                    })
                 ->with('game.translations')
                 ->withCount(['registrations' => fn ($query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])])
                 ->orderByDesc('created_at')
@@ -189,6 +214,8 @@ class MyTournamentsList extends Component
             'tournaments' => $tournaments,
             'userMatches' => $userMatches,
             'activeCount' => $activeCount,
+            'totalTournamentCount' => $tournamentOutcomes->count(),
+            'closedTournamentCount' => $tournamentOutcomes->filter(fn (string $outcome): bool => $outcome === 'closed')->count(),
             'historyCount' => $historyCount,
             'historyMatches' => $historyMatches,
             'matchWins' => $matchWins,

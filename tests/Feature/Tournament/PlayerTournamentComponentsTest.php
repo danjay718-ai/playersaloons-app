@@ -335,8 +335,158 @@ class PlayerTournamentComponentsTest extends TestCase
             ->test(MyTournamentsList::class)
             ->assertViewHas('activeCount', 1)
             ->assertViewHas('historyCount', 2)
-            ->assertViewHas('matchWins', 1)
+            ->assertViewHas('totalTournamentCount', 3)
+            ->assertViewHas('closedTournamentCount', 1)
+            ->assertViewHas('matchWins', 0)
             ->assertViewHas('matchLosses', 1);
+    }
+
+    public function test_tournament_summary_counts_final_outcomes_once_while_history_keeps_every_round(): void
+    {
+        foreach ([TournamentStatus::COMPLETED, TournamentStatus::ONGOING, TournamentStatus::COMPLETED] as $index => $status) {
+            $tournament = $this->makeTournament("Multi Round Cup {$index}", $status);
+            if ($index === 0) {
+                $tournament->update(['workflow_version' => 2]);
+            }
+            [$player, $opponent] = $this->registerPlayers($tournament);
+            $first = $this->makeMatch($tournament, $player, $opponent, $player);
+            $finalRound = Round::query()->create(['bracket_id' => $first->round->bracket_id, 'round_number' => 2]);
+            $final = $this->makeMatch($tournament, $player, $opponent, $index === 2 ? $opponent : $player);
+            $final->update(['round_id' => $finalRound->id]);
+            if ($index === 1) {
+                $final->update(['status' => MatchStatus::READY, 'winner_registration_id' => null, 'completed_at' => null]);
+            }
+        }
+
+        Livewire::actingAs($this->player)->test(MyTournamentsList::class)
+            ->assertViewHas('totalTournamentCount', 3)
+            ->assertViewHas('activeCount', 1)
+            ->assertViewHas('matchWins', 1)
+            ->assertViewHas('matchLosses', 1)
+            ->assertViewHas('closedTournamentCount', 0)
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 1)
+            ->assertSee('Total Tournaments')
+            ->assertSee('Victories mean tournament championships.')
+            ->set('tSubTab', 'history')
+            ->assertViewHas('historyCount', 5)
+            ->assertViewHas('historyMatches', fn ($items) => $items->total() === 5 && $items->count() === 5)
+            ->assertSee('Match History (5)');
+    }
+
+    public function test_closed_tournaments_never_inflate_victories_or_defeats(): void
+    {
+        foreach ([TournamentStatus::CANCELLED, TournamentStatus::REFUNDED, TournamentStatus::COMPLETED] as $index => $status) {
+            $tournament = $this->makeTournament("Closed Cup {$index}", $status);
+            [$player, $opponent] = $this->registerPlayers($tournament);
+            $first = $this->makeMatch($tournament, $player, $opponent, $player);
+            if ($index === 2) {
+                $round = Round::query()->create(['bracket_id' => $first->round->bracket_id, 'round_number' => 2]);
+                GameMatch::query()->create([
+                    'uuid' => Str::uuid(), 'tournament_id' => $tournament->id,
+                    'round_id' => $round->id, 'status' => MatchStatus::FORFEITED,
+                    'player_a_registration_id' => $player->id, 'player_b_registration_id' => $opponent->id,
+                ]);
+            }
+        }
+        foreach (['cancelled', 'refunded'] as $status) {
+            $tournament = $this->makeTournament("Withdrawn {$status}", TournamentStatus::REGISTRATION_OPEN);
+            $this->register($tournament, $this->player)->update(['status' => $status]);
+        }
+        $noChampion = $this->makeTournament('No Champion', TournamentStatus::COMPLETED);
+        [$player, $opponent] = $this->registerPlayers($noChampion);
+        $this->makeMatch($noChampion, $player, $opponent, $player);
+        $noChampion->update(['workflow_version' => 2, 'completion_reason' => 'no_champion']);
+
+        Livewire::actingAs($this->player)->test(MyTournamentsList::class)
+            ->assertViewHas('totalTournamentCount', 6)
+            ->assertViewHas('closedTournamentCount', 6)
+            ->assertViewHas('matchWins', 0)->assertViewHas('matchLosses', 0)
+            ->assertViewHas('activeCount', 0)
+            ->assertViewHas('tournaments', fn ($items) => $items->total() === 0);
+    }
+
+    public function test_unresolved_or_missing_final_never_uses_an_earlier_round_winner(): void
+    {
+        foreach ([true, false] as $createFinalMatch) {
+            $tournament = $this->makeTournament('Unresolved Final', TournamentStatus::COMPLETED);
+            [$player, $opponent] = $this->registerPlayers($tournament);
+            $first = $this->makeMatch($tournament, $player, $opponent, $player);
+            $round = Round::query()->create(['bracket_id' => $first->round->bracket_id, 'round_number' => 2]);
+            if ($createFinalMatch) {
+                GameMatch::query()->create([
+                    'uuid' => Str::uuid(), 'tournament_id' => $tournament->id,
+                    'round_id' => $round->id, 'status' => MatchStatus::WAITING_FOR_CONFIRMATION,
+                    'player_a_registration_id' => $player->id, 'player_b_registration_id' => $opponent->id,
+                    'winner_registration_id' => $player->id,
+                ]);
+            }
+        }
+        Livewire::actingAs($this->player)->test(MyTournamentsList::class)
+            ->assertViewHas('totalTournamentCount', 2)->assertViewHas('closedTournamentCount', 2)
+            ->assertViewHas('matchWins', 0)->assertViewHas('matchLosses', 0)->assertViewHas('activeCount', 0);
+    }
+
+    public function test_withdrawn_player_is_closed_when_other_players_finish_the_tournament(): void
+    {
+        $tournament = $this->makeTournament('Withdrawn Before Play', TournamentStatus::COMPLETED);
+        [$withdrawn, $opponent] = $this->registerPlayers($tournament);
+        $withdrawn->update(['status' => 'cancelled']);
+        $another = $this->register($tournament, $this->admin);
+        $this->makeMatch($tournament, $opponent, $another, $opponent);
+
+        Livewire::actingAs($this->player)->test(MyTournamentsList::class)
+            ->assertViewHas('totalTournamentCount', 1)->assertViewHas('closedTournamentCount', 1)
+            ->assertViewHas('matchWins', 0)->assertViewHas('matchLosses', 0)->assertViewHas('activeCount', 0);
+    }
+
+    public function test_team_captain_and_roster_member_share_one_tournament_outcome(): void
+    {
+        foreach ([TournamentStatus::COMPLETED, TournamentStatus::ONGOING] as $index => $status) {
+            $tournament = $this->makeTournament("Team Cup {$index}", $status);
+            [$captain, $opponent] = $this->registerPlayers($tournament);
+            // The captain is also a roster member; neither membership may duplicate counts.
+            $captain->rosterMembers()->create(['user_id' => $this->player->id, 'role' => 'captain']);
+            $captain->rosterMembers()->create(['user_id' => $this->admin->id, 'role' => 'member']);
+            $match = $this->makeMatch($tournament, $captain, $opponent, $index === 0 ? $captain : $opponent);
+            if ($index === 1) {
+                $match->update(['status' => MatchStatus::FORFEITED]);
+                $captain->update(['status' => 'refunded']);
+            }
+        }
+        foreach ([$this->player, $this->admin] as $user) {
+            Livewire::actingAs($user)->test(MyTournamentsList::class)
+                ->assertViewHas('totalTournamentCount', 2)
+                ->assertViewHas('matchWins', 1)->assertViewHas('matchLosses', 1)
+                ->assertViewHas('closedTournamentCount', 0)->assertViewHas('activeCount', 0)
+                ->set('tSubTab', 'history')
+                ->assertViewHas('historyCount', 2)
+                ->assertViewHas('historyMatches', fn ($items) => $items->count() === 2);
+        }
+    }
+
+    public function test_tournament_summary_excludes_head_to_head_and_counts_all_history_pages(): void
+    {
+        for ($index = 0; $index < 12; $index++) {
+            $tournament = $this->makeTournament("Paged Cup {$index}", TournamentStatus::COMPLETED);
+            [$player, $opponent] = $this->registerPlayers($tournament);
+            $this->makeMatch($tournament, $player, $opponent, $player);
+        }
+        $headToHead = $this->makeTournament('Platform Duel', TournamentStatus::COMPLETED);
+        $headToHead->update(['competition_type' => 'head_to_head']);
+        [$player, $opponent] = $this->registerPlayers($headToHead);
+        $this->makeMatch($headToHead, $player, $opponent, $opponent);
+
+        Livewire::actingAs($this->player)->test(MyTournamentsList::class)
+            ->assertViewHas('totalTournamentCount', 12)
+            ->assertViewHas('matchWins', 12)->assertViewHas('matchLosses', 0)
+            ->set('tSubTab', 'history')
+            ->assertViewHas('historyCount', 12)
+            ->assertViewHas('historyMatches', fn ($items) => $items->total() === 12 && $items->count() === 10)
+            ->call('gotoPage', 2, 'historyPage')
+            ->assertViewHas('historyMatches', fn ($items) => $items->total() === 12 && $items->count() === 2)
+            ->call('selectCompetition', 'head_to_head')
+            ->assertViewHas('historyCount', 1)->assertViewHas('matchWins', 0)->assertViewHas('matchLosses', 1)
+            ->assertSee('Match Wins')->assertDontSee('Total Tournaments');
     }
 
     public function test_elimination_shifts_tournament_to_history(): void

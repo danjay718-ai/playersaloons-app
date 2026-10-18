@@ -22,19 +22,30 @@
     </div>
 
     <!-- Stats Banner -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <x-player.metric-card label="Active" :value="$activeCount" tone="text-cyan-400" icon="zap" />
-        <x-player.metric-card label="History" :value="$historyCount" tone="text-violet-400" icon="calendar" />
-        <x-player.metric-card label="Victories" :value="$matchWins" tone="text-emerald-400" icon="trophy" />
-        <x-player.metric-card label="Defeats" :value="$matchLosses" tone="text-rose-400" icon="skull" />
-    </div>
+    @if($competitionTab === 'tournaments')
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <x-player.metric-card label="Total Tournaments" :value="$totalTournamentCount" icon="trophy" />
+            <x-player.metric-card label="Active" :value="$activeCount" tone="text-cyan-400" icon="zap" />
+            <x-player.metric-card label="Victories" :value="$matchWins" tone="text-emerald-400" icon="trophy" />
+            <x-player.metric-card label="Defeats" :value="$matchLosses" tone="text-rose-400" icon="skull" />
+            <x-player.metric-card label="Closed" :value="$closedTournamentCount" tone="text-zinc-400" icon="archive" />
+        </div>
+        <p class="text-xs text-zinc-400">{{ __('Each tournament counts once: Active, Victory, Defeat, or Closed. Victories mean tournament championships. Closed includes cancelled, refunded, withdrawn, or unresolved competitions.') }}</p>
+    @else
+        <div class="grid grid-cols-2 gap-6 lg:grid-cols-4">
+            <x-player.metric-card label="Active Head-to-Head" :value="$activeCount" tone="text-cyan-400" icon="zap" />
+            <x-player.metric-card label="Match History" :value="$historyCount" tone="text-violet-400" icon="calendar" />
+            <x-player.metric-card label="Match Wins" :value="$matchWins" tone="text-emerald-400" icon="trophy" />
+            <x-player.metric-card label="Match Losses" :value="$matchLosses" tone="text-rose-400" icon="skull" />
+        </div>
+    @endif
 
     <!-- Tabs -->
     <div class="player-status-tabs flex items-center space-x-2 bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 p-1.5 rounded-2xl max-w-fit">
         <button wire:click="$set('tSubTab', 'active')" 
                 class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 {{ $tSubTab === 'active' ? 'player-status-tab-active bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300' }}">{{ __('Active (:value1)', ['value1' => ($activeCount)]) }}</button>
         <button wire:click="$set('tSubTab', 'history')" 
-                class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 {{ $tSubTab === 'history' ? 'player-status-tab-active bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300' }}">{{ __('History (:value1)', ['value1' => ($historyCount)]) }}</button>
+                class="px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 {{ $tSubTab === 'history' ? 'player-status-tab-active bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300' }}">{{ __('Match History (:value1)', ['value1' => ($historyCount)]) }}</button>
     </div>
 
     <!-- Active Tournaments Tab -->
@@ -84,6 +95,7 @@
         @endif
     @else
         <!-- Unified Match History -->
+        <p class="mb-4 text-xs text-zinc-400">{{ __('Match History counts individual matches, including each tournament round. It is separate from tournament totals.') }}</p>
         @if($historyMatches->count() > 0)
             <div class="grid gap-4 md:grid-cols-2">
                 @foreach($historyMatches as $historyMatch)
