@@ -11,6 +11,7 @@ class LandingPageSeeder extends Seeder
 {
     public function run(): void
     {
+        // Startup seeds supply missing defaults; existing CMS content belongs to admins.
         foreach ($this->sections() as $sectionData) {
             $items = $sectionData['items'] ?? [];
             unset($sectionData['items']);
@@ -21,14 +22,11 @@ class LandingPageSeeder extends Seeder
 
             if (! $section->exists) {
                 $section->uuid = Str::uuid()->toString();
+                $section->fill($sectionData)->save();
             }
-
-            if ($section->exists && $section->trashed()) {
-                $section->restore();
+            if ($section->trashed()) {
+                continue;
             }
-
-            $section->fill($sectionData);
-            $section->save();
 
             foreach ($items as $index => $itemData) {
                 $itemKey = $itemData['item_key'] ?? Str::slug((string) ($itemData['title'] ?? 'item-'.$index));
@@ -36,13 +34,10 @@ class LandingPageSeeder extends Seeder
                     ->withTrashed()
                     ->firstOrNew(['item_key' => $itemKey]);
 
-                if (! $item->exists) {
-                    $item->uuid = Str::uuid()->toString();
+                if ($item->exists) {
+                    continue;
                 }
-
-                if ($item->exists && $item->trashed()) {
-                    $item->restore();
-                }
+                $item->uuid = Str::uuid()->toString();
 
                 $item->fill(array_merge([
                     'item_key' => $itemKey,
@@ -53,10 +48,10 @@ class LandingPageSeeder extends Seeder
             }
         }
 
-        $this->syncPolicyFooterLinks();
+        $this->seedMissingPolicyFooterLinks();
     }
 
-    private function syncPolicyFooterLinks(): void
+    private function seedMissingPolicyFooterLinks(): void
     {
         $footer = LandingSection::query()->where('key', 'footer')->first();
         if (! $footer) {
@@ -68,22 +63,16 @@ class LandingPageSeeder extends Seeder
             ->orderBy('sort_order')
             ->get();
 
-        $syncedItemKeys = [];
-
         foreach ($policyPages as $index => $policyPage) {
             $itemKey = $this->footerItemKey($policyPage->slug);
-            $syncedItemKeys[] = $itemKey;
             $item = $footer->items()
                 ->withTrashed()
                 ->firstOrNew(['item_key' => $itemKey]);
 
-            if (! $item->exists) {
-                $item->uuid = Str::uuid()->toString();
+            if ($item->exists) {
+                continue;
             }
-
-            if ($item->exists && $item->trashed()) {
-                $item->restore();
-            }
+            $item->uuid = Str::uuid()->toString();
 
             $item->fill([
                 'item_key' => $itemKey,
@@ -95,9 +84,6 @@ class LandingPageSeeder extends Seeder
             $item->save();
         }
 
-        $footer->items()
-            ->whereNotIn('item_key', $syncedItemKeys)
-            ->update(['is_active' => false]);
     }
 
     private function footerItemKey(string $slug): string

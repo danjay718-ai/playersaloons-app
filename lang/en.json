@@ -435,5 +435,7 @@
     "Match Losses": "Match Losses",
     "Match History (:value1)": "Match History (:value1)",
     "Each tournament counts once: Active, Victory, Defeat, or Closed. Victories mean tournament championships. Closed includes cancelled, refunded, withdrawn, or unresolved competitions.": "Each tournament counts once: Active, Victory, Defeat, or Closed. Victories mean tournament championships. Closed includes cancelled, refunded, withdrawn, or unresolved competitions.",
-    "Match History counts individual matches, including each tournament round. It is separate from tournament totals.": "Match History counts individual matches, including each tournament round. It is separate from tournament totals."
+    "Match History counts individual matches, including each tournament round. It is separate from tournament totals.": "Match History counts individual matches, including each tournament round. It is separate from tournament totals.",
+    "First match begins in": "First match begins in",
+    "First Match": "First Match"
 }

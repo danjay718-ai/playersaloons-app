@@ -348,13 +348,13 @@
 
         $statusVal = $tournament->status->value ?? $tournament->status;
         if ((int) $tournament->workflow_version === 2 && $statusVal === 'REGISTRATION_OPEN' && $tournament->start_at) {
-            $timerLabel = 'First matches begin in';
+            $timerLabel = __('First match begins in');
             $timerTarget = $tournament->start_at;
         } elseif ($statusVal === 'REGISTRATION_OPEN' && $tournament->registration_close_at) {
             $timerLabel = $tournament->extra_registration_started_at ? 'Extra Registration closes in' : 'Registration closes in';
             $timerTarget = $tournament->registration_close_at;
         } elseif (in_array($statusVal, ['REGISTRATION_CLOSED', 'CHECKIN_OPEN', 'CHECKIN_CLOSED']) && $tournament->start_at) {
-            $timerLabel = 'First matches begin in';
+            $timerLabel = __('First match begins in');
             $timerTarget = $tournament->start_at;
         } elseif ($statusVal === 'PUBLISHED' && $tournament->registration_open_at) {
             $timerLabel = 'Registration opens in';
@@ -580,10 +580,10 @@
                             @endif
                         </div>
 
-                        @if($isV2Registration)
+                        @if($isV2Registration && $isHeadToHead)
                             <div class="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-800/50 bg-cyan-950/20 p-4 text-xs leading-relaxed text-cyan-100/75">
                                 <i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0 text-cyan-400"></i>
-                                <p>{{ $isHeadToHead ? __('Both players must register before the Head-to-Head can start. Play your match, then use Submit Result here to report Won, Lost or Draw. Conflicting results go to admin review.') : __('This is the estimated payout if all :value1 teams join. The final prize is based on the actual entry pool when the tournament starts. If the tournament starts below capacity, the bracket uses automatic BYEs and the final prize is adjusted based on confirmed entries.', ['value1' => ($tournament->max_participants)]) }}</p>
+                                <p>{{ __('Both players must register before the Head-to-Head can start. Play your match, then use Submit Result here to report Won, Lost or Draw. Conflicting results go to admin review.') }}</p>
                             </div>
                         @endif
                     </div>
@@ -636,7 +636,7 @@
                             ['icon' => 'calendar', 'color' => 'text-cyan-400 border-cyan-800/50', 'label' => 'Registration Opens', 'time' => $tournament->registration_open_at],
                             ['icon' => 'calendar-x', 'color' => 'text-rose-400 border-rose-800/50', 'label' => 'Registration Ends', 'time' => (int) $tournament->workflow_version === 2 ? $tournament->start_at : $tournament->registration_close_at],
                             ['icon' => 'shield-check', 'color' => 'text-fuchsia-400 border-fuchsia-800/50', 'label' => 'Entries Lock', 'time' => (int) $tournament->workflow_version === 2 ? $tournament->start_at : $tournament->registration_close_at],
-                            ['icon' => 'zap', 'color' => 'text-emerald-400 border-emerald-800/50', 'label' => 'First Matches', 'time' => $tournament->start_at],
+                            ['icon' => 'zap', 'color' => 'text-emerald-400 border-emerald-800/50', 'label' => __('First Match'), 'time' => $tournament->start_at],
                             ['icon' => 'flag', 'color' => 'text-amber-400 border-amber-800/50', 'label' => 'Estimated End', 'time' => $tournament->end_at],
                         ] as $item)
                             @php
@@ -692,7 +692,6 @@
                         @endif
                         @if((int) $tournament->workflow_version === 2)
                             <div class="flex items-center justify-between text-sm"><span class="text-zinc-600 font-medium">Round Duration</span><span class="text-zinc-300 font-bold">{{ $tournament->round_duration_seconds ? \Carbon\CarbonInterval::seconds($tournament->round_duration_seconds)->cascade()->forHumans(['short' => true]) : 'No timer' }}</span></div>
-                            <div class="flex items-center justify-between text-sm"><span class="text-zinc-600 font-medium">Participation XP</span><span class="text-zinc-300 font-bold">4 XP after elimination</span></div>
                         @endif
                     </div>
                 </section>

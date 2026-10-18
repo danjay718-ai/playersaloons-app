@@ -15,6 +15,7 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Enums\UserStatus;
 use Database\Seeders\LandingPageSeeder;
+use Database\Seeders\PolicyPageSeeder;
 use Database\Seeders\PublicNavigationSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -122,6 +123,8 @@ class LandingPageTest extends TestCase
             ->call('saveLandingItem')
             ->assertHasNoErrors();
 
+        $this->seed(LandingPageSeeder::class);
+
         $this->assertDatabaseHas('landing_sections', [
             'id' => $hero->id,
             'title' => 'NEW HERO COPY',
@@ -134,6 +137,48 @@ class LandingPageTest extends TestCase
             'title' => 'Streaming',
             'url' => '/streams',
         ]);
+    }
+
+    public function test_redeploy_seeding_preserves_admin_edits_custom_items_and_hidden_content(): void
+    {
+        $hero = LandingSection::query()->where('key', 'hero')->firstOrFail();
+        $hero->update(['title' => 'Client hero', 'body' => '', 'media_path' => '/client.mp4', 'sort_order' => 99, 'is_active' => false]);
+        $features = LandingSection::query()->where('key', 'features')->firstOrFail();
+        $item = $features->items()->where('item_key', 'tournaments')->firstOrFail();
+        $item->update(['title' => 'Client feature', 'body' => '', 'sort_order' => 90, 'is_active' => false]);
+        $deletedItem = $features->items()->where('item_key', 'wallet')->firstOrFail();
+        $deletedItem->delete();
+        $deletedSection = LandingSection::query()->where('key', 'reviews')->firstOrFail();
+        $deletedSection->delete();
+        $footer = LandingSection::query()->where('key', 'footer')->firstOrFail();
+        $custom = $footer->items()->create(['uuid' => Str::uuid(), 'item_key' => 'client-contact', 'label' => 'Client contact', 'url' => '/client-contact', 'is_active' => true]);
+        $originalHero = $hero->fresh()->getAttributes();
+        $originalItem = $item->fresh()->getAttributes();
+
+        $this->seed(LandingPageSeeder::class);
+        $this->seed(LandingPageSeeder::class);
+
+        self::assertSame($originalHero, $hero->fresh()->getAttributes());
+        self::assertSame($originalItem, $item->fresh()->getAttributes());
+        self::assertTrue($custom->fresh()->is_active);
+        self::assertSoftDeleted($deletedItem);
+        self::assertSoftDeleted($deletedSection);
+    }
+
+    public function test_redeploy_seeding_preserves_edited_and_deleted_policy_footer_links(): void
+    {
+        $this->seed(PolicyPageSeeder::class);
+        $this->seed(LandingPageSeeder::class);
+        $footer = LandingSection::query()->where('key', 'footer')->firstOrFail();
+        $terms = $footer->items()->where('item_key', 'terms')->firstOrFail();
+        $terms->update(['label' => 'Client terms', 'url' => '/client-terms', 'is_active' => false]);
+        $privacy = $footer->items()->where('item_key', 'privacy')->firstOrFail();
+        $privacy->delete();
+        $this->seed(LandingPageSeeder::class);
+        self::assertSame('Client terms', $terms->fresh()->label);
+        self::assertSame('/client-terms', $terms->fresh()->url);
+        self::assertFalse($terms->fresh()->is_active);
+        self::assertSoftDeleted($privacy);
     }
 
     public function test_admin_can_update_game_landing_banner_and_description(): void
