@@ -15,6 +15,8 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property string $role
  * @property Carbon|null $last_read_at
+ * @property bool $notifications_muted
+ * @property int $last_read_message_id
  * @property Carbon|null $muted_until
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -32,6 +34,8 @@ class ChatParticipant extends Model
         'role',
         'last_read_at',
         'muted_until',
+        'notifications_muted',
+        'last_read_message_id',
     ];
 
     /**
@@ -42,6 +46,8 @@ class ChatParticipant extends Model
         return [
             'last_read_at' => 'datetime',
             'muted_until' => 'datetime',
+            'notifications_muted' => 'boolean',
+            'last_read_message_id' => 'integer',
         ];
     }
 

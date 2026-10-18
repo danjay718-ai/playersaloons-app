@@ -13,7 +13,6 @@
         csrf: '{{ csrf_token() }}',
         currentUserUuid: '{{ auth()->user()->uuid }}'
     })"
-    x-init="init()"
 >
     <div class="grid min-h-[calc(100vh-7rem)] grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside class="rounded-xl border border-purple-500/20 bg-[#080516]/90 shadow-[0_0_30px_rgba(88,28,135,0.18)] overflow-hidden">
@@ -97,6 +96,7 @@
                             <p class="truncate text-xs font-black uppercase tracking-wider text-zinc-100" x-text="conversation.title"></p>
                             <p class="truncate text-[10px] text-zinc-500" x-text="conversation.subtitle"></p>
                         </div>
+                        <span x-show="conversation.notifications_muted" x-cloak aria-label="{{ __('Notifications muted') }}" class="text-[10px] text-zinc-500"><svg class="inline h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 3 18 18M10 4a6 6 0 0 1 8 6v4M6 6a6 6 0 0 0-2 4v6l-2 2h16M10 21h4"/></svg> {{ __('Muted') }}</span>
                         <span
                             x-show="unread[conversation.uuid] || conversation.is_unread"
                             class="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]"
@@ -108,12 +108,17 @@
         </aside>
 
         <section class="flex min-h-[680px] flex-col overflow-hidden rounded-xl border border-purple-500/20 bg-[#070412]/95 shadow-[0_0_35px_rgba(88,28,135,0.18)]">
-            <header class="flex items-center justify-between gap-3 border-b border-purple-500/15 bg-gradient-to-r from-purple-950/40 via-zinc-950 to-cyan-950/20 p-4">
+            <header class="flex flex-wrap items-center justify-between gap-3 border-b border-purple-500/15 bg-gradient-to-r from-purple-950/40 via-zinc-950 to-cyan-950/20 p-4">
                 <div class="min-w-0">
                     <p class="font-orbitron text-[9px] font-bold uppercase tracking-[0.35em] text-purple-300" x-text="selected?.type === 'direct' ? @js(__('Secure P2P Link')) : selected?.type === 'team' ? @js(__('Squad Channel')) : @js(__('Global Relay'))"></p>
                     <h3 class="mt-1 truncate font-orbitron text-base font-black uppercase tracking-widest text-zinc-100" x-text="selected?.title || @js(__('Loading channel...'))"></h3>
                 </div>
+                <button x-show="selected" x-cloak type="button" @click="toggleMute()" :aria-pressed="Boolean(selected?.notifications_muted)" class="rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-300 hover:border-fuchsia-500">
+                    <span x-show="!selected?.notifications_muted">{{ __('Mute notifications') }}</span>
+                    <span x-show="selected?.notifications_muted">{{ __('Unmute notifications') }}</span>
+                </button>
             </header>
+            <p x-show="selected?.notifications_muted" x-cloak class="px-4 pt-3 text-xs text-zinc-400">{{ __('Notifications muted. Messages still arrive.') }}</p>
 
             <div x-ref="messagePane" class="flex-1 space-y-3 overflow-y-auto p-4">
                 <template x-if="bootError">

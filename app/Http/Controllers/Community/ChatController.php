@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Community\Models\ChatConversation;
 use App\Modules\Community\Models\ChatMessage;
 use App\Modules\Community\Models\PlayerFollow;
+use App\Modules\Community\Services\ChatInboxService;
 use App\Modules\Community\Services\ChatService;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
@@ -83,14 +84,36 @@ class ChatController extends Controller
             ->values()
             ->map(fn (ChatMessage $message): array => $this->chat->messagePayload($message));
 
-        $conversation->participants()
-            ->where('user_id', $user->getKey())
-            ->update(['last_read_at' => now()]);
-
         return response()->json([
             'conversation' => $this->chat->conversationPayload($conversation, $user),
             'messages' => $messages,
         ]);
+    }
+
+    public function inbox(Request $request, ChatInboxService $inbox): JsonResponse
+    {
+        return response()->json($inbox->summary($request->user()));
+    }
+
+    public function acknowledge(Request $request, string $uuid, ChatInboxService $inbox): JsonResponse
+    {
+        $data = $request->validate(['message_id' => ['required', 'integer', 'min:1']]);
+        $conversation = $this->findConversation($uuid, $request->user());
+        $inbox->acknowledge($conversation, $request->user(), (int) $data['message_id']);
+
+        return response()->json([
+            ...$inbox->summary($request->user()),
+            'conversation' => $this->chat->conversationPayload($conversation->fresh(), $request->user()),
+        ]);
+    }
+
+    public function mute(Request $request, string $uuid, ChatInboxService $inbox): JsonResponse
+    {
+        $data = $request->validate(['muted' => ['required', 'boolean']]);
+        $conversation = $this->findConversation($uuid, $request->user());
+        $inbox->mute($conversation, $request->user(), (bool) $data['muted']);
+
+        return response()->json(['conversation' => $this->chat->conversationPayload($conversation->fresh(), $request->user())]);
     }
 
     public function send(Request $request, string $uuid): JsonResponse

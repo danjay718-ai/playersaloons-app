@@ -18,6 +18,8 @@ class NotificationBell extends Component
 
     public int $unreadCount = 0;
 
+    public bool $hasReadNotifications = false;
+
     public function mount(): void
     {
         $this->loadNotifications();
@@ -28,14 +30,15 @@ class NotificationBell extends Component
         /** @var User $user */
         $user = auth()->user();
 
-        $this->notifications = $user->notifications()
+        $this->notifications = $user->notifications()->whereNull('dismissed_at')
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
-        $this->unreadCount = $user->notifications()
+        $this->unreadCount = $user->notifications()->whereNull('dismissed_at')
             ->whereNull('read_at')
             ->count();
+        $this->hasReadNotifications = $user->notifications()->whereNull('dismissed_at')->whereNotNull('read_at')->exists();
     }
 
     #[On('notification.received')]
@@ -49,7 +52,7 @@ class NotificationBell extends Component
         /** @var User $user */
         $user = auth()->user();
 
-        $user->notifications()->where('id', $id)->whereNull('read_at')->update(['read_at' => now()]);
+        $user->notifications()->whereNull('dismissed_at')->where('id', $id)->whereNull('read_at')->update(['read_at' => now()]);
 
         $this->loadNotifications();
     }
@@ -58,7 +61,7 @@ class NotificationBell extends Component
     {
         /** @var User $user */
         $user = auth()->user();
-        $notification = $user->notifications()->findOrFail($id);
+        $notification = $user->notifications()->whereNull('dismissed_at')->findOrFail($id);
         $notification->forceFill(['read_at' => $notification->read_at ?? now()])->save();
 
         if ($notification->action_url !== null && str_starts_with($notification->action_url, '/')) {
@@ -75,9 +78,17 @@ class NotificationBell extends Component
         /** @var User $user */
         $user = auth()->user();
 
-        $user->notifications()->whereNull('read_at')->update(['read_at' => now()]);
+        $user->notifications()->whereNull('dismissed_at')->whereNull('read_at')->update(['read_at' => now()]);
 
         $this->loadNotifications();
+    }
+
+    public function clearRead(): void
+    {
+        auth()->user()->notifications()->whereNull('dismissed_at')->whereNotNull('read_at')
+            ->update(['dismissed_at' => now()]);
+        $this->loadNotifications();
+        $this->dispatch('notification.received');
     }
 
     public function render(): View

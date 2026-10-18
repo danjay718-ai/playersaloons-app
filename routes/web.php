@@ -146,6 +146,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/leaderboards', LeaderboardList::class)->name('leaderboards');
         Route::get('/streams', StreamList::class)->name('streams');
         Route::get('/chat', GlobalChat::class)->name('chat');
+        Route::get('/chat/api/inbox', [ChatController::class, 'inbox'])->name('chat.inbox');
+        Route::post('/chat/api/conversations/{uuid}/read', [ChatController::class, 'acknowledge'])->name('chat.read');
+        Route::put('/chat/api/conversations/{uuid}/mute', [ChatController::class, 'mute'])->name('chat.mute');
         Route::get('/chat/api/conversations', [ChatController::class, 'conversations'])->name('chat.conversations');
         Route::get('/chat/api/conversations/{uuid}/messages', [ChatController::class, 'messages'])->name('chat.messages');
         Route::post('/chat/api/conversations/{uuid}/messages', [ChatController::class, 'send'])->name('chat.messages.send');

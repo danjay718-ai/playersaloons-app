@@ -151,6 +151,7 @@ class ChatService
         }
 
         $message = DB::transaction(function () use ($conversation, $user, $body): ChatMessage {
+            ChatConversation::query()->whereKey($conversation->id)->lockForUpdate()->firstOrFail();
             $this->ensureParticipant($conversation, $user, 'member');
 
             /** @var ChatParticipant|null $participant */
@@ -171,24 +172,26 @@ class ChatService
             ]);
 
             $conversation->forceFill(['last_message_at' => now()])->save();
-            $participant?->forceFill(['last_read_at' => now()])->save();
             $this->pruneGlobalMessages($conversation);
 
             $message->load('user');
+            app(ChatInboxService::class)->recordMessage($conversation, $message);
 
             return $message;
         });
 
-        try {
-            $pendingBroadcast = broadcast(new ChatMessageSent($conversation->uuid, $this->messagePayload($message)));
-            unset($pendingBroadcast);
-        } catch (Throwable $exception) {
-            Log::warning('Chat message broadcast failed.', [
-                'conversation_uuid' => $conversation->uuid,
-                'message_uuid' => $message->uuid,
-                'exception' => $exception->getMessage(),
-            ]);
-        }
+        DB::afterCommit(function () use ($conversation, $message): void {
+            try {
+                $pendingBroadcast = broadcast(new ChatMessageSent($conversation->uuid, $this->messagePayload($message)));
+                unset($pendingBroadcast);
+            } catch (Throwable $exception) {
+                Log::warning('Chat message broadcast failed.', [
+                    'conversation_uuid' => $conversation->uuid,
+                    'message_uuid' => $message->uuid,
+                    'exception' => $exception->getMessage(),
+                ]);
+            }
+        });
 
         return $message;
     }
@@ -252,8 +255,10 @@ class ChatService
             'last_message_at' => $conversation->last_message_at?->toIso8601String(),
             'team_id' => $conversation->team_id,
             'tournament_team_id' => $conversation->tournament_team_id,
-            'is_unread' => $conversation->last_message_at !== null
-                && ($participant?->last_read_at === null || $conversation->last_message_at->gt($participant->last_read_at)),
+            'notifications_muted' => (bool) $participant?->notifications_muted,
+            'last_read_message_id' => (int) ($participant?->last_read_message_id ?? 0),
+            'is_unread' => $conversation->messages()->where('user_id', '!=', $viewer->id)
+                ->where('id', '>', $participant?->last_read_message_id ?? 0)->exists(),
         ];
     }
 
@@ -304,7 +309,7 @@ class ChatService
             ->orderBy('type')
             ->get();
 
-        return $conversations;
+        return $conversations->filter(fn ($conversation) => $this->canAccessConversation($conversation, $user))->values();
     }
 
     private function ensureParticipant(ChatConversation $conversation, User $user, string $role): ChatParticipant

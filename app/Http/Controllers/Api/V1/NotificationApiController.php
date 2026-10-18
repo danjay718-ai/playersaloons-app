@@ -18,7 +18,7 @@ class NotificationApiController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $perPage = (int) $request->query('per_page', '15');
-        $notifications = $request->user()->notifications()
+        $notifications = $request->user()->notifications()->whereNull('dismissed_at')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
@@ -30,7 +30,7 @@ class NotificationApiController extends Controller
      */
     public function read(string $uuid, Request $request): JsonResponse
     {
-        $notification = $request->user()->notifications()
+        $notification = $request->user()->notifications()->whereNull('dismissed_at')
             ->where('uuid', $uuid)
             ->firstOrFail();
 

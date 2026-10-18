@@ -182,9 +182,10 @@ class ChatIntegrationTest extends TestCase
                 'is_unread' => true,
             ]);
 
-        $this->actingAs($playerB)
+        $message = $this->actingAs($playerB)
             ->getJson(route('chat.messages', ['uuid' => $conversationUuid]))
-            ->assertOk();
+            ->assertOk()->json('messages.0.id');
+        $this->postJson(route('chat.read', ['uuid' => $conversationUuid]), ['message_id' => $message])->assertOk();
 
         $this->actingAs($playerB)
             ->getJson(route('chat.conversations'))

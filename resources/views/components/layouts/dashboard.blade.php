@@ -1,4 +1,6 @@
 @php
+    $chatInboxEnabled = auth()->user()->hasAnyRole(['PLAYER', 'TEAM_CAPTAIN']);
+    $chatInboxInitial = $chatInboxEnabled ? app(\App\Modules\Community\Services\ChatInboxService::class)->summary(auth()->user()) : ['unread_count' => 0, 'conversations' => []];
     $accountTheme = auth()->user()?->theme ?? \App\Shared\Enums\UserTheme::PURPLE_DARK;
 @endphp
 <!DOCTYPE html>
@@ -29,7 +31,7 @@
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
-<body class="theme-auth theme-player bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-violet-600 selection:text-white relative cyber-grid">
+<body x-data="chatInbox(@js(['enabled' => $chatInboxEnabled, 'url' => route('chat.inbox'), 'userUuid' => auth()->user()->uuid, 'initial' => $chatInboxInitial]))" class="theme-auth theme-player bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-violet-600 selection:text-white relative cyber-grid">
     @php
         $bottomNavItems = [
             ['label' => __('Overview'), 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'pattern' => 'dashboard'],
@@ -43,6 +45,10 @@
             ]]);
         }
     @endphp
+    <div x-show="chatAlert" x-cloak role="status" class="fixed right-4 top-20 z-[100] flex max-w-sm items-center gap-3 rounded-xl border border-fuchsia-500/40 bg-zinc-950 p-4 shadow-xl">
+        <a :href="chatAlert?.url" wire:navigate class="min-w-0 text-sm text-zinc-100"><strong>{{ __('New direct message') }}</strong><span class="mt-1 block break-words text-xs text-zinc-400" x-text="chatAlert?.sender"></span></a>
+        <button type="button" @click="chatAlert = null" aria-label="{{ __('Dismiss notification') }}" class="px-2 text-zinc-400">×</button>
+    </div>
     <!-- Global Background FX -->
     <div class="fixed inset-0 pointer-events-none z-0">
         <!-- Neon Orbs -->
@@ -102,6 +108,7 @@
                    id="more-item-{{ $loop->index }}">
                     <i data-lucide="{{ $item['icon'] }}" class="more-item-icon"></i>
                     <span class="more-item-label">{{ $item['label'] }}</span>
+                    @if($item['url'] === '/chat')<x-chat-unread-badge />@endif
                 </a>
             @endforeach
         </div>
@@ -123,7 +130,7 @@
     <!-- Main Outer Container -->
     <div class="player-dashboard-shell relative z-10 flex min-h-screen w-full"
          x-data="{
-             sidebarExpanded: false,
+             sidebarExpanded: true,
              sidebarTooltip: null,
              showSidebarTooltip(target) {
                  const item = target.closest('[data-sidebar-tooltip]');
@@ -139,6 +146,7 @@
                  };
              }
          }"
+         data-sidebar-expanded="true"
          :data-sidebar-expanded="sidebarExpanded ? 'true' : 'false'">
 
         <!-- Desktop Sidebar Panel (Hidden on mobile, sticky on desktop) -->
@@ -198,7 +206,7 @@
             <nav class="my-5 min-h-0 flex-grow space-y-1.5 overflow-y-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @foreach($navItems as $item)
                     <a href="{{ $item['url'] }}" wire:navigate data-sidebar-tooltip="{{ $item['label'] }}"
-                       class="theme-nav-item flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200 
+                       class="theme-nav-item relative flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200
                        {{ $item['active'] 
                           ? 'theme-nav-active bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
                           : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
@@ -208,6 +216,7 @@
                         <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-wider transition-opacity duration-200">
                             {{ $item['label'] }}
                         </span>
+                        @if($item['url'] === '/chat')<span :class="sidebarExpanded ? 'ml-auto' : 'absolute right-0 top-0'"><x-chat-unread-badge /></span>@endif
                     </a>
                 @endforeach
             </nav>
@@ -474,7 +483,8 @@
                             id="mobile-more-btn"
                             aria-label="{{ __('More navigation options') }}"
                             aria-expanded="false"
-                            class="mobile-nav-item">
+                            class="mobile-nav-item relative">
+                        <span class="absolute right-1 top-0"><x-chat-unread-badge /></span>
                         <i data-lucide="{{ $item['icon'] }}" class="mobile-nav-icon"></i>
                         <span class="mobile-nav-label">{{ $item['label'] }}</span>
                     </button>

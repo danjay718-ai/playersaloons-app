@@ -33,6 +33,9 @@ class Notification extends Model
         'message',
         'action_url',
         'read_at',
+        'chat_conversation_id',
+        'chat_message_id',
+        'dismissed_at',
     ];
 
     /**
@@ -44,6 +47,9 @@ class Notification extends Model
     {
         return [
             'read_at' => 'datetime',
+            'dismissed_at' => 'datetime',
+            'chat_conversation_id' => 'integer',
+            'chat_message_id' => 'integer',
         ];
     }
 

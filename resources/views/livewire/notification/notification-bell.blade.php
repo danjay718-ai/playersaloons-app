@@ -1,4 +1,4 @@
-<div class="relative" x-data="{ open: false }" @click.outside="open = false">
+<div wire:poll.30s.visible="onNotificationReceived" class="relative" x-data="{ open: false }" @click.outside="open = false">
     {{-- Bell Button --}}
     <button @click="open = !open"
             class="relative p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 hover:border-purple-500/40 text-zinc-400 hover:text-purple-300 transition-all duration-200">
@@ -21,7 +21,7 @@
 
         {{-- Header --}}
         <div class="px-4 py-2 border-b border-purple-500/10 flex justify-between items-center">
-            <span class="font-orbitron font-bold text-xs text-zinc-300 uppercase tracking-wider">SYSTEM LOGS</span>
+            <span class="font-orbitron font-bold text-xs text-zinc-300 uppercase tracking-wider">{{ __('Notifications') }}</span>
             @if($unreadCount > 0)
                 <span class="text-[9px] bg-purple-950 text-purple-400 border border-purple-900 px-2 py-0.5 rounded-full font-bold">{{ __(':value1 NEW', ['value1' => ($unreadCount)]) }}</span>
             @endif
@@ -36,6 +36,7 @@
                         <div class="p-1.5 bg-purple-900/30 rounded-lg text-purple-400 mt-0.5 flex-shrink-0">
                             @php
                                 $icon = match(true) {
+                                    str_starts_with($notification->type, 'chat.') => 'message-circle',
                                     str_contains($notification->type, 'wallet'), str_contains($notification->type, 'deposit'), str_contains($notification->type, 'prize') => 'wallet',
                                     str_contains($notification->type, 'tournament') => 'trophy',
                                     str_contains($notification->type, 'match') => 'swords',
@@ -69,12 +70,17 @@
         </div>
 
         {{-- Footer --}}
-        @if($unreadCount > 0)
+        @if($unreadCount > 0 || $hasReadNotifications)
             <div class="px-4 py-1.5 text-center border-t border-purple-500/10">
+                @if($unreadCount > 0)
                 <button wire:click="markAllRead"
                         class="text-[10px] font-bold text-purple-400 hover:text-purple-300 uppercase tracking-widest">
-                    Mark all as read
+                    {{ __('Mark all as read') }}
                 </button>
+                @endif
+                @if($hasReadNotifications)
+                    <button wire:click="clearRead" wire:loading.attr="disabled" class="ml-3 text-[10px] font-bold text-zinc-400 hover:text-zinc-200">{{ __('Clear read notifications') }}</button>
+                @endif
             </div>
         @endif
     </div>
