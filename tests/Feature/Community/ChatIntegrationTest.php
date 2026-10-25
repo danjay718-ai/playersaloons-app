@@ -281,6 +281,21 @@ class ChatIntegrationTest extends TestCase
         $this->assertSame(0, ChatMessage::query()->count());
     }
 
+    public function test_chat_and_opponent_profile_expose_saved_level_and_xp_without_private_account_fields(): void
+    {
+        $viewer = User::factory()->create();
+        $player = User::factory()->create();
+        $player->progression()->create(['level' => 4, 'experience_points' => 1750, 'tournaments_completed' => 8]);
+        $conversation = app(ChatService::class)->globalConversation($player);
+        $this->actingAs($player)->postJson(route('chat.messages.send', ['uuid' => $conversation->uuid]), ['message' => 'Ready to play.'])
+            ->assertCreated()->assertJsonPath('message.user.level', 4)->assertJsonPath('message.user.experience_points', 1750);
+        $this->actingAs($viewer)->getJson(route('chat.messages', ['uuid' => $conversation->uuid]))
+            ->assertOk()->assertJsonPath('messages.0.user.level', 4)->assertJsonPath('messages.0.user.experience_points', 1750);
+        $this->getJson(route('chat.players.show', ['uuid' => $player->uuid]))
+            ->assertOk()->assertJsonPath('player.level', 4)->assertJsonPath('player.experience_points', 1750)
+            ->assertJsonMissing(['email' => $player->email]);
+    }
+
     public function test_player_profile_modal_payload_and_follow_action(): void
     {
         $viewer = User::factory()->create(['username' => 'viewer']);

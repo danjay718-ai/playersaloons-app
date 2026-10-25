@@ -30,15 +30,17 @@
         <div class="grid grid-cols-1 xl:grid-cols-[360px_1fr]">
             <aside class="player-profile-identity border-b border-zinc-800 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_32%),linear-gradient(135deg,#111827,#09090b_68%)] p-5 sm:p-6 xl:border-b-0 xl:border-r">
                 <div class="flex items-start justify-between gap-4">
-                    <div>
+                    <div class="min-w-0">
                         <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-300 font-orbitron">Player Card</p>
                         <h2 class="mt-2 text-2xl font-black uppercase tracking-wide text-white font-orbitron break-words" translate="no">{{ $playerName }}</h2>
                         <p class="mt-1 text-xs font-semibold text-zinc-450">{{ '@'.$user->username }}</p>
                     </div>
-                    <span class="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-cyan-250 font-orbitron">
-                        Lv. 01
+                    <span class="shrink-0 whitespace-nowrap rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-1 text-xs font-bold text-cyan-250">
+                        {{ __('Level :level', ['level' => $progression->level]) }}
                     </span>
                 </div>
+
+                <p class="mt-3 text-sm text-zinc-300">{{ __(':points XP', ['points' => number_format($progression->experience_points)]) }}</p>
 
                 <div class="mt-6 flex flex-col items-center">
                     <div class="relative h-40 w-40 rounded-xl border border-zinc-700 bg-zinc-900 p-2 shadow-[0_0_32px_rgba(34,211,238,0.16)]">

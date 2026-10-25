@@ -180,24 +180,24 @@ final class SubmitV2MatchResultAction
         $consistent = ($a === MatchOutcome::WIN && $b === MatchOutcome::LOSS)
             || ($a === MatchOutcome::LOSS && $b === MatchOutcome::WIN);
         if (! $consistent) {
-            $attempt->update(['status' => 'disputed', 'resolution' => 'conflict', 'resolved_at' => now()]);
-            $match->forceFill(['status' => MatchStatus::DISPUTED, 'resolution_reason' => 'conflicting_submissions'])->save();
-            $dispute = MatchDispute::query()->create([
-                'uuid' => Str::uuid()->toString(),
-                'match_id' => $match->id,
-                // The second submission completes the conflicting pair and is
-                // the report that causes the dispute to open.
-                'opened_by' => $second->submitted_by,
-                'status' => DisputeStatus::OPEN,
-                'reason' => 'V2 result submissions conflict.',
-            ]);
-            MatchDisputed::dispatch($match->id, $dispute->id, $second->submitted_by);
+            $this->dispute($match, $attempt, $second->submitted_by, 'conflicting_submissions', 'V2 result submissions conflict.');
 
             return;
         }
 
         $winner = $a === MatchOutcome::WIN ? $first->registration_id : $second->registration_id;
         $this->complete($match, $attempt, (int) $winner, 'confirmed_submissions');
+    }
+
+    public function dispute(GameMatch $match, MatchAttempt $attempt, int $openedBy, string $resolution, string $reason): void
+    {
+        $attempt->update(['status' => 'disputed', 'resolution' => $resolution === 'conflicting_submissions' ? 'conflict' : $resolution, 'resolved_at' => now()]);
+        $match->forceFill(['status' => MatchStatus::DISPUTED, 'resolution_reason' => $resolution])->save();
+        $dispute = MatchDispute::query()->create([
+            'uuid' => Str::uuid()->toString(), 'match_id' => $match->id,
+            'opened_by' => $openedBy, 'status' => DisputeStatus::OPEN, 'reason' => $reason,
+        ]);
+        MatchDisputed::dispatch($match->id, $dispute->id, $openedBy);
     }
 
     public function complete(GameMatch $match, MatchAttempt $attempt, int $winnerRegistrationId, string $reason): void

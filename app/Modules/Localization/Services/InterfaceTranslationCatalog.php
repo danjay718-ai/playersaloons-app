@@ -23,8 +23,7 @@ final class InterfaceTranslationCatalog
         foreach ([resource_path('views'), app_path('Livewire'), app_path('Http/Controllers'), app_path('Modules'), app_path('Shared/Enums')] as $directory) {
             foreach (File::allFiles($directory) as $file) {
                 $path = str_replace('\\', '/', $file->getPathname());
-                if ($file->getExtension() !== 'php' || str_contains($path, '/admin/') || str_contains($path, '/Admin/')
-                    || str_ends_with($path, '/admin-content.blade.php') || str_ends_with($path, '/layouts/admin.blade.php')) {
+                if ($file->getExtension() !== 'php') {
                     continue;
                 }
                 yield from $this->extract(File::get($path), str_ends_with($path, '.blade.php'));
@@ -108,6 +107,10 @@ final class InterfaceTranslationCatalog
                 $text = $token[1][0] === "'" ? str_replace(["\\'", '\\\\'], ["'", '\\'], $text) : stripcslashes($text);
                 $explicitTranslation = count($previous) === 2 && $previous[1] === '('
                     && in_array($previous[0], ['__', 'trans', 'trans_choice'], true);
+                if (count($previous) === 2 && $previous[1] === '('
+                    && in_array($previous[0], ['format', 'isoFormat', 'translatedFormat', 'createFromFormat'], true)) {
+                    continue;
+                }
                 if (($explicitTranslation && ! preg_match('/^[a-z_]+\.[a-z_.]+$/', $text)) || $this->isCopy($text)) {
                     $this->add($text, $phrases);
                 }

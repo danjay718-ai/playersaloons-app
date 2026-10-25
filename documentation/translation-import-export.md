@@ -1,8 +1,8 @@
 # English translation catalog
 
-Translation Manager keeps English as its source catalog. Sync English reads `lang/en.json` and discovers player interface copy from Blade templates, component labels, attributes, PHP labels, country names, and browser UI messages. This includes dashboard headings, buttons, cards, tooltips, placeholders, and states. It inspects source literals without rendering pages or collecting player names, chat messages, or other user data. Sync Database adds public CMS and competition phrases. Neither operation creates empty rows for every other language. Existing translated values are retained. The migration removes only active, empty, non-English placeholder rows.
+Translation Manager keeps English as its source catalog. Sync English reads `lang/en.json` and discovers admin, player, and guest interface copy from Blade templates, component labels, attributes, PHP labels, country names, and browser UI messages. This includes dashboard headings, buttons, cards, tooltips, placeholders, and states. It inspects source literals without rendering pages or collecting player names, chat messages, or other user data. Sync Database adds public CMS and competition phrases. Neither operation creates empty rows for every other language. Existing translated values are retained. The migration removes only active, empty, non-English placeholder rows.
 
-Changing labels that contain counts or names use stable placeholders, such as `Welcome, :name`, so one translation works for every player and number. Browser-generated controls receive localized labels before Alpine or JavaScript changes their text. After syncing new interface copy, download a fresh English export: older exports no longer match the expanded catalog.
+Changing labels that contain counts or names use stable placeholders, such as `Welcome, :name`, so one translation works for every player and number. Browser-generated controls receive localized labels before Alpine or JavaScript changes their text. Sync English discovers admin, player, and guest interface copy. Date-format arguments are excluded. Identical English text is listed and exported once, even when legacy keys refer to the same phrase. Imported and manually saved translations update those equivalent keys.
 
 To translate a language:
 
@@ -25,7 +25,7 @@ To translate a language:
 }
 ```
 
-The import requires exactly the current English entries, unique keys, unchanged English sources, non-empty translations, and matching named/printf placeholders. Entry order may change. An old export becomes invalid after English copy changes. All database batches share one transaction: a mismatch or database failure rolls back every write, including earlier batches. Rejected imports leave the previously published translations available.
+The import validates the exported snapshot fingerprint, unique keys, unchanged existing English sources, non-empty translations, and matching named/printf placeholders. Entry order may change. New phrases added after export do not invalidate a file; they remain untranslated. Changed or removed source phrases require a fresh export. All database batches share one transaction: a mismatch or database failure rolls back every write, including earlier batches. Rejected imports leave the previously published translations available.
 
 **Add a language** accepts a unique language code (for example `fil` or `zh-hans`), its English name, and its native name. The language appears in Translation Manager and the site language selector. Adding it creates no phrase placeholders. Untranslated phrases continue to use existing file translations or English fallback.
 

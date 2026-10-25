@@ -154,6 +154,19 @@ class LoginRedirectTest extends TestCase
         $response->assertSee($player->username);
     }
 
+    public function test_banned_login_has_a_specific_response_only_after_valid_credentials(): void
+    {
+        $user = $this->createUser('PLAYER', 'banned@test.com');
+        $user->update(['status' => UserStatus::BANNED]);
+        Livewire::test(Login::class)->set('identity', $user->email)->set('password', 'wrong-password')
+            ->call('login')->assertSee('The provided credentials do not match our records.')
+            ->assertDontSee('Your account is banned.');
+        Livewire::test(Login::class)->set('identity', $user->email)->set('password', 'Password@1234!')
+            ->call('login')->assertSee('Your account is banned. Contact support for assistance.')
+            ->assertHasErrors('identity');
+        $this->assertGuest();
+    }
+
     public function test_invalid_credentials_show_error(): void
     {
         Livewire::test(Login::class)

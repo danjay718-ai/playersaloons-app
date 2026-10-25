@@ -30,16 +30,27 @@ final class ImportTranslationsAction
         }
 
         return DB::transaction(function () use ($file, $locale): int {
-            // Compare inside the transaction so a changed English catalog cannot
-            // result in a partial or outdated import. All writes roll back together.
+            // Validate the exported snapshot, allowing new English phrases added while translating.
             $source = TranslationString::query()->where('locale', 'en')->orderBy('key')->lockForUpdate()->pluck('text', 'key')->all();
             $source = TranslationCatalogService::normalizeSource($source);
-            if ($source === [] || ($file['source_hash'] ?? null) !== TranslationCatalogService::sourceHash($source)
-                || count($file['entries']) !== count($source)) {
+            $exportedSource = [];
+            foreach ($file['entries'] as $entry) {
+                if (! is_array($entry) || ! is_string($entry['key'] ?? null) || ! is_string($entry['source'] ?? null)
+                    || array_key_exists($entry['key'], $exportedSource)) {
+                    $this->reject(__('Missing, duplicate, extra, or changed English entries are not allowed. Nothing was imported.'));
+                }
+                $exportedSource[$entry['key']] = $entry['source'];
+            }
+            if ($exportedSource === [] || ($file['source_hash'] ?? null) !== TranslationCatalogService::sourceHash($exportedSource)) {
                 $this->reject(__('The file does not match the current English catalog. Export English again. Nothing was imported.'));
             }
             $seen = [];
+            $translatedSources = [];
             $rows = [];
+            $aliases = [];
+            foreach ($source as $key => $text) {
+                $aliases[$text][] = $key;
+            }
             $now = now();
             foreach ($file['entries'] as $entry) {
                 if (! is_array($entry) || ! is_string($entry['key'] ?? null) || ! is_string($entry['translation'] ?? null)
@@ -54,12 +65,18 @@ final class ImportTranslationsAction
                 if ($this->placeholders($entry['source']) !== $this->placeholders($entry['translation'])) {
                     $this->reject(__('Translation placeholders must match the English source. Nothing was imported.'));
                 }
+                if (isset($translatedSources[$entry['source']]) && $translatedSources[$entry['source']] !== $entry['translation']) {
+                    $this->reject(__('Equivalent English phrases must use the same translation. Nothing was imported.'));
+                }
+                $translatedSources[$entry['source']] = $entry['translation'];
                 $seen[$key] = true;
-                $rows[] = ['key' => $key, 'locale' => $locale, 'text' => $entry['translation'],
-                    'created_at' => $now, 'updated_at' => $now, 'deleted_at' => null];
-                if (count($rows) === 100) {
-                    TranslationString::query()->upsert($rows, ['key', 'locale'], ['text', 'updated_at', 'deleted_at']);
-                    $rows = [];
+                foreach ($aliases[$source[$key]] as $alias) {
+                    $rows[] = ['key' => $alias, 'locale' => $locale, 'text' => $entry['translation'],
+                        'created_at' => $now, 'updated_at' => $now, 'deleted_at' => null];
+                    if (count($rows) === 100) {
+                        TranslationString::query()->upsert($rows, ['key', 'locale'], ['text', 'updated_at', 'deleted_at']);
+                        $rows = [];
+                    }
                 }
             }
             if ($rows !== []) {

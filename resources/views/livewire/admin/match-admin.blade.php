@@ -680,6 +680,14 @@
                                 <div>
                                     <h4 class="text-xs font-bold uppercase tracking-wider text-red-300">{{ (int) $resolveDispute->match->tournament->workflow_version === 2 ? 'Dishonest-result strike' : 'Optional compliance ban' }}</h4>
                                     <p class="mt-1 text-[10px] leading-relaxed text-red-300/70">{{ (int) $resolveDispute->match->tournament->workflow_version === 2 ? __('Use only for a confirmed deliberate false result. The third confirmed strike schedules a permanent ban after the player is eliminated or the competition ends.') : 'Use only when the reviewed proof establishes that a player deliberately submitted false evidence.' }}</p>
+                                    @if((int) $resolveDispute->match->tournament->workflow_version === 2)
+                                        @foreach(collect([$resolveDispute->match->playerARegistration?->user, $resolveDispute->match->playerBRegistration?->user])->filter() as $strikePlayer)
+                                            <p class="mt-2 text-xs text-red-200">{{ __(':player has :count confirmed false-result strikes.', ['player' => $strikePlayer->username, 'count' => $strikePlayer->dispute_strikes_count]) }}</p>
+                                            @if($strikePlayer->dispute_strikes_count >= 2)
+                                                <p role="alert" class="mt-1 text-sm font-bold text-amber-300">{{ __('Another confirmed strike for :player will schedule a permanent ban after elimination or competition completion.', ['player' => $strikePlayer->username]) }}</p>
+                                            @endif
+                                        @endforeach
+                                    @endif
                                 </div>
                                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                     <div class="sm:col-span-2">

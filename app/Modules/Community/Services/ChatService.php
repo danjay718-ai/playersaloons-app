@@ -267,7 +267,7 @@ class ChatService
      */
     public function messagePayload(ChatMessage $message): array
     {
-        $message->loadMissing('user.profile');
+        $message->loadMissing(['user.profile', 'user.progression']);
         $user = $message->user;
 
         return [
@@ -282,6 +282,8 @@ class ChatService
                 'username' => $user?->username ?? 'Deleted Player',
                 'initials' => strtoupper(substr($user?->username ?? 'PS', 0, 2)),
                 'avatar_url' => $user?->profile?->avatar_url,
+                'level' => data_get($user, 'progression.level', 1),
+                'experience_points' => data_get($user, 'progression.experience_points', 0),
             ],
         ];
     }

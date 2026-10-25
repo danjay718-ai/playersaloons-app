@@ -7,6 +7,8 @@ namespace App\Modules\Match\Actions;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchAttempt;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\MatchOutcome;
+use App\Shared\Enums\MatchStatus;
 use Illuminate\Support\Facades\DB;
 
 final readonly class ResolveV2ResultTimeoutAction
@@ -30,13 +32,22 @@ final readonly class ResolveV2ResultTimeoutAction
             $match = GameMatch::query()->lockForUpdate()->findOrFail($matchId);
             $attempt = MatchAttempt::query()->lockForUpdate()->find($attemptId);
 
-            if ($attempt === null || $attempt->status !== 'open' || $attempt->result_deadline_at?->isFuture()) {
+            if ($attempt === null || $attempt->status !== 'open' || $attempt->result_deadline_at === null
+                || $attempt->result_deadline_at->isFuture() || $match->status !== MatchStatus::WAITING_FOR_CONFIRMATION) {
                 return false;
             }
 
             $submissions = $attempt->submissions()->orderBy('id')->get();
             if ($submissions->count() !== 1) {
                 return false;
+            }
+
+            $submission = $submissions->first();
+            if ($submission->outcome !== MatchOutcome::WIN->value) {
+                $this->results->dispute($match, $attempt, (int) $submission->submitted_by,
+                    'unconfirmed_result_timeout', 'A loss or draw was reported, but the opponent did not respond before the deadline.');
+
+                return true;
             }
 
             $this->results->complete(

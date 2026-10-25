@@ -74,7 +74,7 @@ class ChatController extends Controller
         $beforeId = $request->integer('before_id');
 
         $messages = ChatMessage::query()
-            ->with('user')
+            ->with(['user.profile', 'user.progression'])
             ->where('chat_conversation_id', $conversation->getKey())
             ->when($beforeId > 0, fn ($query) => $query->where('id', '<', $beforeId))
             ->latest('id')
@@ -228,7 +228,7 @@ class ChatController extends Controller
 
         /** @var User $player */
         $player = User::query()
-            ->with('profile')
+            ->with(['profile', 'progression'])
             ->where('uuid', $uuid)
             ->whereNotNull('email_verified_at')
             ->firstOrFail();
@@ -314,6 +314,8 @@ class ChatController extends Controller
             'is_self' => (int) $viewer->getKey() === (int) $player->getKey(),
             'is_following' => $isFollowing,
             'followers' => $followers,
+            'level' => data_get($player, 'progression.level', 1),
+            'experience_points' => data_get($player, 'progression.experience_points', 0),
             'stats' => [
                 'wins' => $wins,
                 'losses' => $losses,

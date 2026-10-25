@@ -396,7 +396,6 @@
     "How was your Head-to-Head?": "How was your Head-to-Head?",
     "Share your experience. Reviews are checked before appearing publicly.": "Share your experience. Reviews are checked before appearing publicly.",
     "Leave a review": "Leave a review",
-    "Start (:timezone)": "Start (:timezone)",
     "Archived at (:timezone)": "Archived at (:timezone)",
     "App timezone": "App timezone",
     "Save app timezone": "Save app timezone",
@@ -440,5 +439,19 @@
     "First Match": "First Match",
     "Submit your match result": "Submit your match result",
     "Your opponent submitted a result in :tournament. Submit your own result within :minutes minutes, by :deadline. Choose Won, Lost or Draw.": "Your opponent submitted a result in :tournament. Submit your own result within :minutes minutes, by :deadline. Choose Won, Lost or Draw.",
-    "Use only for a confirmed deliberate false result. The third confirmed strike schedules a permanent ban after the player is eliminated or the competition ends.": "Use only for a confirmed deliberate false result. The third confirmed strike schedules a permanent ban after the player is eliminated or the competition ends."
+    "Use only for a confirmed deliberate false result. The third confirmed strike schedules a permanent ban after the player is eliminated or the competition ends.": "Use only for a confirmed deliberate false result. The third confirmed strike schedules a permanent ban after the player is eliminated or the competition ends.",
+    "Your account is banned. Contact support for assistance.": "Your account is banned. Contact support for assistance.",
+    "Wallet balance": "Wallet balance",
+    "Level :level": "Level :level",
+    ":points XP": ":points XP",
+    "Level :level · :points XP": "Level :level · :points XP",
+    "Tournament Started Below Capacity": "Tournament Started Below Capacity",
+    ":value1 of :value2 teams joined. An automatic BYE has been applied where needed. Final prizes have been adjusted in accordance with the tournament rules.": ":value1 of :value2 teams joined. An automatic BYE has been applied where needed. Final prizes have been adjusted in accordance with the tournament rules.",
+    "You are viewing as a spectator. You have not joined this tournament.": "You are viewing as a spectator. You have not joined this tournament.",
+    ":player has :count confirmed false-result strikes.": ":player has :count confirmed false-result strikes.",
+    "Another confirmed strike for :player will schedule a permanent ban after elimination or competition completion.": "Another confirmed strike for :player will schedule a permanent ban after elimination or competition completion.",
+    "Result requires review": "Result requires review",
+    "A loss or draw was reported without an opponent response before the deadline. Upload a screenshot for admin review. You may also provide a written reason.": "A loss or draw was reported without an opponent response before the deadline. Upload a screenshot for admin review. You may also provide a written reason.",
+    "Start time (:timezone)": "Start time (:timezone)",
+    "Imported :count translations. New English phrases added since export remain untranslated.": "Imported :count translations. New English phrases added since export remain untranslated."
 }

@@ -174,10 +174,10 @@ return new class extends Migration
             $table->unique(['tournament_id', 'registration_id'], 'refund_tournament_registration_unique');
         });
 
-        DB::table('system_settings')->updateOrInsert(
-            ['key' => 'tournament.timezone'],
-            ['value' => config('app.tournament_timezone', 'UTC'), 'created_at' => now(), 'updated_at' => now()],
-        );
+        DB::table('system_settings')->insertOrIgnore([
+            'key' => 'tournament.timezone', 'value' => config('app.tournament_timezone', 'Europe/Amsterdam'),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
         DB::table('system_settings')->updateOrInsert(
             ['key' => 'tournament.waiting_result_time_default'],
             ['value' => '5', 'created_at' => now(), 'updated_at' => now()],

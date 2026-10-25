@@ -424,6 +424,7 @@ class ApiEndpointsTest extends TestCase
             'password' => bcrypt('password'),
             'status' => UserStatus::ACTIVE,
         ]);
+        $invitedUser->assignRole('PLAYER');
 
         $responseInvite = $this->postJson(route('api.v1.teams.invite', ['uuid' => $teamUuid]), [
             'invited_user_uuid' => $invitedUser->uuid,

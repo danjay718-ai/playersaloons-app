@@ -44,9 +44,11 @@ class Login extends Component
             return;
         }
 
-        if ($user?->status === UserStatus::SUSPENDED && Hash::check($this->password, $user->password)) {
+        if (in_array($user?->status, [UserStatus::SUSPENDED, UserStatus::BANNED], true) && Hash::check($this->password, $user->password)) {
             RateLimiter::clear($accountKey);
-            $this->addError('identity', 'Your account is suspended. Contact support for assistance.');
+            $this->addError('identity', $user->status === UserStatus::BANNED
+                ? __('Your account is banned. Contact support for assistance.')
+                : __('Your account is suspended. Contact support for assistance.'));
 
             return;
         }

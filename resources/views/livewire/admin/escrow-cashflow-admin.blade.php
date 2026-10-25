@@ -69,12 +69,12 @@
         </div>
         <div class="mt-4 overflow-x-auto">
             <table class="w-full min-w-[760px] text-left text-xs">
-                <thead><tr class="border-b border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-500"><th class="pb-3">{{ __('Competition') }}</th><th class="pb-3">{{ __('Start time (UTC)') }}</th><th class="pb-3">{{ __('1st / 2nd prize') }}</th><th class="pb-3">{{ __('Still set aside') }}</th><th class="pb-3">{{ __('Prize status') }}</th><th class="pb-3 text-right">{{ __('Details') }}</th></tr></thead>
+                <thead><tr class="border-b border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-500"><th class="pb-3">{{ __('Competition') }}</th><th class="pb-3">{{ __('Start time (:timezone)', ['timezone' => app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value()]) }}</th><th class="pb-3">{{ __('1st / 2nd prize') }}</th><th class="pb-3">{{ __('Still set aside') }}</th><th class="pb-3">{{ __('Prize status') }}</th><th class="pb-3 text-right">{{ __('Details') }}</th></tr></thead>
                 <tbody class="divide-y divide-slate-800/60">
                     @forelse($commitments as $tournament)
                         <tr>
                             <td class="py-3 font-semibold text-slate-200">{{ $tournament->name }}</td>
-                            <td class="py-3 font-mono text-slate-400">{{ $tournament->start_at?->utc()->format('Y-m-d H:i:s') }}</td>
+                            <td class="py-3 font-mono text-slate-400">{{ $tournament->start_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('Y-m-d H:i:s') }}</td>
                             <td class="py-3 text-slate-300">@currencySymbol{{ number_format((float) $tournament->prize_1st, 2) }} / @currencySymbol{{ number_format((float) $tournament->prize_2nd, 2) }}</td>
                             <td class="py-3 font-bold text-amber-300">@currencySymbol{{ number_format((float) $tournament->reserved_prize_amount, 2) }}</td>
                             <td class="py-3"><span class="rounded-full bg-slate-800 px-2 py-1 text-[9px] font-black uppercase text-slate-300">{{ match ($tournament->funding_state) { 'reserved' => __('Set aside'), 'paid' => __('Paid to players'), 'released' => __('Returned to platform'), default => __('Awaiting prize update') } }}</span></td>

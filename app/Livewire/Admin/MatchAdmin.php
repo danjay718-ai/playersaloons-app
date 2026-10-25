@@ -349,8 +349,8 @@ class MatchAdmin extends AdminComponent
 
         return MatchDispute::with([
             'match.tournament',
-            'match.playerARegistration.user',
-            'match.playerBRegistration.user',
+            'match.playerARegistration.user' => fn ($query) => $query->withCount('disputeStrikes'),
+            'match.playerBRegistration.user' => fn ($query) => $query->withCount('disputeStrikes'),
             'openedBy',
             'evidence.uploadedBy',
         ])->find($this->selectedDisputeId);

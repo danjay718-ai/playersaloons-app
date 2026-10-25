@@ -44,6 +44,13 @@ class ProfileDashboardTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_profile_displays_real_level_and_xp(): void
+    {
+        $this->user->progression()->create(['level' => 4, 'experience_points' => 1750, 'tournaments_completed' => 8]);
+        Livewire::actingAs($this->user)->test(ProfileDashboard::class)
+            ->assertSee('Level 4')->assertSee('1,750 XP');
+    }
+
     public function test_player_profile_page_renders_game_profile_without_inline_kyc_form(): void
     {
         $this->user->forceFill(['email_verified_at' => now()])->save();

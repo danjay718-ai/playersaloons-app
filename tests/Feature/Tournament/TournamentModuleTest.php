@@ -7,6 +7,7 @@ namespace Tests\Feature\Tournament;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\Identity\Models\User;
+use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Actions\CancelRegistrationAction;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
@@ -344,11 +345,16 @@ class TournamentModuleTest extends TestCase
         $matchesRound2 = GameMatch::where('round_id', $round2->id)->get();
         $this->assertCount(2, $matchesRound2);
 
-        // Since byes are completed in round 1, they advance immediately to round 2.
-        // Semi matches in round 2 should have players seeded.
-        // Let's verify that player_a or player_b is filled from byes.
+        // Odd rounds wait for all winners so the next BYE can go to a different player.
         $hasSomeParticipantsSeeded = $matchesRound2->contains(fn ($m) => $m->player_a_registration_id !== null || $m->player_b_registration_id !== null);
-        $this->assertTrue($hasSomeParticipantsSeeded);
+        $this->assertFalse($hasSomeParticipantsSeeded);
+        $firstByeWinner = $completedByes->first()->winner_registration_id;
+        foreach ($readyMatches as $match) {
+            $match->update(['status' => MatchStatus::COMPLETED, 'winner_registration_id' => $match->player_a_registration_id]);
+            MatchCompleted::dispatch($match->id, $tournament->id, $match->player_a_registration_id);
+        }
+        $nextBye = $round2->matches()->where('status', MatchStatus::COMPLETED)->whereNull('player_b_registration_id')->firstOrFail();
+        $this->assertNotSame($firstByeWinner, $nextBye->winner_registration_id);
     }
 
     public function test_auto_cancel_at_checkin_closed(): void

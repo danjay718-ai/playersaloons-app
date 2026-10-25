@@ -37,6 +37,7 @@ final class MatchAttempt extends Model
         return $this->belongsTo(GameMatch::class, 'match_id');
     }
 
+    /** @return HasMany<MatchResultSubmission, $this> */
     public function submissions(): HasMany
     {
         return $this->hasMany(MatchResultSubmission::class);

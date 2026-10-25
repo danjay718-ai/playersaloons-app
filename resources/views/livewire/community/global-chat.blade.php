@@ -160,6 +160,7 @@
                             <div :class="message.user.uuid === currentUserUuid ? 'player-chat-bubble-own border-fuchsia-500/25 bg-fuchsia-950/20' : 'player-chat-bubble-other border-zinc-800 bg-zinc-950/70'" class="player-chat-bubble rounded-xl border px-3 py-2">
                                 <div class="mb-1 flex items-center gap-2" :class="message.user.uuid === currentUserUuid ? 'justify-end' : ''">
                                     <button type="button" @click="openPlayerProfile(message.user.uuid)" class="font-orbitron text-[10px] font-black uppercase tracking-wider hover:underline" :class="message.user.uuid === currentUserUuid ? 'text-fuchsia-200' : 'text-cyan-200'" x-text="message.user.username"></button>
+                                    <span class="text-xs text-zinc-400" x-text="@js(__('Level :level · :points XP')).replace(':level', message.user.level ?? 1).replace(':points', message.user.experience_points ?? 0)"></span>
                                     <span class="text-[9px] text-zinc-600" x-text="message.time"></span>
                                 </div>
                                 <p class="whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-200" x-text="message.body"></p>
@@ -201,6 +202,7 @@
                             <p class="font-orbitron text-[10px] font-black uppercase tracking-[0.3em] text-purple-300">Player Profile</p>
                             <h3 class="truncate font-orbitron text-xl font-black uppercase tracking-widest text-zinc-100" x-text="selectedPlayer?.display_name || 'Loading...'"></h3>
                             <p class="text-xs text-zinc-500" x-text="selectedPlayer?.username ? `@${selectedPlayer.username}` : ''"></p>
+                            <p class="mt-1 text-sm text-zinc-300" x-text="@js(__('Level :level · :points XP')).replace(':level', selectedPlayer?.level ?? 1).replace(':points', selectedPlayer?.experience_points ?? 0)"></p>
                         </div>
                     </div>
                     <button type="button" @click="playerModalOpen = false" class="rounded-lg border border-zinc-800 p-2 text-zinc-400 hover:text-white">

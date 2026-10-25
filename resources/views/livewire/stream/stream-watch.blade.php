@@ -277,7 +277,7 @@
                                                 <i data-lucide="swords" class="w-5 h-5 text-cyan-400 flex-shrink-0"></i>
                                                 <div class="min-w-0">
                                                     <p class="text-xs font-bold text-white truncate">{{ $t->name }}</p>
-                                                    <p class="text-[10px] text-zinc-500">{{ $t->start_at?->format('M d, Y') ?? 'TBD' }} · {{ $t->status }}</p>
+                                                    <p class="text-[10px] text-zinc-500">{{ $t->start_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, Y') ?? 'TBD' }} · {{ $t->status }}</p>
                                                 </div>
                                             </a>
                                         @endforeach

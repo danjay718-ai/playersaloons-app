@@ -37,9 +37,10 @@ use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
 use App\Modules\Match\Events\MatchCompleted;
+use App\Modules\Match\Events\MatchDisputed;
 use App\Modules\Match\Events\MatchResultSubmitted;
 use App\Modules\Match\Jobs\ResolveV2ResultTimeoutJob;
-use App\Modules\Match\Jobs\ResolveV2ResultTimeoutsJob;
+use App\Modules\Match\Listeners\NotifyAdminsOfDisputeListener;
 use App\Modules\Match\Listeners\NotifyV2ResultResponseListener;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
@@ -846,6 +847,10 @@ final class TournamentV2WorkflowTest extends TestCase
         app(V2TournamentLifecycle::class)->reconcile($tournament->fresh());
 
         self::assertSame(TournamentStatus::ONGOING, $tournament->fresh()->status);
+        $joinedPlayer = User::query()->where('email', 'p1-v2@example.com')->firstOrFail();
+        Livewire::actingAs($joinedPlayer)->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+            ->assertSee('Tournament Started Below Capacity')
+            ->assertSee('3 of 4 teams joined. An automatic BYE has been applied where needed. Final prizes have been adjusted in accordance with the tournament rules.');
         self::assertSame(3, GameMatch::query()->where('tournament_id', $tournament->id)->count());
         self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->whereNull('player_b_registration_id')->where('status', MatchStatus::COMPLETED)->count());
         self::assertSame(1, GameMatch::query()->where('tournament_id', $tournament->id)->where('status', MatchStatus::IN_PROGRESS)->count());
@@ -943,7 +948,14 @@ final class TournamentV2WorkflowTest extends TestCase
                 self::assertNotNull($pair->player_b_registration_id);
                 self::assertNull($pair->winner_registration_id);
             }
+            $previousByeCounts = GameMatch::query()->where('tournament_id', $tournament->id)
+                ->where('status', MatchStatus::COMPLETED)->whereNull('player_b_registration_id')
+                ->whereHas('round', fn ($query) => $query->where('round_number', '<', $round->round_number))
+                ->selectRaw('winner_registration_id, COUNT(*) as total')
+                ->groupBy('winner_registration_id')->pluck('total', 'winner_registration_id');
+            $fewestByes = $players->map(fn ($id) => $previousByeCounts[$id] ?? 0)->min();
             foreach ($matches->where('status', MatchStatus::COMPLETED) as $bye) {
+                self::assertSame($fewestByes, $previousByeCounts[$bye->winner_registration_id] ?? 0);
                 self::assertNull($bye->player_b_registration_id);
                 self::assertSame($bye->player_a_registration_id, $bye->winner_registration_id);
             }
@@ -1060,6 +1072,46 @@ final class TournamentV2WorkflowTest extends TestCase
         Livewire::test(UserAdmin::class)
             ->call('selectUser', $second->id)->assertSee('Verified false report number 3')
             ->assertSee('Automatic dispute ban')->assertSee('Dispute strike #3');
+    }
+
+    public function test_dispute_warns_admin_before_a_third_confirmed_strike_and_spectators_are_identified(): void
+    {
+        [$match, $player, $opponent] = $this->activeTwoPlayerMatch();
+        $submit = app(SubmitV2MatchResultAction::class);
+        $submit->execute($match, $player->id, MatchOutcome::WIN);
+        $submit->execute($match->fresh(), $opponent->id, MatchOutcome::WIN);
+        $dispute = $match->disputes()->firstOrFail();
+        foreach ([1, 2] as $number) {
+            $historicalMatch = $match->replicate();
+            $historicalMatch->uuid = Str::uuid();
+            $historicalMatch->save();
+            $historicalDispute = $dispute->replicate();
+            $historicalDispute->uuid = Str::uuid();
+            $historicalDispute->match_id = $historicalMatch->id;
+            $historicalDispute->save();
+            app(IssueDisputeStrikeAction::class)->execute($historicalDispute, $player, $this->admin, 'Confirmed false report');
+        }
+        app(NotifyAdminsOfDisputeListener::class)->handle(
+            new MatchDisputed($match->id, $dispute->id, $opponent->id));
+        self::assertTrue(Notification::query()->where('user_id', $this->admin->id)->where('type', 'admin_match_dispute')
+            ->where('message', 'like', '%2 confirmed false-result strikes%')->exists());
+        Livewire::actingAs($this->admin)->test(MatchAdmin::class)->call('openDisputeModal', $dispute->id)
+            ->assertSee($player->username.' has 2 confirmed false-result strikes.')
+            ->assertSee('Another confirmed strike for '.$player->username.' will schedule a permanent ban');
+        self::assertSame(UserStatus::ACTIVE, $player->fresh()->status);
+        $spectator = $this->user('uat-spectator@example.com', 'uatspectator', 'PLAYER');
+        Livewire::actingAs($spectator)->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
+            ->assertSee('You are viewing as a spectator. You have not joined this tournament.')
+            ->assertDontSee('You Have Been Defeated');
+    }
+
+    public function test_deployment_seeding_preserves_saved_timezone_and_overrides_stale_configuration(): void
+    {
+        DB::table('system_settings')->where('key', 'tournament.timezone')->update(['value' => 'Europe/Amsterdam']);
+        config()->set('app.tournament_timezone', 'UTC');
+        $this->seed(SystemSettingsSeeder::class);
+        app(TournamentTimezone::class)->forget();
+        self::assertSame('Europe/Amsterdam', app(TournamentTimezone::class)->value());
     }
 
     public function test_third_strike_waits_through_rematch_and_applies_only_after_elimination(): void
@@ -2085,23 +2137,33 @@ final class TournamentV2WorkflowTest extends TestCase
         ];
     }
 
-    public function test_first_submitter_wins_after_five_minute_non_response_even_when_reporting_loss(): void
+    #[DataProvider('unconfirmedTimeoutOutcomes')]
+    public function test_loss_or_draw_timeout_opens_a_dispute_without_reversing_the_report(string $outcome): void
     {
-        [$match, $p1, $p2] = $this->activeTwoPlayerMatch();
-        app(SubmitV2MatchResultAction::class)->execute($match, $p1->id, MatchOutcome::LOSS);
-        $this->travelTo(now()->addMinutes(5)->addSecond());
+        [$match, $p1] = $this->activeTwoPlayerMatch();
+        app(SubmitV2MatchResultAction::class)->execute($match, $p1->id, MatchOutcome::from($outcome));
+        $attempt = $match->attempts()->firstOrFail();
+        $this->travelTo($attempt->result_deadline_at);
+        $resolver = app(ResolveV2ResultTimeoutAction::class);
 
-        (new ResolveV2ResultTimeoutsJob)->handle(app(ResolveV2ResultTimeoutAction::class));
+        self::assertTrue($resolver->execute($attempt->id));
+        self::assertFalse($resolver->execute($attempt->id));
+        self::assertSame(MatchStatus::DISPUTED, $match->fresh()->status);
+        self::assertNull($match->fresh()->winner_registration_id);
+        self::assertSame('unconfirmed_result_timeout', $match->fresh()->resolution_reason);
+        self::assertSame($outcome, $attempt->submissions()->firstOrFail()->outcome);
+        self::assertSame(1, $match->disputes()->count());
+        Storage::fake('public');
+        Livewire::actingAs($p1)->test(MatchDetail::class, ['uuid' => $match->uuid, 'embedded' => true])
+            ->assertSee('Result requires review')
+            ->set('evidenceFile', UploadedFile::fake()->image('timeout-proof.png'))
+            ->call('submitDisputeStatement')->assertHasNoErrors();
+        self::assertSame(1, $match->disputes()->firstOrFail()->evidence()->count());
+    }
 
-        self::assertSame(MatchStatus::COMPLETED, $match->fresh()->status);
-        self::assertSame($match->playerARegistration->includesUser($p1->id)
-            ? $match->player_a_registration_id
-            : $match->player_b_registration_id, $match->fresh()->winner_registration_id);
-        self::assertSame('opponent_submission_timeout', $match->fresh()->resolution_reason);
-
-        Livewire::actingAs($p2)
-            ->test(TournamentDetail::class, ['uuid' => $match->tournament->uuid])
-            ->assertSee('You lost because you did not report your result within 5 minutes after your opponent submitted.');
+    public static function unconfirmedTimeoutOutcomes(): array
+    {
+        return [['loss'], ['draw']];
     }
 
     public function test_first_submission_queues_exact_timeout_and_rejects_a_response_at_the_deadline(): void

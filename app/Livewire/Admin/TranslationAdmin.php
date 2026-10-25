@@ -152,7 +152,7 @@ final class TranslationAdmin extends AdminComponent
         $this->reset('importFile');
         $this->localeFilter = $this->importLocale;
         $this->updatedLocaleFilter();
-        session()->flash('success', __('Imported :count translations. All English entries matched.', ['count' => $count]));
+        session()->flash('success', __('Imported :count translations. New English phrases added since export remain untranslated.', ['count' => $count]));
     }
 
     public function addLanguage(AddTranslationLanguageAction $add): void
@@ -224,7 +224,7 @@ final class TranslationAdmin extends AdminComponent
         $missingCounts = [];
         if ($this->translationTableReady) {
             $statistics = $catalog->statistics();
-            $keys = TranslationString::query()->select('id', 'key', 'text')->where('locale', 'en')
+            $keys = $catalog->sourceQuery()->select('id', 'key', 'text')
                 ->when($this->search !== '', function ($query): void {
                     $query->where(function ($nested): void {
                         $nested->where('key', 'like', '%'.$this->search.'%')->orWhere('text', 'like', '%'.$this->search.'%')

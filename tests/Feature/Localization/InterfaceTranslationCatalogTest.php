@@ -20,6 +20,7 @@ final class InterfaceTranslationCatalogTest extends TestCase
     {
         $source = <<<'BLADE'
 <h2>Your Active Tournaments</h2>
+<p>{{ $date->format('Y-m-d H:i:s T') }}</p>
 <button title="Open Submit Result">Find Tournaments</button>
 <input placeholder="Search players...">
 <x-player.metric-card label="Prize Earnings" :value="$privateTotal" />
@@ -34,7 +35,7 @@ BLADE;
         foreach (['Your Active Tournaments', 'Find Tournaments', 'Open Submit Result', 'Search players...', 'Prize Earnings', 'My Active', 'Cancel', 'Edit Profile', 'Welcome, :name', 'Loading channel...', 'recently', '$:amount Stake'] as $phrase) {
             self::assertContains($phrase, $phrases);
         }
-        foreach (['Private copy', 'bg-zinc-900 text-white', 'private_name', 'function showMessage()', 'player.metric-card'] as $technical) {
+        foreach (['Private copy', 'bg-zinc-900 text-white', 'private_name', 'function showMessage()', 'player.metric-card', 'Y-m-d H:i:s T'] as $technical) {
             self::assertNotContains($technical, $phrases);
         }
     }
@@ -43,7 +44,7 @@ BLADE;
     {
         $catalog = app(TranslationCatalogService::class);
         $catalog->syncFromJsonFiles();
-        foreach (['Your Active Tournaments', 'Find Tournaments', 'Active Events', 'Prize Earnings', 'Edit Profile', 'Strong password', 'Open Match Room', 'Wallet', 'Registration open', 'My Tournaments'] as $phrase) {
+        foreach (['Your Active Tournaments', 'Find Tournaments', 'Active Events', 'Prize Earnings', 'Edit Profile', 'Strong password', 'Open Match Room', 'Wallet', 'Registration open', 'My Tournaments', 'Recent Security & Audit Logs', 'Admin Ruling'] as $phrase) {
             self::assertDatabaseHas('translation_strings', ['key' => $phrase, 'locale' => 'en', 'text' => $phrase]);
         }
         $firstCount = TranslationString::query()->count();

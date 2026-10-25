@@ -68,6 +68,9 @@
                     <h2 class="text-xl font-bold text-zinc-100 truncate w-60" translate="no">
                         {{ $match->playerARegistration?->team?->name ?: ($match->playerARegistration?->user?->profile?->display_name ?: $match->playerARegistration?->user?->username ?: 'TBD') }}
                     </h2>
+                    @if($match->playerARegistration?->user)
+                        <p class="text-xs text-zinc-400">{{ __('Level :level · :points XP', ['level' => $match->playerARegistration->user->progression?->level ?? 1, 'points' => number_format($match->playerARegistration->user->progression?->experience_points ?? 0)]) }}</p>
+                    @endif
                     <span class="block text-xs text-zinc-500 font-semibold">
                         @ @if($match->playerARegistration?->user?->username){{ $match->playerARegistration->user->username }}@else{{ 'To Be Determined' }}@endif
                     </span>
@@ -107,6 +110,9 @@
                     <h2 class="text-xl font-bold text-zinc-100 truncate w-60" translate="no">
                         {{ $match->playerBRegistration?->team?->name ?: ($match->playerBRegistration?->user?->profile?->display_name ?: $match->playerBRegistration?->user?->username ?: 'TBD') }}
                     </h2>
+                    @if($match->playerBRegistration?->user)
+                        <p class="text-xs text-zinc-400">{{ __('Level :level · :points XP', ['level' => $match->playerBRegistration->user->progression?->level ?? 1, 'points' => number_format($match->playerBRegistration->user->progression?->experience_points ?? 0)]) }}</p>
+                    @endif
                     <span class="block text-xs text-zinc-500 font-semibold">
                         @ @if($match->playerBRegistration?->user?->username){{ $match->playerBRegistration->user->username }}@else{{ 'To Be Determined' }}@endif
                     </span>
@@ -200,8 +206,8 @@
 
                 @if($isResultConflict && $activeDispute)
                     <div data-match-content="dispute" role="alert" class="rounded-xl border border-red-500/40 bg-red-950/25 p-5 text-red-100">
-                        <div class="flex items-center gap-2 text-sm font-bold"><i data-lucide="shield-alert" class="h-5 w-5"></i>Result conflict detected</div>
-                        <p class="mt-2 text-xs leading-relaxed text-red-100/80">{{ __('The results conflict. Upload a screenshot for admin review. You may also provide a written reason.') }}</p>
+                        <div class="flex items-center gap-2 text-sm font-bold"><i data-lucide="shield-alert" class="h-5 w-5"></i>{{ $match->resolution_reason === 'unconfirmed_result_timeout' ? __('Result requires review') : __('Result conflict detected') }}</div>
+                        <p class="mt-2 text-xs leading-relaxed text-red-100/80">{{ $match->resolution_reason === 'unconfirmed_result_timeout' ? __('A loss or draw was reported without an opponent response before the deadline. Upload a screenshot for admin review. You may also provide a written reason.') : __('The results conflict. Upload a screenshot for admin review. You may also provide a written reason.') }}</p>
                         @if($isParticipant && ! $hasSubmittedDisputeEvidence)
                             <button type="button" @click="$dispatch('open-dispute-statement')" class="mt-4 rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-500">Submit dispute details</button>
                         @elseif($isParticipant)
@@ -525,8 +531,8 @@
             <div role="dialog" aria-modal="true" aria-labelledby="conflict-dispute-title" class="w-full max-w-lg rounded-2xl border border-red-500/40 bg-zinc-900 p-5 shadow-2xl shadow-black/60 sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <h2 id="conflict-dispute-title" class="font-orbitron text-lg font-bold text-white">Result conflict detected</h2>
-                        <p class="mt-2 text-xs leading-relaxed text-zinc-300">{{ __('The results conflict. Upload a screenshot for admin review. You may also provide a written reason.') }}</p>
+                        <h2 id="conflict-dispute-title" class="font-orbitron text-lg font-bold text-white">{{ $match->resolution_reason === 'unconfirmed_result_timeout' ? __('Result requires review') : __('Result conflict detected') }}</h2>
+                        <p class="mt-2 text-xs leading-relaxed text-zinc-300">{{ $match->resolution_reason === 'unconfirmed_result_timeout' ? __('A loss or draw was reported without an opponent response before the deadline. Upload a screenshot for admin review. You may also provide a written reason.') : __('The results conflict. Upload a screenshot for admin review. You may also provide a written reason.') }}</p>
                     </div>
                 </div>
                 <form wire:submit.prevent="submitDisputeStatement" class="mt-5 space-y-4">

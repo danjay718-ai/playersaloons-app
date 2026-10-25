@@ -59,7 +59,11 @@ final class NotifyAdminsOfDisputeListener implements ShouldQueueAfterCommit
     /** @return array{message: string, action_url: string}|null */
     private function tournamentMatchDetails(int $matchId): ?array
     {
-        $match = GameMatch::query()->with('tournament:id,name,competition_type')->find($matchId);
+        $match = GameMatch::query()->with([
+            'tournament:id,name,competition_type',
+            'playerARegistration.user', 'playerARegistration.rosterMembers.user',
+            'playerBRegistration.user', 'playerBRegistration.rosterMembers.user',
+        ])->find($matchId);
         if ($match === null) {
             return null;
         }
@@ -68,8 +72,19 @@ final class NotifyAdminsOfDisputeListener implements ShouldQueueAfterCommit
             ? 'head-to-head competition'
             : 'tournament';
 
+        $message = "Match #{$match->id} in {$competition} '{$match->tournament->name}' has been disputed and requires an administrator review.";
+        $players = collect([$match->playerARegistration, $match->playerBRegistration])->filter()
+            ->flatMap(fn ($registration) => collect([$registration->user])->merge($registration->rosterMembers->pluck('user')))
+            ->filter()->unique('id');
+        $players = User::query()->whereIn('id', $players->pluck('id'))->withCount('disputeStrikes')->get();
+        foreach ($players as $player) {
+            if ($player->dispute_strikes_count >= 2) {
+                $message .= " {$player->username} has {$player->dispute_strikes_count} confirmed false-result strikes. Another confirmed strike will schedule a permanent ban after elimination or competition completion.";
+            }
+        }
+
         return [
-            'message' => "Match #{$match->id} in {$competition} '{$match->tournament->name}' has been disputed and requires an administrator review.",
+            'message' => $message,
             'action_url' => "/admin/matches?filter=disputes&match={$match->id}",
         ];
     }

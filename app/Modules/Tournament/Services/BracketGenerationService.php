@@ -137,61 +137,9 @@ class BracketGenerationService
             $match->save();
         }
 
-        if ((int) $tournament->workflow_version === 2) {
-            foreach ($matchesByRound[1] as $match) {
-                if ($match->winner_registration_id !== null) {
-                    $this->randomAdvancement->advance($match);
-                }
-            }
-
-            return $bracket;
-        }
-
-        // ── Step 7: Propagate bye winners into later rounds ────────────────
-        // Walk every Round 1 slot. If a winner exists (bye or real),
-        // place them into the correct slot of Round 2. If both players of a
-        // Round 2 slot are now filled, mark it READY and dispatch MatchCreated.
-        for ($r = 1; $r < $totalRounds; $r++) {
-            $slotsInRound = $slotsByRound[$r];
-            for ($j = 1; $j <= $slotsInRound; $j++) {
-                /** @var GameMatch $match */
-                $match = $matchesByRound[$r][$j];
-                $winnerId = $match->winner_registration_id;
-
-                if ($winnerId === null) {
-                    continue;
-                }
-
-                $nextJ = (int) ceil($j / 2);
-                /** @var GameMatch $nextMatch */
-                $nextMatch = $matchesByRound[$r + 1][$nextJ];
-
-                if ($j % 2 !== 0) {
-                    $nextMatch->player_a_registration_id = $winnerId;
-                } else {
-                    $nextMatch->player_b_registration_id = $winnerId;
-                }
-
-                // The last winner has no opponent when this round has odd slots.
-                if ($j === $slotsInRound && $slotsInRound % 2 !== 0) {
-                    $nextMatch->winner_registration_id = $winnerId;
-                    $nextMatch->status = MatchStatus::COMPLETED;
-                }
-                $nextMatch->save();
-
-                if (
-                    $nextMatch->player_a_registration_id !== null
-                    && $nextMatch->player_b_registration_id !== null
-                ) {
-                    $nextMatch->status = MatchStatus::READY;
-                    $nextMatch->save();
-
-                    MatchCreated::dispatch(
-                        (int) $nextMatch->getKey(),
-                        (int) $tournament->getKey(),
-                        (int) $nextMatch->round_id
-                    );
-                }
+        foreach ($matchesByRound[1] as $match) {
+            if ($match->winner_registration_id !== null) {
+                $this->randomAdvancement->advance($match);
             }
         }
 

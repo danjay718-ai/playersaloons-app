@@ -14,6 +14,7 @@ use App\Modules\Identity\Actions\UpdateProfileAction;
 use App\Modules\Identity\Actions\UploadAvatarAction;
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Services\PlayerProgressionService;
 use App\Modules\Identity\Services\TotpService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -379,6 +380,7 @@ class ProfileDashboard extends Component
 
         return view('livewire.profile.profile-dashboard', [
             'user' => $user,
+            'progression' => app(PlayerProgressionService::class)->progressionFor($user),
             'latestKyc' => $latestKyc,
             'timezoneOptions' => $this->timezoneOptions(),
             'countries' => app(CountryEligibilityService::class)->selectableCountries(),

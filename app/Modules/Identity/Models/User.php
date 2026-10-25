@@ -172,6 +172,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasOne(PlayerProgression::class);
     }
 
+    public function disputeStrikes(): HasMany
+    {
+        return $this->hasMany(PlayerDisputeStrike::class);
+    }
+
     /**
      * Get the user's KYC submissions.
      */

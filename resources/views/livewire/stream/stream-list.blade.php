@@ -581,7 +581,7 @@
 
                                 <div class="p-3 flex flex-col gap-2">
                                     <p class="text-xs font-black text-white truncate">{{ $tournament->name }}</p>
-                                    <p class="text-[10px] text-zinc-500">{{ $tournament->start_at ? $tournament->start_at->format('M d, Y h:i A') : 'TBD' }}</p>
+                                    <p class="text-[10px] text-zinc-500">{{ $tournament->start_at ? $tournament->start_at->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, Y h:i A') : 'TBD' }}</p>
                                     <div class="flex gap-2 mt-1">
                                         <a href="/tournaments/{{ $tournament->uuid }}/view" wire:navigate class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-cyan-600/20 border border-cyan-600/40 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-cyan-300 transition hover:bg-cyan-600 hover:text-white">
                                             <i data-lucide="swords" class="w-3 h-3"></i> Tournament

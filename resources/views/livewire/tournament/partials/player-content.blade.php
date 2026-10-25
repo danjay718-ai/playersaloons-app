@@ -321,6 +321,9 @@
                         <div class="w-full bg-zinc-950/60 border border-zinc-800 text-zinc-500 rounded-2xl py-5 px-8 text-center text-xs font-black uppercase tracking-[0.2em]">
                             {{ $tournament->status->label() }}
                         </div>
+                        @if(! $isRegistered && $tournament->status === \App\Shared\Enums\TournamentStatus::ONGOING)
+                            <p role="status" class="text-center text-xs text-zinc-400">{{ __('You are viewing as a spectator. You have not joined this tournament.') }}</p>
+                        @endif
                     @endif
                 @endauth
             </div>
@@ -1241,8 +1244,8 @@
                 <i data-lucide="git-branch" class="h-8 w-8"></i>
             </div>
             <div class="space-y-2 text-center">
-                <h3 class="text-xl font-black uppercase tracking-widest text-white font-orbitron">Tournament Started Under Capacity</h3>
-                <p class="text-sm leading-relaxed text-zinc-400">{{ __(':value1 of :value2 teams joined. Automatic BYEs have been applied where needed, and the final prize has been adjusted based on confirmed paid entries.', ['value1' => ($prizeCalculation['confirmed_count']), 'value2' => ($tournament->max_participants)]) }}</p>
+                <h3 class="text-xl font-black uppercase tracking-widest text-white font-orbitron">{{ __('Tournament Started Below Capacity') }}</h3>
+                <p class="text-sm leading-relaxed text-zinc-400">{{ __(':value1 of :value2 teams joined. An automatic BYE has been applied where needed. Final prizes have been adjusted in accordance with the tournament rules.', ['value1' => ($prizeCalculation['confirmed_count']), 'value2' => ($tournament->max_participants)]) }}</p>
             </div>
             <button type="button" @click="showUnderfilledNotice = false" class="w-full rounded-xl bg-amber-500 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-950 transition hover:bg-amber-400">
                 Understood

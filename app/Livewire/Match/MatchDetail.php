@@ -389,7 +389,7 @@ class MatchDetail extends Component
             ->with(['playerARegistration', 'playerBRegistration'])
             ->firstOrFail();
 
-        if ($match->status !== MatchStatus::DISPUTED || $match->resolution_reason !== 'conflicting_submissions') {
+        if ($match->status !== MatchStatus::DISPUTED || ! in_array($match->resolution_reason, ['conflicting_submissions', 'unconfirmed_result_timeout'], true)) {
             session()->flash('error', 'There is no result conflict to explain.');
 
             return;
@@ -434,11 +434,13 @@ class MatchDetail extends Component
             ->with([
                 'round.matches:id,round_id',
                 'playerARegistration.user.profile',
+                'playerARegistration.user.progression',
                 'playerARegistration.team',
                 'playerARegistration.platform',
                 'playerARegistration.rosterMembers',
                 'playerARegistration.tournamentTeam.members.user:id,username',
                 'playerBRegistration.user.profile',
+                'playerBRegistration.user.progression',
                 'playerBRegistration.team',
                 'playerBRegistration.platform',
                 'playerBRegistration.rosterMembers',
@@ -522,7 +524,7 @@ class MatchDetail extends Component
         $hasSubmittedDisputeEvidence = $activeDispute !== null && $user !== null
             && $activeDispute->evidence->contains('uploaded_by', $user->id);
         $isResultConflict = $match->status === MatchStatus::DISPUTED
-            && $match->resolution_reason === 'conflicting_submissions';
+            && in_array($match->resolution_reason, ['conflicting_submissions', 'unconfirmed_result_timeout'], true);
 
         $latestSubmission = $match->resultSubmissions->first();
         $roundMatchIds = $match->round?->matches?->sortBy('id')->values()->pluck('id') ?? collect();

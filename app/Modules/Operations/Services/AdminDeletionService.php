@@ -21,6 +21,7 @@ use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Localization\Models\TranslationString;
 use App\Modules\Localization\Services\TranslationCatalogCache;
+use App\Modules\Localization\Services\TranslationCatalogService;
 use App\Modules\Operations\Models\ErrorIncident;
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Tournament\Models\Tournament;
@@ -214,7 +215,7 @@ final class AdminDeletionService
                     $record->update(['is_live' => false, 'is_public' => false]);
                 }
                 if ($record instanceof TranslationString) {
-                    TranslationString::query()->where('key', $record->key)->delete();
+                    app(TranslationCatalogService::class)->deleteKey($record->key);
                 } else {
                     $record->delete();
                 }

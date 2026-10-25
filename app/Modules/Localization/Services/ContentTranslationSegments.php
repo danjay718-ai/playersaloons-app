@@ -6,9 +6,15 @@ namespace App\Modules\Localization\Services;
 
 final class ContentTranslationSegments
 {
+    public const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
     /** @return list<string> */
     public function split(string $text): array
     {
+        if (preg_match('/^(.+?)( - '.$this->datePattern().'\s*)$/u', $text, $matches)) {
+            return [...$this->split($matches[1]), $matches[2]];
+        }
+
         // Retain separators so translated content keeps its original spacing.
         $sentences = preg_split('/((?<=[.!?])\s+|\R+)/u', $text, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [$text];
         $segments = [];
@@ -53,12 +59,17 @@ final class ContentTranslationSegments
             $text = html_entity_decode($node[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
             foreach ($this->split($text) as $segment) {
                 $phrase = trim($segment);
-                if ($phrase !== '' && preg_match('/[[:alpha:]]/u', $phrase)) {
+                if ($phrase !== '' && ! preg_match('/^ - '.$this->datePattern().'\s*$/u', $segment) && preg_match('/[[:alpha:]]/u', $phrase)) {
                     $phrases[] = $phrase;
                 }
             }
         }
 
         return array_values(array_unique($phrases));
+    }
+
+    private function datePattern(): string
+    {
+        return '(?:'.implode('|', self::MONTHS).') \d{2}, \d{4} \d{1,2}:\d{2}(?: [AP]M)?';
     }
 }

@@ -73,6 +73,25 @@ final class CompetitionContentTranslationTest extends TestCase
         $this->assertDatabaseMissing('translation_strings', ['key' => 'Keep']);
     }
 
+    public function test_recurring_titles_translate_the_shared_name_once_and_keep_dates_out_of_exports(): void
+    {
+        $catalog = app(TranslationCatalogService::class);
+        foreach (['Oct 24, 2026 2:30 PM', 'Oct 25, 2026 14:30'] as $date) {
+            $this->tournament(['name' => 'Recurring Arena - '.$date]);
+            // Simulate dated names synced by an earlier deployment.
+            TranslationString::query()->create(['key' => 'Recurring Arena - '.$date, 'locale' => 'en', 'text' => 'Recurring Arena - '.$date]);
+        }
+        $catalog->syncFromDatabaseContent();
+        $entries = $catalog->englishExport()['entries'];
+        self::assertSame(['Recurring Arena'], array_values(array_filter(array_column($entries, 'key'), fn ($key) => str_contains($key, 'Recurring Arena'))));
+        self::assertSame(count($entries), $catalog->statistics()['total']);
+        $catalog->saveTranslation('Recurring Arena', 'fr', 'Arène récurrente');
+        app()->setLocale('fr');
+        Route::middleware('web')->get('/translation-recurring-title', fn () => '<h1>Recurring Arena - Oct 24, 2026 2:30 PM</h1>');
+        $this->withSession(['locale' => 'fr'])->get('/translation-recurring-title')->assertOk()->assertSee('Arène récurrente - Oct 24, 2026 2:30 PM');
+        self::assertSame(['- Report results promptly.'], app(ContentTranslationSegments::class)->phrases(' - Report results promptly.'));
+    }
+
     public function test_updates_add_new_phrases_and_preserve_existing_and_deleted_translations(): void
     {
         $tournament = $this->tournament(['description' => 'Keep your account safe.']);

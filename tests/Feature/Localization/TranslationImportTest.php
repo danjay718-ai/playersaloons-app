@@ -110,7 +110,7 @@ final class TranslationImportTest extends TestCase
             $entry['translation'] = 'Translated '.$entry['source'];
         }
         unset($entry);
-        $file['entries'][count($file['entries']) - 1]['source'] = 'Changed source';
+        $file['entries'][count($file['entries']) - 1]['translation'] = 'Unexpected :placeholder';
         $writes = 0;
         DB::listen(function (QueryExecuted $query) use (&$writes): void {
             if (str_contains($query->sql, 'translation_strings') && str_starts_with(strtolower($query->sql), 'insert')) {
@@ -128,13 +128,42 @@ final class TranslationImportTest extends TestCase
         self::assertSame('Original :name.', __('Hello :name.'));
     }
 
-    public function test_changed_english_catalog_rejects_an_earlier_export(): void
+    public function test_new_english_phrases_do_not_invalidate_an_unchanged_export_for_filipino(): void
     {
         $catalog = app(TranslationCatalogService::class);
         $file = $catalog->englishExport();
+        app(AddTranslationLanguageAction::class)->execute($this->admin, 'fil', 'Filipino', 'Filipino');
         $catalog->createKey('Added after export.');
+        self::assertSame(2, app(ImportTranslationsAction::class)->execute($this->admin, 'fil', json_encode($file)));
+        self::assertDatabaseMissing('translation_strings', ['key' => 'Added after export.', 'locale' => 'fil']);
+    }
+
+    public function test_changed_existing_english_source_rejects_an_earlier_export(): void
+    {
+        $catalog = app(TranslationCatalogService::class);
+        $file = $catalog->englishExport();
+        $catalog->saveTranslation('Welcome back.', 'en', 'Updated welcome.');
         $this->expectException(ValidationException::class);
         app(ImportTranslationsAction::class)->execute($this->admin, 'fr', json_encode($file));
+    }
+
+    public function test_duplicate_english_text_is_listed_and_exported_once_and_import_updates_aliases(): void
+    {
+        $catalog = app(TranslationCatalogService::class);
+        TranslationString::query()->create(['key' => 'legacy.welcome', 'locale' => 'en', 'text' => 'Welcome back.']);
+        $file = $catalog->englishExport();
+        self::assertCount(2, $file['entries']);
+        self::assertSame(2, $catalog->statistics()['total']);
+        Livewire::actingAs($this->admin)->test(TranslationAdmin::class)
+            ->set('search', 'Welcome back.')->assertViewHas('keys', fn ($keys) => $keys->total() === 1);
+        foreach ($file['entries'] as &$entry) {
+            $entry['translation'] = 'Salin '.$entry['source'];
+        }
+        unset($entry);
+        app(ImportTranslationsAction::class)->execute($this->admin, 'fr', json_encode($file));
+        self::assertDatabaseHas('translation_strings', ['key' => 'legacy.welcome', 'locale' => 'fr', 'text' => 'Salin Welcome back.']);
+        $catalog->saveTranslation('Welcome back.', 'fr', 'Bienvenue.');
+        self::assertDatabaseHas('translation_strings', ['key' => 'legacy.welcome', 'locale' => 'fr', 'text' => 'Bienvenue.']);
     }
 
     public function test_import_works_for_new_languages_and_duplicate_or_unsafe_codes_are_rejected(): void

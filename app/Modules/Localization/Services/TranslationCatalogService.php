@@ -16,6 +16,7 @@ use App\Modules\Localization\Models\TranslationString;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentScheduleSlot;
 use App\Modules\Tournament\Models\TournamentTemplate;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -187,11 +188,25 @@ final class TranslationCatalogService
 
     public function sourceCatalog(): array
     {
-        $source = TranslationString::query()->where('locale', 'en')->orderBy('key')->pluck('text', 'key')->all();
+        $source = $this->sourceQuery()->orderBy('key')->pluck('text', 'key')->all();
         $source = self::normalizeSource($source);
         ksort($source, SORT_STRING);
 
         return $source;
+    }
+
+    public function sourceQuery(): Builder
+    {
+        $query = TranslationString::query()->where('locale', 'en')->whereIn('id',
+            DB::table('translation_strings')->where('locale', 'en')->whereNull('deleted_at')
+                ->selectRaw('COALESCE(MIN(CASE WHEN `key` = text THEN id END), MIN(id))')
+                ->groupByRaw("COALESCE(NULLIF(text, ''), `key`)"));
+        // Keep historical translations stored, while retiring generated dated titles from the work list.
+        foreach (ContentTranslationSegments::MONTHS as $month) {
+            $query->whereRaw("COALESCE(NULLIF(text, ''), `key`) NOT LIKE ?", ['% - '.$month.' __, ____ %:__%']);
+        }
+
+        return $query;
     }
 
     public static function normalizeSource(array $source): array
@@ -229,11 +244,12 @@ final class TranslationCatalogService
     public function statistics(): array
     {
         return Cache::remember('localization.catalog_statistics', 300, function (): array {
-            $total = TranslationString::query()->where('locale', 'en')->count();
+            $total = $this->sourceQuery()->count();
             $translated = DB::table('translation_strings as translated')
                 ->join('translation_strings as source', function ($join): void {
                     $join->on('source.key', '=', 'translated.key')->where('source.locale', 'en')->whereNull('source.deleted_at');
                 })
+                ->whereIn('source.id', $this->sourceQuery()->select('id'))
                 ->whereNull('translated.deleted_at')->whereNotNull('translated.text')->where('translated.text', '!=', '')
                 ->selectRaw('translated.locale, COUNT(*) as total')->groupBy('translated.locale')
                 ->pluck('total', 'translated.locale')->all();
@@ -272,20 +288,30 @@ final class TranslationCatalogService
     {
         abort_unless(array_key_exists($locale, $this->supportedLanguages()), 422);
         abort_unless(TranslationString::query()->where('key', $key)->where('locale', 'en')->exists(), 404);
-        if ($locale !== 'en' && ($text === null || trim($text) === '')) {
-            $row = TranslationString::query()->where('key', $key)->where('locale', $locale)->first();
-            $row?->delete();
+        $sourceText = TranslationString::query()->where('key', $key)->where('locale', 'en')->value('text');
+        $keys = $locale === 'en' || $sourceText === null || $sourceText === ''
+            ? collect([$key])
+            : TranslationString::query()->where('locale', 'en')->where('text', $sourceText)->pluck('key');
+        DB::transaction(function () use ($keys, $locale, $text): void {
+            foreach ($keys as $alias) {
+                if ($locale !== 'en' && ($text === null || trim($text) === '')) {
+                    TranslationString::query()->where('key', $alias)->where('locale', $locale)->first()?->delete();
 
-            return;
-        }
-        $row = TranslationString::withTrashed()->firstOrNew(['key' => $key, 'locale' => $locale]);
-        $row->text = $text;
-        $row->exists && $row->trashed() ? $row->restore() : $row->save();
+                    continue;
+                }
+                $row = TranslationString::withTrashed()->firstOrNew(['key' => $alias, 'locale' => $locale]);
+                $row->text = $text;
+                $row->exists && $row->trashed() ? $row->restore() : $row->save();
+            }
+        });
     }
 
     public function deleteKey(string $key): void
     {
-        TranslationString::query()->where('key', $key)->delete();
+        $sourceText = TranslationString::query()->where('key', $key)->where('locale', 'en')->value('text');
+        $keys = $sourceText === null || $sourceText === '' ? collect([$key])
+            : TranslationString::query()->where('locale', 'en')->where('text', $sourceText)->pluck('key');
+        TranslationString::query()->whereIn('key', $keys)->delete();
         TranslationCatalogCache::invalidate();
     }
 
@@ -313,8 +339,7 @@ final class TranslationCatalogService
      */
     public function missingKeysForLocale(string $locale): Collection
     {
-        return TranslationString::query()
-            ->where('locale', 'en')
+        return $this->sourceQuery()
             ->whereNotIn('key', TranslationString::query()->select('key')->where('locale', $locale)->whereNotNull('text')->where('text', '!=', ''))
             ->pluck('key');
     }

@@ -265,14 +265,14 @@
             <!-- Topbar sticky header -->
             <header class="theme-header sticky top-0 z-40 h-16 md:h-20 border-b border-purple-500/15 bg-[#0a0718]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
                 <!-- Left: Logo (mobile only) + Desktop section title -->
-                <div class="flex items-center space-x-3">
+                <div class="flex min-w-0 items-center space-x-3">
                     <!-- Mobile Logo -->
                     <a href="/dashboard" wire:navigate class="md:hidden flex shrink-0 items-center justify-center">
                         <img src="/gamersrival-logo.webp" alt="GamersRival logo" width="48" height="36" style="width:48px;height:36px;object-fit:contain">
                     </a>
 
                     <!-- Mobile Page Title -->
-                    <h1 class="theme-page-title md:hidden text-xs font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple">
+                    <h1 class="theme-page-title min-w-0 truncate md:hidden text-xs font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple">
                         @yield('dashboard_title', __('TERMINAL'))
                     </h1>
 
@@ -304,10 +304,10 @@
                 </div>
 
                 <!-- Right: Stats & Controls -->
-                <div class="flex items-center space-x-2 sm:space-x-4">
+                <div class="flex shrink-0 items-center space-x-2 sm:space-x-4">
                     
-                    <!-- Wallet Balance Box (hidden on small mobile, shown on xs+) -->
-                    <a href="/wallet" wire:navigate class="hidden xs:flex items-center space-x-2 bg-[#120a26]/70 border border-emerald-500/30 hover:border-emerald-400/60 rounded-xl px-3 py-1.5 transition-all duration-300 shadow-[inset_0_0_8px_rgba(16,185,129,0.05)] group">
+                    <!-- Live wallet balance stays visible on mobile. -->
+                    <a href="/wallet" wire:navigate aria-label="{{ __('Wallet balance') }}" class="flex shrink-0 items-center space-x-2 bg-[#120a26]/70 border border-emerald-500/30 hover:border-emerald-400/60 rounded-xl px-2 sm:px-3 py-1.5 transition-all duration-300 group">
                         <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></div>
                         <div class="flex flex-col text-right">
                             <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">{{ __('BAL') }}</span>

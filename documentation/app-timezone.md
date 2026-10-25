@@ -9,3 +9,5 @@ Changing this setting does not move existing competitions, result deadlines, or 
 If a new competition form was opened before the timezone changed, submission is blocked. Refresh the form and review the slot times before submitting again.
 
 The existing `tournament.timezone` setting is reused. The fallback is `config('app.tournament_timezone')`, normally `Europe/Amsterdam`; stored dates and API timestamps remain in UTC. No database migration or schedule conversion is required.
+
+Deployment migrations and seeders insert the timezone default only when the setting is missing; they preserve an administrator’s saved selection, even if the deployed environment fallback is UTC. Stream competition cards and the admin competition finance list use the same setting. If an older deployment already overwrote a selection, an administrator must select the intended timezone once; its previous value cannot be inferred safely.
