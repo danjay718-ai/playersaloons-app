@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Community\Models\BroadcastMessage;
+use App\Modules\Operations\Services\AdminDeletionService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Livewire\WithPagination;
@@ -127,7 +128,7 @@ class BroadcastNotificationAdmin extends AdminComponent
             session()->flash('success', 'Broadcast expired.');
         } elseif ($this->confirmAction === 'delete') {
             $this->guardSuperAdmin();
-            app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('broadcasts', [$broadcast->id], $this->actor());
+            app(AdminDeletionService::class)->delete('broadcasts', [$broadcast->id], $this->actor());
             session()->flash('success', 'Broadcast deleted.');
         }
 

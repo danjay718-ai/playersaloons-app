@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Community\Models\Advertisement;
+use App\Modules\Operations\Services\AdminDeletionService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -70,7 +71,7 @@ class AdvertisementAdmin extends AdminComponent
     public function delete(int $id): void
     {
         abort_unless($this->actor()->can('advertisements.manage'), 403);
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('advertisements', [$id], $this->actor());
+        app(AdminDeletionService::class)->delete('advertisements', [$id], $this->actor());
         if ($this->editingId === $id) {
             $this->reset(['editingId', 'title', 'description']);
         }

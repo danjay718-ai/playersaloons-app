@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Modules\Operations\Models\Activity;
 use Illuminate\Support\Facades\DB;
 use Livewire\WithPagination;
-use App\Modules\Operations\Models\Activity;
 
 class AuditLogAdmin extends AdminComponent
 {

@@ -1,8 +1,8 @@
 <?php
 
+use App\Modules\Operations\Models\Activity;
 use Spatie\Activitylog\Actions\CleanActivityLogAction;
 use Spatie\Activitylog\Actions\LogActivityAction;
-use App\Modules\Operations\Models\Activity;
 
 return [
 

@@ -9,6 +9,7 @@ use App\Modules\Stream\Actions\SyncTournamentStreamChannelsAction;
 use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Tournament\Models\TournamentTemplate;
 use App\Modules\Tournament\Services\RecurrenceSchedule;
+use App\Modules\Tournament\Support\CompetitionPlatforms;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -42,7 +43,7 @@ final class GenerateRecurringTournamentAction
             }
 
             $settings = $locked->settings_json ?? [];
-            if (\App\Modules\Tournament\Support\CompetitionPlatforms::hasDeleted($settings)) {
+            if (CompetitionPlatforms::hasDeleted($settings)) {
                 return null;
             }
             $nextRun = CarbonImmutable::instance($locked->next_run_at);

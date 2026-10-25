@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Identity\Models\User;
-use Illuminate\Support\Carbon;
 use App\Modules\Operations\Models\Activity;
+use Illuminate\Support\Carbon;
 
 class StaffActivityDashboard extends AdminComponent
 {

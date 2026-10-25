@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tournament\StateMachines;
 
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Support\CompetitionPlatforms;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use App\Shared\StateMachines\AbstractStateMachine;
@@ -91,7 +92,7 @@ class TournamentStateMachine extends AbstractStateMachine
         if ($tournament->game_id && $tournament->game?->trashed()) {
             throw new LogicException('Select an available game before publishing this tournament.');
         }
-        if (\App\Modules\Tournament\Support\CompetitionPlatforms::hasDeleted(['platform_ids' => $tournament->supportedPlatformIds()])) {
+        if (CompetitionPlatforms::hasDeleted(['platform_ids' => $tournament->supportedPlatformIds()])) {
             throw new LogicException('Select available platforms before publishing this tournament.');
         }
         if (empty($tournament->name)) {

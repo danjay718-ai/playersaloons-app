@@ -6,6 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Modules\Compliance\Models\BlockedCountry;
 use App\Modules\Compliance\Services\CountryEligibilityService;
+use App\Modules\Operations\Services\AdminDeletionService;
 use Illuminate\Support\Facades\Auth;
 
 class BlockedCountriesAdmin extends AdminComponent
@@ -50,7 +51,7 @@ class BlockedCountriesAdmin extends AdminComponent
     public function removeCountry(string $code): void
     {
         abort_unless($this->actor()->can('geo_blocking.manage'), 403);
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('countries', [BlockedCountry::where('country_code', $code)->firstOrFail()->id], $this->actor());
+        app(AdminDeletionService::class)->delete('countries', [BlockedCountry::where('country_code', $code)->firstOrFail()->id], $this->actor());
         app(CountryEligibilityService::class)->forget();
         session()->flash('success', "Unblocked $code successfully.");
     }

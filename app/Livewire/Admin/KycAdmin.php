@@ -8,10 +8,10 @@ use App\Modules\Identity\Actions\ApproveKycAction;
 use App\Modules\Identity\Actions\RejectKycAction;
 use App\Modules\Identity\Actions\ReviewKycAction;
 use App\Modules\Identity\Models\KycSubmission;
+use App\Modules\Operations\Models\Activity;
 use App\Shared\Enums\KycStatus;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithPagination;
-use App\Modules\Operations\Models\Activity;
 
 class KycAdmin extends AdminComponent
 {

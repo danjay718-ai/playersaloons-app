@@ -6,6 +6,7 @@ namespace App\Livewire\Admin;
 
 use App\Modules\CMS\Models\CmsPage;
 use App\Modules\CMS\Models\CmsPageTranslation;
+use App\Modules\Operations\Services\AdminDeletionService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -160,7 +161,7 @@ class CmsContentAdmin extends AdminComponent
     public function deleteContent(int $id): void
     {
         $page = CmsPage::findOrFail($id);
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('content', [$page->id], $this->actor());
+        app(AdminDeletionService::class)->delete('content', [$page->id], $this->actor());
 
         if ($this->selectedPageId === $id) {
             $this->resetEditor();

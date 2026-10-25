@@ -12,13 +12,14 @@ use App\Modules\CMS\Models\Platform;
 use App\Modules\CMS\Models\PublicNavigationItem;
 use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Operations\Services\AdminDeletionService;
 use App\Modules\Operations\Services\GameDeletionService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\Url;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\Url;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
@@ -415,7 +416,7 @@ class CmsAdmin extends AdminComponent
     {
         $platform = Platform::findOrFail($platformId);
         // You could add checks here to see if the platform is linked to existing tournaments before deleting
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('platforms', [$platformId], $this->actor());
+        app(AdminDeletionService::class)->delete('platforms', [$platformId], $this->actor());
 
         session()->flash('success', 'Platform deleted successfully.');
     }
@@ -572,7 +573,7 @@ class CmsAdmin extends AdminComponent
     public function archiveGame(int $gameId): void
     {
         $game = Game::query()->findOrFail($gameId);
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('games', [$gameId], $this->actor());
+        app(AdminDeletionService::class)->delete('games', [$gameId], $this->actor());
 
         session()->flash('success', 'Game soft deleted. Historical tournaments and player records were preserved.');
     }
@@ -818,7 +819,7 @@ class CmsAdmin extends AdminComponent
 
     public function deleteLandingItem(int $itemId): void
     {
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('landing_items', [$itemId], $this->actor());
+        app(AdminDeletionService::class)->delete('landing_items', [$itemId], $this->actor());
 
         session()->flash('success', 'Landing item deleted.');
     }
@@ -899,7 +900,7 @@ class CmsAdmin extends AdminComponent
 
     public function deleteNavigationItem(int $itemId): void
     {
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('navigation', [$itemId], $this->actor());
+        app(AdminDeletionService::class)->delete('navigation', [$itemId], $this->actor());
 
         session()->flash('success', 'Navigation item deleted.');
     }

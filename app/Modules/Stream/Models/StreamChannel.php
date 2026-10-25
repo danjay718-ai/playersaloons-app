@@ -8,9 +8,9 @@ use App\Modules\CMS\Models\Game;
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\Tournament;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
-use Spatie\Permission\Models\Permission;
 use App\Modules\Identity\Models\Role;
+use App\Modules\Operations\Services\AdminDeletionService;
+use Spatie\Permission\Models\Permission;
 
 class RolePermissionAdmin extends AdminComponent
 {
@@ -213,7 +214,7 @@ class RolePermissionAdmin extends AdminComponent
         }
 
         $roleName = $role->name;
-        app(\App\Modules\Operations\Services\AdminDeletionService::class)->delete('roles', [$role->id], $this->actor());
+        app(AdminDeletionService::class)->delete('roles', [$role->id], $this->actor());
 
         $this->showDeleteModal = false;
         $this->deletingRoleId = null;
