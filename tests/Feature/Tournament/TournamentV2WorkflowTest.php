@@ -1581,7 +1581,7 @@ final class TournamentV2WorkflowTest extends TestCase
     }
 
     #[DataProvider('netherlandsScheduleDates')]
-    public function test_app_timezone_filters_use_local_dates_and_times_for_admin_and_player_lists(string $date): void
+    public function test_app_timezone_filters_use_local_dates_and_times_for_admin_and_player_lists(string $date, string $_utcStart, string $_utcAddedStart): void
     {
         $this->travelTo(CarbonImmutable::parse($date.' 10:00:00', 'UTC'));
         $template = $this->template('daily', 4, '23:30');
@@ -2594,7 +2594,7 @@ final class TournamentV2WorkflowTest extends TestCase
     }
 
     #[DataProvider('netherlandsScheduleDates')]
-    public function test_form_defaults_leave_slot_time_blank_and_use_the_sidebar_schedule_timezone(string $date): void
+    public function test_form_defaults_leave_slot_time_blank_and_use_the_sidebar_schedule_timezone(string $date, string $_utcStart, string $_utcAddedStart): void
     {
         $this->travelTo(CarbonImmutable::parse($date.' 17:20:35', 'Europe/Amsterdam')->utc());
         config()->set('app.tournament_timezone', 'UTC');
