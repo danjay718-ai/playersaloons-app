@@ -96,13 +96,13 @@ class CurrencyAndIncomeTest extends TestCase
         $platform = User::query()->where('email', 'platform@playersaloons.com')->firstOrFail()->wallet;
         $player = $this->wallet($this->user('income-player', 'PLAYER'));
         $this->travelTo(CarbonImmutable::parse('2026-10-16 12:00:00', 'UTC'));
-        $wallets->credit($platform, '4.00', LedgerType::PLATFORM_COMMISSION, Wallet::class, 'income-test');
+        $wallets->credit($platform, '4.00', LedgerType::PLATFORM_COMMISSION, Wallet::class, (string) $platform->id);
         $this->travelTo(CarbonImmutable::parse('2026-10-17 12:00:00', 'UTC'));
-        $wallets->credit($platform->fresh(), '10.00', LedgerType::PLATFORM_COMMISSION, Wallet::class, 'income-test');
-        $wallets->debitAllowingLiability($platform->fresh(), '25.00', LedgerType::SPONSORED_PRIZE_RESERVE, Wallet::class, 'income-test');
+        $wallets->credit($platform->fresh(), '10.00', LedgerType::PLATFORM_COMMISSION, Wallet::class, (string) $platform->id);
+        $wallets->debitAllowingLiability($platform->fresh(), '25.00', LedgerType::SPONSORED_PRIZE_RESERVE, Wallet::class, (string) $platform->id);
         app(ProcessDepositAction::class)->execute($player, '100.00', 'stripe', 'income-deposit', '2.00');
-        $wallets->credit($player->fresh(), '5.00', LedgerType::PRIZE, Wallet::class, 'income-test');
-        $wallets->credit($player->fresh(), '3.00', LedgerType::PLATFORM_COMMISSION, Wallet::class, 'income-test');
+        $wallets->credit($player->fresh(), '5.00', LedgerType::PRIZE, Wallet::class, (string) $player->id);
+        $wallets->credit($player->fresh(), '3.00', LedgerType::PLATFORM_COMMISSION, Wallet::class, (string) $player->id);
 
         Livewire::actingAs($this->admin)->test(EscrowCashflowAdmin::class)
             ->assertViewHas('totalFeeIncome', '16.00')
