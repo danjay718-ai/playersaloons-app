@@ -1,4 +1,4 @@
-FROM php:8.4-fpm-alpine
+FROM php:8.4.27-fpm-alpine
 
 ARG COMPOSER_CURL_DISABLE_HTTP2=1
 ARG COMPOSER_PREFER_INSTALL=auto
