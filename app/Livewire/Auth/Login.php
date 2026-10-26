@@ -131,6 +131,6 @@ class Login extends Component
     public function render()
     {
         return view('livewire.auth.login')
-            ->layout('components.layouts.app', ['title' => 'Sign In | GamersRival']);
+            ->layout('components.layouts.auth', ['title' => 'Sign In | GamersRival']);
     }
 }

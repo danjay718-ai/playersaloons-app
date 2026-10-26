@@ -1,3 +1,6 @@
+@guest
+    @include('components.layouts.partials.guest-navigation')
+@else
 @php
     $staffRoles = ['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER'];
     $currentUser = auth()->user();
@@ -218,3 +221,5 @@
     </div>
 
 </header>
+
+@endguest

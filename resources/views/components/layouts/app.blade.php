@@ -23,7 +23,7 @@
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-white antialiased overflow-x-hidden">
+<body class="{{ auth()->guest() ? 'guest-experience' : '' }} bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-white antialiased overflow-x-hidden">
 
     <!-- Global Background FX -->
     <div class="fixed inset-0 pointer-events-none z-0">
@@ -34,7 +34,7 @@
     @include('components.layouts.partials.public-navigation')
 
     <!-- Main Content Area -->
-    <main class="relative z-10 flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 md:pt-24 md:pb-12">
+    <main id="guest-main" class="relative z-10 flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 md:pt-24 md:pb-12">
         {{ $slot }}
     </main>
 

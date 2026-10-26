@@ -1,3 +1,6 @@
+@guest
+    @include('components.layouts.partials.guest-footer')
+@else
 @php
     $footer = \App\Modules\CMS\Models\LandingSection::query()
         ->where('key', 'footer')
@@ -22,3 +25,5 @@
         </div>
     </div>
 </footer>
+
+@endguest
