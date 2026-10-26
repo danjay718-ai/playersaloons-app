@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class FreshInstallationSeederTest extends TestCase
@@ -69,10 +70,27 @@ final class FreshInstallationSeederTest extends TestCase
         $this->assertSame('0', collect($stats)->firstWhere('key', 'active_players')['value']);
     }
 
-    public function test_production_seeding_requires_supplied_credentials_before_writes(): void
+    public function test_development_seeding_uses_defaults_for_blank_bootstrap_credentials(): void
+    {
+        config(['bootstrap.super_admin.email' => '', 'bootstrap.super_admin.password' => '', 'bootstrap.admin.email' => '', 'bootstrap.admin.password' => '']);
+
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertDatabaseCount('users', 3);
+        $this->assertTrue(Hash::check('Admin@1234!', User::where('email', 'admin@playersaloons.com')->firstOrFail()->password));
+        $this->assertTrue(Hash::check('Staff@1234!', User::where('email', 'staff@playersaloons.com')->firstOrFail()->password));
+    }
+
+    public static function missingBootstrapCredentials(): array
+    {
+        return ['missing' => [null], 'blank' => ['']];
+    }
+
+    #[DataProvider('missingBootstrapCredentials')]
+    public function test_production_seeding_requires_supplied_credentials_before_writes(?string $credential): void
     {
         $this->app->detectEnvironment(fn () => 'production');
-        config(['bootstrap.super_admin.email' => null, 'bootstrap.super_admin.password' => null, 'bootstrap.admin.email' => null, 'bootstrap.admin.password' => null]);
+        config(['bootstrap.super_admin.email' => $credential, 'bootstrap.super_admin.password' => $credential, 'bootstrap.admin.email' => $credential, 'bootstrap.admin.password' => $credential]);
         try {
             $this->seedProduction(FreshInstallationSeeder::class);
             $this->fail('Production must require bootstrap secrets.');

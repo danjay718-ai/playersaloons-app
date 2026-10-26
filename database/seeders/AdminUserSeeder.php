@@ -25,9 +25,9 @@ final class AdminUserSeeder extends Seeder
             $account = config('bootstrap.'.$key, []);
             $accounts[] = [
                 'role' => $defaults['role'],
-                'email' => $account['email'] ?? ($development ? $defaults['email'] : null),
+                'email' => ($account['email'] ?? null) ?: ($development ? $defaults['email'] : null),
                 'username' => $account['username'] ?? $key,
-                'password' => $account['password'] ?? ($development ? $defaults['password'] : null),
+                'password' => ($account['password'] ?? null) ?: ($development ? $defaults['password'] : null),
             ];
         }
 
