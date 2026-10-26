@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Actions\ProcessDepositAction;
 use App\Modules\Wallet\Models\Deposit;
 use App\Modules\Wallet\Models\Wallet;
+use App\Modules\Wallet\Services\PaymentSettings;
 use App\Shared\Support\Currency;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ class StripeWebhookController extends Controller
     {
         $payload = $request->getContent();
         $signature = (string) $request->header('Stripe-Signature', '');
-        $webhookSecret = (string) config('services.stripe.webhook_secret', '');
+        $webhookSecret = app(PaymentSettings::class)->credential('stripe.webhook_secret');
 
         if ($webhookSecret === '') {
             Log::error('Stripe webhook secret is not configured.');

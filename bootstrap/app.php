@@ -56,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $middleware->validateCsrfTokens(except: [
             'stripe/webhook',
+            'payop/webhook',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -124,6 +125,6 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*', 'chat/api/*'),
+            fn (Request $request) => $request->is('api/*', 'chat/api/*', 'payop/webhook', 'stripe/webhook'),
         );
     })->create();

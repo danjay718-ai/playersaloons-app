@@ -7,12 +7,20 @@ namespace App\Livewire\Admin;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use App\Modules\Tournament\Services\TournamentTimezone;
+use App\Modules\Wallet\Actions\UpdatePaymentSettingsAction;
+use App\Modules\Wallet\Services\PaymentSettings;
 use App\Shared\Support\Currency;
 use DateTimeZone;
 use Illuminate\Support\Facades\Auth;
 
 class SystemSettingsAdmin extends AdminComponent
 {
+    public string $paymentProvider = 'stripe';
+
+    public bool $paymentsEnabled = true;
+
+    public array $paymentCredentials = [];
+
     public string $currencyCode = 'EUR';
 
     public bool $referralEnabled = true;
@@ -57,6 +65,9 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function mount(): void
     {
+        $payments = app(PaymentSettings::class);
+        $this->paymentProvider = $payments->provider();
+        $this->paymentsEnabled = $payments->enabled();
         $this->currencyCode = Currency::code();
         $settings = SystemSetting::query()->whereIn('key', ['referral.enabled', 'referral.referrer_reward', 'referral.referred_reward'])->pluck('value', 'key');
         $this->referralEnabled = filter_var($settings['referral.enabled'] ?? true, FILTER_VALIDATE_BOOL);
@@ -87,6 +98,18 @@ class SystemSettingsAdmin extends AdminComponent
         $notificationSettings = SystemSetting::query()->whereIn('key', ['notifications.dispute_email', 'notifications.dispute_name'])->pluck('value', 'key');
         $this->disputeNotificationEmail = (string) ($notificationSettings['notifications.dispute_email'] ?? 'info@playersaloons.com');
         $this->disputeNotificationName = (string) ($notificationSettings['notifications.dispute_name'] ?? 'PlayerSaloons Disputes');
+    }
+
+    public function savePaymentSettings(UpdatePaymentSettingsAction $action): void
+    {
+        $this->authorizeManagement();
+        $credentials = [];
+        foreach (PaymentSettings::CREDENTIALS as $key) {
+            $credentials[$key] = $this->paymentCredentials[str_replace('.', '_', $key)] ?? '';
+        }
+        $action->execute($this->actor(), $this->paymentProvider, $this->paymentsEnabled, $credentials);
+        $this->paymentCredentials = [];
+        session()->flash('success', __('Payment settings updated.'));
     }
 
     public function saveCurrencySettings(): void
@@ -260,6 +283,15 @@ class SystemSettingsAdmin extends AdminComponent
     {
         return view('livewire.admin.system-settings-admin', [
             'timezones' => DateTimeZone::listIdentifiers(),
+            'paymentCredentialFields' => [
+                'payop_public_key' => ['key' => 'payop.public_key', 'label' => 'PayOp public key'],
+                'payop_secret' => ['key' => 'payop.secret', 'label' => 'PayOp secret key'],
+                'stripe_secret' => ['key' => 'stripe.secret', 'label' => 'Stripe secret key'],
+                'stripe_webhook_secret' => ['key' => 'stripe.webhook_secret', 'label' => 'Stripe webhook secret'],
+            ],
+            'configuredPaymentCredentials' => collect(PaymentSettings::CREDENTIALS)->mapWithKeys(
+                fn (string $key): array => [$key => app(PaymentSettings::class)->credential($key) !== '']
+            )->all(),
         ])->layout('components.layouts.admin', ['admin_title' => 'System Settings']);
     }
 

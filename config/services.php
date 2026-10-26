@@ -33,6 +33,10 @@ return [
         'secret' => env('STRIPE_SECRET', env('STRIPE_SECRET_KEY')),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
+    'payop' => [
+        'public_key' => env('PAYOP_PUBLIC_KEY'),
+        'secret' => env('PAYOP_SECRET_KEY'),
+    ],
     'youtube' => ['api_key' => env('YOUTUBE_API_KEY')],
     'twitch' => ['client_id' => env('TWITCH_CLIENT_ID'), 'access_token' => env('TWITCH_ACCESS_TOKEN')],
     'facebook' => ['access_token' => env('FACEBOOK_ACCESS_TOKEN')],

@@ -20,7 +20,7 @@ class StripeCheckoutService
             throw new LogicException('Deposit amount must be greater than zero.');
         }
 
-        $secret = (string) config('services.stripe.secret', '');
+        $secret = app(PaymentSettings::class)->credential('stripe.secret');
         if ($secret === '') {
             throw new LogicException('Stripe secret key is not configured.');
         }

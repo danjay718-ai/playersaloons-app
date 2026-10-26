@@ -10,8 +10,9 @@ use App\Modules\Operations\Services\ErrorIncidentReporter;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Exceptions\WithdrawalEligibilityException;
+use App\Modules\Wallet\Services\DepositCheckoutService;
 use App\Modules\Wallet\Services\DepositFeeCalculator;
-use App\Modules\Wallet\Services\StripeCheckoutService;
+use App\Modules\Wallet\Services\PaymentSettings;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Support\Currency;
 use Illuminate\Support\Facades\Auth;
@@ -38,7 +39,7 @@ class WalletDashboard extends Component
         }
     }
 
-    public function deposit(StripeCheckoutService $stripeCheckout)
+    public function deposit(DepositCheckoutService $checkout)
     {
         $user = Auth::user();
         if (! $user) {
@@ -46,7 +47,7 @@ class WalletDashboard extends Component
         }
 
         $this->validate([
-            'depositAmount' => ['required', 'numeric', 'min:1', 'max:10000'],
+            'depositAmount' => ['required', 'numeric', 'min:1', 'max:10000', 'decimal:0,2'],
         ]);
 
         $wallet = $user->wallet()->first();
@@ -57,7 +58,7 @@ class WalletDashboard extends Component
         }
 
         try {
-            $checkoutUrl = $stripeCheckout->createDepositSession(
+            $checkoutUrl = $checkout->createDepositSession(
                 $user,
                 $wallet,
                 (float) $this->depositAmount
@@ -117,7 +118,11 @@ class WalletDashboard extends Component
                 ->paginate(10);
         }
 
+        $payments = app(PaymentSettings::class);
+
         return view('livewire.wallet.wallet-dashboard', [
+            'paymentProvider' => $payments->provider() === 'payop' ? 'PayOp' : 'Stripe',
+            'depositsEnabled' => $payments->enabled(),
             'wallet' => $wallet,
             'ledgerEntries' => $ledgerEntries,
             'depositBreakdown' => $feeCalculator->calculate(is_numeric($this->depositAmount) ? (float) $this->depositAmount : 0),
