@@ -17,22 +17,24 @@ class WithdrawalStateMachine extends AbstractStateMachine
     /**
      * {@inheritDoc}
      *
-     * Actual enum cases: PENDING, UNDER_REVIEW, APPROVED, REJECTED, PROCESSED
+     * Actual enum cases: PENDING, UNDER_REVIEW, APPROVED, REJECTED, PROCESSED, FAILED
      * Transitions:
      *   PENDING      => [UNDER_REVIEW, REJECTED]  (admin picks up or rejects outright)
      *   UNDER_REVIEW => [APPROVED, REJECTED]       (review decision)
-     *   APPROVED     => [PROCESSED]                (payment processed)
+     *   APPROVED     => [PROCESSED, FAILED]        (confirmed payment or refusal)
      *   REJECTED     => [PENDING]                  (retry / resubmit)
      *   PROCESSED    => []                         (terminal)
+     *   FAILED       => []                         (refunded; submit a new request)
      */
     protected function transitions(): array
     {
         return [
             WithdrawalStatus::PENDING->value => [WithdrawalStatus::UNDER_REVIEW->value, WithdrawalStatus::REJECTED->value],
             WithdrawalStatus::UNDER_REVIEW->value => [WithdrawalStatus::APPROVED->value, WithdrawalStatus::REJECTED->value],
-            WithdrawalStatus::APPROVED->value => [WithdrawalStatus::PROCESSED->value],
+            WithdrawalStatus::APPROVED->value => [WithdrawalStatus::PROCESSED->value, WithdrawalStatus::FAILED->value],
             WithdrawalStatus::REJECTED->value => [WithdrawalStatus::PENDING->value],
             WithdrawalStatus::PROCESSED->value => [],
+            WithdrawalStatus::FAILED->value => [],
         ];
     }
 

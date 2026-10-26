@@ -23,7 +23,10 @@ class WithdrawalResource extends JsonResource
     {
         return [
             'uuid' => $this->uuid,
-            'currency' => Currency::code(),
+            'currency' => $this->payout_currency ?? Currency::code(),
+            'payout_provider' => $this->payout_provider ?? 'manual',
+            'payout_status' => $this->payout_status,
+            'payout_reference' => $this->payout_reference,
             'amount' => $this->amount,
             'status' => $this->status->value ?? $this->status,
             'created_at' => $this->created_at,

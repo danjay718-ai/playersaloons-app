@@ -9,6 +9,7 @@ use App\Modules\Wallet\Actions\ApproveWithdrawalAction;
 use App\Modules\Wallet\Actions\ProcessWithdrawalAction;
 use App\Modules\Wallet\Actions\RejectWithdrawalAction;
 use App\Modules\Wallet\Actions\ReviewWithdrawalAction;
+use App\Modules\Wallet\Actions\SyncPayopPayoutAction;
 use App\Modules\Wallet\Models\Withdrawal;
 use App\Shared\Enums\WithdrawalStatus;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +17,8 @@ use Livewire\WithPagination;
 
 class WithdrawalAdmin extends AdminComponent
 {
+    public string $reconciliationReference = '';
+
     use WithPagination;
 
     public function boot(): void
@@ -57,6 +60,7 @@ class WithdrawalAdmin extends AdminComponent
 
     public function selectWithdrawal(int $id): void
     {
+        $this->reconciliationReference = '';
         $this->selectedWithdrawalId = $id;
         $withdrawal = Withdrawal::findOrFail($id);
         $reviewer = Auth::user();
@@ -161,7 +165,9 @@ class WithdrawalAdmin extends AdminComponent
 
         try {
             $action->execute($withdrawal, $operator);
-            session()->flash('success', 'Withdrawal payout marked as PROCESSED.');
+            session()->flash('success', $withdrawal->payout_provider === 'payop'
+                ? __('PayOp payout submitted or already awaiting confirmation. It is marked processed only after PayOp confirms payment.')
+                : __('Withdrawal payout marked as PROCESSED.'));
             $this->showDetailModal = false;
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to process the payout.'));
@@ -211,5 +217,26 @@ class WithdrawalAdmin extends AdminComponent
         ])->layout('components.layouts.admin', [
             'admin_title' => 'Finance & Payout Control',
         ]);
+    }
+
+    public function refreshPayout(SyncPayopPayoutAction $sync): void
+    {
+        $withdrawal = Withdrawal::query()->findOrFail($this->selectedWithdrawalId);
+        abort_unless($this->actor()->can('approve', $withdrawal), 403);
+        if ($withdrawal->payout_provider !== 'payop' || ! $withdrawal->payout_submitted_at) {
+            return;
+        }
+        $reference = $withdrawal->payout_reference;
+        if ($reference === null) {
+            $this->validate(['reconciliationReference' => ['required', 'uuid']]);
+            $reference = $this->reconciliationReference;
+        }
+        try {
+            $sync->execute($reference, $withdrawal->uuid);
+            $this->reconciliationReference = '';
+            session()->flash('success', __('PayOp payout status refreshed.'));
+        } catch (\Exception $e) {
+            session()->flash('error', $this->safeError($e, 'Unable to verify the PayOp payout.'));
+        }
     }
 }

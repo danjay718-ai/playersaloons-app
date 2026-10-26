@@ -143,8 +143,21 @@
                 @endunless
                 <form wire:submit.prevent="withdraw" class="mt-6 space-y-4">
                     @csrf
+                    @if($payoutProvider === 'payop')
+                        <p class="text-sm text-zinc-300">{{ __('Withdrawals are sent by PayOp bank transfer after finance approval. Enter your bank account details.') }}</p>
+                        <div>
+                            <label for="payout-name" class="mb-2 block text-sm text-zinc-300">{{ __('Bank account holder name') }}</label>
+                            <input id="payout-name" wire:model="payoutName" type="text" required maxlength="150" autocomplete="name" class="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-white">
+                            @error('name')<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label for="payout-iban" class="mb-2 block text-sm text-zinc-300">{{ __('Bank account IBAN') }}</label>
+                            <input id="payout-iban" wire:model="payoutIban" type="text" required maxlength="50" spellcheck="false" autocomplete="off" class="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-white">
+                            @error('iban')<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+                        </div>
+                    @endif
                     <div>
-                        <label for="amount" class="mb-2 block font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Withdrawal Amount</label>
+                        <label for="amount" class="mb-2 block text-sm font-semibold text-zinc-300">{{ __('Withdrawal amount') }}</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-fuchsia-300">@currencySymbol</span>
                             <input wire:model="amount" id="amount" type="number" step="0.01" min="1" required
@@ -162,7 +175,7 @@
                     </div>
 
                     <button type="submit" @disabled(!$withdrawalKycApproved) wire:loading.attr="disabled" wire:target="withdraw"
-                        class="disabled:cursor-not-allowed disabled:opacity-50 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500 px-4 font-orbitron text-xs font-black uppercase tracking-widest text-white shadow-[0_0_20px_rgba(217,70,239,0.22)] transition-colors hover:bg-fuchsia-400">
+                        class="disabled:cursor-not-allowed disabled:opacity-50 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-700 px-4 text-sm font-bold text-white transition-colors hover:bg-cyan-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">
                         <i data-lucide="send" class="h-4 w-4"></i>
                         Request Withdrawal
                     </button>
@@ -175,7 +188,19 @@
         </section>
 
         <section class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
-            <div class="flex flex-col gap-3 border-b border-zinc-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div wire:poll.30s>
+                <h2 class="text-base font-bold text-white">{{ __('Recent withdrawal requests') }}</h2>
+                @forelse($withdrawalRequests as $withdrawalRequest)
+                    <div class="mt-3 flex flex-wrap justify-between gap-2 border-b border-zinc-800 pb-3 text-sm">
+                        <span class="text-zinc-200">{{ $withdrawalRequest->payout_currency ?? \App\Shared\Support\Currency::code() }} {{ $withdrawalRequest->amount }}</span>
+                        <span class="text-zinc-300">{{ __(ucwords(str_replace('_', ' ', $withdrawalRequest->status->value))) }}{{ $withdrawalRequest->payout_status ? ' · '.__('PayOp').': '.__($withdrawalRequest->payout_status) : '' }}</span>
+                        @if($withdrawalRequest->payout_status === 'unknown')<p class="w-full text-zinc-400">{{ __('Your payout is awaiting confirmation. Please contact support before making another request.') }}</p>@endif
+                    </div>
+                @empty
+                    <p class="mt-3 text-sm text-zinc-400">{{ __('No withdrawal requests yet.') }}</p>
+                @endforelse
+            </div>
+            <div class="mt-6 flex flex-col gap-3 border-b border-zinc-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-white">Transaction History</h2>
                     <p class="mt-1 text-xs text-zinc-500">Deposits, withdrawals, prizes, and wallet adjustments.</p>

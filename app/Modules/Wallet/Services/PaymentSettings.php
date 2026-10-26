@@ -9,7 +9,12 @@ use Illuminate\Support\Facades\Crypt;
 
 class PaymentSettings
 {
-    public const CREDENTIALS = ['payop.public_key', 'payop.secret', 'stripe.secret', 'stripe.webhook_secret'];
+    public const CREDENTIALS = ['payop.public_key', 'payop.secret', 'stripe.secret', 'stripe.webhook_secret', 'payop.payout_token', 'payop.payout_certificate'];
+
+    public function payoutProvider(): string
+    {
+        return (string) (SystemSetting::query()->where('key', 'payments.payout_provider')->value('value') ?? 'manual');
+    }
 
     public function provider(): string
     {

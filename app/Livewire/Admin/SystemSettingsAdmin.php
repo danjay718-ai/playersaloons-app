@@ -12,9 +12,17 @@ use App\Modules\Wallet\Services\PaymentSettings;
 use App\Shared\Support\Currency;
 use DateTimeZone;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 class SystemSettingsAdmin extends AdminComponent
 {
+    use WithFileUploads;
+
+    public string $payoutProvider = 'manual';
+
+    public $payopPayoutCertificate;
+
     public string $paymentProvider = 'stripe';
 
     public bool $paymentsEnabled = true;
@@ -68,6 +76,7 @@ class SystemSettingsAdmin extends AdminComponent
         $payments = app(PaymentSettings::class);
         $this->paymentProvider = $payments->provider();
         $this->paymentsEnabled = $payments->enabled();
+        $this->payoutProvider = $payments->payoutProvider();
         $this->currencyCode = Currency::code();
         $settings = SystemSetting::query()->whereIn('key', ['referral.enabled', 'referral.referrer_reward', 'referral.referred_reward'])->pluck('value', 'key');
         $this->referralEnabled = filter_var($settings['referral.enabled'] ?? true, FILTER_VALIDATE_BOOL);
@@ -103,12 +112,23 @@ class SystemSettingsAdmin extends AdminComponent
     public function savePaymentSettings(UpdatePaymentSettingsAction $action): void
     {
         $this->authorizeManagement();
+        $this->validate(['payopPayoutCertificate' => ['nullable', 'file', 'max:4']]);
         $credentials = [];
         foreach (PaymentSettings::CREDENTIALS as $key) {
             $credentials[$key] = $this->paymentCredentials[str_replace('.', '_', $key)] ?? '';
         }
-        $action->execute($this->actor(), $this->paymentProvider, $this->paymentsEnabled, $credentials);
+        if ($this->payopPayoutCertificate instanceof TemporaryUploadedFile) {
+            $certificate = $this->payopPayoutCertificate->get();
+            if (strlen($certificate) !== 32) {
+                $this->addError('payopPayoutCertificate', __('Upload the binary x25519.pub certificate supplied by PayOp.'));
+
+                return;
+            }
+            $credentials['payop.payout_certificate'] = base64_encode($certificate);
+        }
+        $action->execute($this->actor(), $this->paymentProvider, $this->paymentsEnabled, $credentials, $this->payoutProvider);
         $this->paymentCredentials = [];
+        $this->payopPayoutCertificate = null;
         session()->flash('success', __('Payment settings updated.'));
     }
 
@@ -288,6 +308,7 @@ class SystemSettingsAdmin extends AdminComponent
                 'payop_secret' => ['key' => 'payop.secret', 'label' => 'PayOp secret key'],
                 'stripe_secret' => ['key' => 'stripe.secret', 'label' => 'Stripe secret key'],
                 'stripe_webhook_secret' => ['key' => 'stripe.webhook_secret', 'label' => 'Stripe webhook secret'],
+                'payop_payout_token' => ['key' => 'payop.payout_token', 'label' => 'PayOp payout JWT token'],
             ],
             'configuredPaymentCredentials' => collect(PaymentSettings::CREDENTIALS)->mapWithKeys(
                 fn (string $key): array => [$key => app(PaymentSettings::class)->credential($key) !== '']

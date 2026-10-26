@@ -26,9 +26,29 @@
                     @error('credentials.'.$details['key'])<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
                 </div>
             @endforeach
+            <div class="space-y-4 border-t border-slate-800 pt-4">
+                <div>
+                    <label for="payout-provider" class="mb-2 block text-sm text-slate-300">{{ __('Withdrawal processing') }}</label>
+                    <select id="payout-provider" wire:model="payoutProvider" class="min-h-11 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                        <option value="manual">{{ __('Manual finance payout') }}</option>
+                        <option value="payop">{{ __('PayOp bank transfer (PBB)') }}</option>
+                    </select>
+                    @error('payoutProvider')<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+                    <p class="mt-2 text-sm text-slate-400">{{ __('Applies to new withdrawal requests independently of the deposit gateway. PayOp payouts require finance approval and submission.') }}</p>
+                </div>
+                <div>
+                    <label for="payop-payout-certificate" class="mb-2 block text-sm text-slate-300">{{ __('PayOp payout certificate') }} · {{ $configuredPaymentCredentials['payop.payout_certificate'] ? __('Configured') : __('Not configured') }}</label>
+                    <input id="payop-payout-certificate" type="file" wire:model="payopPayoutCertificate" class="min-h-11 w-full text-sm text-slate-300">
+                    <p class="mt-2 text-sm text-slate-400">{{ __('Upload the binary x25519.pub certificate from PayOp Settings → Certificates. Leave empty to keep the saved certificate.') }}</p>
+                    @error('payopPayoutCertificate')<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+                </div>
+                <p class="text-sm text-slate-400">{{ __('PayOp bank payouts must be enabled for this merchant and currency. Gateway payout fees are paid from the merchant PayOp balance.') }}</p>
+            </div>
             <div class="space-y-2 border-t border-slate-800 pt-4 text-sm text-slate-400">
                 <p>{{ __('Set the Checkout IPN URL in your PayOp project to:') }}</p>
                 <code class="block break-all text-slate-200">{{ route('payop.webhook') }}</code>
+                <p>{{ __('Set the Withdraw IPN URL in PayOp to:') }}</p>
+                <code class="block break-all text-slate-200">{{ route('payop.payout-webhook') }}</code>
                 <p>{{ __('Stripe webhook URL:') }}</p>
                 <code class="block break-all text-slate-200">{{ route('stripe.webhook') }}</code>
                 <p>{{ __('Use credentials supplied by your gateway. Live credentials can charge real funds.') }}</p>

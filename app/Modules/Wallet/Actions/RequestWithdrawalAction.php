@@ -10,11 +10,15 @@ use App\Modules\Wallet\Events\WithdrawalRequested;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Exceptions\WithdrawalEligibilityException;
 use App\Modules\Wallet\Models\Withdrawal;
+use App\Modules\Wallet\Services\PaymentSettings;
+use App\Modules\Wallet\Services\PayopPayoutService;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\WithdrawalStatus;
+use App\Shared\Support\Currency;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
+use Illuminate\Validation\ValidationException;
 
 class RequestWithdrawalAction
 {
@@ -23,18 +27,41 @@ class RequestWithdrawalAction
      *
      * @param  string|float  $amount
      */
-    public function execute(User $user, $amount): Withdrawal
+    public function execute(User $user, $amount, array $recipient = []): Withdrawal
     {
         if (! $user->hasVerifiedEmail()) {
             throw new WithdrawalEligibilityException('Verify your email before requesting a withdrawal.');
         }
 
+        Validator::make(['amount' => $amount], ['amount' => ['required', 'numeric', 'min:0.01', 'decimal:0,2']])->validate();
         $amountFloat = (float) $amount;
-        if ($amountFloat <= 0) {
-            throw new InvalidArgumentException('Withdrawal amount must be greater than zero.');
+        $provider = app(PaymentSettings::class)->payoutProvider();
+        if (! in_array($provider, ['manual', 'payop'], true)) {
+            throw new WithdrawalEligibilityException('Unsupported withdrawal gateway.');
+        }
+        $currency = Currency::code();
+        if ($provider === 'payop') {
+            if (is_string($recipient['iban'] ?? null)) {
+                $recipient['iban'] = strtoupper(str_replace(' ', '', $recipient['iban']));
+            }
+            $recipient = Validator::make($recipient, [
+                'iban' => ['required', 'string', 'regex:/^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/'],
+                'name' => ['required', 'string', 'max:150'],
+            ])->validate();
+            $iban = substr($recipient['iban'], 4).substr($recipient['iban'], 0, 4);
+            $remainder = 0;
+            foreach (str_split($iban) as $character) {
+                foreach (str_split(ctype_alpha($character) ? (string) (ord($character) - 55) : $character) as $digit) {
+                    $remainder = ($remainder * 10 + (int) $digit) % 97;
+                }
+            }
+            if ($remainder !== 1) {
+                throw ValidationException::withMessages(['iban' => __('Enter a valid IBAN.')]);
+            }
+            $recipient['email'] = $user->email;
         }
 
-        return DB::transaction(function () use ($user, $amountFloat): Withdrawal {
+        return DB::transaction(function () use ($user, $amountFloat, $provider, $currency, $recipient): Withdrawal {
             // Verify KYC is approved
             $kyc = KycSubmission::query()
                 ->where('user_id', $user->getKey())
@@ -63,12 +90,23 @@ class RequestWithdrawalAction
                 );
             }
 
+            if ($provider === 'payop') {
+                try {
+                    app(PayopPayoutService::class)->assertBankPayoutAvailable($currency);
+                } catch (\LogicException $e) {
+                    throw new WithdrawalEligibilityException($e->getMessage(), __('Bank withdrawals are currently unavailable. Please contact support.'));
+                }
+            }
+
             $withdrawal = Withdrawal::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'wallet_id' => $wallet->getKey(),
                 'user_id' => $user->getKey(),
                 'amount' => $amountFloat,
                 'status' => WithdrawalStatus::PENDING,
+                'payout_provider' => $provider,
+                'payout_currency' => $currency,
+                'payout_recipient' => $provider === 'payop' ? $recipient : null,
             ]);
 
             WithdrawalRequested::dispatch(

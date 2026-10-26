@@ -36,6 +36,8 @@ return [
     'payop' => [
         'public_key' => env('PAYOP_PUBLIC_KEY'),
         'secret' => env('PAYOP_SECRET_KEY'),
+        'payout_token' => env('PAYOP_PAYOUT_TOKEN'),
+        'payout_certificate' => env('PAYOP_PAYOUT_CERTIFICATE'),
     ],
     'youtube' => ['api_key' => env('YOUTUBE_API_KEY')],
     'twitch' => ['client_id' => env('TWITCH_CLIENT_ID'), 'access_token' => env('TWITCH_ACCESS_TOKEN')],

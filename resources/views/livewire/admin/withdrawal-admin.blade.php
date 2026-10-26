@@ -170,6 +170,23 @@
                     </div>
 
                     <!-- Notes / Review Audit -->
+                    @if($selectedWithdrawal->payout_provider === 'payop')
+                        <div class="space-y-2 rounded-lg border border-slate-800 p-4 text-sm text-slate-300">
+                            <p>{{ __('Payout gateway') }}: PayOp · {{ $selectedWithdrawal->payout_currency }}</p>
+                            <p>{{ __('Bank account holder name') }}: {{ $selectedWithdrawal->payout_recipient['name'] ?? '—' }}</p>
+                            <p>{{ __('Bank account IBAN') }}: •••• {{ substr($selectedWithdrawal->payout_recipient['iban'] ?? '', -4) }}</p>
+                            <p>{{ __('Payout status') }}: {{ __($selectedWithdrawal->payout_status ?? 'Not submitted') }}</p>
+                            @if($selectedWithdrawal->payout_reference)<p class="break-all">{{ __('PayOp reference') }}: {{ $selectedWithdrawal->payout_reference }}</p>@endif
+                            @if($selectedWithdrawal->payout_status === 'unknown')
+                                <p role="alert">{{ __('Submission outcome is unknown. Reconcile this withdrawal in PayOp before any manual payment or refund. Do not resend.') }}</p>
+                                @unless($selectedWithdrawal->payout_reference)
+                                    <label for="payout-reconciliation-reference" class="block">{{ __('PayOp reference from merchant dashboard') }}</label>
+                                    <input id="payout-reconciliation-reference" type="text" wire:model="reconciliationReference" class="min-h-11 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white">
+                                    @error('reconciliationReference')<p role="alert" class="text-red-400">{{ $message }}</p>@enderror
+                                @endunless
+                            @endif
+                        </div>
+                    @endif
                     @if($selectedWithdrawal->reviewer)
                         <div class="bg-slate-900 border border-slate-850 p-4 rounded-xl">
                             <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Review details</span>
@@ -251,10 +268,13 @@
                         @endif
                     @endif
 
-                    @if($selectedWithdrawal->status->value === 'approved')
-                        <button wire:click="processPayout" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
-                            Mark as Paid / Processed
+                    @if($selectedWithdrawal->status->value === 'approved' && !$selectedWithdrawal->payout_submitted_at)
+                        <button wire:click="processPayout" wire:loading.attr="disabled" wire:target="processPayout" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
+                            {{ $selectedWithdrawal->payout_provider === 'payop' ? __('Send to PayOp') : __('Mark as Paid / Processed') }}
                         </button>
+                    @endif
+                    @if($selectedWithdrawal->payout_provider === 'payop' && $selectedWithdrawal->payout_submitted_at)
+                        <button wire:click="refreshPayout" wire:loading.attr="disabled" wire:target="refreshPayout" class="min-h-11 rounded-lg border border-slate-700 px-4 py-2 text-sm text-white">{{ __('Refresh PayOp status') }}</button>
                     @endif
 
                     <button wire:click="$set('showDetailModal', false)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase px-4 py-2.5 rounded-lg">
