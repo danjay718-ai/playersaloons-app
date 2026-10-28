@@ -10,9 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property WithdrawalStatus $status
  * @property string $amount
+ * @property array{iban: string, name: string, email: string}|null $payout_recipient
  */
 class Withdrawal extends Model
 {
+    protected $hidden = ['payout_recipient'];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -28,6 +31,12 @@ class Withdrawal extends Model
         'review_notes',
         'reviewed_at',
         'processed_at',
+        'payout_provider',
+        'payout_currency',
+        'payout_recipient',
+        'payout_reference',
+        'payout_status',
+        'payout_submitted_at',
     ];
 
     /**
@@ -42,6 +51,8 @@ class Withdrawal extends Model
             'amount' => 'decimal:2',
             'reviewed_at' => 'datetime',
             'processed_at' => 'datetime',
+            'payout_recipient' => 'encrypted:array',
+            'payout_submitted_at' => 'datetime',
         ];
     }
 

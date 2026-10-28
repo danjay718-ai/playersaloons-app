@@ -2,6 +2,62 @@
     @if(session('success'))
         <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{{ session('success') }}</div>
     @endif
+    <section aria-labelledby="payment-settings-heading" class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+        <h2 id="payment-settings-heading" class="text-xl font-bold text-white">{{ __('Payment gateway') }}</h2>
+        <p class="mt-2 text-sm text-slate-400">{{ __('Select the gateway for new deposits. Pending payments continue to use their original gateway.') }}</p>
+        <form wire:submit="savePaymentSettings" class="mt-5 space-y-4">
+            <div>
+                <label for="payment-provider" class="mb-2 block text-sm text-slate-300">{{ __('Active gateway') }}</label>
+                <select id="payment-provider" wire:model="paymentProvider" class="min-h-11 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                    <option value="stripe">Stripe</option>
+                    <option value="payop">PayOp</option>
+                </select>
+                @error('paymentProvider')<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+            </div>
+            <label class="flex min-h-11 items-center gap-3 text-sm text-slate-300">
+                <input type="checkbox" wire:model="paymentsEnabled" class="rounded border-slate-700">
+                {{ __('Accept new deposits') }}
+            </label>
+            <p class="text-sm text-slate-400">{{ __('Credentials are encrypted. Leave a field blank to keep its saved value.') }}</p>
+            @foreach($paymentCredentialFields as $field => $details)
+                <div wire:key="payment-{{ $field }}">
+                    <label for="payment-{{ $field }}" class="mb-2 block text-sm text-slate-300">{{ __($details['label']) }} <span class="text-slate-400">· {{ $configuredPaymentCredentials[$details['key']] ? __('Configured') : __('Not configured') }}</span></label>
+                    <input id="payment-{{ $field }}" type="password" wire:model="paymentCredentials.{{ $field }}" autocomplete="new-password" spellcheck="false" class="min-h-11 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                    @error('credentials.'.$details['key'])<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+                </div>
+            @endforeach
+            <div class="space-y-4 border-t border-slate-800 pt-4">
+                <div>
+                    <label for="payout-provider" class="mb-2 block text-sm text-slate-300">{{ __('Withdrawal processing') }}</label>
+                    <select id="payout-provider" wire:model="payoutProvider" class="min-h-11 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                        <option value="manual">{{ __('Manual finance payout') }}</option>
+                        <option value="payop">{{ __('PayOp bank transfer (PBB)') }}</option>
+                    </select>
+                    @error('payoutProvider')<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+                    <p class="mt-2 text-sm text-slate-400">{{ __('Applies to new withdrawal requests independently of the deposit gateway. PayOp payouts require finance approval and submission.') }}</p>
+                </div>
+                <div>
+                    <label for="payop-payout-certificate" class="mb-2 block text-sm text-slate-300">{{ __('PayOp payout certificate') }} · {{ $configuredPaymentCredentials['payop.payout_certificate'] ? __('Configured') : __('Not configured') }}</label>
+                    <input id="payop-payout-certificate" type="file" wire:model="payopPayoutCertificate" class="min-h-11 w-full text-sm text-slate-300">
+                    <p class="mt-2 text-sm text-slate-400">{{ __('Upload the binary x25519.pub certificate from PayOp Settings → Certificates. Leave empty to keep the saved certificate.') }}</p>
+                    @error('payopPayoutCertificate')<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+                </div>
+                <p class="text-sm text-slate-400">{{ __('PayOp bank payouts must be enabled for this merchant and currency. Gateway payout fees are paid from the merchant PayOp balance.') }}</p>
+            </div>
+            <div class="space-y-2 border-t border-slate-800 pt-4 text-sm text-slate-400">
+                <p>{{ __('Set the Checkout IPN URL in your PayOp project to:') }}</p>
+                <code class="block break-all text-slate-200">{{ route('payop.webhook') }}</code>
+                <p>{{ __('Set the Withdraw IPN URL in PayOp to:') }}</p>
+                <code class="block break-all text-slate-200">{{ route('payop.payout-webhook') }}</code>
+                <p>{{ __('Stripe webhook URL:') }}</p>
+                <code class="block break-all text-slate-200">{{ route('stripe.webhook') }}</code>
+                <p>{{ __('Use credentials supplied by your gateway. Live credentials can charge real funds.') }}</p>
+            </div>
+            @can('system_settings.manage')
+                <button type="submit" wire:loading.attr="disabled" wire:target="savePaymentSettings" class="min-h-11 rounded-lg bg-cyan-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{{ __('Save payment settings') }}</button>
+            @endcan
+        </form>
+    </section>
     <section class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
         <h2 class="text-xl font-bold text-white">{{ __('App timezone') }}</h2>
         <p class="mt-2 text-sm text-slate-500">{{ __('Used across admin and player pages. Changing this does not reschedule existing competitions. New schedules use the selected timezone. Refresh other open pages after saving.') }}</p>

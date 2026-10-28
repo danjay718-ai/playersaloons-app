@@ -11,6 +11,7 @@ use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -69,6 +70,22 @@ class StripeWebhookTest extends TestCase
         $this->assertSame(1, Deposit::query()->where('provider_reference', 'cs_test_idempotent_123')->count());
     }
 
+    public function test_pending_stripe_payment_uses_saved_signing_secret_after_switching_to_payop(): void
+    {
+        SystemSetting::query()->create(['key' => 'payments.provider', 'value' => 'payop']);
+        SystemSetting::query()->create(['key' => 'payments.enabled', 'value' => 'false']);
+        SystemSetting::query()->create([
+            'key' => 'payments.stripe.webhook_secret',
+            'value' => Crypt::encryptString($this->webhookSecret),
+        ]);
+        config(['services.stripe.webhook_secret' => 'unused-environment-secret']);
+        $wallet = $this->createWallet('10.00');
+        $payload = $this->checkoutSessionPayload('cs_pending_switch', 2500, ['wallet_id' => (string) $wallet->getKey()]);
+
+        $this->postStripeWebhook($payload)->assertOk()->assertJson(['handled' => true]);
+        self::assertSame('35.00', $wallet->fresh()->cached_balance);
+    }
+
     public function test_webhook_credits_wallet_amount_and_persists_processing_fee(): void
     {
         $wallet = $this->createWallet('0.00');
@@ -117,9 +134,6 @@ class StripeWebhookTest extends TestCase
         )->assertBadRequest();
     }
 
-    /**
-     * @param  array<string, string>  $metadata
-     */
     public function test_webhook_accepts_euro_and_pound_and_keeps_retries_idempotent_after_a_currency_change(): void
     {
         $wallet = $this->createWallet('0.00');
@@ -151,6 +165,9 @@ class StripeWebhookTest extends TestCase
         self::assertSame(0, Deposit::query()->count());
     }
 
+    /**
+     * @param  array<string, string>  $metadata
+     */
     private function checkoutSessionPayload(string $sessionId, int $amountTotal, array $metadata, string $currency = 'usd'): string
     {
         return json_encode([

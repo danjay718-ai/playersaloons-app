@@ -80,7 +80,8 @@ class WalletApiController extends Controller
         }
 
         try {
-            $withdrawal = $action->execute($request->user(), $amount);
+            $recipient = $request->validate(['iban' => ['nullable', 'string', 'max:50'], 'name' => ['nullable', 'string', 'max:150']]);
+            $withdrawal = $action->execute($request->user(), $amount, $recipient);
 
             return (new WithdrawalResource($withdrawal))
                 ->additional(['message' => 'Withdrawal request submitted successfully.'])

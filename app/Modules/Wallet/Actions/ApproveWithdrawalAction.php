@@ -6,10 +6,14 @@ namespace App\Modules\Wallet\Actions;
 
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
+use App\Modules\Wallet\Events\WalletDebited;
 use App\Modules\Wallet\Events\WithdrawalApproved;
+use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Models\Withdrawal;
+use App\Modules\Wallet\Services\WalletService;
 use App\Modules\Wallet\StateMachines\WithdrawalStateMachine;
 use App\Shared\Enums\KycStatus;
+use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\WithdrawalStatus;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +40,7 @@ class ApproveWithdrawalAction
         }
 
         DB::transaction(function () use ($withdrawal, $reviewer, $notes): void {
+            $withdrawal = Withdrawal::query()->lockForUpdate()->findOrFail($withdrawal->getKey());
             $kyc = KycSubmission::query()
                 ->where('user_id', $withdrawal->getAttribute('user_id'))
                 ->where('status', KycStatus::APPROVED)
@@ -45,7 +50,7 @@ class ApproveWithdrawalAction
                 throw new LogicException('User does not have an approved KYC submission.');
             }
 
-            $wallet = $withdrawal->wallet;
+            $wallet = Wallet::query()->lockForUpdate()->find($withdrawal->wallet_id);
             if (! $wallet) {
                 throw new LogicException('User does not have a wallet.');
             }
@@ -59,11 +64,19 @@ class ApproveWithdrawalAction
                 'review_notes' => $notes,
             ]);
 
+            if ($withdrawal->payout_provider === 'payop') {
+                // Reserve funds before an external payout, independently of queue timing.
+                $entry = app(WalletService::class)->debit($wallet, $withdrawal->amount, LedgerType::WITHDRAWAL,
+                    Withdrawal::class, (string) $withdrawal->getKey(), 'Withdrawal payout approved', 'payop-payout-debit:'.$withdrawal->uuid);
+                WalletDebited::dispatch((int) $wallet->getKey(), (int) $entry->getKey(), $withdrawal->amount, LedgerType::WITHDRAWAL->value);
+            }
+
             WithdrawalApproved::dispatch(
                 (int) $withdrawal->getKey(),
                 (int) $wallet->getKey(),
                 (int) $reviewer->getKey()
             );
         });
+        $withdrawal->refresh();
     }
 }

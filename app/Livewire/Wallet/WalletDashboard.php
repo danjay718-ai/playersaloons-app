@@ -10,11 +10,14 @@ use App\Modules\Operations\Services\ErrorIncidentReporter;
 use App\Modules\Wallet\Actions\RequestWithdrawalAction;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Exceptions\WithdrawalEligibilityException;
+use App\Modules\Wallet\Models\Withdrawal;
+use App\Modules\Wallet\Services\DepositCheckoutService;
 use App\Modules\Wallet\Services\DepositFeeCalculator;
-use App\Modules\Wallet\Services\StripeCheckoutService;
+use App\Modules\Wallet\Services\PaymentSettings;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Support\Currency;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -27,6 +30,10 @@ class WalletDashboard extends Component
 
     public string $depositAmount = '';
 
+    public string $payoutIban = '';
+
+    public string $payoutName = '';
+
     public function mount(): void
     {
         $user = Auth::user();
@@ -38,7 +45,7 @@ class WalletDashboard extends Component
         }
     }
 
-    public function deposit(StripeCheckoutService $stripeCheckout)
+    public function deposit(DepositCheckoutService $checkout)
     {
         $user = Auth::user();
         if (! $user) {
@@ -46,7 +53,7 @@ class WalletDashboard extends Component
         }
 
         $this->validate([
-            'depositAmount' => ['required', 'numeric', 'min:1', 'max:10000'],
+            'depositAmount' => ['required', 'numeric', 'min:1', 'max:10000', 'decimal:0,2'],
         ]);
 
         $wallet = $user->wallet()->first();
@@ -57,7 +64,7 @@ class WalletDashboard extends Component
         }
 
         try {
-            $checkoutUrl = $stripeCheckout->createDepositSession(
+            $checkoutUrl = $checkout->createDepositSession(
                 $user,
                 $wallet,
                 (float) $this->depositAmount
@@ -82,13 +89,15 @@ class WalletDashboard extends Component
         }
 
         $this->validate([
-            'amount' => ['required', 'numeric', 'min:1'],
+            'amount' => ['required', 'numeric', 'min:1', 'decimal:0,2'],
         ]);
 
         try {
-            $action->execute($user, (float) $this->amount);
+            $action->execute($user, $this->amount, ['iban' => $this->payoutIban, 'name' => $this->payoutName]);
             session()->flash('message', 'Withdrawal request of '.Currency::format($this->amount).' submitted successfully and is pending review!');
-            $this->reset('amount');
+            $this->reset('amount', 'payoutIban', 'payoutName');
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (WithdrawalEligibilityException $e) {
             $this->addError('amount', __($e->userMessage));
         } catch (InsufficientBalanceException $e) {
@@ -117,7 +126,13 @@ class WalletDashboard extends Component
                 ->paginate(10);
         }
 
+        $payments = app(PaymentSettings::class);
+
         return view('livewire.wallet.wallet-dashboard', [
+            'paymentProvider' => $payments->provider() === 'payop' ? 'PayOp' : 'Stripe',
+            'depositsEnabled' => $payments->enabled(),
+            'payoutProvider' => $payments->payoutProvider(),
+            'withdrawalRequests' => Withdrawal::query()->where('user_id', $user->getKey())->latest()->limit(5)->get(),
             'wallet' => $wallet,
             'ledgerEntries' => $ledgerEntries,
             'depositBreakdown' => $feeCalculator->calculate(is_numeric($this->depositAmount) ? (float) $this->depositAmount : 0),

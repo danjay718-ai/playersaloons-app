@@ -1,6 +1,12 @@
 <div class="space-y-6 min-w-0" x-data="{ walletAction: 'deposit' }">
     <x-ui.toasts />
 
+    @if(request('deposit') === 'submitted')
+        <p role="status" class="rounded-xl border border-zinc-800 p-4 text-sm text-zinc-300">{{ __('Payment submitted. Your balance updates after payment confirmation.') }}</p>
+    @elseif(request('deposit') === 'cancelled')
+        <p role="status" class="rounded-xl border border-zinc-800 p-4 text-sm text-zinc-300">{{ __('Payment was cancelled or could not be completed.') }}</p>
+    @endif
+
     @unless($emailVerified)
         <section class="flex flex-col gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-start gap-3"><i data-lucide="mail-warning" class="mt-0.5 h-5 w-5 shrink-0 text-amber-300"></i><p class="text-xs leading-relaxed text-amber-100">Verify your email to unlock withdrawals and email notifications. Deposits and the rest of your player account remain available.</p></div>
@@ -16,7 +22,7 @@
                         {{ $wallet?->status ?? 'ACTIVE' }}
                     </span>
                     <span class="rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-300">
-                        Stripe Sandbox
+                        {{ $paymentProvider }}
                     </span>
                 </div>
 
@@ -28,13 +34,13 @@
                         </div>
                     </div>
                     <div class="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-                        <p class="font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Payment Mode</p>
+                        <p class="font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ __('Payment gateway') }}</p>
                         <div class="mt-3 flex items-center gap-2 text-sm font-bold text-zinc-200">
                             <i data-lucide="flask-conical" class="h-4 w-4 text-sky-300"></i>
-                            Test only
+                            {{ $paymentProvider }}
                         </div>
                         <p class="mt-2 text-xs leading-relaxed text-zinc-500">
-                            No real cards or live funds are used on this wallet screen.
+                            {{ __('Payments are completed on the gateway checkout page.') }}
                         </p>
                     </div>
                 </div>
@@ -66,7 +72,7 @@
                     <div>
                         <h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-white">Deposit</h2>
                         <p class="mt-1 text-xs leading-relaxed text-zinc-500">
-                            Enter an amount, then use the test card details below while Stripe Checkout is being wired.
+                            {{ __('Enter an amount to continue to secure checkout.') }}
                         </p>
                     </div>
                     <div class="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-2 text-emerald-300">
@@ -74,6 +80,9 @@
                     </div>
                 </div>
 
+                @unless($depositsEnabled)
+                    <p role="status" class="mt-4 text-sm text-amber-200">{{ __('Deposits are temporarily unavailable. Please try again later.') }}</p>
+                @endunless
                 <form wire:submit.prevent="deposit" class="mt-6 space-y-4">
                     @csrf
                     <div>
@@ -91,7 +100,7 @@
                         <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs">
                             <div class="flex justify-between text-zinc-400"><span>Wallet credit</span><span class="font-bold text-white">@currencySymbol{{ $depositBreakdown['credit'] }}</span></div>
                             <div class="mt-2 flex justify-between text-zinc-400"><span>Processing fee</span><span class="font-bold text-amber-300">@currencySymbol{{ $depositBreakdown['fee'] }}</span></div>
-                            <div class="mt-3 flex justify-between border-t border-zinc-800 pt-3 text-zinc-300"><span class="font-bold">Total Stripe charge</span><span class="font-black text-emerald-300">@currencySymbol{{ $depositBreakdown['total'] }}</span></div>
+                            <div class="mt-3 flex justify-between border-t border-zinc-800 pt-3 text-zinc-300"><span class="font-bold">{{ __('Total charge') }}</span><span class="font-black text-emerald-300">@currencySymbol{{ $depositBreakdown['total'] }}</span></div>
                         </div>
                     @endif
 
@@ -104,10 +113,10 @@
                         @endforeach
                     </div>
 
-                    <button type="submit"
+                    <button type="submit" @disabled(!$depositsEnabled) wire:loading.attr="disabled" wire:target="deposit"
                         class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500 px-4 font-orbitron text-xs font-black uppercase tracking-widest text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.22)] transition-colors hover:bg-emerald-400">
                         <i data-lucide="plus-circle" class="h-4 w-4"></i>
-                        Deposit Test Funds
+                        {{ __('Continue to checkout') }}
                     </button>
                 </form>
             </div>
@@ -117,7 +126,7 @@
                     <div>
                         <h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-white">Withdraw</h2>
                         <p class="mt-1 text-xs leading-relaxed text-zinc-500">
-                            Submit a withdrawal request for review. Stripe Connect payout wiring can be added next.
+                            {{ __('Submit a withdrawal request for finance review and processing.') }}
                         </p>
                     </div>
                     <div class="rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/10 p-2 text-fuchsia-300">
@@ -134,8 +143,21 @@
                 @endunless
                 <form wire:submit.prevent="withdraw" class="mt-6 space-y-4">
                     @csrf
+                    @if($payoutProvider === 'payop')
+                        <p class="text-sm text-zinc-300">{{ __('Withdrawals are sent by PayOp bank transfer after finance approval. Enter your bank account details.') }}</p>
+                        <div>
+                            <label for="payout-name" class="mb-2 block text-sm text-zinc-300">{{ __('Bank account holder name') }}</label>
+                            <input id="payout-name" wire:model="payoutName" type="text" required maxlength="150" autocomplete="name" class="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-white">
+                            @error('name')<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label for="payout-iban" class="mb-2 block text-sm text-zinc-300">{{ __('Bank account IBAN') }}</label>
+                            <input id="payout-iban" wire:model="payoutIban" type="text" required maxlength="50" spellcheck="false" autocomplete="off" class="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-white">
+                            @error('iban')<p role="alert" class="mt-2 text-sm text-red-400">{{ $message }}</p>@enderror
+                        </div>
+                    @endif
                     <div>
-                        <label for="amount" class="mb-2 block font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Withdrawal Amount</label>
+                        <label for="amount" class="mb-2 block text-sm font-semibold text-zinc-300">{{ __('Withdrawal amount') }}</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-fuchsia-300">@currencySymbol</span>
                             <input wire:model="amount" id="amount" type="number" step="0.01" min="1" required
@@ -153,7 +175,7 @@
                     </div>
 
                     <button type="submit" @disabled(!$withdrawalKycApproved) wire:loading.attr="disabled" wire:target="withdraw"
-                        class="disabled:cursor-not-allowed disabled:opacity-50 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500 px-4 font-orbitron text-xs font-black uppercase tracking-widest text-white shadow-[0_0_20px_rgba(217,70,239,0.22)] transition-colors hover:bg-fuchsia-400">
+                        class="disabled:cursor-not-allowed disabled:opacity-50 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan-700 px-4 text-sm font-bold text-white transition-colors hover:bg-cyan-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400">
                         <i data-lucide="send" class="h-4 w-4"></i>
                         Request Withdrawal
                     </button>
@@ -163,49 +185,22 @@
                 @endif
             </div>
 
-            <div class="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-5 shadow-xl md:p-6">
-                <div class="flex items-start gap-3">
-                    <div class="rounded-xl border border-sky-400/25 bg-sky-400/10 p-2 text-sky-200">
-                        <i data-lucide="badge-info" class="h-5 w-5"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-orbitron text-xs font-black uppercase tracking-widest text-sky-100">Stripe Test Payment Information</h3>
-                        <p class="mt-2 text-xs leading-relaxed text-sky-100/70">
-                            Use these values when the deposit button is connected to Stripe Checkout.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="mt-5 space-y-3">
-                    <div class="rounded-xl border border-sky-400/20 bg-zinc-950/70 p-4">
-                        <label class="font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-200/70">Card Number</label>
-                        <div class="mt-2 flex items-center justify-between gap-3">
-                            <code class="text-sm font-black tracking-wider text-white">4242 4242 4242 4242</code>
-                            <i data-lucide="copy" class="h-4 w-4 text-sky-300"></i>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="rounded-xl border border-sky-400/20 bg-zinc-950/70 p-4">
-                            <label class="font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-200/70">Expiry</label>
-                            <div class="mt-2 text-sm font-black text-white">12 / 34</div>
-                        </div>
-                        <div class="rounded-xl border border-sky-400/20 bg-zinc-950/70 p-4">
-                            <label class="font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-200/70">CVC</label>
-                            <div class="mt-2 text-sm font-black text-white">123</div>
-                        </div>
-                    </div>
-
-                    <div class="rounded-xl border border-sky-400/20 bg-zinc-950/70 p-4">
-                        <label class="font-orbitron text-[9px] font-black uppercase tracking-widest text-sky-200/70">ZIP / Postal Code</label>
-                        <div class="mt-2 text-sm font-black text-white">Any valid ZIP, e.g. 10001</div>
-                    </div>
-                </div>
-            </div>
         </section>
 
         <section class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
-            <div class="flex flex-col gap-3 border-b border-zinc-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div wire:poll.30s>
+                <h2 class="text-base font-bold text-white">{{ __('Recent withdrawal requests') }}</h2>
+                @forelse($withdrawalRequests as $withdrawalRequest)
+                    <div class="mt-3 flex flex-wrap justify-between gap-2 border-b border-zinc-800 pb-3 text-sm">
+                        <span class="text-zinc-200">{{ $withdrawalRequest->payout_currency ?? \App\Shared\Support\Currency::code() }} {{ $withdrawalRequest->amount }}</span>
+                        <span class="text-zinc-300">{{ __(ucwords(str_replace('_', ' ', $withdrawalRequest->status->value))) }}{{ $withdrawalRequest->payout_status ? ' · '.__('PayOp').': '.__($withdrawalRequest->payout_status) : '' }}</span>
+                        @if($withdrawalRequest->payout_status === 'unknown')<p class="w-full text-zinc-400">{{ __('Your payout is awaiting confirmation. Please contact support before making another request.') }}</p>@endif
+                    </div>
+                @empty
+                    <p class="mt-3 text-sm text-zinc-400">{{ __('No withdrawal requests yet.') }}</p>
+                @endforelse
+            </div>
+            <div class="mt-6 flex flex-col gap-3 border-b border-zinc-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="font-orbitron text-sm font-black uppercase tracking-widest text-white">Transaction History</h2>
                     <p class="mt-1 text-xs text-zinc-500">Deposits, withdrawals, prizes, and wallet adjustments.</p>

@@ -25,3 +25,4 @@ Schedule::command('tournaments:purge-empty-v2')->everyMinute()->withoutOverlappi
 Schedule::command('errors:prune --days=90')->dailyAt('03:30')->onOneServer();
 
 Schedule::job(new ApplyPendingDisputeBansJob)->everyMinute()->withoutOverlapping()->onOneServer();
+Schedule::command('payments:reconcile-payop-payouts')->everyTenMinutes()->withoutOverlapping()->onOneServer();
