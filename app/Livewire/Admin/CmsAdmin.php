@@ -58,6 +58,16 @@ class CmsAdmin extends AdminComponent
         $this->tab = $this->resolveTab($section);
 
         if ($this->tab === 'landing') {
+            LandingSection::firstOrCreate(
+                ['key' => 'faq'],
+                [
+                    'uuid' => Str::uuid()->toString(),
+                    'title' => 'Frequently Asked Questions',
+                    'subtitle' => 'Got questions? Everything you need to know about competing.',
+                    'sort_order' => 9,
+                    'is_active' => true,
+                ]
+            );
             $firstSection = LandingSection::query()->orderBy('sort_order')->first();
             if ($firstSection) {
                 $this->selectLandingSection((int) $firstSection->id);
@@ -66,6 +76,14 @@ class CmsAdmin extends AdminComponent
 
         if ($this->tab === 'about') {
             $this->loadAboutSettings();
+        }
+
+        if ($this->tab === 'cookies') {
+            $this->loadCookieSettings();
+        }
+
+        if ($this->tab === 'footer') {
+            $this->loadFooterSettings();
         }
     }
 
@@ -208,6 +226,38 @@ class CmsAdmin extends AdminComponent
 
     public string $aboutBody = '';
 
+    // Cookie Management forms
+    public bool $cookieConsentEnabled = true;
+
+    public string $cookieTitle = 'Cookie & Privacy Preferences';
+
+    public string $cookieMessage = 'We use cookies and similar technologies to enhance your gaming experience, secure your account, prevent fraud, and analyze site performance. You can customize your preferences or accept all cookies.';
+
+    public string $cookiePolicyUrl = '/policies/cookie-policy';
+
+    public bool $cookieAnalyticsEnabled = true;
+
+    public bool $cookieMarketingEnabled = false;
+
+    public string $cookieEssentialNote = 'Strictly necessary cookies required for authentication, tournament anti-cheat, session security, and wallet transactions cannot be disabled.';
+
+    // Footer Management forms
+    public string $footerBrandTagline = 'The Premier Competitive Gaming & Tournament Saloon';
+
+    public string $footerDescription = 'Compete in high-stakes daily tournaments and 1v1 challenges across Mobile Legends, Call of Duty, FIFA, and more. Transparent brackets, automated payouts, and verified fair play.';
+
+    public string $footerCopyright = 'All rights reserved. Operated by GamersRival Systems.';
+
+    public string $footerDisclaimer = 'GamersRival is an independent esports competition platform. Game titles, artwork, and trademarks belong to their respective publishers and owners.';
+
+    public string $footerDiscord = 'https://discord.gg/gamersrival';
+
+    public string $footerTwitter = 'https://x.com/gamersrival';
+
+    public string $footerTwitch = '';
+
+    public string $footerYoutube = '';
+
     protected $paginationTheme = 'tailwind';
 
     public function setTab(string $tabName): void
@@ -215,15 +265,35 @@ class CmsAdmin extends AdminComponent
         $this->tab = $tabName;
         $this->resetPage();
 
-        if ($tabName === 'landing' && $this->selectedLandingSectionId === null) {
-            $firstSection = LandingSection::query()->orderBy('sort_order')->first();
-            if ($firstSection) {
-                $this->selectLandingSection((int) $firstSection->id);
+        if ($tabName === 'landing') {
+            LandingSection::firstOrCreate(
+                ['key' => 'faq'],
+                [
+                    'uuid' => Str::uuid()->toString(),
+                    'title' => 'Frequently Asked Questions',
+                    'subtitle' => 'Got questions? Everything you need to know about competing.',
+                    'sort_order' => 9,
+                    'is_active' => true,
+                ]
+            );
+            if ($this->selectedLandingSectionId === null) {
+                $firstSection = LandingSection::query()->orderBy('sort_order')->first();
+                if ($firstSection) {
+                    $this->selectLandingSection((int) $firstSection->id);
+                }
             }
         }
 
         if ($tabName === 'about') {
             $this->loadAboutSettings();
+        }
+
+        if ($tabName === 'cookies') {
+            $this->loadCookieSettings();
+        }
+
+        if ($tabName === 'footer') {
+            $this->loadFooterSettings();
         }
     }
 
@@ -307,6 +377,100 @@ class CmsAdmin extends AdminComponent
         session()->flash('success', 'About Us page content saved successfully.');
     }
 
+    private function loadCookieSettings(): void
+    {
+        $settings = SystemSetting::query()->where('key', 'like', 'cookie.%')->pluck('value', 'key');
+        $this->cookieConsentEnabled = filter_var($settings['cookie.consent_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $this->cookieTitle = (string) ($settings['cookie.title'] ?? 'Cookie & Privacy Preferences');
+        $this->cookieMessage = (string) ($settings['cookie.message'] ?? 'We use cookies and similar technologies to enhance your gaming experience, secure your account, prevent fraud, and analyze site performance.');
+        $this->cookiePolicyUrl = (string) ($settings['cookie.policy_url'] ?? '/policies/cookie-policy');
+        $this->cookieAnalyticsEnabled = filter_var($settings['cookie.analytics_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $this->cookieMarketingEnabled = filter_var($settings['cookie.marketing_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $this->cookieEssentialNote = (string) ($settings['cookie.essential_note'] ?? 'Strictly necessary cookies required for authentication, tournament anti-cheat, session security, and wallet transactions cannot be disabled.');
+    }
+
+    public function saveCookieSettings(): void
+    {
+        $this->validate([
+            'cookieTitle' => 'required|string|max:255',
+            'cookieMessage' => 'required|string',
+            'cookiePolicyUrl' => 'required|string|max:255',
+            'cookieEssentialNote' => 'nullable|string',
+        ]);
+
+        $settings = [
+            'cookie.consent_enabled' => $this->cookieConsentEnabled ? '1' : '0',
+            'cookie.title' => $this->cookieTitle,
+            'cookie.message' => $this->cookieMessage,
+            'cookie.policy_url' => $this->cookiePolicyUrl,
+            'cookie.analytics_enabled' => $this->cookieAnalyticsEnabled ? '1' : '0',
+            'cookie.marketing_enabled' => $this->cookieMarketingEnabled ? '1' : '0',
+            'cookie.essential_note' => $this->cookieEssentialNote,
+        ];
+
+        foreach ($settings as $key => $value) {
+            SystemSetting::query()->updateOrCreate(
+                ['key' => $key],
+                ['value' => $value, 'updated_by' => Auth::id()]
+            );
+        }
+
+        session()->flash('success', 'Cookie management settings saved successfully.');
+    }
+
+    private function loadFooterSettings(): void
+    {
+        $footerSection = LandingSection::query()->where('key', 'footer')->first();
+        $settings = SystemSetting::query()->where('key', 'like', 'footer.%')->pluck('value', 'key');
+
+        $this->footerBrandTagline = (string) ($settings['footer.tagline'] ?? 'The Premier Competitive Gaming & Tournament Saloon');
+        $this->footerDescription = (string) ($settings['footer.description'] ?? 'Compete in high-stakes daily tournaments and 1v1 challenges across Mobile Legends, Call of Duty, FIFA, and more. Transparent brackets, automated payouts, and verified fair play.');
+        $this->footerCopyright = (string) ($settings['footer.copyright'] ?? ($footerSection?->body ?? 'All rights reserved. Operated by GamersRival Systems.'));
+        $this->footerDisclaimer = (string) ($settings['footer.disclaimer'] ?? 'GamersRival is an independent esports competition platform. Game titles, artwork, and trademarks belong to their respective publishers and owners.');
+        $this->footerDiscord = (string) ($settings['footer.discord'] ?? 'https://discord.gg/gamersrival');
+        $this->footerTwitter = (string) ($settings['footer.twitter'] ?? 'https://x.com/gamersrival');
+        $this->footerTwitch = (string) ($settings['footer.twitch'] ?? '');
+        $this->footerYoutube = (string) ($settings['footer.youtube'] ?? '');
+    }
+
+    public function saveFooterSettings(): void
+    {
+        $this->validate([
+            'footerBrandTagline' => 'nullable|string|max:255',
+            'footerDescription' => 'nullable|string|max:1000',
+            'footerCopyright' => 'required|string|max:255',
+            'footerDisclaimer' => 'nullable|string',
+            'footerDiscord' => 'nullable|url|max:255',
+            'footerTwitter' => 'nullable|url|max:255',
+            'footerTwitch' => 'nullable|url|max:255',
+            'footerYoutube' => 'nullable|url|max:255',
+        ]);
+
+        $settings = [
+            'footer.tagline' => $this->footerBrandTagline,
+            'footer.description' => $this->footerDescription,
+            'footer.copyright' => $this->footerCopyright,
+            'footer.disclaimer' => $this->footerDisclaimer,
+            'footer.discord' => $this->footerDiscord,
+            'footer.twitter' => $this->footerTwitter,
+            'footer.twitch' => $this->footerTwitch,
+            'footer.youtube' => $this->footerYoutube,
+        ];
+
+        foreach ($settings as $key => $value) {
+            SystemSetting::query()->updateOrCreate(
+                ['key' => $key],
+                ['value' => $value, 'updated_by' => Auth::id()]
+            );
+        }
+
+        LandingSection::query()->where('key', 'footer')->update([
+            'body' => $this->footerCopyright,
+        ]);
+
+        session()->flash('success', 'Footer content settings saved successfully.');
+    }
+
     private function resolveTab(?string $section): string
     {
         return match ($section) {
@@ -315,6 +479,8 @@ class CmsAdmin extends AdminComponent
             'platforms' => 'platforms',
             'navigation' => 'navigation',
             'about' => 'about',
+            'footer' => 'footer',
+            'cookies' => 'cookies',
             default => 'games',
         };
     }
@@ -923,6 +1089,10 @@ class CmsAdmin extends AdminComponent
                     ->get(),
             ],
             'about' => [],
+            'cookies' => [],
+            'footer' => [
+                'footerSection' => LandingSection::query()->where('key', 'footer')->with('items')->first(),
+            ],
             default => [
                 'games' => Game::query()
                     ->when($this->gameRecordTab === 'deleted' && $this->canViewDeletedGames(), fn ($query) => $query->onlyTrashed(), fn ($query) => $query->withoutTrashed())
@@ -961,6 +1131,8 @@ class CmsAdmin extends AdminComponent
                 'landing' => 'Landing Page',
                 'navigation' => 'Public Navigation',
                 'about' => 'About Us Content',
+                'footer' => 'Footer Content',
+                'cookies' => 'Cookie Management',
                 default => 'Games Catalog',
             },
         ]);

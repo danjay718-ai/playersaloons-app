@@ -772,6 +772,207 @@
             </form>
         </div>
     @endif
+
+    <!-- Cookie Management Tab Content -->
+    @if($tab === 'cookies')
+        <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm mb-6 p-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i data-lucide="cookie" class="w-6 h-6 text-amber-400"></i>
+                        Cookie & Privacy Banner Management
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Configure cookie consent popups, compliance disclaimers, and tracking categories for players and visitors.</p>
+                </div>
+                <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300 cursor-pointer bg-slate-900 border border-slate-800 px-4 py-2 rounded-lg">
+                    <input type="checkbox" wire:model="cookieConsentEnabled" class="rounded border-slate-700 bg-slate-950 text-indigo-500">
+                    Consent Banner Active
+                </label>
+            </div>
+
+            <form wire:submit.prevent="saveCookieSettings" class="space-y-6">
+                <div class="grid gap-6 md:grid-cols-2">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Consent Modal Heading</label>
+                        <input type="text" wire:model="cookieTitle" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm">
+                        @error('cookieTitle') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Consent Notice Message</label>
+                        <textarea wire:model="cookieMessage" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm resize-y"></textarea>
+                        @error('cookieMessage') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cookie Policy Link URL</label>
+                        <input type="text" wire:model="cookiePolicyUrl" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm">
+                        @error('cookiePolicyUrl') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Cookie Categories</label>
+                        <div class="flex items-center gap-3 bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+                            <input type="checkbox" wire:model="cookieAnalyticsEnabled" id="cat_analytics" class="rounded border-slate-700 bg-slate-950 text-indigo-500">
+                            <label for="cat_analytics" class="text-xs text-slate-300 font-semibold cursor-pointer">
+                                Analytics & Performance Cookies (Telemetry, visitor metrics)
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-3 bg-slate-900/60 border border-slate-800 rounded-lg p-3">
+                            <input type="checkbox" wire:model="cookieMarketingEnabled" id="cat_marketing" class="rounded border-slate-700 bg-slate-950 text-indigo-500">
+                            <label for="cat_marketing" class="text-xs text-slate-300 font-semibold cursor-pointer">
+                                Marketing & Promotional Cookies (Campaign attribution)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Essential Cookies Description</label>
+                        <textarea wire:model="cookieEssentialNote" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm resize-y"></textarea>
+                        @error('cookieEssentialNote') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm uppercase tracking-wider px-6 py-3 rounded-lg flex items-center transition-colors">
+                        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                        Save Cookie Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    @endif
+
+    <!-- Footer Management Tab Content -->
+    @if($tab === 'footer')
+        <div class="space-y-6">
+            <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm p-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i data-lucide="panel-bottom" class="w-6 h-6 text-indigo-400"></i>
+                            Footer Content & Layout Management
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Full control over footer brand description, compliance disclaimers, social links, and navigation.</p>
+                    </div>
+                </div>
+
+                <form wire:submit.prevent="saveFooterSettings" class="space-y-6">
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Brand Tagline / Slogan</label>
+                            <input type="text" wire:model="footerBrandTagline" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm">
+                            @error('footerBrandTagline') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Copyright Line</label>
+                            <input type="text" wire:model="footerCopyright" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm">
+                            @error('footerCopyright') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Brand Statement / Mission Note</label>
+                            <textarea wire:model="footerDescription" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm resize-y"></textarea>
+                            @error('footerDescription') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Regulatory / Esports Disclaimer Notice</label>
+                            <textarea wire:model="footerDisclaimer" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm resize-y"></textarea>
+                            @error('footerDisclaimer') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <h3 class="text-xs font-black uppercase tracking-wider text-slate-300 mb-3 flex items-center gap-2">
+                                <i data-lucide="share-2" class="w-4 h-4 text-cyan-400"></i>
+                                Social & Community Channels
+                            </h3>
+                            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-400 mb-1">Discord</label>
+                                    <input type="url" wire:model="footerDiscord" placeholder="https://discord.gg/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-400 mb-1">X (Twitter)</label>
+                                    <input type="url" wire:model="footerTwitter" placeholder="https://x.com/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-400 mb-1">Twitch</label>
+                                    <input type="url" wire:model="footerTwitch" placeholder="https://twitch.tv/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-400 mb-1">YouTube</label>
+                                    <input type="url" wire:model="footerYoutube" placeholder="https://youtube.com/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white text-xs">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm uppercase tracking-wider px-6 py-3 rounded-lg flex items-center transition-colors">
+                            <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                            Save Footer Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer Links Section -->
+            @if(isset($footerSection))
+                <div class="bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden shadow-sm p-6">
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                        <div>
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <i data-lucide="link" class="w-4 h-4 text-emerald-400"></i>
+                                Footer Navigation Links
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1">Manage links displayed in the public footer (Terms, Privacy, Cookies, Refunds, etc.).</p>
+                        </div>
+                        <button type="button" wire:click="openCreateLandingItemModal({{ $footerSection->id }})" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            Add Footer Link
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
+                                    <th class="p-3">Label</th>
+                                    <th class="p-3">URL / Route</th>
+                                    <th class="p-3">Order</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                @forelse($footerSection->items as $item)
+                                    <tr class="hover:bg-slate-900/50">
+                                        <td class="p-3 font-semibold text-white">{{ $item->label ?: $item->title }}</td>
+                                        <td class="p-3 font-mono text-slate-400 text-[11px]">{{ $item->url ?: '#' }}</td>
+                                        <td class="p-3 text-slate-400">{{ $item->sort_order }}</td>
+                                        <td class="p-3">
+                                            <button type="button" wire:click="toggleLandingItemActive({{ $item->id }})" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $item->is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20' }}">
+                                                {{ $item->is_active ? 'Active' : 'Hidden' }}
+                                            </button>
+                                        </td>
+                                        <td class="p-3 text-right space-x-2">
+                                            <button type="button" wire:click="openEditLandingItemModal({{ $item->id }})" class="text-indigo-400 hover:text-indigo-300 font-bold text-[11px]">Edit</button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="p-4 text-center text-slate-500">No footer links configured yet.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
     @if(in_array($tab, ['games', 'platforms', 'navigation', 'landing'], true) && !($tab === 'games' && $gameRecordTab === 'deleted'))
         <x-admin.deletion-actions :resource="$tab === 'landing' ? 'landing_items' : $tab" />
     @endif

@@ -66,6 +66,7 @@ class LandingPageTest extends TestCase
 
     public function test_landing_page_renders_seeded_content_video_and_games(): void
     {
+        config(['features.landing.version' => 'v3']);
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant',

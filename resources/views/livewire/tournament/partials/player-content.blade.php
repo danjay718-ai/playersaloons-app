@@ -10,10 +10,10 @@
         'PUBLISHED' => 'text-blue-400 border-blue-900/50 bg-blue-950/20',
         'REGISTRATION_OPEN' => 'text-emerald-400 border-emerald-900/50 bg-emerald-950/20 shadow-[0_0_15px_rgba(52,211,153,0.2)]',
         'REGISTRATION_CLOSED' => 'text-amber-400 border-amber-900/50 bg-amber-950/20',
-        'CHECKIN_OPEN' => 'text-fuchsia-400 border-fuchsia-900/50 bg-fuchsia-950/20',
+        'CHECKIN_OPEN' => 'text-lime-400 border-lime-900/50 bg-lime-950/20',
         'CHECKIN_CLOSED' => 'text-rose-400 border-rose-900/50 bg-rose-950/20',
-        'BRACKET_GENERATED' => 'text-indigo-400 border-indigo-900/50 bg-indigo-950/20',
-        'ONGOING' => 'text-violet-400 border-violet-800/50 bg-violet-950/30 animate-pulse shadow-[0_0_20px_rgba(124,77,255,0.25)]',
+        'BRACKET_GENERATED' => 'text-cyan-400 border-cyan-900/50 bg-cyan-950/20',
+        'ONGOING' => 'text-cyan-400 border-cyan-800/50 bg-cyan-950/30 animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.25)]',
         'COMPLETED' => 'text-zinc-400 border-zinc-800 bg-zinc-900/80',
         'CANCELLED' => 'text-red-400 border-red-900/50 bg-red-950/20',
         'REFUNDED' => 'text-orange-400 border-orange-900/50 bg-orange-950/20',
@@ -122,71 +122,66 @@
     @endif
 
     <!-- Tournament Header Banner -->
-    <div class="relative group bg-zinc-900/60 backdrop-blur-2xl border border-zinc-800/80 rounded-[2.5rem] {{ $isPlayerView ? 'p-5 md:p-7' : 'p-8 md:p-12' }} shadow-2xl overflow-hidden">
+    <div class="relative group bg-zinc-900/75 backdrop-blur-2xl border border-cyan-500/25 rounded-3xl {{ $isPlayerView ? 'p-5 md:p-7' : 'p-8 md:p-10' }} shadow-[0_24px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden">
         <!-- Background dynamic glows -->
-        <div class="absolute -top-40 -right-40 w-[30rem] h-[30rem] bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-cyan-500/15 transition-colors duration-700"></div>
-        <div class="absolute -bottom-40 -left-40 w-[30rem] h-[30rem] bg-violet-600/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-violet-600/15 transition-colors duration-700"></div>
+        <div class="absolute -top-40 -right-40 w-[28rem] h-[28rem] bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+        <div class="absolute -bottom-40 -left-40 w-[28rem] h-[28rem] bg-lime-400/10 rounded-full blur-[100px] pointer-events-none"></div>
         
-        <div class="relative z-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10">
-            <div class="space-y-6">
-                <div class="flex flex-wrap items-center gap-3">
-                    <span class="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] bg-cyan-950/40 border border-cyan-800/60 rounded-full px-4 py-1.5 shadow-[0_0_15px_rgba(34,211,238,0.15)]">
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+            <div class="space-y-5 flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <span class="text-[10px] font-black text-cyan-300 uppercase tracking-[0.2em] bg-cyan-950/60 border border-cyan-400/40 rounded-full px-3.5 py-1">
                         {{ $tournament->game->localizedName() }}
                     </span>
-                    <span class="text-[10px] font-black uppercase tracking-[0.2em] border rounded-full px-4 py-1.5 {{ $statusColorClass }}">
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] border rounded-full px-3.5 py-1 {{ $statusColorClass }}">
                         {{ $tournament->status->label() }}
                     </span>
-                    <span class="text-[10px] font-black uppercase tracking-[0.15em] rounded-full border border-zinc-800 bg-zinc-950/60 px-4 py-1.5 text-zinc-400">
-                        {{ app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value() }}
-                    </span>
                     @if($isHeadToHead)
-                        <span class="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] bg-violet-950/30 border border-violet-800/60 rounded-full px-4 py-1.5">{{ __('Head-to-Head • 1v1') }}</span>
+                        <span class="text-[10px] font-black text-lime-300 uppercase tracking-[0.2em] bg-lime-950/40 border border-lime-500/40 rounded-full px-3.5 py-1">{{ __('Head-to-Head • 1v1') }}</span>
                     @endif
                     @if(($tournament->team_size ?? 1) > 1)
-                        <span class="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] bg-violet-950/30 border border-violet-800/60 rounded-full px-4 py-1.5">{{ __(':value1 v :value2 Teams', ['value1' => ($tournament->team_size), 'value2' => ($tournament->team_size)]) }}</span>
+                        <span class="text-[10px] font-black text-lime-300 uppercase tracking-[0.2em] bg-lime-950/40 border border-lime-400/40 rounded-full px-3.5 py-1">{{ __(':value1 v :value2 Teams', ['value1' => ($tournament->team_size), 'value2' => ($tournament->team_size)]) }}</span>
                     @endif
                 </div>
                 
-                <h1 class="{{ $isPlayerView ? 'text-2xl md:text-4xl' : 'text-4xl md:text-7xl' }} font-black font-orbitron tracking-tighter text-white uppercase filter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] leading-tight">
-                    {{ $tournament->name }}
+                <h1 class="{{ $isPlayerView ? 'text-2xl md:text-4xl' : 'text-3xl md:text-5xl' }} font-black font-orbitron tracking-tight text-white uppercase leading-tight">
+                    {{ $tournament->display_name }}@if($tournament->display_name !== $tournament->name)<span class="sr-only"> {{ $tournament->name }}</span>@endif
                 </h1>
                 
-                <div class="flex flex-wrap items-center gap-y-4 gap-x-10">
-                    <div class="space-y-1">
-                        <span class="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">{{ $isPlayerView ? __("Current Winner's Prize") : 'Current Prize Pool' }}</span>
-                        <div class="flex items-center space-x-2">
-                            <i data-lucide="crown" class="w-5 h-5 text-fuchsia-500"></i>
-                            <span class="text-2xl font-black text-fuchsia-500 font-orbitron leading-none">@currencySymbol{{ number_format((float) ($isPlayerView ? ($prizeCalculation['distributions'][1] ?? 0) : $prizeCalculation['prize_pool']), 2) }}</span>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl rounded-2xl border border-white/10 bg-zinc-950/75 p-4">
+                    <div>
+                        <span class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{{ $isPlayerView ? __("Current Winner's Prize") : 'Current Prize Pool' }}</span>
+                        <div class="mt-1 flex items-center space-x-2">
+                            <i data-lucide="crown" class="w-4 h-4 text-lime-300"></i>
+                            <span class="text-xl sm:text-2xl font-black text-lime-300 font-orbitron leading-none">@currencySymbol{{ number_format((float) ($isPlayerView ? ($prizeCalculation['distributions'][1] ?? 0) : $prizeCalculation['prize_pool']), 2) }}</span>
                         </div>
                     </div>
-                    <div class="h-10 w-[1px] bg-zinc-800/60 hidden sm:block"></div>
-                    <div class="space-y-1">
-                        <span class="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Entry Fee</span>
-                        <div class="flex items-center space-x-2">
-                            <i data-lucide="zap" class="w-5 h-5 text-cyan-400"></i>
-                            <span class="text-xl font-black text-white font-orbitron leading-none">{{ (float)$tournament->entry_fee > 0 ? \App\Shared\Support\Currency::symbol().number_format((float)$tournament->entry_fee, 2) : 'FREE' }}</span>
+                    <div>
+                        <span class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Entry Fee</span>
+                        <div class="mt-1 flex items-center space-x-2">
+                            <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+                            <span class="text-lg sm:text-xl font-black text-white font-orbitron leading-none">{{ (float)$tournament->entry_fee > 0 ? \App\Shared\Support\Currency::symbol().number_format((float)$tournament->entry_fee, 2) : 'FREE' }}</span>
                         </div>
                     </div>
-                    <div class="h-10 w-[1px] bg-zinc-800/60 hidden sm:block"></div>
-                    <div class="space-y-1">
-                        <span class="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Confirmed Slots</span>
-                        <div class="flex items-center space-x-2">
-                            <i data-lucide="users" class="w-5 h-5 text-violet-500"></i>
-                            <span class="text-xl font-black text-white font-orbitron leading-none">{{ $tournament->registrations_count }} <span class="text-sm text-zinc-600">/</span> {{ $tournament->max_participants }}</span>
+                    <div class="col-span-2 sm:col-span-1">
+                        <span class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Confirmed Slots</span>
+                        <div class="mt-1 flex items-center space-x-2">
+                            <i data-lucide="users" class="w-4 h-4 text-cyan-300"></i>
+                            <span class="text-lg sm:text-xl font-black text-white font-orbitron leading-none">{{ $tournament->registrations_count }} <span class="text-sm text-zinc-500">/</span> {{ $tournament->max_participants }}</span>
                         </div>
                     </div>
                 </div>
                 @if((int) $tournament->workflow_version === 2)
-                    <p class="-mt-3 text-xs text-zinc-500">{{ $isHeadToHead ? __('Two players compete in one match. Prizes are determined by PlayerSaloons and awarded based on match results according to the predefined prize structure.') : __('Estimated prize until entries close. Final prize amounts may be adjusted if the tournament starts below capacity. Prizes are set and administered by PlayerSaloons.') }}</p>
+                    <p class="text-xs text-zinc-400">{{ $isHeadToHead ? __('Two players compete in one match. Prizes are determined by PlayerSaloons and awarded based on match results according to the predefined prize structure.') : __('Estimated prize until entries close. Final prize amounts may be adjusted if the tournament starts below capacity. Prizes are set and administered by PlayerSaloons.') }}</p>
                 @else
-                    <p class="-mt-3 text-xs text-zinc-500">{{ __('Based on :value1 confirmed of :value2 players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.', ['value1' => ($prizeCalculation['confirmed_count']), 'value2' => ($tournament->max_participants)]) }}</p>
+                    <p class="text-xs text-zinc-400">{{ __('Based on :value1 confirmed of :value2 players. At minimum attendance, prizes are 50% of the advertised amount and increase up to 100% as slots fill.', ['value1' => ($prizeCalculation['confirmed_count']), 'value2' => ($tournament->max_participants)]) }}</p>
                 @endif
             </div>
 
             <!-- Main Action Area -->
             <div class="flex-shrink-0 min-w-[280px] space-y-3">
                 @guest
-                    <a href="/login" wire:navigate class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(124,77,255,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
+                    <a href="/login" wire:navigate class="w-full flex items-center justify-center space-x-3 bg-[#c6ff3d] hover:bg-[#d5ff66] text-[#05080f] font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
                         <i data-lucide="log-in" class="w-5 h-5"></i>
                         <span>Sign in to Register</span>
                     </a>
@@ -205,12 +200,12 @@
                                 : $currentMatch->status->label();
                         @endphp
                         @if((int) $tournament->workflow_version === 2)
-                            <button type="button" wire:click="openMatch('{{ $currentMatch->uuid }}')" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
+                            <button type="button" wire:click="openMatch('{{ $currentMatch->uuid }}')" class="w-full flex items-center justify-center space-x-3 bg-[#c6ff3d] hover:bg-[#d5ff66] text-[#05080f] font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
                                 <i data-lucide="clipboard-check" class="w-5 h-5"></i>
                                 <span>{{ $currentMatchLabel }}</span>
                             </button>
                         @else
-                            <a href="/matches/{{ $currentMatch->uuid }}" wire:navigate class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
+                            <a href="/matches/{{ $currentMatch->uuid }}" wire:navigate class="w-full flex items-center justify-center space-x-3 bg-[#c6ff3d] hover:bg-[#d5ff66] text-[#05080f] font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.16em] transform hover:scale-[1.02] active:scale-[0.98]">
                                 <i data-lucide="swords" class="w-5 h-5"></i>
                                 <span>Open Match Room &amp; Report Result</span>
                             </a>
@@ -282,7 +277,7 @@
                         @else
                             @if(Auth::user()->hasRole('PLAYER'))
                                 @if(($tournament->team_size ?? 1) > 1)
-                                    <button type="button" @click="openJoinModal()" wire:loading.attr="disabled" wire:target="prepareRegistrationPrompt" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
+                                    <button type="button" @click="openJoinModal()" wire:loading.attr="disabled" wire:target="prepareRegistrationPrompt" class="w-full flex items-center justify-center space-x-3 bg-[#c6ff3d] hover:bg-[#d5ff66] text-[#05080f] font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(198,255,61,0.35)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
                                         <i data-lucide="{{ $userTournamentTeam || $userSquad ? 'users' : 'user-plus' }}" class="w-5 h-5"></i>
                                         <span>{{ $userTournamentTeam && (int) $userTournamentTeam->leader_user_id === (int) Auth::id() ? 'Register Team' : ($userSquad ? 'Create Team From Squad' : ($isSearchingForTeam ? 'Still Finding a Team' : 'Find a Team')) }}</span>
                                     </button>
@@ -295,7 +290,7 @@
                                         <p class="text-center text-[10px] text-zinc-500 font-medium">Players are grouped for this tournament only. No charge until the team is complete.</p>
                                     @endif
                                 @else
-                                    <button type="button" @click="openJoinModal()" wire:loading.attr="disabled" wire:target="prepareRegistrationPrompt" class="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
+                                    <button type="button" @click="openJoinModal()" wire:loading.attr="disabled" wire:target="prepareRegistrationPrompt" class="w-full flex items-center justify-center space-x-3 bg-[#c6ff3d] hover:bg-[#d5ff66] text-[#05080f] font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(198,255,61,0.35)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
                                         <i data-lucide="plus-circle" class="w-5 h-5"></i>
                                         <span>{{ $joinLabel }}</span>
                                     </button>
@@ -331,12 +326,12 @@
     </div>
 
     @if($isHeadToHead && $isRegistered && Auth::user()?->hasRole('PLAYER') && $tournament->status === \App\Shared\Enums\TournamentStatus::COMPLETED)
-        <section data-head-to-head-review class="flex flex-col gap-4 rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <section data-head-to-head-review class="flex flex-col gap-4 rounded-2xl border border-lime-500/30 bg-lime-500/5 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="text-sm font-bold text-white">{{ __('How was your Head-to-Head?') }}</h2>
                 <p class="mt-1 text-xs text-zinc-400">{{ __('Share your experience. Reviews are checked before appearing publicly.') }}</p>
             </div>
-            <a href="{{ route('reviews') }}" wire:navigate class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-fuchsia-600 px-5 py-3 text-xs font-bold text-white transition hover:bg-fuchsia-500">
+            <a href="{{ route('reviews') }}" wire:navigate class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-lime-600 px-5 py-3 text-xs font-bold text-white transition hover:bg-lime-500">
                 <i data-lucide="star" class="h-4 w-4" aria-hidden="true"></i>
                 {{ __('Leave a review') }}
             </a>
@@ -442,7 +437,7 @@
             <button
                 @if(!$isRestrictedTab || $canViewRestricted)
                     @click="selectTab('{{ $tab['id'] }}')"
-                    :class="activeTab === '{{ $tab['id'] }}' ? 'border-violet-400 bg-violet-600 text-white shadow-[0_0_22px_rgba(124,58,237,.35)]' : 'border-transparent text-zinc-500 hover:border-zinc-700 hover:bg-zinc-900 hover:text-zinc-200'"
+                    :class="activeTab === '{{ $tab['id'] }}' ? 'border-cyan-400 bg-cyan-600 text-white shadow-[0_0_22px_rgba(34,211,238,.35)]' : 'border-transparent text-zinc-500 hover:border-zinc-700 hover:bg-zinc-900 hover:text-zinc-200'"
                 @else
                     disabled title="Only competition participants can view this section"
                 @endif
@@ -463,200 +458,133 @@
         </div>
 
         <!-- ===== OVERVIEW TAB ===== -->
-        <div data-tournament-content="overview" x-show="activeTab === 'overview'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            <div class="lg:col-span-2 space-y-10">
+        <div data-tournament-content="overview" x-show="activeTab === 'overview'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-8 space-y-6">
 
-                <!-- Mission / Description -->
-                <section class="space-y-6">
-                    <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
-                        <span class="w-1.5 h-8 bg-cyan-500 rounded-full"></span>
-                        <span>{{ $isHeadToHead ? __('About this Head-to-Head') : __('ABOUT THIS TOURNAMENT') }}</span>
-                    </h2>
-                    <div class="decorated-card tournament-overview-card bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8 space-y-6">
-                        <i data-lucide="trophy" aria-hidden="true" class="ui-card-watermark"></i>
-                        @if($tournament->description)
-                            <x-ui.collapsible-rich-text :content="$tournament->description" :threshold="500" :preview-height="220" />
-                        @else
-                            <p class="text-zinc-500 italic">No description provided.</p>
+                <!-- Essential Match Specs + Description -->
+                <section class="rounded-3xl border border-cyan-500/20 bg-zinc-900/65 p-6 sm:p-7 space-y-6">
+                    <div class="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+                        <div>
+                            <p class="gr-eyebrow !mb-1"><span class="gr-slash">//</span> {{ __('Competition Brief') }}</p>
+                            <h2 class="font-orbitron text-lg sm:text-xl font-black uppercase text-white">
+                                {{ $isHeadToHead ? __('About this Head-to-Head') : __('Overview & Format') }}
+                            </h2>
+                        </div>
+                        @if($tournament->frequency && $tournament->frequency !== 'one-time')
+                            <span class="rounded-full border border-cyan-400/35 bg-cyan-950/50 px-3 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                                {{ ucfirst($tournament->frequency) }}
+                            </span>
                         @endif
+                    </div>
 
-                        <!-- Key stats grid -->
-                        <div class="grid grid-cols-1 gap-3 pt-4 border-t border-zinc-800/60 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-                            @php
-                                $format = $isHeadToHead ? __('1v1 • Two players') : ($tournament->template?->format ?? 'Single Elimination');
-                            @endphp
-                            <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
-                                <div class="flex items-center space-x-2 text-cyan-400">
-                                    <i data-lucide="target" class="w-4 h-4"></i>
-                                    <span class="text-[10px] font-black uppercase tracking-widest">Format</span>
-                                </div>
-                                <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $format }}</span>
-                            </div>
-
-                            <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
-                                <div class="flex items-center space-x-2 text-fuchsia-500">
-                                    <i data-lucide="award" class="w-4 h-4"></i>
-                                    <span class="text-[10px] font-black uppercase tracking-widest">1st Prize</span>
-                                </div>
-                                <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">
-                                    @php
-                                        $firstPrize = $displayPrizeCalculation['first'] ?? $prizeCalculation['distributions'][1] ?? '0.00';
-                                    @endphp
-                                    @currencySymbol{{ number_format((float) $firstPrize, 2) }}
-                                    @if($isV2Registration)
-                                        <span class="text-[9px] text-zinc-600 tracking-normal font-sans">(full est.)</span>
-                                    @endif
-                                </span>
-                            </div>
-
-                            @php
-                                $secondPrize = $displayPrizeCalculation['second'] ?? $prizeCalculation['distributions'][2] ?? '0.00';
-                            @endphp
-                            @if((float) $secondPrize > 0)
-                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
-                                    <div class="flex items-center space-x-2 text-zinc-400">
-                                        <i data-lucide="medal" class="w-4 h-4"></i>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">2nd Prize</span>
-                                    </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">@currencySymbol{{ number_format((float) $secondPrize, 2) }}</span>
-                                </div>
-                            @endif
-
-                            @if(isset($prizeCalculation['distributions'][3]))
-                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
-                                    <div class="flex items-center space-x-2 text-orange-400">
-                                        <i data-lucide="trophy" class="w-4 h-4"></i>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">3rd Prize</span>
-                                    </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">@currencySymbol{{ number_format((float)$prizeCalculation['distributions'][3], 2) }}</span>
-                                </div>
-                            @endif
-
-                            @if($tournament->team_size > 1)
-                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
-                                    <div class="flex items-center space-x-2 text-violet-400">
-                                        <i data-lucide="users" class="w-4 h-4"></i>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">Team Size</span>
-                                    </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ __(':value1 Players', ['value1' => ($tournament->team_size)]) }}</span>
-                                </div>
-                            @endif
-
-                            @if($tournament->platform)
-                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
-                                    <div class="flex items-center space-x-2 text-emerald-400">
-                                        <i data-lucide="monitor" class="w-4 h-4"></i>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">Platform</span>
-                                    </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ $tournament->platform_names ?: '—' }}</span>
-                                </div>
-                            @endif
-
-                            @if($tournament->winning_points)
-                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
-                                    <div class="flex items-center space-x-2 text-amber-400">
-                                        <i data-lucide="star" class="w-4 h-4"></i>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">Win Points</span>
-                                    </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ __('+:value1 pts', ['value1' => ($tournament->winning_points)]) }}</span>
-                                </div>
-                            @endif
-
-                            @if($tournament->waiting_time)
-                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
-                                    <div class="flex items-center space-x-2 text-rose-400">
-                                        <i data-lucide="clock" class="w-4 h-4"></i>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">Match Timeout</span>
-                                    </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ __(':value1 min', ['value1' => ($tournament->waiting_time)]) }}</span>
-                                </div>
-                            @endif
-
-                            @if($tournament->frequency && $tournament->frequency !== 'one-time')
-                                <div class="min-w-0 bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-3 space-y-2 sm:p-4">
-                                    <div class="flex items-center space-x-2 text-indigo-400">
-                                        <i data-lucide="repeat" class="w-4 h-4"></i>
-                                        <span class="text-[10px] font-black uppercase tracking-widest">Frequency</span>
-                                    </div>
-                                    <span class="block break-words text-sm font-bold text-white uppercase font-orbitron sm:text-base">{{ ucfirst($tournament->frequency) }}</span>
-                                </div>
-                            @endif
+                    <!-- Streamlined 4-Card Essential Specs Row -->
+                    @php
+                        $format = $isHeadToHead ? __('1v1 • Two players') : ($tournament->template?->format ?? 'Single Elimination');
+                        $firstPrize = $displayPrizeCalculation['first'] ?? $prizeCalculation['distributions'][1] ?? '0.00';
+                        $secondPrize = $displayPrizeCalculation['second'] ?? $prizeCalculation['distributions'][2] ?? '0.00';
+                    @endphp
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div class="rounded-2xl border border-white/10 bg-zinc-950/70 p-3.5">
+                            <span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-500">Format</span>
+                            <span class="mt-1 block font-orbitron text-xs sm:text-sm font-black uppercase text-white">{{ $format }}</span>
                         </div>
 
-                        @if($isV2Registration && $isHeadToHead)
-                            <div class="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-800/50 bg-cyan-950/20 p-4 text-xs leading-relaxed text-cyan-100/75">
-                                <i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0 text-cyan-400"></i>
-                                <p>{{ __('Both players must register before the Head-to-Head can start. Play your match, then use Submit Result here to report Won, Lost or Draw. Conflicting results go to admin review.') }}</p>
-                            </div>
-                        @endif
+                        <div class="rounded-2xl border border-white/10 bg-zinc-950/70 p-3.5">
+                            <span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-500">1st Prize</span>
+                            <span class="mt-1 block font-orbitron text-xs sm:text-sm font-black text-lime-300">
+                                @currencySymbol{{ number_format((float) $firstPrize, 2) }}
+                                @if((float) $secondPrize > 0)
+                                    <span class="block text-[10px] font-sans font-semibold text-zinc-400">2nd: @currencySymbol{{ number_format((float) $secondPrize, 2) }}</span>
+                                @endif
+                            </span>
+                        </div>
+
+                        <div class="rounded-2xl border border-white/10 bg-zinc-950/70 p-3.5">
+                            <span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-500">Platform</span>
+                            <span class="mt-1 block truncate font-orbitron text-xs sm:text-sm font-black uppercase text-cyan-300" title="{{ $tournament->platform_names ?: 'Any' }}">{{ $tournament->platform_names ?: 'Any' }}</span>
+                        </div>
+
+                        <div class="rounded-2xl border border-white/10 bg-zinc-950/70 p-3.5">
+                            <span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-500">Result Window</span>
+                            <span class="mt-1 block font-orbitron text-xs sm:text-sm font-black uppercase text-amber-300">
+                                {{ $tournament->waiting_result_time ? __(':value1 min', ['value1' => $tournament->waiting_result_time]) : ($tournament->waiting_time ? __(':value1 min', ['value1' => $tournament->waiting_time]) : __('Standard')) }}
+                            </span>
+                        </div>
                     </div>
+
+                    @if($tournament->description)
+                        <div class="border-t border-white/10 pt-4 text-sm text-zinc-300">
+                            <x-ui.collapsible-rich-text :content="$tournament->description" :threshold="500" :preview-height="200" />
+                        </div>
+                    @endif
+
+                    @if($isV2Registration && $isHeadToHead)
+                        <div class="flex items-start gap-3 rounded-2xl border border-cyan-500/30 bg-cyan-950/25 p-4 text-xs leading-relaxed text-cyan-100">
+                            <i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0 text-cyan-400"></i>
+                            <p>{{ __('Both players must register before the Head-to-Head can start. Play your match, then use Submit Result here to report Won, Lost or Draw. Conflicting results go to admin review.') }}</p>
+                        </div>
+                    @endif
                 </section>
 
-                <!-- Rules Section -->
-                <section class="space-y-6">
-                    <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
-                        <span class="w-1.5 h-8 bg-fuchsia-500 rounded-full"></span>
-                        <span>TOURNAMENT RULES</span>
-                    </h2>
-                    <div class="decorated-card tournament-overview-card bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
-                        <i data-lucide="scroll-text" aria-hidden="true" class="ui-card-watermark"></i>
-                        @if($tournament->rules)
-                            <x-ui.collapsible-rich-text :content="$tournament->rules" :preview-height="420" :scrollable="true" scroll-label="Tournament rules" />
-                        @else
-                            <!-- Default rules when none specified -->
-                            <ul class="space-y-4">
-                                @foreach([
-                                    $isHeadToHead ? __('Both players must register before the Head-to-Head can start.') : 'Tournament entries lock when registration closes.',
-                                    'Standard competitive server parameters only.',
-                                    'Instant result reporting required post-engagement.',
-                                    'Disputes necessitate high-definition screenshot evidence.',
-                                    'Zero tolerance for unsportsmanlike conduct.',
-                                ] as $rule)
-                                    <li class="flex items-start space-x-4 group">
-                                        <div class="w-6 h-6 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center mt-0.5 group-hover:border-fuchsia-500 transition-colors duration-300">
-                                            <i data-lucide="check" class="w-3.5 h-3.5 text-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                                        </div>
-                                        <span class="text-zinc-400 group-hover:text-zinc-200 transition-colors font-medium">{{ $rule }}</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                            <p class="text-[10px] text-zinc-700 mt-4 font-medium italic">* No specific rules set by organizer — standard platform rules apply.</p>
-                        @endif
+                <!-- Compact Rules Section -->
+                <section class="rounded-3xl border border-cyan-500/20 bg-zinc-900/65 p-6 sm:p-7 space-y-4">
+                    <div>
+                        <p class="gr-eyebrow !mb-1"><span class="gr-slash">//</span> {{ __('Fair Play') }}</p>
+                        <h2 class="font-orbitron text-lg sm:text-xl font-black uppercase text-white">Tournament Rules</h2>
                     </div>
+                    @if($tournament->rules)
+                        <x-ui.collapsible-rich-text :content="$tournament->rules" :preview-height="320" :scrollable="true" scroll-label="Tournament rules" />
+                    @else
+                        <ul class="grid gap-2.5 sm:grid-cols-2">
+                            @foreach([
+                                $isHeadToHead ? __('Both players must register before the Head-to-Head can start.') : 'Tournament entries lock when registration closes.',
+                                'Standard competitive server parameters only.',
+                                'Instant result reporting required post-engagement.',
+                                'Disputes necessitate high-definition screenshot evidence.',
+                            ] as $rule)
+                                <li class="flex items-start gap-3 rounded-xl border border-white/5 bg-zinc-950/60 p-3 text-xs text-zinc-300">
+                                    <i data-lucide="check-circle-2" class="mt-0.5 h-4 w-4 shrink-0 text-lime-300"></i>
+                                    <span>{{ $rule }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
                 </section>
             </div>
 
-            <!-- Timeline Sidebar -->
-            <div class="space-y-10">
-                <!-- Chronology -->
-                <section class="space-y-6">
-                    <h2 class="text-xl font-black font-orbitron tracking-widest text-white">CHRONOLOGY</h2>
-                    <div class="decorated-card tournament-overview-card relative bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8 space-y-8 overflow-hidden">
-                        <i data-lucide="clock-3" aria-hidden="true" class="ui-card-watermark"></i>
-                        <div class="absolute top-12 bottom-12 left-11 w-px bg-gradient-to-b from-cyan-500 via-violet-500 to-fuchsia-500 opacity-20"></div>
-                        
+            <!-- Simplified 3-Step Schedule Sidebar -->
+            <div class="lg:col-span-4">
+                <section class="rounded-3xl border border-cyan-500/20 bg-zinc-900/65 p-6 sm:p-7 space-y-5">
+                    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                        <div>
+                            <p class="gr-eyebrow !mb-1"><span class="gr-slash">//</span> {{ __('Schedule') }}</p>
+                            <h2 class="font-orbitron text-lg font-black uppercase text-white">Match Timeline</h2>
+                        </div>
+                        <span class="rounded-full border border-white/10 bg-zinc-950 px-3 py-1 font-mono text-[10px] font-bold text-zinc-400">
+                            {{ app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value() }}
+                        </span>
+                    </div>
+
+                    <div class="relative space-y-5 pl-3">
                         @foreach([
-                            ['icon' => 'calendar', 'color' => 'text-cyan-400 border-cyan-800/50', 'label' => 'Registration Opens', 'time' => $tournament->registration_open_at],
-                            ['icon' => 'calendar-x', 'color' => 'text-rose-400 border-rose-800/50', 'label' => 'Registration Ends', 'time' => (int) $tournament->workflow_version === 2 ? $tournament->start_at : $tournament->registration_close_at],
-                            ['icon' => 'shield-check', 'color' => 'text-fuchsia-400 border-fuchsia-800/50', 'label' => 'Entries Lock', 'time' => (int) $tournament->workflow_version === 2 ? $tournament->start_at : $tournament->registration_close_at],
-                            ['icon' => 'zap', 'color' => 'text-emerald-400 border-emerald-800/50', 'label' => __('First Match'), 'time' => $tournament->start_at],
-                            ['icon' => 'flag', 'color' => 'text-amber-400 border-amber-800/50', 'label' => 'Estimated End', 'time' => $tournament->end_at],
+                            ['icon' => 'calendar', 'color' => 'text-cyan-300 border-cyan-400/40', 'label' => 'Registration Opens', 'time' => $tournament->registration_open_at],
+                            ['icon' => 'zap', 'color' => 'text-lime-300 border-lime-400/50', 'label' => __('First Match'), 'time' => $tournament->start_at],
+                            ['icon' => 'flag', 'color' => 'text-amber-300 border-amber-400/40', 'label' => 'Estimated End', 'time' => $tournament->end_at],
                         ] as $item)
                             @php
                                 $isPast = $item['time'] && \Illuminate\Support\Carbon::parse($item['time'])->isPast();
                             @endphp
-                            <div class="flex items-start space-x-5 relative z-10 group">
-                                <div class="w-7 h-7 rounded-full {{ $isPast ? 'bg-zinc-900 border-zinc-700' : 'bg-zinc-950 border-2 border-zinc-800' }} flex items-center justify-center shrink-0 group-hover:border-zinc-400 transition-colors {{ $isPast ? 'opacity-50' : '' }}">
-                                    <i data-lucide="{{ $item['icon'] }}" class="w-3.5 h-3.5 {{ $item['color'] }} {{ $isPast ? 'opacity-50' : '' }}" style="border-color: unset;"></i>
+                            <div class="flex items-start gap-3.5 relative z-10">
+                                <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border bg-zinc-950 {{ $item['color'] }} {{ $isPast ? 'opacity-50' : '' }}">
+                                    <i data-lucide="{{ $item['icon'] }}" class="h-4 w-4"></i>
                                 </div>
-                                <div class="space-y-1 min-w-0">
-                                    <span class="block text-[10px] font-black {{ $isPast ? 'text-zinc-700' : 'text-zinc-500' }} uppercase tracking-widest">{{ $item['label'] }}</span>
-                                    <span class="text-sm font-bold {{ $isPast ? 'text-zinc-600 line-through' : 'text-zinc-300' }}">
-                                        {{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, Y') : 'TBD' }}
-                                        <span class="text-xs text-zinc-500 ml-1 opacity-60">{{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('h:i A T') : '' }}</span>
+                                <div class="min-w-0 flex-1">
+                                    <span class="block text-[10px] font-black uppercase tracking-widest {{ $isPast ? 'text-zinc-600' : 'text-zinc-400' }}">{{ $item['label'] }}</span>
+                                    <span class="mt-0.5 block font-orbitron text-xs font-bold {{ $isPast ? 'text-zinc-500 line-through' : 'text-white' }}">
+                                        {{ $item['time'] ? \Illuminate\Support\Carbon::parse($item['time'])->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, Y · h:i A') : 'TBD' }}
                                     </span>
                                     @if($item['time'] && !$isPast)
-                                        <span class="text-[10px] text-zinc-600 font-medium">{{ \Illuminate\Support\Carbon::parse($item['time'])->diffForHumans() }}</span>
+                                        <span class="mt-0.5 block text-[11px] font-semibold text-cyan-300">{{ \Illuminate\Support\Carbon::parse($item['time'])->diffForHumans() }}</span>
                                     @endif
                                 </div>
                             </div>
@@ -664,37 +592,33 @@
                     </div>
                 </section>
 
-                <!-- Quick Info -->
-                <section class="space-y-4">
-                    <h2 class="text-xl font-black font-orbitron tracking-widest text-white">QUICK INFO</h2>
-                    <div class="decorated-card tournament-overview-card bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-6 space-y-4">
-                        <i data-lucide="info" aria-hidden="true" class="ui-card-watermark"></i>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-zinc-600 font-medium">Minimum Participants</span>
-                            <span class="text-zinc-300 font-bold">{{ $tournament->min_participants }}</span>
+                <!-- Quick Info Specs -->
+                <section class="mt-6 rounded-3xl border border-cyan-500/20 bg-zinc-900/65 p-6 sm:p-7 space-y-4">
+                    <h2 class="font-orbitron text-sm font-black uppercase tracking-wider text-white">QUICK INFO</h2>
+                    <div class="space-y-3 divide-y divide-white/5 text-xs">
+                        <div class="flex items-center justify-between pt-2">
+                            <span class="text-zinc-400 font-medium">Minimum Participants</span>
+                            <span class="text-white font-bold">{{ $tournament->min_participants }}</span>
                         </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-zinc-600 font-medium">{{ $isHeadToHead ? __('Maximum Players') : ((int) $tournament->workflow_version === 2 ? 'Maximum Teams' : 'Max Players') }}</span>
-                                <span class="text-zinc-300 font-bold">{{ $tournament->max_participants }} {{ ! $isHeadToHead && (int) $tournament->workflow_version === 2 ? 'teams' : __('players') }}</span>
+                        <div class="flex items-center justify-between pt-2">
+                            <span class="text-zinc-400 font-medium">{{ $isHeadToHead ? __('Maximum Players') : ((int) $tournament->workflow_version === 2 ? 'Maximum Teams' : 'Max Players') }}</span>
+                            <span class="text-white font-bold">{{ $tournament->max_participants }} {{ ! $isHeadToHead && (int) $tournament->workflow_version === 2 ? 'teams' : __('players') }}</span>
                         </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-zinc-600 font-medium">Registered</span>
-                            <span class="text-emerald-400 font-bold">{{ $tournament->registrations_count }}</span>
+                        <div class="flex items-center justify-between pt-2">
+                            <span class="text-zinc-400 font-medium">Registered</span>
+                            <span class="text-lime-300 font-bold">{{ $tournament->registrations_count }}</span>
                         </div>
                         @if($tournament->entry_fee > 0)
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-zinc-600 font-medium">Entry Fee</span>
-                                <span class="text-cyan-400 font-bold">@currencySymbol{{ number_format((float)$tournament->entry_fee, 2) }}</span>
+                            <div class="flex items-center justify-between pt-2">
+                                <span class="text-zinc-400 font-medium">Entry Fee</span>
+                                <span class="text-cyan-300 font-bold">@currencySymbol{{ number_format((float)$tournament->entry_fee, 2) }}</span>
                             </div>
                         @endif
                         @if($tournament->waiting_result_time)
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-zinc-600 font-medium">Result Timeout</span>
-                                <span class="text-zinc-300 font-bold">{{ __(':value1 min', ['value1' => ($tournament->waiting_result_time)]) }}</span>
+                            <div class="flex items-center justify-between pt-2">
+                                <span class="text-zinc-400 font-medium">Result Timeout</span>
+                                <span class="text-amber-300 font-bold">{{ $tournament->waiting_result_time }} min</span>
                             </div>
-                        @endif
-                        @if((int) $tournament->workflow_version === 2)
-                            <div class="flex items-center justify-between text-sm"><span class="text-zinc-600 font-medium">Round Duration</span><span class="text-zinc-300 font-bold">{{ $tournament->round_duration_seconds ? \Carbon\CarbonInterval::seconds($tournament->round_duration_seconds)->cascade()->forHumans(['short' => true]) : 'No timer' }}</span></div>
                         @endif
                     </div>
                 </section>
@@ -732,7 +656,7 @@
                             $memberAvatar = $reg->team?->logo_url ?: $reg->user?->profile?->avatar_url;
                             $memberInitials = strtoupper(substr($memberUsername ?: $memberName, 0, 2));
                         @endphp
-                        <div class="group bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-2xl p-5 flex items-center space-x-4 hover:border-violet-500/50 hover:bg-violet-950/10 transition-all duration-300">
+                        <div class="group bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-2xl p-5 flex items-center space-x-4 hover:border-cyan-500/50 hover:bg-cyan-950/10 transition-all duration-300">
                             <div class="w-12 h-12 bg-zinc-950 rounded-xl border border-zinc-800 flex items-center justify-center text-zinc-300 font-black text-xs overflow-hidden shrink-0">
                                 @if($memberAvatar)
                                     <img src="{{ $memberAvatar }}" alt="{{ $memberName }}" class="w-full h-full object-cover" loading="lazy">
@@ -814,8 +738,8 @@
                     <h3 class="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4 border-t border-zinc-800/60 pt-6">{{ __('Registered Teams (:value1)', ['value1' => ($formedTeams->count())]) }}</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @foreach($formedTeams as $reg)
-                            <div class="bg-zinc-950/60 border border-violet-800/30 rounded-2xl p-4 flex items-center space-x-3 hover:border-violet-600/50 transition-colors">
-                                <div class="w-10 h-10 bg-violet-950/30 rounded-xl border border-violet-800/30 flex items-center justify-center text-violet-200 font-black text-[10px] overflow-hidden shrink-0">
+                            <div class="bg-zinc-950/60 border border-cyan-800/30 rounded-2xl p-4 flex items-center space-x-3 hover:border-cyan-600/50 transition-colors">
+                                <div class="w-10 h-10 bg-cyan-950/30 rounded-xl border border-cyan-800/30 flex items-center justify-center text-cyan-200 font-black text-[10px] overflow-hidden shrink-0">
                                     @if($reg->team?->logo_url)
                                         <img src="{{ $reg->team->logo_url }}" alt="{{ $reg->team->name }}" class="w-full h-full object-cover" loading="lazy">
                                     @elseif($reg->user?->profile?->avatar_url)
@@ -826,7 +750,7 @@
                                 </div>
                                 <div class="truncate">
                                     <span class="block text-sm font-bold text-white truncate">{{ $reg->team->name }}</span>
-                                    <span class="block text-[10px] text-violet-500 font-bold uppercase tracking-widest">{{ __('Captain: :value1', ['value1' => ($reg->user->username)]) }}</span>
+                                    <span class="block text-[10px] text-cyan-500 font-bold uppercase tracking-widest">{{ __('Captain: :value1', ['value1' => ($reg->user->username)]) }}</span>
                                 </div>
                             </div>
                         @endforeach
@@ -839,10 +763,10 @@
         <!-- ===== FIXTURES & BRACKET TAB ===== -->
         <div x-show="activeTab === 'matches'" x-cloak style="display:none;" class="rounded-2xl border border-zinc-800/70 bg-zinc-900/30 p-2">
             <div class="grid grid-cols-2 gap-2">
-                <button type="button" @click="selectBracketView('bracket')" :class="bracketView === 'bracket' ? 'bg-violet-600 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white'" class="rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition">
+                <button type="button" @click="selectBracketView('bracket')" :class="bracketView === 'bracket' ? 'bg-cyan-600 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white'" class="rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition">
                     Bracket
                 </button>
-                <button type="button" @click="selectBracketView('fixtures')" :class="bracketView === 'fixtures' ? 'bg-indigo-600 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white'" class="rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition">
+                <button type="button" @click="selectBracketView('fixtures')" :class="bracketView === 'fixtures' ? 'bg-cyan-600 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white'" class="rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition">
                     Fixtures
                 </button>
             </div>
@@ -851,7 +775,7 @@
         <div data-tournament-content="matches-fixtures" x-show="activeTab === 'matches' && bracketView === 'fixtures'" x-cloak style="display:none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
             <div class="flex items-center justify-between">
                 <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
-                    <span class="w-1.5 h-8 bg-indigo-500 rounded-full"></span>
+                    <span class="w-1.5 h-8 bg-cyan-500 rounded-full"></span>
                     <span>MATCH FIXTURES</span>
                 </h2>
                 <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{{ __(':value1 matches total', ['value1' => ($allMatches->count())]) }}</span>
@@ -902,7 +826,7 @@
                                             <div class="hidden sm:flex flex-col items-center w-16 shrink-0 text-center">
                                                 <span class="text-[9px] font-black text-zinc-700 uppercase tracking-widest">Match</span>
                                                 <span class="text-lg font-black font-orbitron text-zinc-600">#{{ $loop->iteration }}</span>
-                                                <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full mt-1 {{ $isOngoing ? 'text-cyan-400 bg-cyan-950/40' : ($isCompleted ? 'text-zinc-600 bg-zinc-900' : 'text-fuchsia-400 bg-fuchsia-950/30') }}">
+                                                <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full mt-1 {{ $isOngoing ? 'text-cyan-400 bg-cyan-950/40' : ($isCompleted ? 'text-zinc-600 bg-zinc-900' : 'text-lime-400 bg-lime-950/30') }}">
                                                     {{ $isOngoing ? 'Live' : ($isCompleted ? 'Done' : 'Soon') }}
                                                 </span>
                                             </div>
@@ -982,7 +906,7 @@
             @if($rounds->isNotEmpty())
                 <div class="flex items-center justify-between">
                     <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
-                        <span class="w-1.5 h-8 bg-violet-500 rounded-full"></span>
+                        <span class="w-1.5 h-8 bg-cyan-500 rounded-full"></span>
                         <span>{{ $isHeadToHead ? __('Head-to-Head Match') : __('TOURNAMENT BRACKET') }}</span>
                     </h2>
                     <span class="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{{ __(':value1 rounds', ['value1' => ($rounds->count())]) }}</span>
@@ -1007,7 +931,7 @@
                             <div class="flex flex-col" style="min-width: 220px; width: 220px;">
                                 <!-- Round header -->
                                 <div class="relative mb-6 mx-3">
-                                    <div class="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 rounded-xl blur opacity-60"></div>
+                                    <div class="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-cyan-500/20 rounded-xl blur opacity-60"></div>
                                     <div class="relative text-center bg-zinc-950 border border-zinc-800/80 rounded-xl py-2.5 px-3 shadow-lg">
                                         <span class="font-orbitron font-black text-[9px] uppercase tracking-[0.25em] text-white">{{ $roundLabel }}</span>
                                     </div>
@@ -1058,7 +982,7 @@
                                                     <!-- Match header -->
                                                     <div class="flex items-center justify-between px-3 py-2 border-b border-zinc-800/50 bg-zinc-950/50">
                                                         <span class="text-[8px] font-black text-zinc-700 uppercase tracking-widest">#{{ $mIdx + 1 }}</span>
-                                                        <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full {{ $isMatchOngoing ? 'text-cyan-400 bg-cyan-950/50' : ($isMatchCompleted ? 'text-emerald-400 bg-emerald-950/30' : ($isMatchDisputed ? 'text-red-400 bg-red-950/30' : 'text-fuchsia-500 bg-fuchsia-950/30')) }}">
+                                                        <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full {{ $isMatchOngoing ? 'text-cyan-400 bg-cyan-950/50' : ($isMatchCompleted ? 'text-emerald-400 bg-emerald-950/30' : ($isMatchDisputed ? 'text-red-400 bg-red-950/30' : 'text-lime-500 bg-lime-950/30')) }}">
                                                             {{ $isMatchOngoing ? '● Live' : ($isMatchCompleted ? 'Done' : ($isMatchDisputed ? 'Disputed' : 'Pending')) }}
                                                         </span>
                                                     </div>
@@ -1138,7 +1062,7 @@
                 <p class="text-[10px] text-zinc-700 font-medium text-center">Scroll horizontally to view all rounds → </p>
             @else
                 <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800 rounded-[2.5rem] p-24 text-center relative overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-indigo-950/10 pointer-events-none"></div>
+                    <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-cyan-950/10 pointer-events-none"></div>
                     <i data-lucide="git-branch" class="w-16 h-16 mx-auto text-zinc-800 mb-6"></i>
                     <h3 class="text-xl font-black text-zinc-400 font-orbitron tracking-widest uppercase">{{ $isHeadToHead ? __('Waiting for both players') : __('Bracket Not Generated') }}</h3>
                     <p class="text-sm font-medium text-zinc-600 mt-4 max-w-sm mx-auto leading-relaxed">{{ $isHeadToHead ? __('The match and result form become available when both players are registered and the competition starts.') : __('Brackets and result submission become available automatically after tournament entries lock.') }}</p>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Identity\Services;
 
+use App\Modules\CMS\Models\Game;
 use App\Modules\Community\Models\BroadcastMessage;
 use App\Modules\Community\Models\ChatConversation;
 use App\Modules\Community\Models\ChatMessage;
@@ -11,6 +12,7 @@ use App\Modules\Community\Models\PlayerFollow;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Tournament\Models\Tournament;
+use App\Modules\Tournament\Services\TournamentTimezone;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\RegistrationStatus;
@@ -31,7 +33,7 @@ final class PlayerDashboardService
         $progression = $this->progression->progressionFor($user);
 
         return array_merge(
-            Cache::remember("player-dashboard:snapshot:v4:{$user->getKey()}", now()->addSeconds(45), fn () => $this->snapshot($user)),
+            Cache::remember("player-dashboard:snapshot:v5:{$user->getKey()}", now()->addSeconds(45), fn () => $this->snapshot($user)),
             [
                 'progression' => $progression,
                 'announcements' => $this->announcements(),
@@ -67,7 +69,7 @@ final class PlayerDashboardService
                 'name' => $tournament->name,
                 'game' => $tournament->game?->localizedName() ?? 'Game',
                 'status' => $tournament->status->value,
-                'starts_at' => $tournament->start_at?->format('M d · H:i') ?? 'TBD',
+                'starts_at' => $tournament->start_at?->copy()->setTimezone(app(TournamentTimezone::class)->value())->format('M d · H:i') ?? 'TBD',
                 'registrations_count' => (int) $tournament->registrations_count,
                 'max_participants' => (int) $tournament->max_participants,
             ])
@@ -119,7 +121,24 @@ final class PlayerDashboardService
             ->withSum(['ledgerEntries as prize_earnings' => fn (Builder $query) => $query->where('type', LedgerType::PRIZE->value)], 'amount')
             ->first();
 
+        $activeGames = Game::query()
+            ->availableInCatalog()
+            ->with('translations')
+            ->withCount(['tournaments as open_tournaments_count' => fn (Builder $query) => $query->where('status', TournamentStatus::REGISTRATION_OPEN->value)])
+            ->orderByDesc('open_tournaments_count')
+            ->orderBy('slug')
+            ->limit(6)
+            ->get()
+            ->map(fn (Game $game): array => [
+                'slug' => $game->slug,
+                'name' => $game->localizedName(),
+                'image' => $game->cardImageUrl(),
+                'open' => (int) $game->open_tournaments_count,
+            ])
+            ->all();
+
         return [
+            'activeGames' => $activeGames,
             'activeTournaments' => $activeTournaments,
             'recentMatches' => $recentMatches,
             'stats' => [

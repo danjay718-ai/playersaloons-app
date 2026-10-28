@@ -115,9 +115,21 @@ class GuestCompetitionTest extends TestCase
     public function test_public_layouts_share_the_same_footer_markup(): void
     {
         $footers = [];
+        $this->assertSharedFooter('gr-footer');
+    }
+
+    public function test_v3_layouts_share_the_same_footer_markup(): void
+    {
+        config(['features.landing.version' => 'v3']);
+        $this->assertSharedFooter('guest-footer');
+    }
+
+    private function assertSharedFooter(string $class): void
+    {
+        $footers = [];
         foreach (['/', '/about', '/contact', '/tournaments', '/policies', '/login', '/register'] as $url) {
             $html = $this->get($url)->assertOk()->getContent();
-            preg_match('/<footer class="guest-footer">.*?<\/footer>/s', $html, $matches);
+            preg_match('/<footer class="'.$class.'">.*?<\/footer>/s', $html, $matches);
             self::assertNotEmpty($matches, $url);
             $footers[] = $matches[0];
         }

@@ -1,7 +1,7 @@
 @php
     $chatInboxEnabled = auth()->user()->hasAnyRole(['PLAYER', 'TEAM_CAPTAIN']);
     $chatInboxInitial = $chatInboxEnabled ? app(\App\Modules\Community\Services\ChatInboxService::class)->summary(auth()->user()) : ['unread_count' => 0, 'conversations' => []];
-    $accountTheme = auth()->user()?->theme ?? \App\Shared\Enums\UserTheme::PURPLE_DARK;
+    $accountTheme = auth()->user()?->theme ?? \App\Shared\Enums\UserTheme::default();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $accountTheme->value }}">
@@ -10,7 +10,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{{ $title ?? __('Gamer Terminal | GamersRival') }}</title>
-    
+
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="{{ $accountTheme->metaColor() }}">
@@ -31,7 +31,7 @@
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
-<body x-data="chatInbox(@js(['enabled' => $chatInboxEnabled, 'url' => route('chat.inbox'), 'userUuid' => auth()->user()->uuid, 'initial' => $chatInboxInitial]))" class="theme-auth theme-player bg-[#05030c] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-violet-600 selection:text-white relative cyber-grid">
+<body x-data="chatInbox(@js(['enabled' => $chatInboxEnabled, 'url' => route('chat.inbox'), 'userUuid' => auth()->user()->uuid, 'initial' => $chatInboxInitial]))" class="theme-auth theme-player bg-[#05080f] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-[#c6ff3d] selection:text-[#05080f] relative cyber-grid">
     @php
         $bottomNavItems = [
             ['label' => __('Overview'), 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'pattern' => 'dashboard'],
@@ -45,18 +45,15 @@
             ]]);
         }
     @endphp
-    <div x-show="chatAlert" x-cloak role="status" class="fixed right-4 top-20 z-[100] flex max-w-sm items-center gap-3 rounded-xl border border-fuchsia-500/40 bg-zinc-950 p-4 shadow-xl">
+    <div x-show="chatAlert" x-cloak role="status" class="fixed right-4 top-20 z-[100] flex max-w-sm items-center gap-3 rounded-xl border border-cyan-400/40 bg-[#0a1220] p-4 shadow-[0_14px_35px_rgba(0,0,0,0.75)]">
         <a :href="chatAlert?.url" wire:navigate class="min-w-0 text-sm text-zinc-100"><strong>{{ __('New direct message') }}</strong><span class="mt-1 block break-words text-xs text-zinc-400" x-text="chatAlert?.sender"></span></a>
-        <button type="button" @click="chatAlert = null" aria-label="{{ __('Dismiss notification') }}" class="px-2 text-zinc-400">×</button>
+        <button type="button" @click="chatAlert = null" aria-label="{{ __('Dismiss notification') }}" class="px-2 text-zinc-400 hover:text-white">×</button>
     </div>
-    <!-- Global Background FX -->
+
+    <!-- Global Background FX (Neon Arena) -->
     <div class="fixed inset-0 pointer-events-none z-0">
-        <!-- Neon Orbs -->
-        <div class="absolute top-[-10%] right-[-10%] w-[45%] h-[45%] bg-purple-700/10 rounded-full blur-[140px]"></div>
-        <div class="absolute bottom-[-10%] left-[-10%] w-[45%] h-[45%] bg-fuchsia-600/10 rounded-full blur-[140px]"></div>
-        <div class="absolute top-[40%] left-[30%] w-[35%] h-[35%] bg-indigo-900/5 rounded-full blur-[150px]"></div>
-        <!-- Scanlines for sci-fi atmosphere -->
-        <div class="absolute inset-0 scanlines opacity-[0.15] mix-blend-overlay"></div>
+        <div class="absolute top-[-12%] right-[-10%] w-[45%] h-[45%] bg-cyan-500/8 rounded-full blur-[150px]"></div>
+        <div class="absolute bottom-[-12%] left-[-10%] w-[42%] h-[42%] bg-lime-400/6 rounded-full blur-[150px]"></div>
     </div>
 
     @if(config('features.player_wager.enabled'))
@@ -82,7 +79,7 @@
                 ['label' => __('Leaderboard'), 'icon' => 'award',          'url' => '/leaderboards',    'pattern' => 'leaderboards'],
                 ['label' => __('Streams'),     'icon' => 'tv',              'url' => '/streams',         'pattern' => 'streams'],
                 ['label' => __('Chat'),        'icon' => 'message-square',  'url' => '/chat',            'pattern' => 'chat'],
-                ['label' => __('Squads'),       'icon' => 'users',           'url' => '/teams',           'pattern' => 'teams'],
+                ['label' => __('Squads'),      'icon' => 'users',           'url' => '/teams',           'pattern' => 'teams'],
                 ['label' => __('Wallet'),      'icon' => 'wallet',          'url' => '/wallet',          'pattern' => 'wallet'],
                 ['label' => __('Profile'),     'icon' => 'user-round',      'url' => '/profile',         'pattern' => 'profile'],
                 ['label' => __('Support'),     'icon' => 'headphones',      'url' => '/contact',         'pattern' => 'contact'],
@@ -113,7 +110,11 @@
             @endforeach
         </div>
 
-        <div class="px-4 py-3">
+        <div class="mx-4 mb-2 rounded-xl border border-cyan-500/15 bg-black/20">
+            <livewire:identity.theme-switcher variant="menu" key="player-mobile-theme" />
+        </div>
+
+        <div class="px-4 py-2">
             <x-localization.language-switcher variant="player" align="left" class="w-full" />
         </div>
 
@@ -149,7 +150,7 @@
          data-sidebar-expanded="true"
          :data-sidebar-expanded="sidebarExpanded ? 'true' : 'false'">
 
-        <!-- Desktop Sidebar Panel (Hidden on mobile, sticky on desktop) -->
+        <!-- Desktop Sidebar Panel -->
         <aside id="desktop-sidebar" x-ref="sidebar"
                @mouseover="showSidebarTooltip($event.target)"
                @mouseleave="sidebarTooltip = null"
@@ -158,11 +159,11 @@
                @scroll.capture="sidebarTooltip = null"
                @click="sidebarTooltip = null"
                @keydown.escape="sidebarTooltip = null"
-               class="theme-sidebar group/sidebar hidden md:flex fixed top-0 left-0 h-screen border-r backdrop-blur-2xl z-50 flex-col justify-between py-5 overflow-hidden">
-            
-            <!-- Sidebar Header / Logo -->
-            <div class="h-20 px-2 flex shrink-0 items-center justify-center">
-                <a href="/dashboard" wire:navigate data-sidebar-tooltip="{{ __('Dashboard') }}" aria-label="{{ __('Dashboard') }}" class="flex items-center justify-center w-full">
+               class="theme-sidebar group/sidebar hidden md:flex fixed top-0 left-0 h-screen border-r backdrop-blur-2xl z-50 flex-col justify-between py-4 overflow-hidden">
+
+            <!-- Sidebar Header / Brand -->
+            <div class="h-16 px-3 flex shrink-0 items-center justify-center border-b border-white/[0.06]">
+                <a href="/dashboard" wire:navigate data-sidebar-tooltip="{{ __('Dashboard') }}" aria-label="{{ __('Dashboard') }}" class="flex items-center justify-center w-full gap-2.5">
                     <img src="/gamersrival-logo.webp" alt="GamersRival logo" width="64" height="48" class="player-sidebar-brand-logo object-contain">
                 </a>
             </div>
@@ -174,46 +175,59 @@
                     $playerTournamentFrequency = 'daily';
                 }
                 $navItems = [
-                    ['label' => __('Overview'),    'icon' => 'layout-dashboard', 'url' => '/dashboard',        'active' => request()->is('dashboard')],
-                    ['label' => __('Daily Tournaments'), 'icon' => 'calendar-days', 'url' => '/tournaments/browse?frequency=daily', 'active' => request()->is('tournaments/browse*') && $playerTournamentFrequency === 'daily'],
-                    ['label' => __('Weekly Tournaments'), 'icon' => 'calendar-range', 'url' => '/tournaments/browse?frequency=weekly', 'active' => request()->is('tournaments/browse*') && $playerTournamentFrequency === 'weekly'],
-                    ['label' => __('Monthly Tournaments'), 'icon' => 'calendar-fold', 'url' => '/tournaments/browse?frequency=monthly', 'active' => request()->is('tournaments/browse*') && $playerTournamentFrequency === 'monthly'],
-                    ['label' => __('My Games'),    'icon' => 'trophy',           'url' => '/my-tournaments',   'active' => request()->is('my-tournaments')],
-                    ['label' => __('Leaderboard'), 'icon' => 'award',            'url' => '/leaderboards',     'active' => request()->is('leaderboards')],
-                    ['label' => __('Streams'),     'icon' => 'tv',               'url' => '/streams',          'active' => request()->is('streams')],
-                    ['label' => __('Chat'),        'icon' => 'message-square',   'url' => '/chat',             'active' => request()->is('chat')],
-                    ['label' => __('Squads'),      'icon' => 'users',            'url' => '/teams',            'active' => request()->is('teams')],
-                    ['label' => __('Support'),     'icon' => 'headphones',       'url' => '/contact',          'active' => request()->is('contact')],
-                    ['label' => __('Review Us'),   'icon' => 'star',             'url' => '/reviews',          'active' => request()->is('reviews')],
+                    ['label' => __('Overview'),    'icon' => 'layout-dashboard', 'url' => '/dashboard',        'active' => request()->is('dashboard'), 'group' => __('Arena')],
+                    ['label' => __('Daily Tournaments'), 'icon' => 'calendar-days', 'url' => '/tournaments/browse?frequency=daily', 'active' => request()->is('tournaments/browse*') && $playerTournamentFrequency === 'daily', 'group' => __('Compete')],
+                    ['label' => __('Weekly Tournaments'), 'icon' => 'calendar-range', 'url' => '/tournaments/browse?frequency=weekly', 'active' => request()->is('tournaments/browse*') && $playerTournamentFrequency === 'weekly', 'group' => __('Compete')],
+                    ['label' => __('Monthly Tournaments'), 'icon' => 'calendar-fold', 'url' => '/tournaments/browse?frequency=monthly', 'active' => request()->is('tournaments/browse*') && $playerTournamentFrequency === 'monthly', 'group' => __('Compete')],
+                    ['label' => __('My Games'),    'icon' => 'trophy',           'url' => '/my-tournaments',   'active' => request()->is('my-tournaments'), 'group' => __('Arena')],
+                    ['label' => __('Leaderboard'), 'icon' => 'award',            'url' => '/leaderboards',     'active' => request()->is('leaderboards'), 'group' => __('Community')],
+                    ['label' => __('Streams'),     'icon' => 'tv',               'url' => '/streams',          'active' => request()->is('streams'), 'group' => __('Community')],
+                    ['label' => __('Chat'),        'icon' => 'message-square',   'url' => '/chat',             'active' => request()->is('chat'), 'group' => __('Community')],
+                    ['label' => __('Squads'),      'icon' => 'users',            'url' => '/teams',            'active' => request()->is('teams'), 'group' => __('Community')],
+                    ['label' => __('Support'),     'icon' => 'headphones',       'url' => '/contact',          'active' => request()->is('contact'), 'group' => __('More')],
+                    ['label' => __('Review Us'),   'icon' => 'star',             'url' => '/reviews',          'active' => request()->is('reviews'), 'group' => __('More')],
                 ];
                 if (config('features.team_finder.enabled')) {
                     array_splice($navItems, 7, 0, [[
-                        'label' => __('Find Team'), 'icon' => 'user-search', 'url' => '/teams#find-team', 'active' => false,
+                        'label' => __('Find Team'), 'icon' => 'user-search', 'url' => '/teams#find-team', 'active' => false, 'group' => __('Community'),
                     ]]);
                 }
                 if (config('features.tournament_v2.enabled')) {
                     array_splice($navItems, 3, 0, [[
-                        'label' => __('Head-to-Head'), 'icon' => 'swords', 'url' => '/h2h', 'active' => request()->is('h2h'),
+                        'label' => __('Head-to-Head'), 'icon' => 'swords', 'url' => '/h2h', 'active' => request()->is('h2h'), 'group' => __('Compete'),
                     ]]);
                 }
                 if (config('features.player_wager.enabled')) {
                     array_splice($navItems, 4, 0, [[
-                        'label' => __('Head-to-Head Duels'), 'icon' => 'swords', 'url' => '/head-to-head', 'active' => request()->is('head-to-head'),
+                        'label' => __('Head-to-Head Duels'), 'icon' => 'swords', 'url' => '/head-to-head', 'active' => request()->is('head-to-head'), 'group' => __('Compete'),
                     ]]);
                 }
+                $previousGroup = null;
             @endphp
 
-            <nav class="my-5 min-h-0 flex-grow space-y-1.5 overflow-y-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <nav class="my-4 min-h-0 flex-grow space-y-1 overflow-y-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @foreach($navItems as $item)
+                    @if($item['group'] !== $previousGroup)
+                        @if($previousGroup !== null)
+                            <div class="my-2 border-t border-white/[0.05]"></div>
+                        @endif
+                        <p x-show="sidebarExpanded" class="sidebar-label px-3 pt-1 pb-1 text-[9px] font-black uppercase tracking-[0.22em] text-zinc-500">
+                            {{ $item['group'] }}
+                        </p>
+                        @php $previousGroup = $item['group']; @endphp
+                    @endif
                     <a href="{{ $item['url'] }}" wire:navigate data-sidebar-tooltip="{{ $item['label'] }}"
-                       class="theme-nav-item relative flex items-center group/item h-12 px-3 rounded-lg border transition-all duration-200
-                       {{ $item['active'] 
-                          ? 'theme-nav-active bg-purple-950/40 border-purple-500/40 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.15)]' 
-                          : 'bg-transparent border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/40 hover:border-zinc-800' }}">
+                       class="theme-nav-item relative flex items-center group/item h-11 px-3 rounded-xl border transition-all duration-200
+                       {{ $item['active']
+                          ? 'theme-nav-active bg-[#c6ff3d]/12 border-[#c6ff3d]/40 text-[#c6ff3d] shadow-[0_0_16px_rgba(198,255,61,0.12)]'
+                          : 'bg-transparent border-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04] hover:border-cyan-500/20' }}">
+                        @if($item['active'])
+                            <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#c6ff3d] shadow-[0_0_8px_rgba(198,255,61,0.8)]" aria-hidden="true"></span>
+                        @endif
                         <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                            <i data-lucide="{{ $item['icon'] }}" class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110"></i>
+                            <i data-lucide="{{ $item['icon'] }}" class="w-4.5 h-4.5 transition-transform duration-200 group-hover/item:scale-110 {{ $item['active'] ? 'text-[#c6ff3d]' : 'text-zinc-400 group-hover/item:text-cyan-300' }}"></i>
                         </div>
-                        <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-wider transition-opacity duration-200">
+                        <span class="sidebar-label ml-3.5 font-orbitron text-[11px] font-bold uppercase tracking-wider transition-opacity duration-200">
                             {{ $item['label'] }}
                         </span>
                         @if($item['url'] === '/chat')<span :class="sidebarExpanded ? 'ml-auto' : 'absolute right-0 top-0'"><x-chat-unread-badge /></span>@endif
@@ -222,15 +236,15 @@
             </nav>
 
             <!-- Sidebar Bottom Action -->
-            <div class="px-3">
-                <div x-show="sidebarExpanded" x-cloak class="mb-3"><x-app-clock /></div>
+            <div class="px-3 pt-2 border-t border-white/[0.06]">
+                <div x-show="sidebarExpanded" x-cloak class="mb-2.5"><x-app-clock /></div>
                 @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
                 <a href="/admin" wire:navigate data-sidebar-tooltip="{{ __('Admin Panel') }}"
-                   class="w-full flex items-center h-12 px-3 mb-2 rounded-lg border border-amber-500/30 bg-amber-950/20 text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 hover:border-amber-400/50 transition-all duration-200">
+                   class="w-full flex items-center h-11 px-3 mb-1.5 rounded-xl border border-amber-400/30 bg-amber-400/10 text-amber-300 hover:text-amber-200 hover:bg-amber-400/15 hover:border-amber-400/50 transition-all duration-200">
                     <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                        <i data-lucide="shield" class="w-5 h-5"></i>
+                        <i data-lucide="shield" class="w-4.5 h-4.5"></i>
                     </div>
-                    <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-wider transition-opacity duration-200">
+                    <span class="sidebar-label ml-3.5 font-orbitron text-[11px] font-bold uppercase tracking-wider transition-opacity duration-200">
                         {{ __('Admin Panel') }}
                     </span>
                 </a>
@@ -238,11 +252,11 @@
                 <form method="POST" action="{{ route('logout') }}" class="m-0">
                     @csrf
                     <button type="button" data-sidebar-tooltip="{{ __('Logout') }}" onclick="document.getElementById('logout-confirmation')?.showModal()"
-                            class="w-full flex items-center h-12 px-3 rounded-lg border border-transparent text-zinc-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all duration-200">
+                            class="w-full flex items-center h-11 px-3 rounded-xl border border-transparent text-zinc-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all duration-200">
                         <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                            <i data-lucide="log-out" class="w-4.5 h-4.5"></i>
                         </div>
-                        <span class="sidebar-label ml-4 font-orbitron text-xs font-bold uppercase tracking-wider transition-opacity duration-200">
+                        <span class="sidebar-label ml-3.5 font-orbitron text-[11px] font-bold uppercase tracking-wider transition-opacity duration-200">
                             {{ __('Logout') }}
                         </span>
                     </button>
@@ -261,9 +275,9 @@
 
         <!-- Right Side: Header + Content Pane -->
         <div class="player-dashboard-pane flex-1 flex flex-col min-w-0 relative">
-            
+
             <!-- Topbar sticky header -->
-            <header class="theme-header sticky top-0 z-40 h-16 md:h-20 border-b border-purple-500/15 bg-[#0a0718]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+            <header class="theme-header sticky top-0 z-40 h-16 md:h-18 border-b border-cyan-500/15 bg-[#060b14]/88 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between shadow-[0_6px_24px_rgba(0,0,0,0.45)]">
                 <!-- Left: Logo (mobile only) + Desktop section title -->
                 <div class="flex min-w-0 items-center space-x-3">
                     <!-- Mobile Logo -->
@@ -272,14 +286,14 @@
                     </a>
 
                     <!-- Mobile Page Title -->
-                    <h1 class="theme-page-title min-w-0 truncate md:hidden text-xs font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple">
+                    <h1 class="theme-page-title min-w-0 truncate md:hidden text-xs font-black tracking-widest text-white font-orbitron uppercase">
                         @yield('dashboard_title', __('TERMINAL'))
                     </h1>
 
                     <!-- Desktop section title -->
                     <div class="hidden md:flex items-center space-x-3">
                         <button type="button"
-                                class="player-sidebar-toggle inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border focus-visible:outline-2 focus-visible:outline-offset-2"
+                                class="player-sidebar-toggle inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border focus-visible:outline-2 focus-visible:outline-offset-2"
                                 :class="{ 'is-expanded': sidebarExpanded }"
                                 @click="sidebarExpanded = !sidebarExpanded; sidebarTooltip = null"
                                 aria-controls="desktop-sidebar"
@@ -288,7 +302,7 @@
                                 :aria-expanded="sidebarExpanded"
                                 :aria-label="sidebarExpanded ? @js(__('Collapse sidebar')) : @js(__('Expand sidebar'))"
                                 :title="sidebarExpanded ? @js(__('Collapse sidebar')) : @js(__('Expand sidebar'))">
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <rect x="3" y="4" width="18" height="16" rx="3" />
                                 <path d="M9 4v16" />
                                 <rect x="4.5" y="5.5" width="3" height="13" rx="1" fill="currentColor" stroke="none" :opacity="sidebarExpanded ? '0.45' : '0.15'" />
@@ -296,99 +310,97 @@
                                 <polyline points="15,9 18,12 15,15" :points="sidebarExpanded ? '15,9 12,12 15,15' : '15,9 18,12 15,15'" />
                             </svg>
                         </button>
-                        <span class="theme-title-marker hidden xs:block w-2 h-6 bg-gradient-to-b from-purple-500 to-fuchsia-500 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.6)]"></span>
-                        <h1 class="theme-page-title text-xs sm:text-sm md:text-base font-black tracking-widest text-purple-400 font-orbitron uppercase neon-pulse-purple truncate max-w-[150px] sm:max-w-none">
+                        <span class="theme-title-marker hidden xs:block w-1.5 h-5 bg-gradient-to-b from-[#c6ff3d] to-[#22e6ff] rounded-full shadow-[0_0_10px_rgba(198,255,61,0.5)]"></span>
+                        <h1 class="theme-page-title text-xs sm:text-sm md:text-base font-black tracking-widest text-white font-orbitron uppercase truncate max-w-[150px] sm:max-w-none">
                             @yield('dashboard_title', __('DASHBOARD'))
                         </h1>
                     </div>
                 </div>
 
                 <!-- Right: Stats & Controls -->
-                <div class="flex shrink-0 items-center space-x-2 sm:space-x-4">
-                    
+                <div class="flex shrink-0 items-center space-x-2 sm:space-x-3">
+
                     <!-- Live wallet balance stays visible on mobile. -->
-                    <a href="/wallet" wire:navigate aria-label="{{ __('Wallet balance') }}" class="flex shrink-0 items-center space-x-2 bg-[#120a26]/70 border border-emerald-500/30 hover:border-emerald-400/60 rounded-xl px-2 sm:px-3 py-1.5 transition-all duration-300 group">
-                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></div>
+                    <a href="/wallet" wire:navigate aria-label="{{ __('Wallet balance') }}" class="flex shrink-0 items-center space-x-2 bg-[#0a1220]/90 border border-emerald-500/25 hover:border-[#c6ff3d]/50 rounded-xl px-2.5 sm:px-3.5 py-1.5 transition-all duration-200 group">
+                        <div class="w-1.5 h-1.5 rounded-full bg-[#c6ff3d] shadow-[0_0_8px_rgba(198,255,61,0.9)]"></div>
                         <div class="flex flex-col text-right">
                             <span class="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">{{ __('BAL') }}</span>
                             <livewire:wallet.wallet-balance />
                         </div>
                     </a>
 
-                    <!-- Deposit CTA Button (hidden on smallest screens) -->
-                    <a href="/wallet" wire:navigate class="theme-primary-action hidden sm:inline-flex relative items-center justify-center p-0.5 overflow-hidden text-xs font-bold text-white rounded-lg group bg-gradient-to-br from-purple-600 to-fuchsia-500 hover:from-purple-500 hover:to-fuchsia-400 border border-fuchsia-400/20 shadow-[0_0_15px_rgba(217,70,239,0.3)] hover:shadow-[0_0_20px_rgba(217,70,239,0.6)] transition-all duration-300 cursor-pointer">
-                        <span class="relative px-3 py-1.5 transition-all ease-in duration-75 bg-[#0a0718]/90 rounded-md group-hover:bg-transparent font-orbitron tracking-widest uppercase text-[10px]">
-                            {{ __('+ Deposit') }}
-                        </span>
+                    <!-- Deposit CTA Button -->
+                    <a href="/wallet" wire:navigate class="theme-primary-action hidden sm:inline-flex items-center justify-center rounded-xl bg-[#c6ff3d] hover:bg-[#d5ff66] border border-[#c6ff3d] px-3.5 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-[#05080f] shadow-[0_0_18px_rgba(198,255,61,0.28)] hover:shadow-[0_0_24px_rgba(198,255,61,0.5)] transition-all duration-200">
+                        <span>{{ __('+ Deposit') }}</span>
                     </a>
-
-                    <livewire:identity.theme-switcher key="player-header-theme" />
 
                     <!-- Notifications Bell -->
                     <livewire:notification.notification-bell />
 
-                    <!-- Profile Dropdown (Avatar) -->
+                    <!-- Profile Dropdown (Avatar + Theme Switcher inside menu) -->
                     @php
                         $topbarAvatarUrl = auth()->user()?->profile?->avatar_url;
                     @endphp
                     <div class="relative" x-data="{ open: false, avatarUrl: @js($topbarAvatarUrl ?: '') }" @avatar-updated.window="avatarUrl = $event.detail.url" @click.outside="open = false">
-                        <button @click="open = !open" class="flex items-center space-x-1.5 bg-zinc-900/40 hover:bg-zinc-800/60 border border-purple-500/20 rounded-full py-1.5 pl-1.5 pr-2 transition-all duration-300 shadow-[0_0_10px_rgba(168,85,247,0.1)] hover:shadow-[0_0_15px_rgba(168,85,247,0.25)]">
-                            <div class="w-6 h-6 md:w-7 md:h-7 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-500 p-[1.5px]">
-                                <div class="w-full h-full bg-[#0a0718] rounded-full overflow-hidden flex items-center justify-center text-purple-400 text-[9px] font-bold font-orbitron">
+                        <button type="button" @click="open = !open" class="flex items-center space-x-2 bg-[#0a1220]/80 hover:bg-[#0e182a] border border-cyan-500/25 hover:border-cyan-400/50 rounded-full py-1.5 pl-1.5 pr-2.5 transition-all duration-200">
+                            <div class="w-6 h-6 md:w-7 md:h-7 rounded-full bg-gradient-to-br from-[#c6ff3d] to-[#22e6ff] p-[1.5px]">
+                                <div class="w-full h-full bg-[#05080f] rounded-full overflow-hidden flex items-center justify-center text-cyan-300 text-[9px] font-bold font-orbitron">
                                     <img x-show="avatarUrl" :src="avatarUrl" alt="{{ auth()->user()->username }}" class="h-full w-full object-cover" x-cloak>
                                     <span x-show="!avatarUrl">{{ strtoupper(substr(auth()->user()->username, 0, 2)) }}</span>
                                 </div>
                             </div>
-                            <span class="text-[10px] font-black uppercase tracking-wider text-purple-300 hidden md:inline">
+                            <span class="text-[10px] font-black uppercase tracking-wider text-zinc-200 hidden md:inline">
                                 {{ auth()->user()->username }}
                             </span>
-                            <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-500"></i>
+                            <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-400"></i>
                         </button>
 
-                        <div x-show="open" 
+                        <div x-show="open"
                              x-transition:enter="transition ease-out duration-100"
                              x-transition:enter-start="transform opacity-0 scale-95"
                              x-transition:enter-end="transform opacity-100 scale-100"
                              x-transition:leave="transition ease-in duration-75"
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
-                             class="theme-popover absolute right-0 mt-3 w-52 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-1"
+                             class="theme-popover absolute right-0 mt-3 w-64 bg-[#0a1220] border border-cyan-500/25 rounded-2xl shadow-[0_18px_45px_rgba(0,0,0,0.85)] z-50 py-1.5"
                              x-cloak>
                             {{-- Role badge --}}
-                            @php 
-                                $role = auth()->user()?->roles?->pluck('name')?->first(); 
-                                $profileUrl = auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']) 
-                                    ? '/admin/profile' 
+                            @php
+                                $role = auth()->user()?->roles?->pluck('name')?->first();
+                                $profileUrl = auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER'])
+                                    ? '/admin/profile'
                                     : '/profile';
                             @endphp
                             @if($role && $role !== 'PLAYER')
-                            <div class="px-4 py-2 border-b border-purple-500/10">
+                            <div class="px-3.5 py-2 border-b border-white/[0.06]">
                                 <span class="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-amber-900/40 text-amber-300 border border-amber-700/30 rounded-full px-2 py-0.5">
                                     <i data-lucide="shield" class="w-2.5 h-2.5"></i>
                                     {{ $role }}
                                 </span>
                             </div>
                             @endif
-                            <a href="{{ $profileUrl }}" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-zinc-350 hover:bg-purple-950/30 hover:text-white transition-colors">
-                                <i data-lucide="user" class="w-4 h-4 text-purple-400"></i>
+                            <a href="{{ $profileUrl }}" wire:navigate class="flex items-center space-x-2.5 px-3.5 py-2.5 text-xs font-semibold text-zinc-200 hover:bg-cyan-500/10 hover:text-white transition-colors">
+                                <i data-lucide="user" class="w-4 h-4 text-cyan-400"></i>
                                 <span>{{ __('My Profile') }}</span>
                             </a>
                             @if(!auth()->user()->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
-                            <a href="/wallet" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-zinc-350 hover:bg-purple-950/30 hover:text-white transition-colors">
-                                <i data-lucide="wallet" class="w-4 h-4 text-purple-400"></i>
+                            <a href="/wallet" wire:navigate class="flex items-center space-x-2.5 px-3.5 py-2.5 text-xs font-semibold text-zinc-200 hover:bg-cyan-500/10 hover:text-white transition-colors">
+                                <i data-lucide="wallet" class="w-4 h-4 text-[#c6ff3d]"></i>
                                 <span>{{ __('My Wallet') }}</span>
                             </a>
                             @endif
                             @if(auth()->user()?->hasAnyRole(['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER']))
-                            <a href="/admin" wire:navigate class="flex items-center space-x-2 px-4 py-2.5 text-xs text-amber-400 hover:bg-amber-950/30 hover:text-amber-300 transition-colors">
+                            <a href="/admin" wire:navigate class="flex items-center space-x-2.5 px-3.5 py-2.5 text-xs font-semibold text-amber-300 hover:bg-amber-950/30 hover:text-amber-200 transition-colors">
                                 <i data-lucide="shield" class="w-4 h-4"></i>
                                 <span>{{ __('Admin Panel') }}</span>
                             </a>
                             @endif
-                            <hr class="border-purple-500/10 my-1">
+                            <hr class="border-white/[0.06] my-1">
+                            <livewire:identity.theme-switcher variant="menu" key="player-header-theme" />
+                            <hr class="border-white/[0.06] my-1">
                             <form method="POST" action="{{ route('logout') }}" class="m-0">
                                 @csrf
-                                <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()" class="w-full flex items-center space-x-2 px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                                <button type="button" onclick="document.getElementById('logout-confirmation')?.showModal()" class="w-full flex items-center space-x-2.5 px-3.5 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors text-left">
                                     <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
                                     <span>{{ __('Logout') }}</span>
                                 </button>
@@ -413,11 +425,11 @@
                 @endauth
                 @php($activePromotion = \App\Modules\Community\Models\Advertisement::query()->currentlyVisible()->latest()->first())
                 @if($activePromotion)
-                    <aside x-data="{ visible: true }" x-show="visible" class="mb-5 overflow-hidden rounded-2xl border border-fuchsia-500/25 bg-gradient-to-r from-fuchsia-950/80 to-indigo-950/80 shadow-lg">
+                    <aside x-data="{ visible: true }" x-show="visible" class="mb-5 overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-r from-[#0a1220] to-[#0e182a] shadow-lg">
                         <div class="flex items-center gap-4 p-4">
                             @if($activePromotion->image_url)<img src="{{ $activePromotion->image_url }}" alt="" class="h-16 w-24 rounded-lg object-cover">@endif
-                            <div class="min-w-0 flex-1"><p class="text-[10px] font-black uppercase tracking-widest text-fuchsia-300">Sponsored promotion</p><h2 class="mt-1 font-bold text-white">{{ $activePromotion->title }}</h2>@if($activePromotion->description)<p class="mt-1 text-xs text-zinc-400">{{ $activePromotion->description }}</p>@endif</div>
-                            @if($activePromotion->target_url)<a href="{{ route('promotions.click', $activePromotion) }}" target="_blank" rel="noopener sponsored" class="rounded-lg bg-fuchsia-500 px-4 py-2 text-xs font-bold text-white">{{ $activePromotion->cta_label }}</a>@endif
+                            <div class="min-w-0 flex-1"><p class="text-[10px] font-black uppercase tracking-widest text-cyan-300">Sponsored promotion</p><h2 class="mt-1 font-bold text-white">{{ $activePromotion->title }}</h2>@if($activePromotion->description)<p class="mt-1 text-xs text-zinc-400">{{ $activePromotion->description }}</p>@endif</div>
+                            @if($activePromotion->target_url)<a href="{{ route('promotions.click', $activePromotion) }}" target="_blank" rel="noopener sponsored" class="rounded-lg bg-[#c6ff3d] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#05080f]">{{ $activePromotion->cta_label }}</a>@endif
                             <button type="button" @click="visible = false" aria-label="Dismiss promotion" class="text-zinc-500 hover:text-white">×</button>
                         </div>
                     </aside>
@@ -464,7 +476,6 @@
 
     <!-- ─────────────────────────────────────
          MOBILE BOTTOM NAVIGATION BAR
-         (shown only on mobile, < md breakpoint)
     ───────────────────────────────────────── -->
     <nav id="mobile-bottom-nav" role="navigation" aria-label="Main navigation">
         <div class="mobile-nav-items">

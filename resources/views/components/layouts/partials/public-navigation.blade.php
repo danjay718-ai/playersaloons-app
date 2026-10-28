@@ -1,5 +1,5 @@
 @guest
-    @include('components.layouts.partials.guest-navigation')
+    @include(config('features.landing.version') === 'v3' ? 'components.layouts.partials.guest-navigation' : 'components.layouts.partials.gr-navigation')
 @else
 @php
     $staffRoles = ['SUPER_ADMIN','ADMIN','MODERATOR','FINANCE_OPERATOR','KYC_REVIEWER','SUPPORT_AGENT','TOURNAMENT_ORGANIZER'];

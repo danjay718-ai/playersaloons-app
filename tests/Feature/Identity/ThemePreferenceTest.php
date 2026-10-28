@@ -9,6 +9,7 @@ use App\Modules\Identity\Models\User;
 use App\Shared\Enums\UserTheme;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -23,11 +24,11 @@ class ThemePreferenceTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
     }
 
-    public function test_new_accounts_use_the_original_purple_theme(): void
+    public function test_new_accounts_use_the_neon_arena_theme(): void
     {
         $user = User::factory()->create()->refresh();
 
-        $this->assertSame(UserTheme::PURPLE_DARK, $user->theme);
+        $this->assertSame(UserTheme::NEON_ARENA, $user->theme);
     }
 
     public function test_authenticated_user_can_persist_a_shared_theme_preference(): void
@@ -36,12 +37,12 @@ class ThemePreferenceTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(ThemeSwitcher::class)
-            ->call('setTheme', UserTheme::BLUE_DARK->value)
-            ->assertSet('theme', UserTheme::BLUE_DARK->value)
+            ->call('setTheme', UserTheme::LIGHT->value)
+            ->assertSet('theme', UserTheme::LIGHT->value)
             ->assertHasNoErrors()
             ->assertDispatched('theme-preference-updated');
 
-        $this->assertSame(UserTheme::BLUE_DARK, $user->refresh()->theme);
+        $this->assertSame(UserTheme::LIGHT, $user->refresh()->theme);
     }
 
     public function test_invalid_theme_is_rejected_without_changing_the_account(): void
@@ -70,13 +71,13 @@ class ThemePreferenceTest extends TestCase
             ->assertDontSeeHtml('id="desktop-sidebar" class="group/sidebar hidden md:flex fixed top-0 left-0 h-screen bg-[#0a0718]/90')
             ->assertSee('Choose color theme');
 
-        $admin = User::factory()->create(['theme' => UserTheme::BLUE_DARK]);
+        $admin = User::factory()->create(['theme' => UserTheme::NEON_ARENA]);
         $admin->syncRoles(['ADMIN']);
 
         $this->actingAs($admin)
             ->get('/admin')
             ->assertOk()
-            ->assertSeeHtml('data-theme="blue_dark"')
+            ->assertSeeHtml('data-theme="neon_arena"')
             ->assertSee('Choose color theme');
     }
 
@@ -89,7 +90,7 @@ class ThemePreferenceTest extends TestCase
             ->get('/profile')
             ->assertOk()
             ->assertSee('Arena Theme')
-            ->assertSee('Blue Dark')
+            ->assertSee('Neon Arena')
             ->assertSee('Light');
 
         $admin = User::factory()->create();
@@ -99,8 +100,31 @@ class ThemePreferenceTest extends TestCase
             ->get('/admin/profile')
             ->assertOk()
             ->assertSee('Appearance')
-            ->assertSee('Blue Dark')
+            ->assertSee('Neon Arena')
             ->assertSee('Light');
+    }
+
+    public function test_removed_blue_and_violet_themes_are_rejected_and_legacy_rows_fall_back(): void
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(ThemeSwitcher::class)
+            ->call('setTheme', 'blue_dark')
+            ->assertHasErrors(['theme'])
+            ->call('setTheme', 'purple_dark')
+            ->assertHasErrors(['theme']);
+
+        DB::table('users')->where('id', $user->id)->update(['theme' => 'purple_dark']);
+        $this->assertSame(UserTheme::NEON_ARENA, $user->fresh()->theme);
+    }
+
+    public function test_theme_switcher_lives_in_the_profile_menu_not_the_topbar(): void
+    {
+        $player = User::factory()->create();
+        $player->syncRoles(['PLAYER']);
+
+        $this->actingAs($player)->get('/dashboard')->assertOk()->assertSeeHtml('player-header-theme', false);
     }
 
     public function test_guest_landing_page_keeps_its_existing_public_theme(): void

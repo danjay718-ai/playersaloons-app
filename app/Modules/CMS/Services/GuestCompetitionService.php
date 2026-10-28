@@ -81,13 +81,39 @@ class GuestCompetitionService
             ->orderBy('start_at')->orderBy('id')->limit(8)->get();
     }
 
+    /** @return array{matches_won: int, total_won: string} */
+    public function winSummary(): array
+    {
+        $publicTournamentIds = $this->publicTournaments()
+            ->whereIn('status', [TournamentStatus::ONGOING, TournamentStatus::COMPLETED])
+            ->select('tournaments.id');
+
+        $matchesWon = GameMatch::query()
+            ->whereIn('tournament_id', $publicTournamentIds)
+            ->where('status', MatchStatus::COMPLETED)
+            ->whereNotNull('completed_at')
+            ->whereHas('winnerRegistration.user', fn (Builder $users) => $users->whereNull('users.deleted_at'))
+            ->count();
+
+        $totalPrize = (float) PrizeDistribution::query()
+            ->whereIn('tournament_id', $publicTournamentIds)
+            ->where('status', 'completed')
+            ->where('amount', '>', 0)
+            ->sum('amount');
+
+        return [
+            'matches_won' => $matchesWon,
+            'total_won' => Currency::format(number_format($totalPrize, 2, '.', '')),
+        ];
+    }
+
     /** @return list<GuestWin> */
     public function activity(): array
     {
         $matches = GameMatch::query()
             ->whereIn('tournament_id', $this->publicTournaments()->whereIn('status', [TournamentStatus::ONGOING, TournamentStatus::COMPLETED])->select('tournaments.id'))
             ->where('status', MatchStatus::COMPLETED)
-            ->whereNotNull('completed_at')->where('completed_at', '>=', now()->subWeek())
+            ->whereNotNull('completed_at')
             ->whereHas('winnerRegistration.user', fn (Builder $users) => $users->whereNull('users.deleted_at'))
             ->with(['winnerRegistration.user', 'round', 'tournament.rounds'])
             ->latest('completed_at')->orderByDesc('id')->limit(8)->get();

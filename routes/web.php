@@ -216,7 +216,7 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->group(function () {
     Route::get('/error-logs', ErrorIncidentAdmin::class)->name('admin.error-logs');
     Route::get('/cms/content', CmsContentAdmin::class)->name('admin.cms.content');
     Route::get('/cms/{section?}', CmsAdmin::class)
-        ->whereIn('section', ['landing', 'games', 'platforms', 'navigation', 'about'])
+        ->whereIn('section', ['landing', 'games', 'platforms', 'navigation', 'about', 'footer', 'cookies'])
         ->name('admin.cms');
     Route::get('/translations', TranslationAdmin::class)->name('admin.translations');
     Route::get('/policies', PolicyAdmin::class);

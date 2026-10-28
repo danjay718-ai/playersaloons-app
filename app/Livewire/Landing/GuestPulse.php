@@ -15,9 +15,14 @@ class GuestPulse extends Component
 
     public function render(GuestCompetitionService $competitions)
     {
-        return view('livewire.landing.guest-pulse', [
+        $view = $this->placement === 'activity' && config('features.landing.version') !== 'v3'
+            ? 'livewire.landing.guest-pulse-v4'
+            : 'livewire.landing.guest-pulse';
+
+        return view($view, [
             'summary' => $this->placement === 'header' ? $competitions->openSummary() : null,
             'activity' => $this->placement === 'activity' ? collect($competitions->activity()) : collect(),
+            'winSummary' => $this->placement === 'activity' ? $competitions->winSummary() : null,
         ]);
     }
 }

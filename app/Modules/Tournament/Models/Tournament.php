@@ -279,6 +279,18 @@ class Tournament extends Model implements HasMedia
         return Platform::withTrashed()->whereIn('id', $this->supportedPlatformIds())->orderBy('name')->pluck('name')->implode(', ');
     }
 
+    public function getDisplayNameAttribute(): string
+    {
+        $name = (string) $this->name;
+        $cleaned = preg_replace(
+            '/\s*[-–—·]\s*(?:[A-Z][a-z]{2,8}\s+\d{1,2},?\s+\d{4}(?:\s+\d{1,2}:\d{2}\s*(?:AM|PM)?)?|\d{4}-\d{2}-\d{2}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)\s*$/i',
+            '',
+            $name,
+        );
+
+        return trim($cleaned ?: $name);
+    }
+
     public function scopeForPlatform(Builder $query, int $platformId): void
     {
         $query->where(fn ($query) => $query->whereJsonContains('platform_ids', $platformId)

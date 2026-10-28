@@ -6,6 +6,7 @@ namespace App\Modules\Identity\Models;
 
 use App\Modules\Community\Models\Notification;
 use App\Modules\Community\Models\NotificationPreference;
+use App\Modules\Identity\Casts\UserThemeCast;
 use App\Modules\Identity\Services\UserPresenceService;
 use App\Modules\Stream\Models\StreamChannel;
 use App\Modules\Wallet\Models\Wallet;
@@ -142,7 +143,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             'newsletter_subscribed_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
-            'theme' => UserTheme::class,
+            'theme' => UserThemeCast::class,
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',
