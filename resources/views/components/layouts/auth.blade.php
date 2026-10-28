@@ -28,7 +28,6 @@
     @endif
     <main id="guest-main">{{ $slot }}</main>
     @include(config('features.landing.version') === 'v3' ? 'components.layouts.partials.guest-footer' : 'components.layouts.partials.gr-footer')
-    <x-pwa-update-prompt />
     <x-cookie-consent />
     @livewireScripts
 </body>

@@ -1,6 +1,4 @@
-@auth
-    @include('livewire.landing.authenticated-home')
-@elseif(config('features.landing.version') === 'v3')
+@if(config('features.landing.version') === 'v3')
     {{-- Previous guest design, retained. Re-enable with LANDING_VERSION=v3. --}}
     @include('livewire.landing.landing-page-v3')
 @else
@@ -12,19 +10,21 @@
     $topPlayersSection = $sections->get('top_players');
     $reviewsSection = $sections->get('reviews');
     $faqSection = $sections->get('faq');
+    $ctaSection = $sections->get('cta');
+    $emptyLeaderboard = $sections->get('leaderboard_empty');
     $byGame = $registrationTournaments->groupBy('game_id');
     $review = $playerReviews->first();
 @endphp
 <main id="guest-main" class="gr-home" x-data="grHome">
     @if($hero)
-        <x-guest.hero :hero="$hero" :tournament="$registrationTournaments->first()" />
+        <x-guest.hero :hero="$hero" :empty-section="$sections->get('competition_empty')" :tournament="$registrationTournaments->first()" />
     @endif
 
     <livewire:landing.guest-pulse placement="activity" key="guest-recent-results" />
 
-    @if($games->isNotEmpty())
+    @if($gamesSection && $games->isNotEmpty())
     <section id="games" class="gr-section gr-wrap">
-        <x-guest.section-head :eyebrow="__('Games')" :title="$gamesSection?->title ?: __('Pick your table')" :body="__('Tap a table to see what starts next.')" href="/tournaments" :link-label="__('Browse Tournaments')" />
+        <x-guest.section-head :eyebrow="$gamesSection->subtitle" :title="$gamesSection->title" :body="$gamesSection->body" :href="$gamesSection->cta_url" :link-label="$gamesSection->cta_label" />
         <div class="gr-tables">
             @foreach($games as $game)
                 <x-guest.table-card :game="$game" :tournaments="$byGame->get($game->id, collect())" :index="$loop->index" />
@@ -54,7 +54,15 @@
             <div class="gr-honours">
                 @forelse($topPlayers as $player)<x-guest.honour :player="$player" />
                 @empty
-                    <div class="gr-empty"><p>{{ __('The next name could be yours.') }}</p><span>{{ __('No weekly leaderboard results yet. Completed tournament matches will shape this board.') }}</span><a href="/tournaments">{{ __('Find a tournament') }} ↗</a></div>
+                    @if($emptyLeaderboard)
+                        <div class="gr-empty">
+                            <p>{{ $emptyLeaderboard->title }}</p>
+                            <span>{{ $emptyLeaderboard->body }}</span>
+                            @if($emptyLeaderboard->cta_label && $emptyLeaderboard->cta_url)
+                                <a href="{{ $emptyLeaderboard->cta_url }}">{{ $emptyLeaderboard->cta_label }} ↗</a>
+                            @endif
+                        </div>
+                    @endif
                 @endforelse
             </div>
         @endif
@@ -64,9 +72,13 @@
     </section>
     @endif
 
-    <x-guest.faq :section="$faqSection" />
+    @if($faqSection)
+        <x-guest.faq :section="$faqSection" />
+    @endif
 
-    <x-guest.cta-band />
-    <x-guest.join-bar />
+    @if($ctaSection)
+        <x-guest.cta-band :section="$ctaSection" />
+        <x-guest.join-bar :section="$ctaSection" />
+    @endif
 </main>
-@endauth
+@endif

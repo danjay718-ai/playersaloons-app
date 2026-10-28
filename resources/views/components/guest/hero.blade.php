@@ -1,4 +1,4 @@
-@props(['hero', 'tournament' => null])
+@props(['hero', 'tournament' => null, 'emptySection' => null])
 @php
     $rawTitle = trim((string) $hero->title);
     $phrases = preg_split('/(?<=\.)\s+/', $rawTitle, -1, PREG_SPLIT_NO_EMPTY) ?: [$rawTitle];
@@ -10,7 +10,8 @@
         $lastPhrase = (string) array_pop($phrases);
         $leadPhrases = $phrases;
     }
-    $typewriterWords = array_values(array_unique([$lastPhrase, __('DOMINATE.'), __('GET PAID.'), __('RANK UP.')]));
+    $typewriterWords = array_values(array_unique(array_merge([$lastPhrase], $hero->activeItems->where('item_key', '!=', 'primary-action')->pluck('title')->filter()->all())));
+    $primaryAction = $hero->activeItems->firstWhere('item_key', 'primary-action');
 @endphp
 <section class="gr-hero" data-gr-hero>
     <div class="gr-hero-media" wire:ignore x-data="{ playing: false, init() { if (!matchMedia('(prefers-reduced-motion: reduce)').matches) this.$refs.video?.play().then(() => this.playing = true).catch(() => {}); } }">
@@ -22,7 +23,7 @@
     <div class="gr-hero-glow" aria-hidden="true"></div>
     <div class="gr-wrap gr-hero-stage">
         <div class="gr-hero-copy">
-            <p class="gr-eyebrow"><span class="gr-slash" aria-hidden="true">//</span> {{ __('Competitive gaming for cash') }}</p>
+            <p class="gr-eyebrow"><span class="gr-slash" aria-hidden="true">//</span> {{ $hero->subtitle }}</p>
             <h1>
                 @foreach($leadPhrases as $phrase)
                     <span class="gr-hero-word {{ $loop->iteration === 2 ? 'is-cyan' : 'is-ink' }}">{{ $phrase }}</span>
@@ -33,10 +34,12 @@
             </h1>
             <p class="gr-hero-body">{{ $hero->body }}</p>
             <div class="gr-hero-actions">
-                <x-guest.button href="/register">{{ __('Create Account') }}</x-guest.button>
+                @auth<x-guest.button :href="route('dashboard')">{{ __('Dashboard') }}</x-guest.button>@else
+                @if($primaryAction)<x-guest.button :href="$primaryAction->url">{{ $primaryAction->title }}</x-guest.button>@endif
+                @endauth
                 @if($hero->cta_label && $hero->cta_url)<x-guest.button :href="$hero->cta_url" variant="ghost">{{ __($hero->cta_label) }}</x-guest.button>@endif
             </div>
         </div>
-        <x-guest.ticket :tournament="$tournament" />
+        <x-guest.ticket :tournament="$tournament" :empty-section="$emptySection" />
     </div>
 </section>

@@ -1,6 +1,17 @@
 @php
     $navigation = \App\Modules\CMS\Models\PublicNavigationItem::query()->where('is_active', true)
-        ->whereIn('visibility', ['public', 'guest', 'guest_or_player'])->orderBy('sort_order')->get();
+        ->orderBy('sort_order')->get()->filter(function ($item) {
+            $user = auth()->user();
+            $staff = $user?->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'FINANCE_OPERATOR', 'KYC_REVIEWER', 'SUPPORT_AGENT', 'TOURNAMENT_ORGANIZER']) ?? false;
+            return match ($item->visibility) {
+                'guest' => $user === null,
+                'auth' => $user !== null,
+                'player' => $user !== null && ! $staff,
+                'staff' => $staff,
+                'guest_or_player' => ! $staff,
+                default => true,
+            };
+        });
     $isHome = request()->is('/');
     $isH2h = request()->is('h2h*');
     $activeIds = $navigation
@@ -35,8 +46,12 @@
         <div class="gr-nav-actions">
             <button type="button" class="pwa-install-btn gr-install" data-pwa-install-desktop><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
             <button type="button" class="pwa-install-btn gr-install gr-install-icon hidden" data-pwa-install-mobile><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
+            @auth
+                <x-guest.button :href="route('dashboard')">{{ __('Dashboard') }}</x-guest.button>
+            @else
             <a class="gr-link gr-signin {{ request()->is('login') ? 'is-active' : '' }}" href="/login" @if(request()->is('login')) aria-current="page" @endif>{{ __('Sign In') }}</a>
             <x-guest.button href="/register" class="gr-nav-join">{{ __('Join Now') }}</x-guest.button>
+            @endauth
             <button class="gr-menu-toggle" type="button" @click="menu = !menu" :aria-expanded="menu.toString()" aria-controls="gr-mobile-nav" aria-label="{{ __('Menu') }}"><span></span><span></span></button>
         </div>
     </div>
@@ -48,7 +63,7 @@
         @if(config('features.tournament_v2.enabled'))
             <a href="{{ route('platform-h2h', ['view' => 'guest']) }}" @click="menu = false" class="{{ $isH2h ? 'is-active' : '' }}">{{ __('Head-to-Head') }}</a>
         @endif
-        <a href="/login">{{ __('Sign In') }}</a>
+        @auth<a href="{{ route('dashboard') }}">{{ __('Dashboard') }}</a>@else<a href="/login">{{ __('Sign In') }}</a>@endauth
         <button type="button" class="pwa-install-btn gr-install" data-pwa-install-mobile><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
         <x-localization.language-switcher variant="public" align="left" />
     </nav>

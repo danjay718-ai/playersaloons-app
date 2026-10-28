@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Landing;
 
+use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Services\GuestCompetitionService;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -20,6 +21,9 @@ class GuestPulse extends Component
             : 'livewire.landing.guest-pulse';
 
         return view($view, [
+            'activitySection' => $view === 'livewire.landing.guest-pulse-v4'
+                ? LandingSection::query()->where('key', 'activity')->where('is_active', true)->first()
+                : null,
             'summary' => $this->placement === 'header' ? $competitions->openSummary() : null,
             'activity' => $this->placement === 'activity' ? collect($competitions->activity()) : collect(),
             'winSummary' => $this->placement === 'activity' ? $competitions->winSummary() : null,
