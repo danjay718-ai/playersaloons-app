@@ -42,7 +42,6 @@
     @auth
         <x-logout-confirmation />
     @endauth
-    <x-pwa-update-prompt />
     <x-cookie-consent />
 
     @livewireScripts

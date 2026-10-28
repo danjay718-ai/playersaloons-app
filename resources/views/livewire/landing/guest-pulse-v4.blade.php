@@ -1,4 +1,5 @@
 <div wire:poll.30s.visible x-data="{ paused: false }" :class="{ 'is-paused': paused }" class="gr-wire" data-ui>
+    @if($activitySection)
     @if($winSummary && $winSummary['matches_won'] > 0)
         <div class="gr-wire-summary" aria-label="{{ __('Platform win totals') }}">
             <span class="gr-wire-badge">
@@ -12,7 +13,7 @@
             </span>
         </div>
     @endif
-    <div class="gr-wire-window" tabindex="0" role="region" aria-label="{{ __('Recent public results') }}">
+    <div class="gr-wire-window" tabindex="0" role="region" aria-label="{{ $activitySection->title }}">
         @if($activity->isNotEmpty())
             <div class="gr-wire-track">
                 @foreach([false, true] as $duplicate)
@@ -34,10 +35,11 @@
                 @endforeach
             </div>
         @else
-            <span class="gr-wire-empty">{{ __('The next win could be yours. Confirmed player wins appear here.') }}</span>
+            <span class="gr-wire-empty">{{ $activitySection->body }}</span>
         @endif
     </div>
     @if($activity->isNotEmpty())
         <button type="button" x-cloak @click="paused = !paused" :aria-pressed="paused.toString()" :aria-label="paused ? @js(__('Resume activity')) : @js(__('Pause activity'))" x-text="paused ? '▶' : '❚❚'">❚❚</button>
+    @endif
     @endif
 </div>

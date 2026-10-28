@@ -157,3 +157,22 @@ Both **Guest** (`/tournaments`, `/h2h?view=guest`, `/games/{slug}?view=guest`) a
 - **Streamlined Tournament Overview (`resources/views/livewire/tournament/partials/player-content.blade.php`):**
   - Focused 4-card essential specs row (`Format`, `1st Prize` + 2nd, `Platform`, `Result Window`), collapsible description, compact 2-column rules grid, and a clean 3-step `Match Timeline` (`Registration Opens`, `First Match`, `Estimated End`).
 
+
+
+## Landing content and signed-in visits
+
+The root URL uses the configured landing version for guests and signed-in users alike. Signed-in users get Dashboard links in place of signup actions.
+
+In Admin → CMS → Landing, edit these sections:
+
+- `hero`: title, subtitle, body, video, and secondary CTA. The `primary-action` item controls the signup button; the other active items supply the rotating headline phrases.
+- `games`: heading, subtitle, description, and browse link.
+- `how_it_works`, `stats`, and `top_players`: existing content and item labels; match statistics remain calculated from real activity.
+- `faq`: heading, subtitle, body, and the small label (CTA Label). Items are the questions and answers. Hidden or deleted items stay hidden without template fallback questions.
+- `activity`: activity strip title and empty-state message.
+- `cta`: closing heading, body, signup action, and the sticky join-bar action.
+- `competition_empty` and `leaderboard_empty`: copy and links shown when there is no competition or leaderboard activity.
+
+Opening the landing editor or running `LandingPageSeeder` adds missing defaults without overwriting existing edits or restoring soft-deleted content. Footer copy and social links remain in the Footer editor.
+
+Install buttons use the browser's native prompt when available. Otherwise, a dismissible modal shows manual installation instructions, including Share → Add to Home Screen for iPhone/iPad. The footer install button is also available on mobile. Actual device installation requires verification on physical Android and iOS devices.

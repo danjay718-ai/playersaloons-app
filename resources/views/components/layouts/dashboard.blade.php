@@ -505,7 +505,6 @@
     </nav>
 
     <x-logout-confirmation />
-    <x-pwa-update-prompt />
     @livewireScripts
 
     <script src="https://unpkg.com/lucide@latest"></script>

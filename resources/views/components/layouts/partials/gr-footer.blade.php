@@ -21,9 +21,6 @@
                     <span class="font-orbitron font-black text-xl tracking-tight text-white group-hover:text-cyan-400 transition-colors">
                         GAMERS<span class="text-[#c6ff3d]">RIVAL</span>
                     </span>
-                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                        V2 Saloon
-                    </span>
                 </a>
                 @if($tagline)
                     <p class="text-xs font-bold uppercase tracking-wider text-zinc-300">
@@ -121,7 +118,7 @@
             <p>&copy; {{ date('Y') }} {{ __($copyright) }}</p>
 
             <div class="gr-footer-tools flex items-center gap-3">
-                <button type="button" class="pwa-install-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:border-white/20 text-zinc-300 hover:text-white text-xs font-semibold transition-colors" data-pwa-install-desktop>
+                <button type="button" class="pwa-install-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:border-white/20 text-zinc-300 hover:text-white text-xs font-semibold transition-colors" data-pwa-install-desktop data-pwa-install-mobile>
                     <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     <span data-pwa-install-label>{{ __('Install App') }}</span>
                 </button>

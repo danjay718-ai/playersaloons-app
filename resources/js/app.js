@@ -778,44 +778,10 @@ function attachPublicPwaInstallEvents() {
     });
 }
 
-function syncPwaUpdatePrompt() {
-    document.querySelectorAll('[data-pwa-update-prompt]').forEach(prompt => {
-        prompt.classList.toggle('hidden', window.__playerSaloonsPwaUpdateReady !== true);
-    });
-}
-
-function attachPwaUpdatePromptEvents() {
-    if (window.__playerSaloonsPwaUpdateListenerAttached) return;
-
-    window.__playerSaloonsPwaUpdateListenerAttached = true;
-    document.addEventListener('click', event => {
-        if (event.target.closest('[data-pwa-update-now]')) {
-            window.dispatchEvent(new CustomEvent('pwa-apply-update'));
-
-            return;
-        }
-
-        if (event.target.closest('[data-pwa-update-later]')) {
-            window.__playerSaloonsPwaUpdateReady = false;
-            syncPwaUpdatePrompt();
-        }
-    });
-}
-
 function initPublicPwaInstall() {
-    attachPwaUpdatePromptEvents();
-    syncPwaUpdatePrompt();
-
     if ('serviceWorker' in navigator && !window.__playerSaloonsServiceWorkerRegistered) {
         window.__playerSaloonsServiceWorkerRegistered = true;
         let refreshingForServiceWorker = false;
-        let serviceWorkerRegistration = null;
-        const notifyUpdateReady = () => {
-            window.__playerSaloonsPwaUpdateReady = true;
-            window.dispatchEvent(new CustomEvent('pwa-update-ready'));
-            syncPwaUpdatePrompt();
-        };
-
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (refreshingForServiceWorker) return;
 
@@ -823,30 +789,16 @@ function initPublicPwaInstall() {
             window.location.reload();
         });
 
-        window.addEventListener('pwa-apply-update', () => {
-            serviceWorkerRegistration?.waiting?.postMessage({ type: 'SKIP_WAITING' });
-        });
-
-        window.addEventListener('load', () => {
+        const registerServiceWorker = () => {
             navigator.serviceWorker.register('/sw.js')
                 .then(registration => {
-                    serviceWorkerRegistration = registration;
-
-                    if (registration.waiting) notifyUpdateReady();
-
-                    registration.addEventListener('updatefound', () => {
-                        const installingWorker = registration.installing;
-                        installingWorker?.addEventListener('statechange', () => {
-                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                notifyUpdateReady();
-                            }
-                        });
-                    });
-
                     return registration.update();
                 })
                 .catch(err => console.error('SW registration failed:', err));
-        });
+        };
+
+        if (document.readyState === 'complete') registerServiceWorker();
+        else window.addEventListener('load', registerServiceWorker, { once: true });
     }
 
     const isStandalone = () => {
@@ -921,17 +873,25 @@ function initPublicPwaInstall() {
     const showInstallNotice = message => {
         let notice = document.getElementById('pwa-install-notice');
         if (!notice) {
-            notice = document.createElement('div');
+            notice = document.createElement('dialog');
             notice.id = 'pwa-install-notice';
-            notice.className = 'fixed inset-x-4 bottom-5 z-[100] mx-auto max-w-md rounded-2xl border border-cyan-300/30 bg-zinc-950/95 px-4 py-3 text-center text-xs font-semibold leading-relaxed text-zinc-100 shadow-[0_0_32px_rgba(34,211,238,0.25)] backdrop-blur-xl sm:bottom-8';
-            notice.setAttribute('role', 'status');
-            notice.setAttribute('aria-live', 'polite');
+            notice.className = 'pwa-install-notice';
+            notice.setAttribute('aria-labelledby', 'pwa-install-notice-title');
+            const title = document.createElement('h2');
+            title.id = 'pwa-install-notice-title';
+            title.textContent = interfaceText('Install App');
+            const body = document.createElement('p');
+            body.dataset.pwaInstallMessage = '';
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.textContent = interfaceText('Close');
+            close.addEventListener('click', () => notice.close());
+            notice.append(title, body, close);
             document.body.append(notice);
         }
 
-        notice.textContent = message;
-        window.clearTimeout(window.__playerSaloonsPwaNoticeTimer);
-        window.__playerSaloonsPwaNoticeTimer = window.setTimeout(() => notice.remove(), 7000);
+        notice.querySelector('[data-pwa-install-message]').textContent = message;
+        if (!notice.open) notice.showModal();
     };
 
     const installHelpMessage = () => {
@@ -946,7 +906,7 @@ function initPublicPwaInstall() {
             return interfaceText('To install on iPhone or iPad, tap Share, then Add to Home Screen. If it is already installed, open GamersRival from your Home Screen.');
         }
 
-        return interfaceText('Use your browser menu and choose Install app. If GamersRival is already installed, open it from your desktop or app launcher.');
+        return interfaceText('Open your browser menu and choose Install app or Add to Home Screen. If you opened this page inside another app, open it in Chrome or Safari first.');
     };
 
     getInstallButtons().forEach(button => {
@@ -966,7 +926,7 @@ function initPublicPwaInstall() {
             syncInstallButtons();
 
             try {
-                promptEvent.prompt();
+                await promptEvent.prompt();
                 const choice = await promptEvent.userChoice;
                 window.__playerSaloonsPwaPrompt = null;
 

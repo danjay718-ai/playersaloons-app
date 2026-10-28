@@ -17,6 +17,7 @@ use App\Modules\Wallet\Models\PrizeDistribution;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\TournamentStatus;
 use App\Shared\Support\Currency;
+use Database\Seeders\LandingPageSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -25,6 +26,12 @@ use Tests\TestCase;
 class GuestCompetitionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(LandingPageSeeder::class);
+    }
 
     public function test_guest_board_excludes_private_inactive_elapsed_and_deleted_tournaments(): void
     {

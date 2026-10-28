@@ -101,12 +101,13 @@ class LandingPageTest extends TestCase
             ->assertSee('Contact');
     }
 
-    public function test_authenticated_home_keeps_its_existing_presentation(): void
+    public function test_authenticated_admin_sees_the_current_landing(): void
     {
         $this->actingAs($this->adminUser())->get('/')
             ->assertOk()
-            ->assertSee('id="public-nav"', escape: false)
-            ->assertSee('landing-page-root')
+            ->assertSee('gr-header')
+            ->assertSee('gr-home')
+            ->assertDontSee('landing-page-root')
             ->assertDontSee('guest-tournament-strip');
     }
 

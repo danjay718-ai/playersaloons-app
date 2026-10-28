@@ -50,7 +50,7 @@ final class FreshInstallationSeederTest extends TestCase
         $this->assertDatabaseCount('user_profiles', 2);
         $this->assertDatabaseCount('wallets', 3);
         $this->assertSame(0.0, (float) DB::table('wallets')->sum('cached_balance'));
-        $this->assertDatabaseCount('landing_sections', 8);
+        $this->assertDatabaseCount('landing_sections', 13);
         $this->assertDatabaseCount('public_navigation_items', 4);
         $this->assertDatabaseCount('policy_pages', 5);
 

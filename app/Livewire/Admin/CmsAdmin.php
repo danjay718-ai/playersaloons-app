@@ -14,6 +14,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Operations\Services\AdminDeletionService;
 use App\Modules\Operations\Services\GameDeletionService;
+use Database\Seeders\LandingPageSeeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -58,16 +59,7 @@ class CmsAdmin extends AdminComponent
         $this->tab = $this->resolveTab($section);
 
         if ($this->tab === 'landing') {
-            LandingSection::firstOrCreate(
-                ['key' => 'faq'],
-                [
-                    'uuid' => Str::uuid()->toString(),
-                    'title' => 'Frequently Asked Questions',
-                    'subtitle' => 'Got questions? Everything you need to know about competing.',
-                    'sort_order' => 9,
-                    'is_active' => true,
-                ]
-            );
+            app(LandingPageSeeder::class)->run();
             $firstSection = LandingSection::query()->orderBy('sort_order')->first();
             if ($firstSection) {
                 $this->selectLandingSection((int) $firstSection->id);
@@ -266,16 +258,7 @@ class CmsAdmin extends AdminComponent
         $this->resetPage();
 
         if ($tabName === 'landing') {
-            LandingSection::firstOrCreate(
-                ['key' => 'faq'],
-                [
-                    'uuid' => Str::uuid()->toString(),
-                    'title' => 'Frequently Asked Questions',
-                    'subtitle' => 'Got questions? Everything you need to know about competing.',
-                    'sort_order' => 9,
-                    'is_active' => true,
-                ]
-            );
+            app(LandingPageSeeder::class)->run();
             if ($this->selectedLandingSectionId === null) {
                 $firstSection = LandingSection::query()->orderBy('sort_order')->first();
                 if ($firstSection) {
