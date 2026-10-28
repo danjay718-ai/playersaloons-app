@@ -1,3 +1,6 @@
+@guest
+    @include(config('features.landing.version') === 'v3' ? 'components.layouts.partials.guest-footer' : 'components.layouts.partials.gr-footer')
+@else
 @php
     $footer = \App\Modules\CMS\Models\LandingSection::query()
         ->where('key', 'footer')
@@ -22,3 +25,5 @@
         </div>
     </div>
 </footer>
+
+@endguest

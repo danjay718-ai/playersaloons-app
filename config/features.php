@@ -16,6 +16,14 @@ return [
         'enabled' => (bool) env('PLAYER_WAGER_ENABLED', false),
     ],
 
+    /*
+    | Guest landing design. v4 is the active "Neon Arena" design; v3 is the
+    | previous design, retained so it can be restored with LANDING_VERSION=v3.
+    */
+    'landing' => [
+        'version' => env('LANDING_VERSION', 'v4'),
+    ],
+
     'team_finder' => [
         'enabled' => (bool) env('TEAM_FINDER_ENABLED', false),
     ],

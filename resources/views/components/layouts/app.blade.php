@@ -23,18 +23,18 @@
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-white antialiased overflow-x-hidden">
+<body class="{{ auth()->guest() ? (config('features.landing.version') === 'v3' ? 'guest-experience' : 'gr-experience') : '' }} bg-[#05080f] text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-[#c6ff3d] selection:text-[#05080f] antialiased overflow-x-clip">
 
     <!-- Global Background FX -->
     <div class="fixed inset-0 pointer-events-none z-0">
         <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/5 rounded-full blur-[120px]"></div>
-        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-600/5 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-lime-400/5 rounded-full blur-[120px]"></div>
     </div>
 
     @include('components.layouts.partials.public-navigation')
 
     <!-- Main Content Area -->
-    <main class="relative z-10 flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 md:pt-24 md:pb-12">
+    <main id="guest-main" class="relative z-10 flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 md:pt-24 md:pb-12">
         {{ $slot }}
     </main>
 
@@ -43,6 +43,7 @@
         <x-logout-confirmation />
     @endauth
     <x-pwa-update-prompt />
+    <x-cookie-consent />
 
     @livewireScripts
 </body>

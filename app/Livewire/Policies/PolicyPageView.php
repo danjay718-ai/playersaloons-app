@@ -24,8 +24,16 @@ class PolicyPageView extends Component
             ->whereNotNull('published_at')
             ->firstOrFail();
 
+        $allPolicies = PolicyPage::query()
+            ->where('is_active', true)
+            ->whereNotNull('published_at')
+            ->orderBy('sort_order')
+            ->orderBy('title')
+            ->get();
+
         return view('livewire.policies.policy-page-view', [
             'policy' => $policy,
+            'allPolicies' => $allPolicies,
         ])->layout('components.layouts.landing', [
             'title' => $policy->title.' | GamersRival',
         ]);

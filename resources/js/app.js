@@ -1,3 +1,5 @@
+import './guest-home';
+import './guest-v4';
 /**
  * GamersRival Global Scripts
  */

@@ -12,14 +12,14 @@ use Livewire\Component;
 
 final class ThemeSwitcher extends Component
 {
-    public string $theme = UserTheme::PURPLE_DARK->value;
+    public string $theme = UserTheme::NEON_ARENA->value;
 
     public string $variant = 'compact';
 
     public function mount(string $variant = 'compact'): void
     {
-        $this->variant = in_array($variant, ['compact', 'cards'], true) ? $variant : 'compact';
-        $this->theme = auth()->user()?->theme?->value ?? UserTheme::PURPLE_DARK->value;
+        $this->variant = in_array($variant, ['compact', 'cards', 'menu'], true) ? $variant : 'compact';
+        $this->theme = auth()->user()?->theme?->value ?? UserTheme::default()->value;
     }
 
     public function setTheme(string $theme): void

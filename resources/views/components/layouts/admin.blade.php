@@ -1,5 +1,5 @@
 @php
-    $accountTheme = auth()->user()?->theme ?? \App\Shared\Enums\UserTheme::PURPLE_DARK;
+    $accountTheme = auth()->user()?->theme ?? \App\Shared\Enums\UserTheme::default();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $accountTheme->value }}">
@@ -30,7 +30,6 @@
             <span class="font-bold text-sm tracking-wider uppercase text-slate-200">{{ __('GR ADMIN') }}</span>
         </div>
         <div class="flex items-center space-x-2">
-            <livewire:identity.theme-switcher key="admin-mobile-theme" />
             @php $mobileRole = auth()->user()?->roles?->pluck('name')?->first() ?? 'Staff'; @endphp
             <span class="text-[9px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-900/40 border border-indigo-700/30 rounded-full px-2 py-0.5">
                 {{ $mobileRole }}
@@ -87,6 +86,8 @@
                                 ['label' => 'Games', 'icon' => 'gamepad-2', 'url' => '/admin/cms/games', 'permission' => 'games.view'],
                                 ['label' => 'Platforms', 'icon' => 'monitor-smartphone', 'url' => '/admin/cms/platforms', 'permission' => 'cms.manage'],
                                 ['label' => 'Navigation', 'icon' => 'menu', 'url' => '/admin/cms/navigation', 'permission' => 'cms.manage'],
+                                ['label' => 'Footer', 'icon' => 'panel-bottom', 'url' => '/admin/cms/footer', 'permission' => 'cms.manage'],
+                                ['label' => 'Cookie Management', 'icon' => 'cookie', 'url' => '/admin/cms/cookies', 'permission' => 'cms.manage'],
                                 ['label' => 'About Us', 'icon' => 'info', 'url' => '/admin/cms/about', 'permission' => 'cms.manage'],
                                 ['label' => 'Policies', 'icon' => 'scroll-text', 'url' => '/admin/policies', 'permission' => 'cms.view'],
                                 ['label' => 'Translations', 'icon' => 'languages', 'url' => '/admin/translations', 'permission' => 'translations.view'],
@@ -224,26 +225,46 @@
                         ];
                         $roleClass = $roleColors[$adminRole] ?? 'bg-slate-800 text-slate-300 border-slate-700/30';
                     @endphp
-                    <a href="/admin/profile" wire:navigate class="flex items-center space-x-3 bg-slate-900/60 border border-slate-700/50 hover:border-slate-650/80 hover:bg-slate-800/40 rounded-xl px-3.5 py-2 transition-all duration-150">
-                        <div class="w-9 h-9 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-xs font-bold shrink-0">
-                            {{ strtoupper(substr(auth()->user()?->username ?? 'A', 0, 2)) }}
-                        </div>
-                        <div class="flex flex-col items-start min-w-0">
-                            <span class="text-xs font-semibold text-slate-200 truncate leading-tight">{{ auth()->user()?->username }}</span>
-                            <span class="text-[9px] font-semibold uppercase tracking-wider {{ $roleClass }} inline-flex items-center gap-1 border rounded-full px-2 py-0.5 mt-1">
-                                <i data-lucide="shield" class="w-2.5 h-2.5"></i>
-                                {{ str_replace('_', ' ', $adminRole) }}
-                            </span>
-                        </div>
-                    </a>
-                    <livewire:identity.theme-switcher key="admin-header-theme" />
-                    <x-localization.language-switcher variant="admin" />
-                    <form method="POST" action="{{ route('logout') }}" class="m-0">
-                        @csrf
-                        <button type="submit" title="{{ __('Sign out') }}" class="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/20">
-                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                        <button type="button" @click="open = !open" class="flex items-center space-x-3 bg-slate-900/60 border border-slate-700/50 hover:border-cyan-500/40 hover:bg-slate-800/40 rounded-xl px-3.5 py-2 transition-all duration-150">
+                            <div class="w-9 h-9 rounded-full bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-300 text-xs font-bold shrink-0">
+                                {{ strtoupper(substr(auth()->user()?->username ?? 'A', 0, 2)) }}
+                            </div>
+                            <div class="flex flex-col items-start min-w-0">
+                                <span class="text-xs font-semibold text-slate-200 truncate leading-tight">{{ auth()->user()?->username }}</span>
+                                <span class="text-[9px] font-semibold uppercase tracking-wider {{ $roleClass }} inline-flex items-center gap-1 border rounded-full px-2 py-0.5 mt-1">
+                                    <i data-lucide="shield" class="w-2.5 h-2.5"></i>
+                                    {{ str_replace('_', ' ', $adminRole) }}
+                                </span>
+                            </div>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
                         </button>
-                    </form>
+
+                        <div x-show="open" x-cloak
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="theme-popover absolute right-0 mt-2.5 w-64 rounded-xl border border-slate-700/70 bg-[#0a1220] py-1.5 shadow-[0_14px_36px_rgba(0,0,0,0.75)] z-50">
+                            <a href="/admin/profile" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold text-slate-200 hover:bg-cyan-500/10 hover:text-cyan-300 transition-colors">
+                                <i data-lucide="user-cog" class="w-4 h-4 text-cyan-400"></i>
+                                <span>{{ __('My Profile') }}</span>
+                            </a>
+                            <div class="my-1 border-t border-slate-800/80"></div>
+                            <livewire:identity.theme-switcher variant="menu" key="admin-header-theme" />
+                            <div class="my-1 border-t border-slate-800/80"></div>
+                            <form method="POST" action="{{ route('logout') }}" class="m-0">
+                                @csrf
+                                <button type="submit" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                                    <i data-lucide="log-out" class="w-4 h-4 text-red-400"></i>
+                                    <span>{{ __('Sign out') }}</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <x-localization.language-switcher variant="admin" />
                 </div>
             </header>
 
@@ -317,11 +338,15 @@
                     <p class="mt-1 font-mono text-sm font-bold text-slate-100" x-text="time"></p>
                     <p class="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500"><span x-text="date"></span> · {{ $adminClockTimezone }}</p>
                 </div>
-                <div class="flex items-center justify-between px-4 py-2 bg-slate-900/40 rounded-lg border border-slate-800/50 text-xs">
+                <a href="/admin/profile" wire:navigate class="flex items-center justify-between px-4 py-2 bg-slate-900/40 rounded-lg border border-slate-800/50 text-xs hover:border-cyan-500/40 transition-colors">
                     <div class="truncate">
                         <p class="font-bold text-slate-350 truncate">{{ auth()->user()->username }}</p>
                         <p class="text-[9px] text-slate-500 uppercase tracking-wider mt-0.5">{{ str_replace('_', ' ', auth()->user()->roles->pluck('name')->first() ?? 'Staff') }}</p>
                     </div>
+                    <i data-lucide="user-cog" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+                </a>
+                <div class="rounded-lg border border-slate-800/70 bg-slate-900/40">
+                    <livewire:identity.theme-switcher variant="menu" key="admin-mobile-theme" />
                 </div>
                 <x-localization.language-switcher variant="admin" align="left" class="w-full" />
             </div>

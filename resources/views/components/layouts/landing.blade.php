@@ -23,7 +23,7 @@
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
-<body class="min-h-screen overflow-x-hidden bg-[#050311] font-sans text-zinc-100 antialiased selection:bg-cyan-500 selection:text-white">
+<body class="{{ auth()->guest() ? (config('features.landing.version') === 'v3' ? 'guest-experience' : 'gr-experience') : '' }} min-h-screen overflow-x-clip bg-[#05080f] font-sans text-zinc-100 antialiased selection:bg-[#c6ff3d] selection:text-[#05080f]">
 
     @include('components.layouts.partials.public-navigation')
 
@@ -31,6 +31,7 @@
 
     @include('components.layouts.partials.public-footer')
     <x-pwa-update-prompt />
+    <x-cookie-consent />
 
     @livewireScripts
 </body>

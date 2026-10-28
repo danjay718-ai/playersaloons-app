@@ -66,6 +66,7 @@ class LandingPageTest extends TestCase
 
     public function test_landing_page_renders_seeded_content_video_and_games(): void
     {
+        config(['features.landing.version' => 'v3']);
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant',
@@ -83,8 +84,9 @@ class LandingPageTest extends TestCase
             ->assertSee('/compressed_v1.mp4')
             ->assertSee('/images/games/valorant.webp')
             ->assertSee(route('games.show', $game), escape: false)
-            ->assertSee('Previous available games')
-            ->assertSee('Next available games')
+            ->assertSee('open tournaments')
+            ->assertSee('data-pwa-install-desktop', escape: false)
+            ->assertSee('Weekly honours')
             ->assertSee('PLAY.')
             ->assertSee('WIN.')
             ->assertSee('CASH OUT.')
@@ -97,6 +99,15 @@ class LandingPageTest extends TestCase
             ->assertSee('Built For Competitive Play')
             ->assertSee('Player Reviews')
             ->assertSee('Contact');
+    }
+
+    public function test_authenticated_home_keeps_its_existing_presentation(): void
+    {
+        $this->actingAs($this->adminUser())->get('/')
+            ->assertOk()
+            ->assertSee('id="public-nav"', escape: false)
+            ->assertSee('landing-page-root')
+            ->assertDontSee('guest-tournament-strip');
     }
 
     public function test_admin_can_update_landing_section_and_create_item(): void
