@@ -28,15 +28,21 @@ class Game extends Model
 {
     use SoftDeletes;
 
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
     public function scopeAvailableInCatalog(Builder $query): Builder
     {
-        return $query->withoutTrashed()->where('games.is_active', true);
+        $query->withoutTrashed();
+
+        return $query->where('games.is_active', true);
     }
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'uuid',
@@ -50,7 +56,7 @@ class Game extends Model
     /**
      * Get the attributes that should be cast.
      *
-     * @return array<string, string>
+     * @return array{is_active: 'boolean', game_id_settings: 'array'}
      */
     protected function casts(): array
     {
@@ -63,7 +69,7 @@ class Game extends Model
     /**
      * Get translations for the game.
      *
-     * @return HasMany<GameTranslation, Game>
+     * @return HasMany<GameTranslation, $this>
      */
     public function translations(): HasMany
     {
@@ -73,7 +79,7 @@ class Game extends Model
     /**
      * Get trailer/embed stream channels for the game.
      *
-     * @return HasMany<StreamChannel, Game>
+     * @return HasMany<StreamChannel, $this>
      */
     public function streamChannels(): HasMany
     {
@@ -142,7 +148,7 @@ class Game extends Model
 
     public function localizedName(?string $locale = null): string
     {
-        return $this->translation($locale)?->name ?? $this->slug;
+        return $this->translation($locale)->name ?? $this->slug;
     }
 
     public function localizedDescription(?string $locale = null): ?string

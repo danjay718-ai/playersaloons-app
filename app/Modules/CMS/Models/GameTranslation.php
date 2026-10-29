@@ -10,14 +10,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $game_id
  * @property string $locale
  * @property string $name
- * @property string $description
+ * @property string|null $description
  */
 class GameTranslation extends Model
 {
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'game_id',
@@ -29,7 +29,7 @@ class GameTranslation extends Model
     /**
      * Get the game this translation belongs to.
      *
-     * @return BelongsTo<Game, GameTranslation>
+     * @return BelongsTo<Game, $this>
      */
     public function game(): BelongsTo
     {

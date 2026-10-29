@@ -403,12 +403,12 @@ class CmsAdmin extends AdminComponent
 
     private function loadFooterSettings(): void
     {
-        $footerSection = LandingSection::query()->where('key', 'footer')->first();
+        $footerBody = LandingSection::query()->where('key', 'footer')->value('body');
         $settings = SystemSetting::query()->where('key', 'like', 'footer.%')->pluck('value', 'key');
 
         $this->footerBrandTagline = (string) ($settings['footer.tagline'] ?? 'The Premier Competitive Gaming & Tournament Saloon');
         $this->footerDescription = (string) ($settings['footer.description'] ?? 'Compete in high-stakes daily tournaments and 1v1 challenges across Mobile Legends, Call of Duty, FIFA, and more. Transparent brackets, automated payouts, and verified fair play.');
-        $this->footerCopyright = (string) ($settings['footer.copyright'] ?? ($footerSection?->body ?? 'All rights reserved. Operated by GamersRival Systems.'));
+        $this->footerCopyright = (string) ($settings['footer.copyright'] ?? ($footerBody ?? 'All rights reserved. Operated by GamersRival Systems.'));
         $this->footerDisclaimer = (string) ($settings['footer.disclaimer'] ?? 'GamersRival is an independent esports competition platform. Game titles, artwork, and trademarks belong to their respective publishers and owners.');
         $this->footerDiscord = (string) ($settings['footer.discord'] ?? 'https://discord.gg/gamersrival');
         $this->footerTwitter = (string) ($settings['footer.twitter'] ?? 'https://x.com/gamersrival');
@@ -602,7 +602,7 @@ class CmsAdmin extends AdminComponent
 
         $this->gameName = $translation !== null ? $translation->name : '';
         $this->gameSlug = $game->slug;
-        $this->gameDescription = $translation !== null ? $translation->description : '';
+        $this->gameDescription = $translation->description ?? '';
         $this->gameBannerPath = (string) ($game->bannerUrl() ?? '');
         $this->gameCardImagePath = (string) ($game->cardArtworkUrl() ?? '');
         $this->gameIsActive = (bool) $game->is_active;
@@ -629,8 +629,8 @@ class CmsAdmin extends AdminComponent
             ->where('locale', $this->gameLocale)
             ->first();
 
-        $this->gameName = $translation?->name ?? '';
-        $this->gameDescription = $translation?->description ?? '';
+        $this->gameName = $translation->name ?? '';
+        $this->gameDescription = $translation->description ?? '';
     }
 
     public function saveGameTranslation(): void

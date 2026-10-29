@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Livewire\Admin\CmsAdmin;
+use App\Modules\CMS\Models\LandingSection;
 use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Shared\Enums\UserStatus;
@@ -88,6 +89,20 @@ class CmsCookieAndFooterManagementTest extends TestCase
         $this->assertSame('Global Esports Arena', SystemSetting::query()->where('key', 'footer.tagline')->value('value'));
         $this->assertSame('2026 GamersRival Global Inc.', SystemSetting::query()->where('key', 'footer.copyright')->value('value'));
         $this->assertSame('https://discord.gg/custom', SystemSetting::query()->where('key', 'footer.discord')->value('value'));
+    }
+
+    public function test_footer_copyright_falls_back_to_section_then_default_when_settings_are_missing(): void
+    {
+        SystemSetting::query()->where('key', 'footer.copyright')->delete();
+        $footer = LandingSection::query()->where('key', 'footer')->firstOrFail();
+        $footer->update(['body' => 'Custom section copyright']);
+
+        Livewire::actingAs($this->admin)->test(CmsAdmin::class, ['section' => 'footer'])
+            ->assertSet('footerCopyright', 'Custom section copyright');
+
+        $footer->delete();
+        Livewire::actingAs($this->admin)->test(CmsAdmin::class, ['section' => 'footer'])
+            ->assertSet('footerCopyright', 'All rights reserved. Operated by GamersRival Systems.');
     }
 
     public function test_cookie_consent_banner_appears_on_guest_landing(): void

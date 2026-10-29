@@ -229,6 +229,40 @@ class LandingPageTest extends TestCase
         ]);
     }
 
+    public function test_game_editor_loads_json_settings_and_nullable_or_missing_translations(): void
+    {
+        $game = Game::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'slug' => 'nullable-description',
+            'is_active' => true,
+            'game_id_settings' => ['default' => [
+                'label' => 'Player tag',
+                'example' => 'Player#123',
+                'instructions' => 'Copy your tag from the game profile.',
+            ]],
+        ]);
+        $game->translations()->create(['locale' => 'en', 'name' => 'Nullable Description', 'description' => null]);
+
+        Livewire::actingAs($this->adminUser())->test(CmsAdmin::class)
+            ->call('editGameTranslation', $game->id)
+            ->assertSet('gameName', 'Nullable Description')
+            ->assertSet('gameDescription', '')
+            ->assertSet('gameIdLabel', 'Player tag')
+            ->assertSet('gameIdExample', 'Player#123')
+            ->assertSet('gameIdInstructions', 'Copy your tag from the game profile.')
+            ->call('loadSelectedGameTranslation')
+            ->assertSet('gameName', 'Nullable Description')
+            ->assertSet('gameDescription', '')
+            ->set('gameLocale', 'fr')
+            ->call('loadSelectedGameTranslation')
+            ->assertSet('gameName', '')
+            ->assertSet('gameDescription', '')
+            ->call('editGameTranslation', $game->id)
+            ->assertSet('gameName', '')
+            ->assertSet('gameDescription', '')
+            ->assertHasNoErrors();
+    }
+
     public function test_admin_can_create_a_game_with_platforms_and_edit_its_catalog_display(): void
     {
         Storage::fake('public');
