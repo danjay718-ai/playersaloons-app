@@ -38,6 +38,13 @@
         : __('Free');
     $prizeLabel = $symbol.number_format($prizeAmount, 2);
     $detailUrl = '/tournaments/'.$tournament->uuid.'/view'.$viewQuery;
+    $joinedLabel = ! $isHeadToHead && ((int) $tournament->workflow_version === 2 || (int) $tournament->team_size > 1)
+        ? __('Teams joined') : __('Players joined');
+    $mobileActionLabel = match ($actionLabel) {
+        'Join' => __('Join'),
+        'View Results' => __('Results'),
+        default => __('View'),
+    };
 @endphp
 
 <article {{ $attributes->class(['player-tournament-card group']) }} data-start-time="{{ $tournament->start_at?->getTimestampMs() }}">
@@ -46,7 +53,7 @@
         href="{{ $detailUrl }}"
         wire:navigate
         class="absolute inset-0 z-10 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400"
-        aria-label="{{ $cleanTitle }}"
+        aria-label="{{ __($actionLabel) }}: {{ $cleanTitle }}"
     >
         <span class="sr-only">
             {{ $isHeadToHead ? __('Join Head-to-Head') : __($actionLabel) }} · {{ __('Starts in') }} · {{ __('Joined players') }} {{ $registrationsCount }} / {{ $isHeadToHead ? __('Max players') : __('Max teams') }} {{ $tournament->max_participants }} · {{ __('Platforms') }}: {{ $platformNames }}
@@ -54,18 +61,18 @@
     </a>
 
     {{-- 1. Compact Square Game Thumbnail --}}
-    <div class="flex items-center gap-3 md:block">
+    <div class="flex items-center gap-3 xl:block">
         <div class="relative h-13 w-13 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-zinc-950 transition-colors group-hover:border-lime-400/50">
             <img src="{{ $tournament->banner_url ?? $tournament->game?->cardImageUrl() ?? 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=300&auto=format&fit=crop' }}"
                  alt="{{ $cleanTitle }}"
                  class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                  loading="lazy">
         </div>
-        <div class="min-w-0 flex-1 md:hidden">
+        <div class="min-w-0 flex-1 xl:hidden">
             <h3 title="{{ $cleanTitle }}" class="truncate font-orbitron text-sm font-black text-white transition-colors group-hover:text-lime-300">
                 {{ $cleanTitle }}@if($cleanTitle !== $tournament->name)<span class="sr-only"> {{ $tournament->name }}</span>@endif
             </h3>
-            <p class="mt-0.5 truncate text-xs text-zinc-400">
+            <p class="mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-zinc-400 [overflow-wrap:anywhere]">
                 <span class="font-bold text-cyan-300">{{ $gameName }}</span>
                 <span class="text-zinc-600">·</span>
                 <span>{{ $isHeadToHead ? __('1v1 Head-to-Head') : __('Tournament') }}</span>
@@ -78,7 +85,7 @@
     </div>
 
     {{-- 2. Competition Title + Game/Type (Desktop) --}}
-    <div class="hidden min-w-0 md:block">
+    <div class="hidden min-w-0 xl:block">
         <h3 title="{{ $cleanTitle }}" class="truncate font-orbitron text-sm font-black tracking-wide text-white transition-colors group-hover:text-lime-300 lg:text-base">
             {{ $cleanTitle }}@if($cleanTitle !== $tournament->name)<span class="sr-only"> {{ $tournament->name }}</span>@endif
         </h3>
@@ -93,36 +100,48 @@
         </div>
     </div>
 
-    {{-- Mobile Compact Metrics + Glowing Arrow --}}
-    <div class="flex items-center justify-between gap-3 border-t border-white/5 pt-2.5 md:hidden">
-        <div class="flex flex-wrap items-center gap-3 text-xs">
-            <span class="font-orbitron font-black text-white">{{ $entryLabel }}</span>
-            <span class="text-zinc-600">·</span>
-            <span class="font-orbitron font-black text-lime-300">{{ $prizeLabel }}</span>
-            <span class="text-zinc-600">·</span>
-            <span class="font-mono font-bold tabular-nums text-zinc-200">{{ $registrationsCount }}/{{ $tournament->max_participants }}</span>
+    <div class="space-y-3 border-t border-white/5 pt-3 xl:hidden">
+        <dl class="grid grid-cols-3 gap-3 text-xs [&>div]:min-w-0 [&_dd]:[overflow-wrap:anywhere]">
+            <div><dt class="text-zinc-400">{{ __('Entry fee') }}</dt><dd class="mt-1 text-sm font-bold tabular-nums text-white">{{ $entryLabel }}</dd></div>
+            <div><dt class="text-zinc-400">{{ __('Total prizes') }}</dt><dd class="mt-1 text-sm font-bold tabular-nums text-lime-300">{{ $prizeLabel }}</dd></div>
+            <div><dt class="text-zinc-400">{{ $joinedLabel }}</dt><dd class="mt-1 text-sm font-bold tabular-nums text-zinc-200">{{ $registrationsCount }} / {{ $tournament->max_participants }}</dd></div>
+        </dl>
+        <div class="flex items-center justify-between gap-3">
+            <p class="inline-flex min-w-0 items-center gap-2 rounded-lg bg-lime-400/10 px-2.5 py-2 text-xs font-semibold tabular-nums text-lime-300"
+               data-server-now="{{ now()->getTimestampMs() }}" x-data="tournamentCountdown(Number($el.dataset.serverNow), @js([
+                   'startsIn' => __('Starts in'),
+                   'ongoing' => __('In progress'),
+                   'completed' => __('Completed'),
+                   'cancelled' => __('Cancelled'),
+                   'refunded' => __('Refunded'),
+                   'pending' => __('Schedule pending'),
+                   'reached' => __('Starting now'),
+               ]))">
+                <i data-lucide="clock-3" class="h-3.5 w-3.5 shrink-0" aria-hidden="true"></i>
+                <time class="min-w-0" datetime="{{ $tournament->start_at?->toIso8601String() }}" x-text="countdown(@js($tournament->start_at?->getTimestampMs()), @js($statusValue))">
+                    {{ in_array($statusValue, ['ONGOING', 'COMPLETED', 'CANCELLED', 'REFUNDED'], true) ? $tournament->status->label() : ($tournament->start_at?->diffForHumans() ?? __('Schedule pending')) }}
+                </time>
+            </p>
+            <span data-card-action class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-lime-400 px-5 text-sm font-bold text-zinc-950">{{ $mobileActionLabel }}</span>
         </div>
-        <span class="player-card-action !h-8 !w-8 shrink-0" aria-hidden="true">
-            <i data-lucide="arrow-right" class="h-4 w-4"></i>
-        </span>
     </div>
 
     {{-- 3. Entry Fee (Desktop — no inner label) --}}
-    <div class="hidden md:block">
+    <div class="hidden xl:block">
         <span class="font-orbitron text-sm font-black text-white">
             {{ $entryLabel }}
         </span>
     </div>
 
     {{-- 4. Prize (Desktop — right beside Entry Fee, no inner label) --}}
-    <div class="hidden md:block">
+    <div class="hidden xl:block">
         <span class="font-orbitron text-sm font-black text-lime-300">
             {{ $prizeLabel }}
         </span>
     </div>
 
     {{-- 5. Full Capacity / Seats (Desktop — no inner label) --}}
-    <div class="hidden items-center gap-2.5 md:flex">
+    <div class="hidden items-center gap-2.5 xl:flex">
         <div class="flex items-center gap-1" aria-hidden="true">
             @for($i = 0; $i < $pipTotal; $i++)
                 <span class="h-2 w-1.5 rounded-sm {{ $i < $pipFilled ? 'bg-cyan-400 shadow-[0_0_6px_#22e6ff]' : ($i === $pipFilled && $statusValue === 'REGISTRATION_OPEN' ? 'bg-lime-400/80 animate-pulse' : 'bg-white/10') }}"></span>
@@ -136,7 +155,7 @@
     </div>
 
     {{-- 6. Glowing Arrow on Card Hover (Desktop) --}}
-    <div class="hidden items-center justify-end md:flex" aria-hidden="true">
+    <div class="hidden items-center justify-end xl:flex" aria-hidden="true">
         <span class="player-card-action">
             <i data-lucide="arrow-right" class="h-4 w-4"></i>
         </span>

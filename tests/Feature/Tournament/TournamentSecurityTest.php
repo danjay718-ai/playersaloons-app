@@ -171,11 +171,7 @@ class TournamentSecurityTest extends TestCase
             ->assertNotFound();
     }
 
-    /**
-     * Matches, Players, and Activity tabs are disabled for non-participants.
-     * A registered player can see them; a non-registered player cannot.
-     */
-    public function test_view_restricted_details_policy(): void
+    public function test_public_sections_are_clickable_without_granting_participant_permissions(): void
     {
         $tournament = $this->makeTournament(TournamentStatus::REGISTRATION_OPEN);
 
@@ -191,13 +187,17 @@ class TournamentSecurityTest extends TestCase
             'registered_at' => now(),
         ]);
 
-        // Non-participant: tabs should be disabled (cursor-not-allowed)
+        $this->assertFalse($nonParticipant->can('viewRestrictedDetails', $tournament));
+        $this->assertTrue($participant->can('viewRestrictedDetails', $tournament));
+
         Livewire::actingAs($nonParticipant)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
-            ->assertSee('cursor-not-allowed');
+            ->assertSeeHtml("@click=\"selectTab('participants')\"")
+            ->assertDontSee('Only competition participants can view this section')
+            ->call('loadSection', 'participants')
+            ->assertViewHas('participantsLoaded', true)
+            ->assertSee($participant->username);
 
-        // Participant: tabs are clickable, no cursor-not-allowed for their tabs
-        // Gate resolves true → @can block renders the clickable button
         Livewire::actingAs($participant)
             ->test(TournamentDetail::class, ['uuid' => $tournament->uuid])
             ->assertSeeHtml("@click=\"selectTab('participants')\"");

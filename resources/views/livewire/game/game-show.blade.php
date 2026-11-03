@@ -39,12 +39,12 @@
             @if($featuredTournaments->isNotEmpty())
                 <div class="space-y-4">
                     <div class="flex items-end justify-between gap-4"><div><p class="gr-eyebrow !mb-2 !text-amber-300"><span class="gr-slash">//</span> Hand-picked events</p><h2 class="font-orbitron text-xl font-black uppercase text-white">{{ __('Featured :value1:value2', ['value1' => ($frequencyLabel), 'value2' => ($competitionLabel)]) }}</h2></div><span class="hidden text-xs text-zinc-400 sm:block">{{ __('Highlights from active :value1', ['value1' => (strtolower($frequencyLabel.$competitionLabel))]) }}</span></div>
-                    <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 md:grid md:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] md:items-center md:gap-5" aria-hidden="true">
+                    <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5" aria-hidden="true">
                         <span></span>
                         <span>{{ __('Competition') }}</span>
                         <span>{{ __('Entry Fee') }}</span>
-                        <span>{{ __('Prize') }}</span>
-                        <span>{{ __('Full Capacity') }}</span>
+                        <span>{{ __('Total prizes') }}</span>
+                        <span>{{ __('Joined / Max') }}</span>
                         <span></span>
                     </div>
                     <div class="flex flex-col gap-2.5">@foreach($featuredTournaments as $tournament)<x-player.tournament-card :tournament="$tournament" :action-label="__('View :competition', ['competition' => $competitionSingular])" :public-view="$publicView ?? false" />@endforeach</div>
@@ -67,12 +67,12 @@
             </div></div>
             <div class="flex gap-2">@foreach(['upcoming' => 'Upcoming','ongoing' => 'Ongoing','past' => 'Past'] as $key => $label)<button wire:click="$set('tournamentStatus', '{{ $key }}')" class="rounded-full px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-wider transition {{ $tournamentStatus === $key ? 'bg-lime-400 text-zinc-950' : 'border border-white/10 bg-zinc-900/60 text-zinc-400 hover:text-white' }}">{{ $label }}</button>@endforeach</div>
             @if($tournaments->count())
-                <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 md:grid md:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] md:items-center md:gap-5" aria-hidden="true">
+                <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5" aria-hidden="true">
                     <span></span>
                     <span>{{ __('Competition') }}</span>
                     <span>{{ __('Entry Fee') }}</span>
-                    <span>{{ __('Prize') }}</span>
-                    <span>{{ __('Full Capacity') }}</span>
+                    <span>{{ __('Total prizes') }}</span>
+                    <span>{{ __('Joined / Max') }}</span>
                     <span></span>
                 </div>
                 <div class="flex flex-col gap-2.5">@foreach($tournaments as $tournament)<x-player.tournament-card :tournament="$tournament" :action-label="__('View :competition', ['competition' => $competitionSingular])" :public-view="$publicView ?? false" />@endforeach</div>

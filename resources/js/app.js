@@ -16,6 +16,7 @@ import { translationLanguageVisibility } from './translation-language-visibility
 import { translationImportUpload } from './translation-import-upload';
 import { interfaceText } from './interface-text';
 import { streamChat } from './stream-chat';
+import { competitionPanel } from './competition-panel';
 
 window.chatInbox = chatInbox;
 window.chatConsole = chatConsole;
@@ -32,6 +33,7 @@ window.translationLanguageVisibility = translationLanguageVisibility;
 window.translationImportUpload = translationImportUpload;
 window.interfaceText = interfaceText;
 window.streamChat = streamChat;
+window.competitionPanel = competitionPanel;
 
 window.Pusher = Pusher;
 

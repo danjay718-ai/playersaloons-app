@@ -7,7 +7,9 @@ namespace Tests\Feature\Tournament;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Game\GameShow;
 use App\Livewire\Tournament\MyTournamentsList;
+use App\Livewire\Tournament\PlatformHeadToHeadList;
 use App\Livewire\Tournament\PlayerTournamentList;
+use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\Identity\Models\PlayerExperienceAward;
@@ -568,6 +570,110 @@ class PlayerTournamentComponentsTest extends TestCase
             ->assertViewHas('historyMatches', fn ($items) => $items->total() === 3);
 
         $this->assertLessThanOrEqual(5, $matchQueries, 'Match query count should remain constant as match history grows.');
+    }
+
+    public function test_competition_preview_is_collapsible_and_starts_hidden_on_public_and_player_lists(): void
+    {
+        $this->makeTournament('Daily Preview Cup', TournamentStatus::REGISTRATION_OPEN, 'daily');
+        $headToHead = $this->makeTournament('Daily Preview H2H', TournamentStatus::REGISTRATION_OPEN, 'daily');
+        $headToHead->update(['competition_type' => 'head_to_head']);
+
+        foreach ([PublicTournamentList::class, PlayerTournamentList::class, PlatformHeadToHeadList::class] as $list) {
+            Livewire::actingAs($this->player)
+                ->test($list)
+                ->assertSee('Show competition preview')
+                ->assertSee('Hide competition preview', false)
+                ->assertSee('expanded: false', false)
+                ->assertSee('aria-controls="competition-spotlight-preview"', false)
+                ->assertSee('x-show="expanded"', false)
+                ->call('$refresh')
+                ->assertSee('Show competition preview')
+                ->set('search', 'No matching competition')
+                ->assertDontSee('aria-controls="competition-spotlight-preview"', false);
+        }
+    }
+
+    public function test_guests_can_browse_tournament_and_head_to_head_content_with_an_account_invitation(): void
+    {
+        foreach (['tournament', 'head_to_head'] as $type) {
+            $tournament = $this->makeTournament('Public '.$type, TournamentStatus::ONGOING);
+            $tournament->update(['competition_type' => $type, 'team_size' => $type === 'tournament' ? 2 : 1]);
+            [$first, $second] = $this->registerPlayers($tournament);
+            $match = $this->makeMatch($tournament, $first, $second, $first);
+            activity()->performedOn($tournament)->withProperties(['private_note' => 'internal-only-note'])->log('Competition started');
+
+            $component = Livewire::test(TournamentDetail::class, ['uuid' => $tournament->uuid])
+                ->assertSet('activeTab', 'overview')
+                ->assertViewHas('participantsLoaded', false)
+                ->assertSee('Create account')
+                ->assertSee('Explore the competition. Create an account to join and play.')
+                ->assertSeeHtml("@click=\"selectTab('matches')\"")
+                ->assertSeeHtml("@click=\"selectTab('participants')\"")
+                ->call('loadSection', 'participants')
+                ->assertViewHas('participantsLoaded', true)
+                ->assertViewHas('tournament', fn ($item) => $item->registrations->count() === 2)
+                ->assertSee($this->player->username)
+                ->call('loadSection', 'matches')
+                ->assertViewHas('bracketLoaded', true)
+                ->assertViewHas('allMatches', fn ($items) => $items->pluck('uuid')->all() === [$match->uuid])
+                ->assertDontSee('wire:click="openMatch', false)
+                ->call('loadSection', 'activity')
+                ->assertSee('Competition started')
+                ->assertDontSee('internal-only-note');
+
+            if ($type === 'tournament') {
+                $component->call('loadSection', 'team-lobby')
+                    ->assertSee('Solo Players Waiting (2)');
+            }
+
+            $component->call('openMatch', $match->uuid)->assertForbidden();
+        }
+    }
+
+    public function test_competition_cards_explain_amounts_and_registration_counts_and_show_a_mobile_action(): void
+    {
+        foreach (['tournament', 'head_to_head'] as $type) {
+            $tournament = $this->makeTournament('Clear Card '.$type, TournamentStatus::REGISTRATION_OPEN);
+            $tournament->update(['competition_type' => $type, 'team_size' => $type === 'tournament' ? 2 : 1]);
+            $this->registerPlayers($tournament);
+            $tournament->loadCount('registrations');
+
+            $this->blade('<x-player.tournament-card :tournament="$tournament" />', ['tournament' => $tournament])
+                ->assertSee('Entry fee')
+                ->assertSee('Total prizes')
+                ->assertSee($type === 'tournament' ? 'Teams joined' : 'Players joined')
+                ->assertSee('Free')
+                ->assertSee('$0.00')
+                ->assertSee('2 / 8')
+                ->assertSee('tournamentCountdown(', false)
+                ->assertSee('Starts in')
+                ->assertDontSee('Europe/Amsterdam')
+                ->assertDontSee('Starts:')
+                ->assertSee('>Join</span>', false);
+
+            $this->blade('<x-player.tournament-card :tournament="$tournament" action-label="View Results" />', ['tournament' => $tournament])
+                ->assertSee('>Results</span>', false)
+                ->assertDontSee('>Join</span>', false);
+        }
+    }
+
+    public function test_card_countdown_scope_stays_stable_when_the_server_clock_refreshes(): void
+    {
+        $this->freezeTime();
+        $tournament = $this->makeTournament('Live Timer Cup', TournamentStatus::REGISTRATION_OPEN);
+        $tournament->update(['start_at' => now()->addHour()]);
+        $render = fn (): string => (string) $this->blade('<x-player.tournament-card :tournament="$tournament" />', ['tournament' => $tournament]);
+
+        $before = $render();
+        $this->travel(10)->seconds();
+        $after = $render();
+
+        $this->assertSame(1, preg_match('/x-data="(tournamentCountdown[^\"]+)"/', $before, $beforeScope));
+        $this->assertSame(1, preg_match('/x-data="(tournamentCountdown[^\"]+)"/', $after, $afterScope));
+        $this->assertSame($beforeScope[1], $afterScope[1], 'Polling must preserve the Alpine scope used by the ticking text.');
+        preg_match('/data-server-now="([0-9]+)"/', $before, $beforeClock);
+        preg_match('/data-server-now="([0-9]+)"/', $after, $afterClock);
+        $this->assertSame(10000, (int) $afterClock[1] - (int) $beforeClock[1]);
     }
 
     public function test_player_tournament_list_filtering(): void

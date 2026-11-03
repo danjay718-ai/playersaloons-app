@@ -57,7 +57,7 @@ class TournamentPolicy
     }
 
     /**
-     * Determine whether the user can view restricted tournament details (players, matches, activity).
+     * Determine whether the user has participant access to competition match rooms.
      */
     public function viewRestrictedDetails(User $user, Tournament $tournament): bool
     {

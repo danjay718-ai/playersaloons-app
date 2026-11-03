@@ -4,7 +4,7 @@
     $joinLabel = $isHeadToHead
         ? __('Join Competition')
         : __('Join Tournament');
-    $isPlayerView = ! (Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']));
+    $isPlayerView = $viewMode === 'guest' || ! (Auth::check() && Auth::user()->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']));
     $statusColorClass = [
         'DRAFT' => 'text-zinc-500 border-zinc-800 bg-zinc-900/50',
         'PUBLISHED' => 'text-blue-400 border-blue-900/50 bg-blue-950/20',
@@ -19,10 +19,10 @@
         'REFUNDED' => 'text-orange-400 border-orange-900/50 bg-orange-950/20',
     ][$statusValue] ?? 'text-zinc-500 border-zinc-800 bg-zinc-900/50';
 @endphp
-<div class="player-tournament-detail space-y-10" wire:poll.10s.visible
-     @tournament-content-opened.window="if ($event.detail.tournamentUuid === @js($tournament->uuid)) { activeTab = $event.detail.tab; $nextTick(() => scrollToTab($event.detail.tab, $event.detail.focus)); }"
+<div class="player-tournament-detail min-w-0 space-y-6 sm:space-y-8" wire:poll.10s.visible
+     @resize.window.debounce.150ms="resizePanel()"
+     @tournament-content-opened.window="if ($event.detail.tournamentUuid === @js($tournament->uuid)) { openPanel($event.detail.tab); activeTab = $event.detail.tab; $nextTick(() => scrollToTab($event.detail.tab, $event.detail.focus)); }"
      x-data="{ 
-         activeTab: @entangle('activeTab').live,
          canViewRestricted: @json($canViewRestricted),
          showJoinModal: false,
          showUnderfilledNotice: false,
@@ -58,14 +58,16 @@
              return null;
          },
          scrollToTab(tab, focus = null) {
-             if (this.scrollEnabled && this.activeTab === tab) scrollToTournamentContent(this.$root, tab, this.bracketView, focus);
+             if (this.scrollEnabled && !this.panelOpen && this.activeTab === tab) scrollToTournamentContent(this.$root, tab, this.bracketView, focus);
          },
          selectBracketView(view) {
              this.bracketView = view;
              this.$nextTick(() => this.scrollToTab('matches'));
          },
          async selectTab(tab, scroll = true) {
+             if (scroll) this.openPanel(tab);
              this.activeTab = tab;
+             if (this.panelOpen) this.$nextTick(() => { this.$refs.panelBody.scrollTop = 0; });
              if (tab === 'submit-results') this.$dispatch('tournament-result-selected', { tournamentUuid: @js($tournament->uuid) });
              const section = this.sectionFor(tab);
              if (section && !this.loadedSections.includes(section)) {
@@ -82,10 +84,7 @@
      }" 
      x-init="
          initRealtime();
-         if (!canViewRestricted && !['overview', 'streams'].includes(activeTab)) {
-             activeTab = 'overview';
-         }
-         if (canViewRestricted) selectTab(activeTab, activeTab === 'submit-results');
+         selectTab(activeTab, false);
          const underfilledNoticeKey = 'v2_underfilled_notice_{{ $tournament->uuid }}_{{ optional($tournament->start_at)->timestamp }}';
          if (@js($shouldShowUnderfilledNotice) && !localStorage.getItem(underfilledNoticeKey)) {
              showUnderfilledNotice = true;
@@ -179,7 +178,7 @@
             </div>
 
             <!-- Main Action Area -->
-            <div class="flex-shrink-0 min-w-[280px] space-y-3">
+            <div class="competition-main-action w-full min-w-0 flex-shrink-0 space-y-3 lg:w-72 lg:min-w-[280px]">
                 @guest
                     <a href="/login" wire:navigate class="w-full flex items-center justify-center space-x-3 bg-[#c6ff3d] hover:bg-[#d5ff66] text-[#05080f] font-black py-5 px-8 rounded-2xl transition-all duration-300 shadow-[0_15px_30px_-10px_rgba(34,211,238,0.4)] text-xs uppercase tracking-[0.2em] transform hover:scale-[1.02] active:scale-[0.98]">
                         <i data-lucide="log-in" class="w-5 h-5"></i>
@@ -371,7 +370,7 @@
             </div>
             <div class="flex items-center gap-2 sm:gap-3 sm:ml-auto">
                 <template x-if="!expired">
-                    <div class="flex items-center gap-1.5 sm:gap-2">
+                    <div class="competition-countdown-units flex items-center gap-1.5 sm:gap-2">
                         <div class="text-center">
                             <div class="bg-amber-950/75 border border-amber-500/60 rounded-xl px-3 py-3 min-w-[3.5rem] sm:min-w-[4rem] text-center shadow-inner">
                                 <span class="text-2xl sm:text-3xl font-black font-orbitron text-amber-200" x-text="String(days).padStart(2,'0')"></span>
@@ -410,7 +409,6 @@
     @endif
 
     <!-- Navigation Tabs -->
-    <div class="flex overflow-x-auto no-scrollbar items-center gap-1.5 bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 p-1.5 rounded-2xl w-full">
         @php
             $tabs = [
                 ['id' => 'matches', 'label' => $isHeadToHead ? __('Match') : 'Fixtures & Bracket', 'icon' => 'git-branch'],
@@ -432,24 +430,54 @@
             $tabs[] = ['id' => 'activity', 'label' => 'Activity', 'icon' => 'activity'];
         @endphp
 
+    <nav class="competition-section-nav grid {{ count($tabs) <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3' }} gap-2 lg:flex lg:flex-wrap" aria-label="{{ __('Competition sections') }}">
         @foreach($tabs as $tab)
-            @php $isRestrictedTab = in_array($tab['id'], ['submit-results', 'participants', 'team-lobby', 'matches', 'activity'], true); @endphp
             <button
-                @if(!$isRestrictedTab || $canViewRestricted)
-                    @click="selectTab('{{ $tab['id'] }}')"
-                    :class="activeTab === '{{ $tab['id'] }}' ? 'border-cyan-400 bg-cyan-600 text-white shadow-[0_0_22px_rgba(34,211,238,.35)]' : 'border-transparent text-zinc-500 hover:border-zinc-700 hover:bg-zinc-900 hover:text-zinc-200'"
-                @else
-                    disabled title="Only competition participants can view this section"
-                @endif
-                class="flex items-center space-x-1.5 border px-4 md:px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 whitespace-nowrap {{ $isRestrictedTab && !$canViewRestricted ? 'opacity-40 cursor-not-allowed text-zinc-600' : '' }}">
-                <i data-lucide="{{ $tab['icon'] }}" class="w-3.5 h-3.5"></i>
+                type="button"
+                data-competition-tab="{{ $tab['id'] }}"
+                @click="selectTab('{{ $tab['id'] }}')"
+                :aria-pressed="activeTab === '{{ $tab['id'] }}'"
+                :class="activeTab === '{{ $tab['id'] }}' ? 'competition-section-selected' : ''"
+                class="competition-section-button">
+                <i data-lucide="{{ $tab['icon'] }}" class="h-4 w-4 shrink-0" aria-hidden="true"></i>
                 <span>{{ $tab['label'] }}</span>
             </button>
         @endforeach
-    </div>
+    </nav>
 
     <!-- Tabs Content -->
-    <div class="relative min-h-[500px]">
+    <dialog open x-ref="contentPanel" class="competition-panel"
+         @cancel.prevent="closePanel()"
+         :class="{ 'competition-panel-open': compactView && panelOpen }"
+         :role="compactView && panelOpen ? 'dialog' : 'region'"
+         :aria-modal="compactView && panelOpen ? 'true' : null"
+         :aria-labelledby="compactView && panelOpen ? 'competition-panel-title' : null"
+         x-trap.noscroll="compactView && panelOpen">
+        <header x-show="compactView && panelOpen" x-cloak class="competition-panel-header">
+            <button type="button" @click="closePanel()" class="competition-panel-back" aria-label="{{ __('Return to competition') }}">
+                <i data-lucide="arrow-left" class="h-5 w-5" aria-hidden="true"></i>
+            </button>
+            <div class="min-w-0 flex-1">
+                <p class="truncate text-xs text-zinc-400">{{ $isHeadToHead ? __('Head-to-Head') : __('Tournament') }}</p>
+                <h2 id="competition-panel-title" class="text-base font-bold text-white" x-text="panelTitle"></h2>
+            </div>
+            <button type="button" @click="closePanel()" class="competition-panel-back" aria-label="{{ __('Close section') }}">
+                <i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i>
+            </button>
+        </header>
+        <div x-ref="panelBody" class="competition-panel-body" :class="{ 'competition-panel-body-open': compactView && panelOpen }">
+        @guest
+            <aside x-show="activeTab !== 'overview' || panelOpen" class="competition-guest-invite">
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-bold text-white">{{ __('Your next match starts here') }}</p>
+                    <p class="mt-1 text-xs leading-relaxed text-zinc-400">{{ __('Explore the competition. Create an account to join and play.') }}</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <a href="{{ route('register') }}" class="competition-register-link">{{ __('Create account') }} <span aria-hidden="true">↗</span></a>
+                    <a href="{{ route('login') }}" class="text-xs font-semibold text-zinc-300 hover:text-white">{{ __('Sign in') }}</a>
+                </div>
+            </aside>
+        @endguest
 
         <div x-show="loadingSection !== null" x-cloak class="absolute inset-x-0 top-16 z-20 flex justify-center">
             <div class="rounded-xl border border-zinc-800 bg-zinc-950/90 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-400 shadow-2xl">
@@ -479,14 +507,14 @@
 
                     <!-- Streamlined 4-Card Essential Specs Row -->
                     @php
-                        $format = $isHeadToHead ? __('1v1 • Two players') : ($tournament->template?->format ?? 'Single Elimination');
+                        $format = $isHeadToHead ? __('1v1 • Two players') : __(\Illuminate\Support\Str::headline($tournament->template?->format ?? 'Single Elimination'));
                         $firstPrize = $displayPrizeCalculation['first'] ?? $prizeCalculation['distributions'][1] ?? '0.00';
                         $secondPrize = $displayPrizeCalculation['second'] ?? $prizeCalculation['distributions'][2] ?? '0.00';
                     @endphp
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <div class="rounded-2xl border border-white/10 bg-zinc-950/70 p-3.5">
                             <span class="block text-[9px] font-bold uppercase tracking-widest text-zinc-500">Format</span>
-                            <span class="mt-1 block font-orbitron text-xs sm:text-sm font-black uppercase text-white">{{ $format }}</span>
+                            <span class="mt-1 block text-sm font-semibold text-white">{{ $format }}</span>
                         </div>
 
                         <div class="rounded-2xl border border-white/10 bg-zinc-950/70 p-3.5">
@@ -644,7 +672,6 @@
             </div>
         @endif
 
-        @if($canViewRestricted)
         <!-- ===== PLAYERS TAB ===== -->
         <div data-tournament-content="participants" x-show="activeTab === 'participants'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
             @if($tournament->registrations->count() > 0)
@@ -672,7 +699,7 @@
                                     @if($reg->team)
                                         {{ $tournament->team_size }} players • Captain @ {{ $reg->user->username }}
                                     @else
-                                        #{{ $reg->user->id }} • @ {{ $reg->user->username }}
+                                        @ {{ $reg->user->username }}
                                         @if(($tournament->team_size ?? 1) > 1)
                                             <span class="text-amber-500/70 ml-1">· Seeking Team</span>
                                         @endif
@@ -821,7 +848,7 @@
                                         $viewerLostThisMatch = $isCompleted && $isViewerMatch && $match->winner_registration_id && (int) $match->winner_registration_id !== (int) $userRegistration->id;
                                     @endphp
                                     <div class="bg-zinc-900/40 backdrop-blur-md border {{ $viewerLostThisMatch ? 'border-rose-500/50 shadow-[0_0_22px_rgba(244,63,94,.12)]' : ($isOngoing ? 'border-cyan-500/40 shadow-[0_0_20px_rgba(34,211,238,0.08)]' : ($isCompleted ? 'border-zinc-800/40' : 'border-zinc-800/60')) }} rounded-2xl p-5 transition-all duration-300 hover:border-zinc-700">
-                                        <div class="flex items-center gap-4">
+                                        <div class="competition-fixture-row flex items-center gap-4">
                                             <!-- Match ID & Status -->
                                             <div class="hidden sm:flex flex-col items-center w-16 shrink-0 text-center">
                                                 <span class="text-[9px] font-black text-zinc-700 uppercase tracking-widest">Match</span>
@@ -832,7 +859,7 @@
                                             </div>
 
                                             <!-- Player A -->
-                                            <div class="flex-1 flex items-center gap-3 {{ $winnerA ? '' : ($isCompleted && !$winnerA && $playerA ? 'opacity-40' : '') }}">
+                                            <div class="competition-fixture-player min-w-0 flex-1 flex items-center gap-3 {{ $winnerA ? '' : ($isCompleted && !$winnerA && $playerA ? 'opacity-40' : '') }}">
                                                 <div class="w-9 h-9 bg-zinc-950 rounded-xl border {{ $winnerA ? 'border-emerald-500/40' : 'border-zinc-800' }} flex items-center justify-center shrink-0 overflow-hidden text-[10px] font-black text-zinc-300">
                                                     @if($playerAAvatar)<img src="{{ $playerAAvatar }}" alt="{{ $playerA->username }}" class="w-full h-full object-cover" loading="lazy">@else{{ strtoupper(substr($playerA?->username ?? '??', 0, 2)) }}@endif
                                                 </div>
@@ -857,7 +884,7 @@
                                             </div>
 
                                             <!-- Player B -->
-                                            <div class="flex-1 flex items-center gap-3 justify-end text-right {{ $winnerB ? '' : ($isCompleted && !$winnerB && $playerB ? 'opacity-40' : '') }}">
+                                            <div class="competition-fixture-player min-w-0 flex-1 flex items-center gap-3 justify-end text-right {{ $winnerB ? '' : ($isCompleted && !$winnerB && $playerB ? 'opacity-40' : '') }}">
                                                 @if($winnerB)
                                                     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 mr-auto shrink-0"></i>
                                                 @endif
@@ -878,10 +905,10 @@
 
                                             <!-- Match Link -->
                                             @if((int) $tournament->workflow_version === 2 && $isViewerMatch)
-                                                <button type="button" wire:click="openMatch('{{ $match->uuid }}')" aria-label="Open Submit Result" title="Open Submit Result" class="shrink-0 w-9 h-9 flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-cyan-500/40 rounded-xl text-zinc-600 hover:text-cyan-400 transition-all duration-300">
+                                                <button type="button" wire:click="openMatch('{{ $match->uuid }}')" aria-label="Open Submit Result" title="Open Submit Result" class="competition-fixture-action shrink-0 w-11 h-11 flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-cyan-500/40 rounded-xl text-zinc-300 hover:text-cyan-400 transition-all duration-300">
                                                     <i data-lucide="clipboard-check" class="w-4 h-4"></i>
                                                 </button>
-                                            @elseif((int) $tournament->workflow_version !== 2 && ($match->player_a_registration_id || $match->player_b_registration_id))
+                                            @elseif($canViewRestricted && (int) $tournament->workflow_version !== 2 && ($match->player_a_registration_id || $match->player_b_registration_id))
                                                 <a href="/matches/{{ $match->uuid }}" wire:navigate aria-label="Open Match Room" title="Open Match Room" class="shrink-0 w-9 h-9 flex items-center justify-center bg-zinc-950 border border-zinc-800 hover:border-cyan-500/40 rounded-xl text-zinc-600 hover:text-cyan-400 transition-all duration-300">
                                                     <i data-lucide="external-link" class="w-4 h-4"></i>
                                                 </a>
@@ -914,7 +941,7 @@
 
                 <!-- Bracket Scroll Container -->
                 <div class="overflow-x-auto pb-6 pt-2 relative" style="scrollbar-width: thin; scrollbar-color: #3f3f46 #09090b;">
-                    <div class="flex items-stretch gap-0 min-w-max">
+                    <div class="competition-bracket-rounds flex items-stretch gap-0 min-w-max">
                         @foreach($rounds as $roundIndex => $round)
                             @php
                                 $roundCount = $rounds->count();
@@ -928,7 +955,7 @@
                             @endphp
 
                             <!-- Round column -->
-                            <div class="flex flex-col" style="min-width: 220px; width: 220px;">
+                            <div class="competition-bracket-round flex flex-col" style="min-width: 220px; width: 220px;">
                                 <!-- Round header -->
                                 <div class="relative mb-6 mx-3">
                                     <div class="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-cyan-500/20 rounded-xl blur opacity-60"></div>
@@ -962,17 +989,17 @@
                                         @endphp
 
                                         <!-- Match card wrapper for vertical spacing -->
-                                        <div data-bracket-match="{{ $match->uuid }}" class="relative flex items-center py-3" style="flex: 1 0 auto; min-height: {{ max(100, 600 / max(1, $matchCount)) }}px;">
+                                        <div data-bracket-match="{{ $match->uuid }}" class="competition-bracket-match relative flex items-center py-3" style="flex: 1 0 auto; min-height: {{ max(100, 600 / max(1, $matchCount)) }}px;">
                                             <!-- Bracket connectors (right side) - vertical bar for grouping -->
                                             @if(!$isLast && (int) $tournament->workflow_version !== 2)
                                                 @if($mIdx % 2 === 0)
                                                     <!-- Top of pair: draw right connector going down -->
-                                                    <div class="absolute right-0 top-1/2 bottom-0 w-3 border-t border-r border-zinc-700/60 rounded-tr-lg" style="right: -12px; top: 50%; height: 50%;"></div>
+                                                    <div class="competition-bracket-connector absolute right-0 top-1/2 bottom-0 w-3 border-t border-r border-zinc-700/60 rounded-tr-lg" style="right: -12px; top: 50%; height: 50%;"></div>
                                                 @else
                                                     <!-- Bottom of pair: draw right connector going up -->
-                                                    <div class="absolute right-0 top-0 w-3 border-b border-r border-zinc-700/60 rounded-br-lg" style="right: -12px; height: 50%;"></div>
+                                                    <div class="competition-bracket-connector absolute right-0 top-0 w-3 border-b border-r border-zinc-700/60 rounded-br-lg" style="right: -12px; height: 50%;"></div>
                                                     <!-- Plain line to the next matchup -->
-                                                    <div class="absolute h-px bg-zinc-700/60" style="right: -36px; top: 50%; width: 24px;"></div>
+                                                    <div class="competition-bracket-connector absolute h-px bg-zinc-700/60" style="right: -36px; top: 50%; width: 24px;"></div>
                                                 @endif
                                             @endif
 
@@ -1036,7 +1063,7 @@
                                                             <span>Submit Result</span>
                                                             <i data-lucide="clipboard-check" class="w-2.5 h-2.5"></i>
                                                         </button>
-                                                    @elseif((int) $tournament->workflow_version !== 2 && ($match->player_a_registration_id || $match->player_b_registration_id))
+                                                    @elseif($canViewRestricted && (int) $tournament->workflow_version !== 2 && ($match->player_a_registration_id || $match->player_b_registration_id))
                                                         <a href="/matches/{{ $match->uuid }}" wire:navigate class="flex items-center justify-center gap-1.5 py-2 px-3 bg-zinc-950/40 hover:bg-zinc-900 border-t border-zinc-800/50 text-[8px] font-black text-zinc-600 hover:text-cyan-400 uppercase tracking-widest transition-all duration-200">
                                                             <span>Match Room</span>
                                                             <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
@@ -1051,7 +1078,7 @@
 
                             <!-- Connector line between rounds -->
                             @if(!$isLast)
-                                <div class="flex items-center justify-center shrink-0" style="width: 36px; align-self: center;">
+                                <div class="competition-bracket-connector flex items-center justify-center shrink-0" style="width: 36px; align-self: center;">
                                     @if((int) $tournament->workflow_version !== 2)<div class="h-px w-6 bg-zinc-700/70"></div>@endif
                                 </div>
                             @endif
@@ -1059,7 +1086,7 @@
                     </div>
                 </div>
 
-                <p class="text-[10px] text-zinc-700 font-medium text-center">Scroll horizontally to view all rounds → </p>
+                <p class="hidden text-xs text-zinc-400 font-medium text-center lg:block">{{ __('Scroll horizontally to view all rounds') }} →</p>
             @else
                 <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800 rounded-[2.5rem] p-24 text-center relative overflow-hidden">
                     <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-cyan-950/10 pointer-events-none"></div>
@@ -1105,8 +1132,6 @@
                 @endif
             </div>
         </div>
-
-        @endif
 
         <!-- ===== STREAMS TAB ===== -->
         @php $streamItems = $streamService->streamsForTournament($tournament); $streamStatus = $streamService->statusLabel($tournament); @endphp
@@ -1156,7 +1181,8 @@
         </div>
         @endif
 
-    </div><!-- end tabs content -->
+        </div>
+    </dialog><!-- end tabs content -->
 
     <!-- V2 Underfilled Tournament Notice -->
     <div x-show="showUnderfilledNotice"

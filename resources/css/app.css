@@ -323,6 +323,8 @@ html[data-theme='light'] {
     }
 }
 @media (max-width: 639px) {
+    .competition-countdown-units > div > div { min-width: 0; padding: 10px 6px; }
+    .competition-countdown-units [x-text] { font-size: 18px; }
     .public-brand-mobile-icon-only .public-brand-wordmark {
         display: none;
     }
@@ -1738,7 +1740,7 @@ html[data-theme='light'] nav[role='navigation'] div.flex.justify-between.flex-1.
     }
 
     .player-tournament-card {
-        @apply relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-2xl border border-cyan-500/15 bg-zinc-900/70 px-4 py-3.5 shadow-[0_10px_28px_-12px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-lime-400/60 hover:bg-zinc-900/95 hover:shadow-[0_14px_34px_-12px_rgba(198,255,61,0.2)] sm:px-5 md:grid md:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] md:items-center md:gap-5;
+        @apply relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-2xl border border-cyan-500/15 bg-zinc-900/70 px-4 py-3.5 shadow-[0_10px_28px_-12px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-lime-400/60 hover:bg-zinc-900/95 hover:shadow-[0_14px_34px_-12px_rgba(198,255,61,0.2)] sm:px-5 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5;
     }
 
     .player-badge {
@@ -2471,3 +2473,99 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
 .pwa-install-notice h2 { margin-bottom: 16px; font-size: 22px; font-weight: 700; }
 .pwa-install-notice p { font-size: 16px; line-height: 1.6; }
 .pwa-install-notice button { margin-top: 24px; min-height: 44px; padding: 10px 24px; border-radius: 8px; background: #c6ff3d; color: #05080f; font-weight: 700; }
+
+/* Competition discovery and detail share these controls on tournaments and H2H. */
+.competition-preview-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.competition-preview-toggle {
+    display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 8px;
+    min-height: 44px; padding: 10px 14px; border: 1px solid #344237; border-radius: 999px;
+    background: #172119; color: #c6ff3d; font-size: 12px; font-weight: 700;
+    transition: background .15s, border-color .15s;
+}
+.competition-preview-toggle:hover, .competition-preview-toggle-open { background: #243224; border-color: #a1c83a; }
+.competition-preview-toggle:focus-visible, .competition-section-button:focus-visible,
+.competition-panel-back:focus-visible, .competition-register-link:focus-visible {
+    outline: 2px solid #c6ff3d; outline-offset: 3px;
+}
+.competition-section-button {
+    display: flex; min-width: 0; align-items: center; justify-content: center; gap: 8px;
+    min-height: 48px; padding: 12px 18px; border: 1px solid #29313c; border-radius: 14px;
+    background: #111720; color: #c0c8d2; font-size: 12px; font-weight: 600;
+    line-height: 1.35; transition: background .15s, color .15s;
+}
+.competition-section-button:hover { background: #1a222c; color: #fff; }
+.competition-section-selected { border-color: #a3c943; background: #1f2a18; color: #d7ff71; }
+.competition-panel { position: relative; inset: auto; width: 100%; max-width: none; max-height: none; min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; }
+.competition-panel::backdrop { background: #090e16; }
+.competition-panel-body { min-width: 0; }
+.competition-panel-body > [data-tournament-content] { min-width: 0; overflow-wrap: anywhere; }
+.competition-guest-invite {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 20px;
+    padding: 16px; border: 1px solid #303b2c; border-radius: 16px; background: #141c12;
+}
+.competition-register-link {
+    display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+    min-height: 44px; padding: 10px 16px; border-radius: 10px; background: #c6ff3d;
+    color: #111709; font-size: 12px; font-weight: 700;
+}
+.competition-panel-header { display: flex; align-items: center; gap: 12px; }
+.competition-panel-back {
+    display: flex; flex-shrink: 0; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border: 1px solid #2c3540; border-radius: 14px;
+    background: #171e28; color: #e4e9ef;
+}
+
+@media (max-width: 1023px) {
+    .competition-preview-heading > div { max-width: 58%; }
+    .competition-preview-heading h2 { line-height: 1.35; }
+    .competition-preview-heading p { line-height: 1.5; }
+    .competition-preview-toggle { gap: 6px; padding-inline: 12px; }
+    .competition-section-button { flex-direction: column; gap: 7px; padding: 12px 6px; min-height: 76px; }
+    .competition-section-button span { max-width: 100%; overflow-wrap: break-word; }
+    .competition-section-selected { border-bottom: 3px solid #c6ff3d; padding-bottom: 10px; }
+    .competition-panel-open {
+        position: fixed; inset: 0; z-index: 120; display: flex; flex-direction: column;
+        height: 100dvh; margin: 0 !important; background: #090e16; isolation: isolate;
+    }
+    .competition-panel-open > .competition-panel-header {
+        flex-shrink: 0; padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+        border-bottom: 1px solid #252d38; background: #0e141e;
+    }
+    .competition-panel-body-open {
+        flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+        padding: 20px 16px max(24px, env(safe-area-inset-bottom));
+    }
+    .competition-panel-body-open > [data-tournament-content] { animation: competition-panel-enter .18s ease-out; }
+    .competition-panel-body :is(.p-20, .p-24) { padding: 32px 16px; }
+    .competition-panel-body :is(.p-8, .p-10) { padding: 20px 16px; }
+    .competition-panel-body h2 { font-size: 18px; line-height: 1.4; letter-spacing: -.015em; }
+    .competition-panel-body h3 { overflow-wrap: anywhere; }
+    .competition-panel-body [data-tournament-content="overview"] > div { min-width: 0; }
+    .competition-panel-body [data-tournament-content="overview"] section { padding: 20px 16px; }
+    .competition-panel-body [data-tournament-content="overview"] section > div:first-child { flex-wrap: wrap; }
+    .competition-panel-body [data-tournament-content="overview"] .grid > div { min-width: 0; }
+    .competition-panel-body [data-tournament-content="participants"] > .grid { gap: 12px; }
+    .competition-main-action > :is(button, a, [role="status"], [role="alert"]) { max-width: 100%; padding-inline: 16px; letter-spacing: .04em; }
+    .competition-main-action :is(button, a) > svg { flex-shrink: 0; }
+    .competition-main-action :is(button, a) > span { min-width: 0; overflow-wrap: anywhere; }
+    .competition-bracket-rounds { display: grid; min-width: 0; gap: 24px; }
+    .competition-bracket-round { width: 100% !important; min-width: 0 !important; }
+    .competition-bracket-match { min-height: 0 !important; flex: none !important; padding-block: 6px; }
+    .competition-bracket-connector { display: none; }
+    .player-tournament-detail > div h1 { overflow-wrap: anywhere; }
+    .player-tournament-detail > .relative .grid > div { min-width: 0; }
+    .player-tournament-detail > .relative .grid > div > .flex { flex-wrap: wrap; }
+}
+@media (max-width: 639px) {
+    .competition-guest-invite { gap: 12px; }
+    .competition-guest-invite > div:first-child { flex-basis: 100%; }
+    .competition-fixture-row { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 12px; }
+    .competition-fixture-player { min-width: 0; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+    .competition-fixture-player > div { max-width: 100%; }
+    .competition-fixture-action { grid-column: 1 / -1; width: 100%; }
+    .competition-fixture-action > :is(button, a) { width: 100%; }
+}
+@keyframes competition-panel-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+    .competition-panel-body-open > [data-tournament-content] { animation: none; }
+}

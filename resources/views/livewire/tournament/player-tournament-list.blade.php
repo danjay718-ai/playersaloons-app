@@ -64,31 +64,55 @@
             'pipFilled' => (int) round(($joined / $max) * min(24, $max)),
             'startAtLabel' => $item->start_at ? $item->start_at->copy()->setTimezone($arenaTimezone)->format('M d · H:i').' '.$arenaTimezone : __('Schedule pending'),
             'href' => '/tournaments/'.$item->uuid.'/view'.$viewQuery,
-            'ctaLabel' => $isH2h ? __('Take 1v1 Seat') : __('Take a Seat'),
+            'ctaLabel' => $item->status === \App\Shared\Enums\TournamentStatus::REGISTRATION_OPEN
+                ? ($isH2h ? __('Join Head-to-Head Now') : __('Join Tournament Now'))
+                : ($isH2h ? __('View Head-to-Head') : __('View Tournament')),
         ];
     })->all();
 @endphp
 
-<div class="player-tournament-discovery space-y-10" wire:poll.10s.visible x-data="tournamentListRealtime(() => $wire.$refresh())">
+<div class="player-tournament-discovery min-w-0 space-y-10" wire:poll.10s.visible x-data="tournamentListRealtime(() => $wire.$refresh())">
     <!-- 1. Interactive Top Preview Stage (Main Event Spotlight + Starting Next Queue) -->
     @if(!empty($spotlightPayload))
         <section
             x-data="{
                 items: @js($spotlightPayload),
                 activeIndex: 0,
+                expanded: false,
                 get current() { return this.items[this.activeIndex] || this.items[0]; }
             }"
-            class="grid gap-5 lg:grid-cols-12"
+            class="min-w-0 space-y-4"
             aria-label="{{ __('Competition Spotlight') }}"
         >
+            <div class="competition-preview-heading">
+                <div class="min-w-0">
+                    <h2 class="text-sm font-bold text-white sm:text-base">{{ __('Competition spotlight') }}</h2>
+                    <p class="mt-1 text-xs text-zinc-400">{{ __('A quick look at what starts next') }}</p>
+                </div>
+                <button
+                    type="button"
+                    @click="expanded = !expanded"
+                    :aria-expanded="expanded"
+                    aria-expanded="false"
+                    aria-controls="competition-spotlight-preview"
+                    :aria-label="expanded ? @js(__('Hide competition preview')) : @js(__('Show competition preview'))"
+                    class="competition-preview-toggle"
+                    :class="{ 'competition-preview-toggle-open': expanded }"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="h-4 w-4 shrink-0" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18M9 10v10"/></svg>
+                    <span x-text="expanded ? @js(__('Hide preview')) : @js(__('Preview'))">{{ __('Preview') }}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 shrink-0" :class="{ 'rotate-180': expanded }" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                </button>
+            </div>
+            <div id="competition-spotlight-preview" x-show="expanded" x-cloak class="grid min-w-0 gap-5 xl:grid-cols-12">
             <!-- Left: Active Competition Preview -->
-            <article class="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-cyan-500/25 bg-zinc-900/80 p-5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.7)] sm:p-7 lg:col-span-7">
+            <article class="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-3xl border border-cyan-500/25 bg-zinc-900/80 p-4 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.7)] sm:p-7 xl:col-span-7">
                 <img :src="current.banner" alt="" class="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25 transition-all duration-500">
                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#05080f] via-[#05080f]/90 to-[#05080f]/65"></div>
 
                 <div class="relative z-10 space-y-4">
                     <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex min-w-0 flex-wrap items-center gap-2 [&>span]:max-w-full [&>span]:[overflow-wrap:anywhere]">
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-lime-400/40 bg-lime-400/15 px-3 py-1 font-orbitron text-[10px] font-black uppercase tracking-widest text-lime-300">
                                 <span class="h-2 w-2 rounded-full bg-lime-400 shadow-[0_0_8px_#c6ff3d] animate-pulse"></span>
                                 {{ __('Spotlight Preview') }}
@@ -96,15 +120,15 @@
                             <span class="rounded-full border border-cyan-400/35 bg-cyan-950/60 px-3 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wider text-cyan-300" x-text="current.game"></span>
                             <span class="rounded-full border border-white/10 bg-zinc-950/70 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-300" x-text="current.type"></span>
                         </div>
-                        <span class="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/35 bg-zinc-950/85 px-3 py-1.5 font-mono text-xs font-bold text-amber-300">
-                            <i data-lucide="clock" class="h-3.5 w-3.5 text-amber-400"></i>
-                            <span x-text="current.startAtLabel"></span>
+                        <span class="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-xl border border-amber-400/35 bg-zinc-950/85 px-3 py-1.5 font-mono text-xs font-bold text-amber-300">
+                            <i data-lucide="clock" class="h-3.5 w-3.5 shrink-0 text-amber-400"></i>
+                            <span class="min-w-0 [overflow-wrap:anywhere]" x-text="current.startAtLabel"></span>
                         </span>
                     </div>
 
                     <div>
-                        <h2 class="font-orbitron text-2xl font-black uppercase tracking-tight text-white sm:text-3xl" x-text="current.title"></h2>
-                        <p class="mt-1 text-xs font-semibold text-zinc-400">
+                        <h2 class="font-orbitron text-xl font-black uppercase tracking-tight text-white [overflow-wrap:anywhere] sm:text-3xl" x-text="current.title"></h2>
+                        <p class="mt-1 text-xs font-semibold text-zinc-400 [overflow-wrap:anywhere]">
                             <span class="text-cyan-300" x-text="current.game"></span>
                             <template x-if="current.frequency">
                                 <span> · <span x-text="current.frequency"></span></span>
@@ -112,7 +136,7 @@
                         </p>
                     </div>
 
-                    <dl class="grid grid-cols-3 gap-3 rounded-2xl border border-white/10 bg-zinc-950/75 p-3.5 sm:p-4">
+                    <dl class="grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-zinc-950/75 p-3.5 sm:grid-cols-3 sm:p-4 [&>div]:min-w-0 [&_dd]:[overflow-wrap:anywhere]">
                         <div>
                             <dt class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{{ __('Entry Fee') }}</dt>
                             <dd class="mt-1 font-orbitron text-base font-black text-white sm:text-lg" x-text="current.entry"></dd>
@@ -121,8 +145,8 @@
                             <dt class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{{ __('Prize') }}</dt>
                             <dd class="mt-1 font-orbitron text-base font-black text-lime-300 sm:text-lg" x-text="current.prize"></dd>
                         </div>
-                        <div>
-                            <dt class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{{ __('Full Capacity') }}</dt>
+                        <div class="col-span-2 sm:col-span-1">
+                            <dt class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{{ __('Joined / Max') }}</dt>
                             <dd class="mt-1 font-mono text-base font-black text-cyan-300 sm:text-lg">
                                 <span x-text="current.joined"></span>
                                 <span class="text-xs text-zinc-500">/</span>
@@ -134,8 +158,8 @@
                     <!-- Interactive Seat Map Pips -->
                     <div class="space-y-1.5">
                         <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                            <span>{{ __('Live Seat Map') }}</span>
-                            <span class="text-lime-300" x-text="current.seatsLeft > 0 ? '{{ __('Next seat ready') }}' : '{{ __('Full capacity') }}'"></span>
+                            <span>{{ __('Available slots') }}</span>
+                            <span class="text-lime-300" x-text="current.seatsLeft > 0 ? @js(__('Slots available')) : @js(__('Full'))"></span>
                         </div>
                         <div class="grid grid-cols-12 gap-1.5 sm:grid-cols-24" aria-hidden="true">
                             <template x-for="pip in current.pipCount" :key="pip">
@@ -156,17 +180,17 @@
                         <span aria-hidden="true">↗</span>
                     </a>
                     <a href="#competition-board" class="text-xs font-extrabold uppercase tracking-wider text-zinc-400 transition hover:text-cyan-300">
-                        {{ __('Jump to full board') }} ↓
+                        {{ $isHeadToHeadListing ? __('View all head-to-head matches') : __('View all tournaments') }} ↓
                     </a>
                 </div>
             </article>
 
             <!-- Right: Starting Next Queue (Click to Preview) -->
-            <aside class="flex flex-col justify-between rounded-3xl border border-cyan-500/20 bg-zinc-900/65 p-5 backdrop-blur-md sm:p-6 lg:col-span-5">
+            <aside class="flex min-w-0 flex-col justify-between rounded-3xl border border-cyan-500/20 bg-zinc-900/65 p-4 backdrop-blur-md sm:p-6 xl:col-span-5">
                 <div>
-                    <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22e6ff]"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                        <div class="flex min-w-0 items-center gap-2">
+                            <span class="h-2 w-2 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_#22e6ff]"></span>
                             <h3 class="font-orbitron text-xs font-black uppercase tracking-widest text-white">{{ __('Starting Next — Click to Preview') }}</h3>
                         </div>
                         <span class="font-mono text-[11px] font-bold text-lime-300">{{ $tournaments->total() }} {{ __('open') }}</span>
@@ -177,7 +201,7 @@
                             <button
                                 type="button"
                                 @click="activeIndex = idx"
-                                class="group flex w-full items-center justify-between gap-3 rounded-2xl border px-3.5 py-2.5 text-left transition-all"
+                                class="group flex min-w-0 w-full items-center justify-between gap-3 rounded-2xl border px-3.5 py-2.5 text-left transition-all"
                                 :class="activeIndex === idx
                                     ? 'border-lime-400/60 bg-lime-400/10 shadow-[0_0_20px_rgba(198,255,61,0.12)]'
                                     : 'border-white/5 bg-zinc-950/60 hover:border-cyan-400/35 hover:bg-zinc-950'"
@@ -189,12 +213,12 @@
                                     <p class="mt-0.5 truncate text-[11px] text-zinc-400">
                                         <span class="font-semibold text-cyan-300" x-text="item.game"></span>
                                         <span> · </span>
-                                        <span x-text="item.joined + '/' + item.max + ' seats'"></span>
+                                        <span x-text="item.joined + '/' + item.max + ' ' + @js(__('joined'))"></span>
                                         <span> · </span>
                                         <span class="text-amber-300" x-text="item.startAtLabel"></span>
                                     </p>
                                 </div>
-                                <div class="shrink-0 text-right">
+                                <div class="max-w-[40%] shrink-0 text-right [overflow-wrap:anywhere]">
                                     <span class="block font-orbitron text-xs font-black text-lime-300" x-text="item.entry"></span>
                                     <span class="text-[9px] font-bold uppercase tracking-wider" :class="activeIndex === idx ? 'text-lime-300' : 'text-zinc-500'" x-text="activeIndex === idx ? 'Previewing' : 'Preview'"></span>
                                 </div>
@@ -203,13 +227,14 @@
                     </div>
                 </div>
 
-                <div class="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-xs text-zinc-400">
-                    <span>{{ __('Select any row above to inspect seats') }}</span>
+                <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3 text-xs text-zinc-400">
+                    <span>{{ __('Select a competition to view details') }}</span>
                     <a :href="current.href" wire:navigate class="font-orbitron text-[10px] font-black uppercase tracking-wider text-cyan-300 hover:text-lime-300">
                         {{ __('Open Details') }} →
                     </a>
                 </div>
             </aside>
+            </div>
         </section>
     @endif
 
@@ -255,12 +280,12 @@
     @if($featuredTournaments->isNotEmpty())
     <section class="space-y-4">
         <div class="flex items-end justify-between gap-4"><div><p class="gr-eyebrow !mb-1.5 !text-amber-300"><span class="gr-slash">//</span> Selected competitions</p><h2 class="font-orbitron text-xl font-black uppercase text-white">{{ __('Featured :value1', ['value1' => ($competitionPlural)]) }}</h2></div><span class="hidden text-xs text-zinc-400 sm:block">Highlights from active competitions</span></div>
-        <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 md:grid md:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] md:items-center md:gap-5" aria-hidden="true">
+        <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5" aria-hidden="true">
             <span></span>
             <span>{{ __('Competition') }}</span>
             <span>{{ __('Entry Fee') }}</span>
-            <span>{{ __('Prize') }}</span>
-            <span>{{ __('Full Capacity') }}</span>
+            <span>{{ __('Total prizes') }}</span>
+            <span>{{ __('Joined / Max') }}</span>
             <span></span>
         </div>
         <div class="flex flex-col gap-2.5">@foreach($featuredTournaments as $tournament)<div wire:key="featured-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" action-label="Join" :public-view="$publicView" class="min-w-0" /></div>@endforeach</div>
@@ -272,11 +297,11 @@
     <section id="competition-board" class="space-y-4 scroll-mt-24">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-cyan-500/15 pb-3">
             <div class="flex gap-2 overflow-x-auto [scrollbar-width:none]">
-                @foreach(['upcoming' => $isHeadToHeadListing ? 'Upcoming H2H' : 'Upcoming', 'ongoing' => $isHeadToHeadListing ? 'Ongoing H2H' : 'Ongoing', 'past' => 'Past '.$competitionPlural] as $key => $label)<button wire:click="$set('activeTab', '{{ $key }}')" class="whitespace-nowrap rounded-full px-5 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest transition {{ $activeTab === $key ? 'bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.35)]' : 'border border-white/10 bg-zinc-900/60 text-zinc-400 hover:border-cyan-400/40 hover:text-white' }}">{{ $label }}</button>@endforeach
+                @foreach(['upcoming' => __('Upcoming'), 'ongoing' => __('Ongoing'), 'past' => 'Past '.$competitionPlural] as $key => $label)<button wire:click="$set('activeTab', '{{ $key }}')" class="whitespace-nowrap rounded-full px-5 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest transition {{ $activeTab === $key ? 'bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.35)]' : 'border border-white/10 bg-zinc-900/60 text-zinc-400 hover:border-cyan-400/40 hover:text-white' }}">{{ $label }}</button>@endforeach
             </div>
             <span class="hidden items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-zinc-400 sm:inline-flex">
                 <i data-lucide="list" class="h-3.5 w-3.5 text-cyan-400"></i>
-                {{ __('Simplified Board') }}
+                {{ $competitionPlural }}
             </span>
         </div>
 
@@ -308,12 +333,12 @@
 
         @if($tournaments->count())
             <!-- Desktop Board Column Header -->
-            <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 md:grid md:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] md:items-center md:gap-5" aria-hidden="true">
+            <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5" aria-hidden="true">
                 <span></span>
                 <span>{{ __('Competition') }}</span>
                 <span>{{ __('Entry Fee') }}</span>
-                <span>{{ __('Prize') }}</span>
-                <span>{{ __('Full Capacity') }}</span>
+                <span>{{ __('Total prizes') }}</span>
+                <span>{{ __('Joined / Max') }}</span>
                 <span></span>
             </div>
 

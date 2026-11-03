@@ -107,11 +107,11 @@ class TournamentDetail extends Component
             && ! request()->query->has('bracketView')
             && ! request()->query->has('match');
 
-        if ($user?->can('viewRestrictedDetails', $tournament)) {
-            $this->loadSection($this->activeTab);
-        } elseif (! in_array($this->activeTab, ['overview', 'streams'], true)) {
+        if ((! $user || $this->viewMode === 'guest' || ! $user->can('viewRestrictedDetails', $tournament))
+            && ! request()->query->has('activeTab')) {
             $this->activeTab = 'overview';
         }
+        $this->loadSection($this->activeTab);
 
         if ($user) {
             $this->selectedPlatformId = $tournament->platform_id ?? $tournament->supportedPlatformIds()[0] ?? null;
@@ -421,9 +421,11 @@ class TournamentDetail extends Component
 
         $canViewRestricted = $user?->can('viewRestrictedDetails', $tournament) ?? false;
 
-        $participantsLoaded = $canViewRestricted && isset($this->loadedSections['participants']);
-        $bracketLoaded = $canViewRestricted && isset($this->loadedSections['bracket']);
-        $activityLoaded = $canViewRestricted && isset($this->loadedSections['activity']);
+        // Public discovery includes rosters, fixtures and the competition timeline.
+        // Match-room actions keep their own participant authorization.
+        $participantsLoaded = isset($this->loadedSections['participants']);
+        $bracketLoaded = isset($this->loadedSections['bracket']);
+        $activityLoaded = isset($this->loadedSections['activity']);
 
         if ($participantsLoaded) {
             $tournament->load([
@@ -572,6 +574,7 @@ class TournamentDetail extends Component
             ? Activity::query()
                 ->where('subject_type', Tournament::class)
                 ->where('subject_id', $tournament->id)
+                ->select(['id', 'description', 'created_at'])
                 ->orderBy('created_at', 'desc')
                 ->limit(50)
                 ->get()

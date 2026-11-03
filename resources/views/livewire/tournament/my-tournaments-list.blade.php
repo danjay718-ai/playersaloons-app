@@ -74,12 +74,12 @@
             </section>
         @endif
         @if($tournaments->count() > 0)
-            <div class="mb-2.5 hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 md:grid md:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] md:items-center md:gap-5" aria-hidden="true">
+            <div class="mb-2.5 hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5" aria-hidden="true">
                 <span></span>
                 <span>{{ __('Competition') }}</span>
                 <span>{{ __('Entry Fee') }}</span>
-                <span>{{ __('Prize') }}</span>
-                <span>{{ __('Full Capacity') }}</span>
+                <span>{{ __('Total prizes') }}</span>
+                <span>{{ __('Joined / Max') }}</span>
                 <span></span>
             </div>
             <div class="flex flex-col gap-2.5">

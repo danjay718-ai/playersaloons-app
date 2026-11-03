@@ -178,7 +178,7 @@
                                     </div>
                                     <div class="text-right">
                                         <a :href="active.nextUuid ? ('/tournaments/' + active.nextUuid + '/view?view=guest') : active.href" wire:navigate class="inline-flex items-center gap-1.5 rounded-xl bg-[#c6ff3d] px-3.5 py-2 font-orbitron text-[10px] font-black uppercase tracking-wider text-[#07110a] transition hover:brightness-110">
-                                            <span x-text="active.nextUuid ? '{{ __('Take a Seat') }}' : '{{ __('View Table') }}'"></span>
+                                            <span x-text="active.nextUuid ? @js(__('Join Tournament Now')) : @js(__('View Tournaments'))"></span>
                                             <span aria-hidden="true">↗</span>
                                         </a>
                                     </div>
