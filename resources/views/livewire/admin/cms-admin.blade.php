@@ -211,6 +211,10 @@
 
     <!-- Landing Page Tab Content -->
     @if($tab === 'landing')
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <div><h2 class="text-sm font-bold text-white">{{ __('Pages & Navigation') }}</h2><p class="mt-1 text-xs text-slate-400">{{ __('Manage the pages and links shown in the top menu.') }}</p></div>
+            <a href="{{ route('admin.cms', ['section' => 'navigation']) }}" class="rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-500">{{ __('Manage pages & links') }}</a>
+        </div>
         <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
             <aside class="space-y-2">
                 @foreach($landingSections as $section)

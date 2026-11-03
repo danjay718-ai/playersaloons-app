@@ -671,5 +671,8 @@
     "submitting": "submitting",
     "unknown": "unknown",
     "PayOp reference from merchant dashboard": "PayOp reference from merchant dashboard",
-    "Withdrawal amount": "Withdrawal amount"
+    "Withdrawal amount": "Withdrawal amount",
+    "Pages & Navigation": "Pages & Navigation",
+    "Manage the pages and links shown in the top menu.": "Manage the pages and links shown in the top menu.",
+    "Manage pages & links": "Manage pages & links"
 }

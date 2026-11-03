@@ -387,6 +387,50 @@ class LandingPageTest extends TestCase
         ]);
     }
 
+    public function test_head_to_head_menu_links_follow_admin_edits_and_visibility_in_every_header(): void
+    {
+        $admin = $this->adminUser();
+        $item = PublicNavigationItem::query()->where('label', 'Head-to-Head')->firstOrFail();
+        $editor = Livewire::actingAs($admin)->test(CmsAdmin::class)
+            ->call('setTab', 'navigation')
+            ->call('openEditNavigationItemModal', $item->id)
+            ->set('navigationLabel', 'Duel competitions')
+            ->call('saveNavigationItem')
+            ->assertHasNoErrors();
+
+        foreach (['gr-navigation', 'guest-navigation', 'public-navigation'] as $header) {
+            $html = (string) $this->blade("@include('components.layouts.partials.{$header}')");
+            $this->assertSame(2, substr_count($html, 'Duel competitions'));
+            $this->assertSame(2, substr_count($html, 'href="/h2h?view=guest"'));
+            $this->assertStringNotContainsString('>Head-to-Head<', $html);
+        }
+
+        $editor->call('toggleNavigationItemActive', $item->id);
+        foreach (['gr-navigation', 'guest-navigation', 'public-navigation'] as $header) {
+            $this->blade("@include('components.layouts.partials.{$header}')")
+                ->assertDontSee('Duel competitions')
+                ->assertDontSee('href="/h2h?view=guest"', false);
+        }
+
+        $this->get(route('admin.cms', ['section' => 'landing']))->assertOk()
+            ->assertSee('Pages &amp; Navigation', false)
+            ->assertSee(route('admin.cms', ['section' => 'navigation']), false);
+    }
+
+    public function test_navigation_backfill_preserves_disabled_and_deleted_admin_links(): void
+    {
+        $item = PublicNavigationItem::query()->where('label', 'Head-to-Head')->firstOrFail();
+        $item->update(['is_active' => false, 'label' => 'My 1v1 games']);
+        $migration = require database_path('migrations/2026_11_03_000000_add_managed_head_to_head_navigation.php');
+        $migration->up();
+        $this->assertFalse($item->fresh()->is_active);
+        $this->assertSame('My 1v1 games', $item->fresh()->label);
+        $item->delete();
+        $migration->up();
+        $this->assertTrue($item->fresh()->trashed());
+        $this->assertSame(1, PublicNavigationItem::withTrashed()->where('url', '/h2h?view=guest')->count());
+    }
+
     private function adminUser(): User
     {
         /** @var User $user */

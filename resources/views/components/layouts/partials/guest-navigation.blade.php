@@ -10,7 +10,6 @@
             @foreach($navigation as $item)
                 <a href="{{ $item->url }}" @if($item->opens_new_tab) target="_blank" rel="noopener" @endif>{{ __($item->label) }}</a>
             @endforeach
-            @if(config('features.tournament_v2.enabled'))<a href="{{ route('platform-h2h', ['view' => 'guest']) }}">{{ __('Head-to-Head') }}</a>@endif
         </nav>
         <div class="guest-nav-actions">
             <button type="button" class="pwa-install-btn guest-install" data-pwa-install-desktop><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
@@ -25,7 +24,6 @@
         @foreach($navigation as $item)
             <a href="{{ $item->url }}" @click="menu = false" @if($item->opens_new_tab) target="_blank" rel="noopener" @endif>{{ __($item->label) }}</a>
         @endforeach
-        @if(config('features.tournament_v2.enabled'))<a href="{{ route('platform-h2h', ['view' => 'guest']) }}">{{ __('Head-to-Head') }}</a>@endif
         <button type="button" class="pwa-install-btn guest-install" data-pwa-install-mobile><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
         <x-localization.language-switcher variant="public" align="left" />
     </nav>

@@ -45,6 +45,16 @@ class PublicNavigationSeeder extends Seeder
                 'opens_new_tab' => false,
             ],
             [
+                'label' => 'Head-to-Head',
+                'url' => '/h2h?view=guest',
+                'icon' => 'swords',
+                'match_pattern' => 'h2h*',
+                'visibility' => 'public',
+                'sort_order' => 15,
+                'is_active' => true,
+                'opens_new_tab' => false,
+            ],
+            [
                 'label' => 'Teams',
                 'url' => '/teams',
                 'icon' => 'users',

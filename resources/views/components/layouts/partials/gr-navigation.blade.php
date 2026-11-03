@@ -13,7 +13,6 @@
             };
         });
     $isHome = request()->is('/');
-    $isH2h = request()->is('h2h*');
     $activeIds = $navigation
         ->filter(fn ($item): bool => $item->match_pattern
             ? collect(explode('|', $item->match_pattern))->contains(fn (string $pattern): bool => request()->is(trim($pattern)))
@@ -36,12 +35,6 @@
                     <span>{{ __($item->label) }}</span>
                 </a>
             @endforeach
-            @if(config('features.tournament_v2.enabled'))
-                <a href="{{ route('platform-h2h', ['view' => 'guest']) }}" class="{{ $isH2h ? 'is-active' : '' }}" @if($isH2h) aria-current="page" @endif>
-                    <span class="gr-nav-dot" aria-hidden="true"></span>
-                    <span>{{ __('Head-to-Head') }}</span>
-                </a>
-            @endif
         </nav>
         <div class="gr-nav-actions">
             <button type="button" class="pwa-install-btn gr-install" data-pwa-install-desktop><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
@@ -60,9 +53,6 @@
         @foreach($navigation as $item)
             <a href="{{ $item->url }}" @click="menu = false" class="{{ in_array($item->id, $activeIds, true) ? 'is-active' : '' }}" @if(in_array($item->id, $activeIds, true)) aria-current="page" @endif @if($item->opens_new_tab) target="_blank" rel="noopener" @endif>{{ __($item->label) }}</a>
         @endforeach
-        @if(config('features.tournament_v2.enabled'))
-            <a href="{{ route('platform-h2h', ['view' => 'guest']) }}" @click="menu = false" class="{{ $isH2h ? 'is-active' : '' }}">{{ __('Head-to-Head') }}</a>
-        @endif
         @auth<a href="{{ route('dashboard') }}">{{ __('Dashboard') }}</a>@else<a href="/login">{{ __('Sign In') }}</a>@endauth
         <button type="button" class="pwa-install-btn gr-install" data-pwa-install-mobile><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
         <x-localization.language-switcher variant="public" align="left" />
