@@ -98,6 +98,7 @@
                 <span>{{ __(ucfirst((string) $tournament->frequency)) }}</span>
             @endif
         </div>
+        <x-tournament-countdown :tournament="$tournament" class="mt-2" />
     </div>
 
     <div class="space-y-3 border-t border-white/5 pt-3 xl:hidden">
@@ -107,21 +108,7 @@
             <div><dt class="text-zinc-400">{{ $joinedLabel }}</dt><dd class="mt-1 text-sm font-bold tabular-nums text-zinc-200">{{ $registrationsCount }} / {{ $tournament->max_participants }}</dd></div>
         </dl>
         <div class="flex items-center justify-between gap-3">
-            <p class="inline-flex min-w-0 items-center gap-2 rounded-lg bg-lime-400/10 px-2.5 py-2 text-xs font-semibold tabular-nums text-lime-300"
-               data-server-now="{{ now()->getTimestampMs() }}" x-data="tournamentCountdown(Number($el.dataset.serverNow), @js([
-                   'startsIn' => __('Starts in'),
-                   'ongoing' => __('In progress'),
-                   'completed' => __('Completed'),
-                   'cancelled' => __('Cancelled'),
-                   'refunded' => __('Refunded'),
-                   'pending' => __('Schedule pending'),
-                   'reached' => __('Starting now'),
-               ]))">
-                <i data-lucide="clock-3" class="h-3.5 w-3.5 shrink-0" aria-hidden="true"></i>
-                <time class="min-w-0" datetime="{{ $tournament->start_at?->toIso8601String() }}" x-text="countdown(@js($tournament->start_at?->getTimestampMs()), @js($statusValue))">
-                    {{ in_array($statusValue, ['ONGOING', 'COMPLETED', 'CANCELLED', 'REFUNDED'], true) ? $tournament->status->label() : ($tournament->start_at?->diffForHumans() ?? __('Schedule pending')) }}
-                </time>
-            </p>
+            <x-tournament-countdown :tournament="$tournament" class="rounded-lg bg-lime-400/10 px-2.5 py-2" />
             <span data-card-action class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-lime-400 px-5 text-sm font-bold text-zinc-950">{{ $mobileActionLabel }}</span>
         </div>
     </div>

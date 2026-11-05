@@ -240,6 +240,7 @@
                             </td>
                             <td class="p-4 text-slate-400">
                                 {{ $tournament->start_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, H:i') ?? 'N/A' }}
+                                <div class="mt-1"><x-tournament-countdown :tournament="$tournament" /></div>
                             </td>
                             <td class="p-4 text-right">
                                 <x-admin.action-dropdown>

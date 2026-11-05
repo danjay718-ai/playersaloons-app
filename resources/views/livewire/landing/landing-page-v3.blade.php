@@ -32,7 +32,7 @@
                     @if($topPlayersSection)<a href="#achievements">{{ __('Weekly honours') }} ↗</a>@endif
                 </nav>
             </div>
-            <aside class="guest-featured-slider" x-data="guestTournamentSlider" aria-label="{{ __('Open registration tournaments') }}" data-ui data-started="{{ __('Starting now') }}" data-days="{{ __('d') }}" data-hours="{{ __('h') }}" data-minutes="{{ __('m') }}" data-seconds="{{ __('s') }}">
+            <aside class="guest-featured-slider" x-data="guestTournamentSlider" data-server-now="{{ now()->getTimestampMs() }}" aria-label="{{ __('Open registration tournaments') }}" data-ui data-started="{{ __('Starting now') }}" data-days="{{ __('d') }}" data-hours="{{ __('h') }}" data-minutes="{{ __('m') }}" data-seconds="{{ __('s') }}">
                 @if($registrationTournaments->isNotEmpty())
                     <div class="guest-slider-heading"><span>{{ __('Registration is open') }}</span><span>{{ __(':count events', ['count' => $registrationTournaments->count()]) }}</span></div>
                     <div class="guest-tournament-track" x-ref="track" tabindex="0" role="region" aria-label="{{ __('Featured tournaments. Swipe or use the arrow buttons to explore.') }}"

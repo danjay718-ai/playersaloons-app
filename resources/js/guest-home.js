@@ -1,11 +1,15 @@
+import { serverClock } from './server-clock.js';
+
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('guestTournamentSlider', () => ({
-        index: 0, count: 0, now: Date.now(), timer: null, labels: {},
+        index: 0, count: 0, now: 0, timer: null, labels: {},
         pointer: null, origin: 0, scrollOrigin: 0, dragged: false,
         init() {
             this.count = this.$el.querySelectorAll('[data-tournament-slide]').length;
             this.labels = { ...this.$el.dataset };
-            this.timer = setInterval(() => { this.now = Date.now(); }, 1000);
+            const now = serverClock(Number(this.$el.dataset.serverNow));
+            this.now = now();
+            this.timer = setInterval(() => { this.now = now(); }, 1000);
         },
         remaining(date) {
             const seconds = Math.max(0, Math.ceil((Date.parse(date) - this.now) / 1000));

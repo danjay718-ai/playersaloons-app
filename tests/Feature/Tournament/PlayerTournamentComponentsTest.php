@@ -676,6 +676,17 @@ class PlayerTournamentComponentsTest extends TestCase
         $this->assertSame(10000, (int) $afterClock[1] - (int) $beforeClock[1]);
     }
 
+    public function test_tournament_and_h2h_cards_have_both_desktop_and_mobile_server_timers(): void
+    {
+        foreach (['tournament', 'head_to_head'] as $type) {
+            $tournament = $this->makeTournament('Timer '.$type, TournamentStatus::REGISTRATION_OPEN);
+            $tournament->update(['competition_type' => $type, 'start_at' => now()->addHour()]);
+            $html = (string) $this->blade('<x-player.tournament-card :tournament="$tournament" />', ['tournament' => $tournament]);
+            $this->assertSame(2, substr_count($html, 'x-data="tournamentCountdown('));
+            $this->assertMatchesRegularExpression('/xl:block[\s\S]*?x-data="tournamentCountdown/', $html);
+        }
+    }
+
     public function test_player_tournament_list_filtering(): void
     {
         $otherGame = $this->makeGame('racing', 'Racing');

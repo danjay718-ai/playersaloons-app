@@ -3,6 +3,7 @@ import test from 'node:test';
 import { serverClock } from '../../resources/js/server-clock.js';
 import { systemClock } from '../../resources/js/system-clock.js';
 import { countdownTimer, tournamentCountdown, matchResultTimer } from '../../resources/js/slot-picker.js';
+import { guestCountdown } from '../../resources/js/guest-countdown.js';
 
 const labels = { startsIn: 'Starts in', reached: 'Start time reached' };
 
@@ -27,17 +28,22 @@ for (const now of ['2026-10-17T17:15:00+02:00', '2026-12-17T17:15:00+01:00']) {
         page.advance(90000);
         const tournament = tournamentCountdown(epoch, labels);
         const detail = countdownTimer(target, epoch);
+        const guest = guestCountdown(new Date(target).toISOString(), { d: 'd', h: 'h', m: 'm', s: 's', started: 'Starting now' }, epoch);
 
         sidebar.tick();
         h2h.updateClock();
         tournament.updateClock();
         detail.tick();
+        guest.tick();
         assert.equal(sidebar.time, '17:18:00');
         assert.equal(h2h.now, sidebar.currentEpoch);
         assert.equal(tournament.now, sidebar.currentEpoch);
         assert.equal(h2h.countdown(target, 'REGISTRATION_OPEN'), 'Starts in 00h 02m 00s');
         assert.equal(tournament.countdown(target, 'REGISTRATION_OPEN'), h2h.countdown(target, 'REGISTRATION_OPEN'));
         assert.deepEqual([detail.minutes, detail.seconds], [2, 0]);
+        assert.equal(guest.now, sidebar.currentEpoch);
+        assert.equal(guest.seconds, 120);
+        assert.equal(guest.text, '0d 00h 02m 00s');
     });
 }
 
@@ -56,6 +62,20 @@ test('fresh response resynchronizes existing sidebar and cards after device slee
     // An older response that arrives later must not rewind any of the clocks.
     page.advance(1000);
     assert.equal(serverClock(epoch)(), epoch + 121000);
+});
+
+test('guest countdown releases its interval and reaches zero using server time', (t) => {
+    const page = pageClock(t);
+    const epoch = Date.parse('2026-10-17T10:00:00Z');
+    const guest = guestCountdown(new Date(epoch + 1000).toISOString(), { started: 'Starting now' }, epoch);
+    guest.init();
+    assert.notEqual(guest.timer, null);
+    page.advance(1000);
+    guest.tick();
+    assert.equal(guest.seconds, 0);
+    assert.equal(guest.text, 'Starting now');
+    guest.destroy();
+    assert.equal(guest.timer, null);
 });
 
 test('a sidebar initialized after the cards uses their elapsed time', (t) => {

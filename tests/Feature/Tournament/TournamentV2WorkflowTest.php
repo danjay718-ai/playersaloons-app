@@ -1567,7 +1567,9 @@ final class TournamentV2WorkflowTest extends TestCase
         ]);
         $createRoute = $type === CompetitionType::HEAD_TO_HEAD ? 'admin.h2h.v2.create' : 'admin.tournaments.v2.create';
         $this->get(route($createRoute))->assertOk()
-            ->assertSee('name="schedule_timezone" value="Asia/Singapore"', false);
+            ->assertSee('name="schedule_timezone" value="Asia/Singapore"', false)
+            ->assertSee('serverNow: window.serverClock(Date.parse(clockNow))', false)
+            ->assertDontSee('clockStartedAt', false);
         $missing = $payload;
         unset($missing['schedule_timezone']);
         $this->post(route($route), $missing)->assertSessionHasErrors('schedule_timezone');
