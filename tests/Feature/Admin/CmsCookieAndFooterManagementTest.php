@@ -80,6 +80,7 @@ class CmsCookieAndFooterManagementTest extends TestCase
             ->set('footerBrandTagline', 'Global Esports Arena')
             ->set('footerDescription', 'Custom arena description for all competitors.')
             ->set('footerCopyright', '2026 GamersRival Global Inc.')
+            ->set('footerCompanyDetails', "Updated Company Ltd\nCompany number: 12345678\nRegistered office: London")
             ->set('footerDisclaimer', 'All trademarks are property of their respective owners.')
             ->set('footerDiscord', 'https://discord.gg/custom')
             ->call('saveFooterSettings')
@@ -89,6 +90,55 @@ class CmsCookieAndFooterManagementTest extends TestCase
         $this->assertSame('Global Esports Arena', SystemSetting::query()->where('key', 'footer.tagline')->value('value'));
         $this->assertSame('2026 GamersRival Global Inc.', SystemSetting::query()->where('key', 'footer.copyright')->value('value'));
         $this->assertSame('https://discord.gg/custom', SystemSetting::query()->where('key', 'footer.discord')->value('value'));
+        $this->assertSame("Updated Company Ltd\nCompany number: 12345678\nRegistered office: London", SystemSetting::query()->where('key', 'footer.company_details')->value('value'));
+
+        Livewire::actingAs($this->admin)->test(CmsAdmin::class, ['section' => 'footer'])
+            ->assertSet('footerCompanyDetails', "Updated Company Ltd\nCompany number: 12345678\nRegistered office: London");
+    }
+
+    public function test_company_details_appear_separately_in_every_footer_variant(): void
+    {
+        $this->actingAs($this->admin);
+
+        foreach (['gr-footer', 'guest-footer', 'public-footer'] as $footer) {
+            $this->view('components.layouts.partials.'.$footer)
+                ->assertSee('Company Details')
+                ->assertSee("Skillplay Ltd\nCompany number: 15920047\nIncorporated on: 27 August 2024\nRegistered office:\n167–169 Great Portland Street, 5th Floor\nLondon, W1W 5PF, England")
+                ->assertSee('whitespace-pre-line');
+        }
+    }
+
+    public function test_company_details_are_escaped_and_can_be_hidden(): void
+    {
+        SystemSetting::query()->where('key', 'footer.company_details')->update(['value' => '<script>alert(1)</script>']);
+
+        $this->blade('<x-footer-company-details />')
+            ->assertSee('<script>alert(1)</script>')
+            ->assertDontSee('<script>', false);
+
+        Livewire::actingAs($this->admin)->test(CmsAdmin::class, ['section' => 'footer'])
+            ->set('footerCompanyDetails', '')
+            ->call('saveFooterSettings')
+            ->assertHasNoErrors();
+
+        $this->blade('<x-footer-company-details />')->assertDontSee('Company Details');
+    }
+
+    public function test_company_details_reject_overlong_content(): void
+    {
+        Livewire::actingAs($this->admin)->test(CmsAdmin::class, ['section' => 'footer'])
+            ->set('footerCompanyDetails', str_repeat('a', 1001))
+            ->call('saveFooterSettings')
+            ->assertHasErrors(['footerCompanyDetails' => 'max']);
+    }
+
+    public function test_company_details_migration_preserves_existing_content(): void
+    {
+        SystemSetting::query()->where('key', 'footer.company_details')->update(['value' => 'Custom company details']);
+        $migration = require database_path('migrations/2026_11_05_000000_add_footer_company_details.php');
+        $migration->up();
+
+        $this->assertSame('Custom company details', SystemSetting::query()->where('key', 'footer.company_details')->value('value'));
     }
 
     public function test_footer_copyright_falls_back_to_section_then_default_when_settings_are_missing(): void

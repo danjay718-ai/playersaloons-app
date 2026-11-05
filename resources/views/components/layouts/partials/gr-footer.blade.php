@@ -113,6 +113,8 @@
             </div>
         @endif
 
+        <x-footer-company-details />
+
         <!-- Bottom Bar -->
         <div class="gr-footer-bottom pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
             <p>&copy; {{ date('Y') }} {{ __($copyright) }}</p>

@@ -8,6 +8,7 @@
         <a href="/tournaments" class="guest-button">{{ __('Browse Tournaments') }} <span aria-hidden="true">↗</span></a>
     </div>
     <a href="/" class="guest-footer-brand" aria-label="{{ __('GamersRival home') }}"><span>Gamers</span><span>Rival</span></a>
+    <x-footer-company-details />
     <div class="guest-footer-bottom">
         <p>&copy; {{ date('Y') }} {{ __($footer?->body ?? 'All rights reserved. Operated by GamersRival Systems.') }}</p>
         <nav aria-label="{{ __('Footer navigation') }}">

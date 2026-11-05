@@ -876,6 +876,13 @@
                         </div>
 
                         <div class="md:col-span-2">
+                            <label for="footer-company-details" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{{ __('Company Details') }}</label>
+                            <textarea id="footer-company-details" wire:model="footerCompanyDetails" rows="5" maxlength="1000" aria-describedby="footer-company-details-help" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm resize-y"></textarea>
+                            <p id="footer-company-details-help" class="text-xs text-slate-400 mt-1">{{ __('Shown separately from copyright. Use a new line for each company detail.') }}</p>
+                            @error('footerCompanyDetails') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Brand Statement / Mission Note</label>
                             <textarea wire:model="footerDescription" rows="2" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm resize-y"></textarea>
                             @error('footerDescription') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror

@@ -240,6 +240,8 @@ class CmsAdmin extends AdminComponent
 
     public string $footerCopyright = 'All rights reserved. Operated by GamersRival Systems.';
 
+    public string $footerCompanyDetails = '';
+
     public string $footerDisclaimer = 'GamersRival is an independent esports competition platform. Game titles, artwork, and trademarks belong to their respective publishers and owners.';
 
     public string $footerDiscord = 'https://discord.gg/gamersrival';
@@ -409,6 +411,7 @@ class CmsAdmin extends AdminComponent
         $this->footerBrandTagline = (string) ($settings['footer.tagline'] ?? 'The Premier Competitive Gaming & Tournament Saloon');
         $this->footerDescription = (string) ($settings['footer.description'] ?? 'Compete in high-stakes daily tournaments and 1v1 challenges across Mobile Legends, Call of Duty, FIFA, and more. Transparent brackets, automated payouts, and verified fair play.');
         $this->footerCopyright = (string) ($settings['footer.copyright'] ?? ($footerBody ?? 'All rights reserved. Operated by GamersRival Systems.'));
+        $this->footerCompanyDetails = (string) ($settings['footer.company_details'] ?? '');
         $this->footerDisclaimer = (string) ($settings['footer.disclaimer'] ?? 'GamersRival is an independent esports competition platform. Game titles, artwork, and trademarks belong to their respective publishers and owners.');
         $this->footerDiscord = (string) ($settings['footer.discord'] ?? 'https://discord.gg/gamersrival');
         $this->footerTwitter = (string) ($settings['footer.twitter'] ?? 'https://x.com/gamersrival');
@@ -422,6 +425,7 @@ class CmsAdmin extends AdminComponent
             'footerBrandTagline' => 'nullable|string|max:255',
             'footerDescription' => 'nullable|string|max:1000',
             'footerCopyright' => 'required|string|max:255',
+            'footerCompanyDetails' => 'nullable|string|max:1000',
             'footerDisclaimer' => 'nullable|string',
             'footerDiscord' => 'nullable|url|max:255',
             'footerTwitter' => 'nullable|url|max:255',
@@ -433,6 +437,7 @@ class CmsAdmin extends AdminComponent
             'footer.tagline' => $this->footerBrandTagline,
             'footer.description' => $this->footerDescription,
             'footer.copyright' => $this->footerCopyright,
+            'footer.company_details' => $this->footerCompanyDetails,
             'footer.disclaimer' => $this->footerDisclaimer,
             'footer.discord' => $this->footerDiscord,
             'footer.twitter' => $this->footerTwitter,

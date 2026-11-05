@@ -10,6 +10,9 @@
 @endphp
 
 <footer class="relative z-10 border-t border-zinc-900/50 bg-zinc-950/80 px-4 py-10 text-center">
+    <div class="mx-auto max-w-7xl">
+        <x-footer-company-details />
+    </div>
     <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 md:flex-row">
         <a href="/" aria-label="Gamers Rival home"><x-public-brand :compact="true" /></a>
         <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-700">
