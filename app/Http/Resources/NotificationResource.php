@@ -34,7 +34,7 @@ class NotificationResource extends JsonResource
             'type' => $this->type,
             'title' => $this->title,
             'message' => $this->message,
-            'action_url' => $this->action_url,
+            'action_url' => $this->resource->availableActionUrl(),
             'read_at' => $this->read_at,
             'created_at' => $this->created_at,
         ];

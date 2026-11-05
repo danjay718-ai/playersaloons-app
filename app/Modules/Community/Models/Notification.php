@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Community\Models;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\TournamentStatus;
 use Database\Factories\NotificationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -37,6 +39,24 @@ class Notification extends Model
         'chat_message_id',
         'dismissed_at',
     ];
+
+    public function availableActionUrl(): ?string
+    {
+        $url = $this->action_url;
+        if ($url === null || ! str_starts_with($url, '/') || str_starts_with($url, '//')) {
+            return null;
+        }
+
+        if (preg_match('#^/tournaments/([^/]+)/view$#', (string) parse_url($url, PHP_URL_PATH), $matches)) {
+            $tournament = Tournament::query()->where('uuid', $matches[1])->first();
+            if ($tournament === null || in_array($tournament->status, [TournamentStatus::DRAFT, TournamentStatus::CANCELLED, TournamentStatus::REFUNDED], true)
+                || ((int) $tournament->workflow_version === 2 && ! config('features.tournament_v2.enabled'))) {
+                return null;
+            }
+        }
+
+        return $url;
+    }
 
     /**
      * Get the attributes that should be cast.

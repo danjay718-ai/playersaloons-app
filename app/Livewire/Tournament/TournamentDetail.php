@@ -99,7 +99,17 @@ class TournamentDetail extends Component
             $this->layout = 'components.layouts.app';
         }
 
-        $tournament = $this->getTournamentQuery()->where('uuid', $uuid)->firstOrFail();
+        $tournament = Tournament::query()->where('uuid', $uuid)->first();
+        $isStaff = $user?->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']) ?? false;
+        abort_if(! $isStaff && $tournament?->status === TournamentStatus::DRAFT, 404);
+        if (! $isStaff && ($tournament === null || in_array($tournament->status, [TournamentStatus::CANCELLED, TournamentStatus::REFUNDED], true))) {
+            session()->flash('competitionUnavailable', __('This competition is no longer available.'));
+            $this->redirect('/tournaments');
+            $this->skipRender();
+
+            return;
+        }
+        abort_if($tournament === null, 404);
         $this->defaultResultTabPending = $user?->hasRole('PLAYER')
             && $this->viewMode !== 'guest'
             && (int) $tournament->workflow_version === 2

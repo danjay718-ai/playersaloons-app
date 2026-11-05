@@ -20,6 +20,8 @@ class NotificationBell extends Component
 
     public bool $hasReadNotifications = false;
 
+    public bool $actionUnavailable = false;
+
     public function mount(): void
     {
         $this->loadNotifications();
@@ -64,8 +66,10 @@ class NotificationBell extends Component
         $notification = $user->notifications()->whereNull('dismissed_at')->findOrFail($id);
         $notification->forceFill(['read_at' => $notification->read_at ?? now()])->save();
 
-        if ($notification->action_url !== null && str_starts_with($notification->action_url, '/')) {
-            $this->redirect($notification->action_url, navigate: true);
+        $actionUrl = $notification->availableActionUrl();
+        $this->actionUnavailable = $notification->action_url !== null && $actionUrl === null;
+        if ($actionUrl !== null) {
+            $this->redirect($actionUrl, navigate: true);
 
             return;
         }

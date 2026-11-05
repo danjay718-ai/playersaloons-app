@@ -6,6 +6,7 @@ namespace App\Modules\Tournament\Policies;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\RegistrationStatus;
 
 class TournamentPolicy
 {
@@ -62,6 +63,7 @@ class TournamentPolicy
     public function viewRestrictedDetails(User $user, Tournament $tournament): bool
     {
         return $tournament->registrations()
+            ->whereNotIn('status', [RegistrationStatus::CANCELLED, RegistrationStatus::REFUNDED])
             ->where(function ($query) use ($user): void {
                 $query->where('user_id', $user->getKey())
                     ->orWhereHas('rosterMembers', fn ($members) => $members->where('user_id', $user->getKey()));

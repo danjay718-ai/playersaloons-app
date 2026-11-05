@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tournament;
 
+use App\Http\Resources\NotificationResource;
 use App\Livewire\Admin\TournamentAdmin;
 use App\Livewire\Game\GameShow;
+use App\Livewire\Notification\NotificationBell;
 use App\Livewire\Tournament\MyTournamentsList;
 use App\Livewire\Tournament\PlatformHeadToHeadList;
 use App\Livewire\Tournament\PlayerTournamentList;
 use App\Livewire\Tournament\PublicTournamentList;
 use App\Livewire\Tournament\TournamentDetail;
 use App\Modules\CMS\Models\Game;
+use App\Modules\Community\Models\Notification;
 use App\Modules\Identity\Models\PlayerExperienceAward;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Models\GameMatch;
@@ -684,6 +687,42 @@ class PlayerTournamentComponentsTest extends TestCase
             $html = (string) $this->blade('<x-player.tournament-card :tournament="$tournament" />', ['tournament' => $tournament]);
             $this->assertSame(2, substr_count($html, 'x-data="tournamentCountdown('));
             $this->assertMatchesRegularExpression('/xl:block[\s\S]*?x-data="tournamentCountdown/', $html);
+        }
+    }
+
+    public function test_retired_competitions_cannot_be_opened_from_notifications_or_bookmarks(): void
+    {
+        foreach (['tournament', 'head_to_head'] as $type) {
+            foreach ([TournamentStatus::REGISTRATION_OPEN, TournamentStatus::CANCELLED, TournamentStatus::REFUNDED] as $status) {
+                $tournament = $this->makeTournament('Notification '.$type.' '.$status->value, $status);
+                $tournament->update(['competition_type' => $type]);
+                $notification = Notification::factory()->create([
+                    'user_id' => $this->player->id,
+                    'action_url' => '/tournaments/'.$tournament->uuid.'/view?activeTab=submit-results',
+                ]);
+                $url = $notification->action_url;
+                if ($status === TournamentStatus::REGISTRATION_OPEN) {
+                    Livewire::actingAs($this->player)->test(NotificationBell::class)
+                        ->call('openNotification', $notification->id)->assertRedirect($url);
+                    $tournament->delete();
+                }
+                Livewire::actingAs($this->player)->test(NotificationBell::class)
+                    ->call('openNotification', $notification->id)
+                    ->assertNoRedirect()->assertSet('actionUnavailable', true);
+                $this->assertNull((new NotificationResource($notification->fresh()))->toArray(request())['action_url']);
+                $this->actingAs($this->player)->get($url)->assertRedirect('/tournaments');
+            }
+        }
+    }
+
+    public function test_withdrawn_players_lose_restricted_match_access_but_keep_public_competition_details(): void
+    {
+        $tournament = $this->makeTournament('Withdrawn access', TournamentStatus::REGISTRATION_OPEN);
+        $registration = $this->register($tournament, $this->player);
+        $this->assertTrue($this->player->can('viewRestrictedDetails', $tournament));
+        foreach (['cancelled', 'refunded'] as $status) {
+            $registration->update(['status' => $status]);
+            $this->assertFalse($this->player->can('viewRestrictedDetails', $tournament));
         }
     }
 

@@ -97,15 +97,34 @@ class NotificationBellTest extends TestCase
         $user = $this->makeUser();
         $notification = Notification::factory()->create([
             'user_id' => $user->id,
-            'action_url' => '/tournaments/example/view',
+            'action_url' => '/profile',
             'read_at' => null,
         ]);
 
         Livewire::actingAs($user)
             ->test(NotificationBell::class)
             ->call('openNotification', $notification->id)
-            ->assertRedirect('/tournaments/example/view');
+            ->assertRedirect('/profile');
 
+        $this->assertNotNull($notification->fresh()->read_at);
+    }
+
+    public function test_missing_competition_notifications_are_read_without_redirecting_to_an_error(): void
+    {
+        $user = $this->makeUser();
+        $notification = Notification::factory()->create([
+            'user_id' => $user->id,
+            'action_url' => '/tournaments/deleted-competition/view?activeTab=submit-results',
+            'read_at' => null,
+        ]);
+
+        Livewire::actingAs($user)->test(NotificationBell::class)
+            ->assertSee('Details unavailable')
+            ->call('openNotification', $notification->id)
+            ->assertNoRedirect()
+            ->assertSet('actionUnavailable', true)
+            ->assertSet('unreadCount', 0)
+            ->assertSee('This competition is no longer available.');
         $this->assertNotNull($notification->fresh()->read_at);
     }
 

@@ -72,6 +72,9 @@
 @endphp
 
 <div class="player-tournament-discovery min-w-0 space-y-10" wire:poll.10s.visible x-data="tournamentListRealtime(() => $wire.$refresh())">
+    @if(session('competitionUnavailable'))
+        <p role="status" class="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-200">{{ session('competitionUnavailable') }}</p>
+    @endif
     <!-- 1. Interactive Top Preview Stage (Main Event Spotlight + Starting Next Queue) -->
     @if(!empty($spotlightPayload))
         <section

@@ -28,6 +28,9 @@
         </div>
 
         {{-- Notification List --}}
+        @if($actionUnavailable)
+            <p role="status" class="px-4 py-3 text-xs text-amber-300">{{ __('This competition is no longer available. Check My Tournaments for your entry and refund history.') }}</p>
+        @endif
         <div class="max-h-60 overflow-y-auto">
             @forelse($notifications as $notification)
                 <button wire:click="openNotification({{ $notification->id }})"
@@ -52,8 +55,10 @@
                             </p>
                             <p class="whitespace-pre-line [overflow-wrap:anywhere] text-[10px] leading-relaxed text-zinc-500 mt-0.5">{{ $notification->message }}</p>
                             <p class="text-[9px] text-zinc-600 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
-                            @if($notification->action_url)
-                                <p class="mt-1 text-[9px] font-black uppercase tracking-wider text-purple-400">Open details →</p>
+                            @if($notification->availableActionUrl())
+                                <p class="mt-1 text-[9px] font-black uppercase tracking-wider text-purple-400">{{ __('Open details') }} →</p>
+                            @elseif($notification->action_url)
+                                <p class="mt-1 text-[10px] text-zinc-500">{{ __('Details unavailable') }}</p>
                             @endif
                         </div>
                         @if(is_null($notification->read_at))
