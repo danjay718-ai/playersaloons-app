@@ -10,7 +10,7 @@
         $lastPhrase = (string) array_pop($phrases);
         $leadPhrases = $phrases;
     }
-    $typewriterWords = array_values(array_unique(array_merge([$lastPhrase], $hero->activeItems->where('item_key', '!=', 'primary-action')->pluck('title')->filter()->all())));
+    $typewriterWords = array_values(array_unique(array_merge([$lastPhrase], $hero->activeItems->filter(fn ($item) => str_starts_with((string) $item->item_key, 'rotate-'))->pluck('title')->filter()->all())));
     $primaryAction = $hero->activeItems->firstWhere('item_key', 'primary-action');
 @endphp
 <section class="gr-hero" data-gr-hero>

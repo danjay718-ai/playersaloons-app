@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? __('GamersRival | Play. Win. Cash.') }}</title>
-    <meta name="description" content="{{ __('The ultimate battleground for competitive gamers. Join high-stakes tournaments, dominate the bracket, and secure instant payouts.') }}">
+    <meta name="description" content="{{ \App\Modules\CMS\Models\LandingSection::query()->where('key', 'hero')->where('is_active', true)->value('body') }}">
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#050311">

@@ -142,6 +142,34 @@ class LandingV4Test extends TestCase
         $this->get('/about')->assertOk()->assertDontSee('Start here');
     }
 
+    public function test_hero_rotation_has_a_visible_editor_and_saves_additions_removals_and_order(): void
+    {
+        $this->seed(LandingPageSeeder::class);
+        $this->seed(RolesAndPermissionsSeeder::class);
+        $admin = User::factory()->create(['status' => UserStatus::ACTIVE]);
+        $admin->assignRole('ADMIN');
+        $hero = LandingSection::query()->where('key', 'hero')->firstOrFail();
+        $editor = Livewire::actingAs($admin)->test(CmsAdmin::class, ['section' => 'landing'])
+            ->call('selectLandingSection', $hero->id)
+            ->assertSee('Hero rotating phrases')
+            ->assertSet('landingHeroRotatingWords', "DOMINATE.\nGET PAID.\nRANK UP.")
+            ->set('landingHeroRotatingWords', "PLAY TOGETHER.\nWIN TOGETHER.\nCLIMB.\nCELEBRATE.")
+            ->call('saveLandingSection')->assertHasNoErrors();
+        $this->get('/')->assertOk()->assertSeeInOrder(['PLAY TOGETHER.', 'WIN TOGETHER.', 'CLIMB.', 'CELEBRATE.'])->assertDontSee('DOMINATE.');
+        $rotation = $hero->items()->where('item_key', 'rotate-dominate')->firstOrFail();
+        $editor->call('openEditLandingItemModal', $rotation->id)
+            ->set('landingItemTitle', 'EDITED.')
+            ->call('saveLandingItem')
+            ->assertSet('landingHeroRotatingWords', "EDITED.\nWIN TOGETHER.\nCLIMB.\nCELEBRATE.")
+            ->call('toggleLandingItemActive', $rotation->id)
+            ->assertSet('landingHeroRotatingWords', "WIN TOGETHER.\nCLIMB.\nCELEBRATE.");
+        $editor->set('landingHeroRotatingWords', 'ONE PHRASE.')->call('saveLandingSection')->assertHasNoErrors();
+        $this->get('/')->assertOk()->assertSee('ONE PHRASE.')->assertDontSee('WIN TOGETHER.');
+        $editor->set('landingHeroRotatingWords', str_repeat('x', 256))->call('saveLandingSection')->assertHasErrors('landingHeroRotatingWords');
+        $editor->set('landingHeroRotatingWords', '')->call('saveLandingSection')->assertHasNoErrors();
+        $this->get('/')->assertOk()->assertDontSee('ONE PHRASE.')->assertDontSee('GET PAID.');
+    }
+
     public function test_footer_shortcuts_and_copy_backfill_preserve_admin_changes(): void
     {
         $this->seed(LandingPageSeeder::class);

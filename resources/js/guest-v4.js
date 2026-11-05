@@ -3,7 +3,7 @@ const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('grTypewriter', (words) => ({
-        words: Array.isArray(words) && words.length ? words : ['CASH OUT.'],
+        words: Array.isArray(words) && words.length ? words : [''],
         wordIndex: 0,
         charIndex: 0,
         deleting: false,

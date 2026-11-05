@@ -150,6 +150,8 @@ class CmsAdmin extends AdminComponent
     // Landing page forms
     public ?int $selectedLandingSectionId = null;
 
+    public string $landingHeroRotatingWords = '';
+
     public string $landingSectionTitle = '';
 
     public string $landingSectionSubtitle = '';
@@ -856,6 +858,15 @@ class CmsAdmin extends AdminComponent
         $this->landingSectionCtaUrl = (string) $section->cta_url;
         $this->landingSectionSortOrder = (int) $section->sort_order;
         $this->landingSectionIsActive = (bool) $section->is_active;
+        $this->loadHeroRotatingWords();
+    }
+
+    private function loadHeroRotatingWords(): void
+    {
+        $this->landingHeroRotatingWords = LandingSectionItem::query()
+            ->where('landing_section_id', $this->selectedLandingSectionId)
+            ->where('item_key', 'like', 'rotate-%')->where('is_active', true)
+            ->orderBy('sort_order')->pluck('title')->implode("\n");
     }
 
     public function saveLandingSection(): void
@@ -873,18 +884,38 @@ class CmsAdmin extends AdminComponent
             'landingSectionCtaUrl' => 'nullable|string|max:255',
             'landingSectionSortOrder' => 'integer|min:0|max:65535',
             'landingSectionIsActive' => 'boolean',
+            'landingHeroRotatingWords' => ['nullable', 'string', 'max:5000', 'regex:/\A[^\r\n]{0,255}(?:\R[^\r\n]{0,255})*\z/u'],
         ]);
 
-        LandingSection::findOrFail($this->selectedLandingSectionId)->update([
-            'title' => $this->landingSectionTitle,
-            'subtitle' => $this->landingSectionSubtitle,
-            'body' => $this->landingSectionBody,
-            'media_path' => $this->landingSectionMediaPath,
-            'cta_label' => $this->landingSectionCtaLabel,
-            'cta_url' => $this->landingSectionCtaUrl,
-            'sort_order' => $this->landingSectionSortOrder,
-            'is_active' => $this->landingSectionIsActive,
-        ]);
+        DB::transaction(function (): void {
+            $section = LandingSection::findOrFail($this->selectedLandingSectionId);
+            $section->update([
+                'title' => $this->landingSectionTitle,
+                'subtitle' => $this->landingSectionSubtitle,
+                'body' => $this->landingSectionBody,
+                'media_path' => $this->landingSectionMediaPath,
+                'cta_label' => $this->landingSectionCtaLabel,
+                'cta_url' => $this->landingSectionCtaUrl,
+                'sort_order' => $this->landingSectionSortOrder,
+                'is_active' => $this->landingSectionIsActive,
+            ]);
+
+            if ($section->key === 'hero') {
+                $phrases = collect(preg_split('/\R/', $this->landingHeroRotatingWords) ?: [])
+                    ->map(fn (string $phrase): string => trim($phrase))->filter(fn (string $phrase): bool => $phrase !== '')->values();
+                $items = $section->items()->where('item_key', 'like', 'rotate-%')->get();
+                foreach ($phrases as $index => $phrase) {
+                    $item = $items->get($index) ?? $section->items()->make([
+                        'uuid' => Str::uuid()->toString(),
+                        'item_key' => 'rotate-'.Str::uuid()->toString(),
+                    ]);
+                    $item->fill(['title' => $phrase, 'sort_order' => $index + 10, 'is_active' => true])->save();
+                }
+                foreach ($items->slice($phrases->count()) as $item) {
+                    $item->update(['is_active' => false]);
+                }
+            }
+        });
 
         session()->flash('success', 'Landing section saved successfully.');
     }
@@ -960,6 +991,7 @@ class CmsAdmin extends AdminComponent
         }
 
         $this->showLandingItemModal = false;
+        $this->loadHeroRotatingWords();
         session()->flash('success', 'Landing item saved successfully.');
     }
 
@@ -968,12 +1000,14 @@ class CmsAdmin extends AdminComponent
         $item = LandingSectionItem::findOrFail($itemId);
         $item->update(['is_active' => ! $item->is_active]);
 
+        $this->loadHeroRotatingWords();
         session()->flash('success', 'Landing item status updated.');
     }
 
     public function deleteLandingItem(int $itemId): void
     {
         app(AdminDeletionService::class)->delete('landing_items', [$itemId], $this->actor());
+        $this->loadHeroRotatingWords();
 
         session()->flash('success', 'Landing item deleted.');
     }

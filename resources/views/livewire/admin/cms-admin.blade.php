@@ -258,6 +258,14 @@
                                 <textarea wire:model="landingSectionBody" rows="4" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"></textarea>
                                 @error('landingSectionBody') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
                             </div>
+                            @if($selectedLandingSection?->key === 'hero')
+                                <div class="md:col-span-2">
+                                    <label for="hero-rotating-phrases" class="mb-1 block text-xs font-bold text-slate-300">{{ __('Hero rotating phrases') }}</label>
+                                    <textarea id="hero-rotating-phrases" wire:model="landingHeroRotatingWords" rows="4" aria-describedby="hero-rotating-help" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100"></textarea>
+                                    <p id="hero-rotating-help" class="mt-1 text-xs text-slate-400">{{ __('One phrase per line, in display order. These rotate after the last phrase of the Title. Clear this field to keep only the Title phrase.') }}</p>
+                                    @error('landingHeroRotatingWords') <span class="mt-1 block text-xs text-red-400">{{ $message }}</span> @enderror
+                                </div>
+                            @endif
                             <div>
                                 <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Media Path</label>
                                 <input type="text" wire:model="landingSectionMediaPath" placeholder="/compressed_v1.mp4" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
