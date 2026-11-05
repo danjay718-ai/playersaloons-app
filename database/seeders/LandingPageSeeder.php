@@ -258,6 +258,14 @@ class LandingPageSeeder extends Seeder
                 'title' => 'GamersRival',
                 'body' => 'ALL RIGHTS RESERVED. OPERATED BY GAMERSRIVAL SYSTEMS.',
                 'sort_order' => 8,
+                'items' => [
+                    ['item_key' => 'competition-tournaments', 'title' => 'Tournaments', 'url' => '/tournaments'],
+                    ['item_key' => 'competition-head-to-head', 'title' => 'Head-to-Head', 'url' => '/h2h?view=guest'],
+                    ['item_key' => 'competition-games', 'title' => 'Supported Games', 'url' => '/#games'],
+                    ['item_key' => 'competition-how', 'title' => 'How it Works', 'url' => '/#how'],
+                    ['item_key' => 'about-us', 'title' => 'About Us', 'url' => '/about'],
+                    ['item_key' => 'contact-support', 'title' => 'Contact Support', 'url' => '/contact'],
+                ],
             ],
         ];
     }

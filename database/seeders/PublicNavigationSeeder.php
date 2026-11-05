@@ -4,12 +4,17 @@ namespace Database\Seeders;
 
 use App\Modules\CMS\Models\PublicNavigationItem;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PublicNavigationSeeder extends Seeder
 {
     public function run(): void
     {
+        if (DB::table('system_settings')->where('key', 'cms.public_navigation_seeded')->exists()) {
+            return;
+        }
+
         foreach ($this->items() as $item) {
             $navItem = PublicNavigationItem::query()
                 ->withTrashed()
@@ -19,13 +24,18 @@ class PublicNavigationSeeder extends Seeder
                 $navItem->uuid = Str::uuid()->toString();
             }
 
-            if ($navItem->exists && $navItem->trashed()) {
-                $navItem->restore();
+            if ($navItem->exists) {
+                continue;
             }
 
             $navItem->fill($item);
             $navItem->save();
         }
+
+        DB::table('system_settings')->insertOrIgnore([
+            'key' => 'cms.public_navigation_seeded', 'value' => '1',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
     }
 
     /**
@@ -34,6 +44,16 @@ class PublicNavigationSeeder extends Seeder
     private function items(): array
     {
         return [
+            [
+                'label' => 'Home',
+                'url' => '/',
+                'icon' => 'house',
+                'match_pattern' => '/',
+                'visibility' => 'public',
+                'sort_order' => 0,
+                'is_active' => true,
+                'opens_new_tab' => false,
+            ],
             [
                 'label' => 'Tournaments',
                 'url' => '/tournaments',

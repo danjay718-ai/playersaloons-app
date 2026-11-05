@@ -45,7 +45,7 @@ class GuestCompetitionService
             ->map(fn (Game $game): array => [
                 'name' => $game->localizedName(),
                 'count' => (int) $counts[$game->id],
-                'url' => route('games.show', $game),
+                'url' => route('games.show', ['game' => $game, 'view' => 'guest']),
                 'image' => $game->bannerUrl(),
             ])->sortByDesc('count')->values()->all();
 
@@ -145,7 +145,7 @@ class GuestCompetitionService
             'action' => Lang::string('won in'),
             'context' => $match->tournament->name,
             'reward' => $reward,
-            'url' => route('tournaments.view', $match->tournament->uuid),
+            'url' => route('tournaments.view', ['uuid' => $match->tournament->uuid, 'view' => 'guest']),
             'at' => $match->completed_at ?? $match->updated_at ?? now(),
         ];
     }

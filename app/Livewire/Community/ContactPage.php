@@ -96,13 +96,6 @@ class ContactPage extends Component
     public function render()
     {
         $view = view('livewire.community.contact-page');
-        $user = Auth::user();
-
-        if ($user && $user->hasVerifiedEmail()) {
-            return $view->layout('components.layouts.dashboard', [
-                'title' => 'Contact Support | GamersRival',
-            ]);
-        }
 
         return $view->layout('components.layouts.app', [
             'title' => 'Contact Support | GamersRival',

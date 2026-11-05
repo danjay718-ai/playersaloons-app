@@ -9,6 +9,8 @@
     $twitter = $footerSettings['footer.twitter'] ?? 'https://x.com/gamersrival';
     $twitch = $footerSettings['footer.twitch'] ?? '';
     $youtube = $footerSettings['footer.youtube'] ?? '';
+    $competitionLinks = $footer?->activeItems->filter(fn ($item) => str_starts_with((string) $item->item_key, 'competition-')) ?? collect();
+    $policyLinks = $footer?->activeItems->reject(fn ($item) => str_starts_with((string) $item->item_key, 'competition-')) ?? collect();
 @endphp
 <footer class="gr-footer">
     <div class="border-t border-white/5 bg-[#03060c] text-zinc-400 pt-12 pb-8">
@@ -64,18 +66,11 @@
                     {{ __('Competition') }}
                 </p>
                 <nav class="flex flex-col space-y-2 text-xs">
-                    <a href="/tournaments" class="hover:text-white transition-colors flex items-center gap-1.5">
-                        <span class="text-cyan-400 font-mono">/</span> {{ __('Tournaments') }}
-                    </a>
-                    <a href="/tournaments" class="hover:text-white transition-colors flex items-center gap-1.5">
-                        <span class="text-cyan-400 font-mono">/</span> {{ __('Head to Head Duels') }}
-                    </a>
-                    <a href="/#games" class="hover:text-white transition-colors flex items-center gap-1.5">
-                        <span class="text-cyan-400 font-mono">/</span> {{ __('Supported Games') }}
-                    </a>
-                    <a href="/#how" class="hover:text-white transition-colors flex items-center gap-1.5">
-                        <span class="text-cyan-400 font-mono">/</span> {{ __('How it Works') }}
-                    </a>
+                    @foreach($competitionLinks as $item)
+                        <a href="{{ $item->url }}" class="hover:text-white transition-colors flex items-center gap-1.5">
+                            <span class="text-cyan-400 font-mono">/</span> {{ __($item->label ?: $item->title) }}
+                        </a>
+                    @endforeach
                 </nav>
             </div>
 
@@ -85,7 +80,7 @@
                     {{ __('Policies & Support') }}
                 </p>
                 <nav class="grid grid-cols-2 gap-2 text-xs" aria-label="{{ __('Footer navigation') }}">
-                    @forelse($footer?->activeItems ?? [] as $item)
+                    @forelse($policyLinks as $item)
                         <a href="{{ $item->url ?: route('policies.index') }}" class="hover:text-white transition-colors flex items-center gap-1.5 truncate">
                             <span class="text-zinc-500 font-mono">·</span> {{ __($item->label ?: $item->title) }}
                         </a>
@@ -94,12 +89,6 @@
                             <span class="text-zinc-500 font-mono">·</span> {{ __('Policies') }}
                         </a>
                     @endforelse
-                    <a href="{{ route('about') }}" class="hover:text-white transition-colors flex items-center gap-1.5">
-                        <span class="text-zinc-500 font-mono">·</span> {{ __('About Us') }}
-                    </a>
-                    <a href="{{ route('contact') }}" class="hover:text-white transition-colors flex items-center gap-1.5">
-                        <span class="text-zinc-500 font-mono">·</span> {{ __('Contact Support') }}
-                    </a>
                 </nav>
             </div>
         </div>

@@ -18,7 +18,7 @@
             <div><dt>{{ __('Entry') }}</dt><dd>{{ (float) $tournament->entry_fee > 0 ? $symbol.number_format((float) $tournament->entry_fee, 2) : __('Free') }}</dd></div>
             <div><dt>{{ __('Players') }}</dt><dd>{{ $tournament->registrations_count }}<span> / {{ $tournament->max_participants }}</span></dd></div>
         </dl>
-        <x-guest.button :href="route('tournaments.view', $tournament->uuid)" class="gr-block">{{ __('Join Tournament Now') }}</x-guest.button>
+        <x-guest.button :href="route('tournaments.view', ['uuid' => $tournament->uuid, 'view' => 'guest'])" class="gr-block">{{ __('Join Tournament Now') }}</x-guest.button>
     @elseif($emptySection)
         <div class="gr-ticket-top"><span class="gr-live is-idle"><i aria-hidden="true"></i>{{ $emptySection->subtitle }}</span></div>
         <h2 class="gr-ticket-name">{{ $emptySection->title }}</h2>

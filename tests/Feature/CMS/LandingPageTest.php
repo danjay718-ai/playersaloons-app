@@ -431,6 +431,21 @@ class LandingPageTest extends TestCase
         $this->assertSame(1, PublicNavigationItem::withTrashed()->where('url', '/h2h?view=guest')->count());
     }
 
+    public function test_startup_seeding_never_overwrites_or_restores_admin_navigation(): void
+    {
+        $item = PublicNavigationItem::query()->where('label', 'Head-to-Head')->firstOrFail();
+        $item->update(['label' => 'My duel arena', 'url' => '/h2h?tab=ongoing', 'match_pattern' => 'custom-duels*', 'is_active' => false]);
+        $this->seed(PublicNavigationSeeder::class);
+        $this->assertSame('My duel arena', $item->fresh()->label);
+        $this->assertSame('/h2h?tab=ongoing', $item->fresh()->url);
+        $this->assertFalse($item->fresh()->is_active);
+        $item->delete();
+        $this->seed(PublicNavigationSeeder::class);
+        $this->assertTrue($item->fresh()->trashed());
+        $this->assertSame(1, PublicNavigationItem::withTrashed()->where('match_pattern', 'custom-duels*')->count());
+        $this->assertFalse(PublicNavigationItem::query()->where('label', 'Head-to-Head')->exists());
+    }
+
     private function adminUser(): User
     {
         /** @var User $user */

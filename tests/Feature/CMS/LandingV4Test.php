@@ -7,6 +7,7 @@ namespace Tests\Feature\CMS;
 use App\Livewire\Admin\CmsAdmin;
 use App\Modules\CMS\Models\Game;
 use App\Modules\CMS\Models\LandingSection;
+use App\Modules\CMS\Models\PublicNavigationItem;
 use App\Modules\Identity\Models\User;
 use App\Shared\Enums\UserStatus;
 use Database\Seeders\LandingPageSeeder;
@@ -123,5 +124,42 @@ class LandingV4Test extends TestCase
         $faq->update(['is_active' => true]);
         $faq->items()->update(['is_active' => false]);
         $this->get('/')->assertOk()->assertDontSee('How do tournament payouts work?');
+    }
+
+    public function test_authenticated_public_pages_keep_the_new_navigation_and_footer(): void
+    {
+        $user = User::factory()->create(['status' => UserStatus::ACTIVE]);
+        $user->assignRole('PLAYER');
+        $this->seed(LandingPageSeeder::class);
+        foreach (['/tournaments', '/h2h?view=guest', '/about', '/contact', '/updates'] as $url) {
+            $this->actingAs($user)->get($url)->assertOk()
+                ->assertSee('gr-experience')->assertSee('gr-header')->assertSee('gr-footer')
+                ->assertDontSee('id="public-nav"', false);
+        }
+        PublicNavigationItem::query()->where('url', '/')->update(['label' => 'Start here']);
+        $this->get('/about')->assertOk()->assertSee('Start here');
+        PublicNavigationItem::query()->where('url', '/')->update(['is_active' => false]);
+        $this->get('/about')->assertOk()->assertDontSee('Start here');
+    }
+
+    public function test_footer_shortcuts_and_copy_backfill_preserve_admin_changes(): void
+    {
+        $this->seed(LandingPageSeeder::class);
+        $home = PublicNavigationItem::query()->where('url', '/')->firstOrFail();
+        $home->update(['label' => 'Start here', 'is_active' => false]);
+        $home->delete();
+        $footer = LandingSection::query()->where('key', 'footer')->firstOrFail();
+        $h2h = $footer->items()->where('item_key', 'competition-head-to-head')->firstOrFail();
+        $h2h->update(['is_active' => false]);
+        $footer->items()->where('item_key', 'about-us')->update(['title' => 'Who we are', 'url' => '/about?source=footer']);
+
+        $migration = require database_path('migrations/2026_11_05_000100_add_managed_public_copy.php');
+        $migration->up();
+        $this->assertTrue($home->fresh()->trashed());
+        $this->assertSame('Start here', $home->fresh()->label);
+        $this->assertFalse($h2h->fresh()->is_active);
+        $this->view('components.layouts.partials.gr-footer')
+            ->assertSee('Who we are')->assertSee('/about?source=footer')
+            ->assertDontSee('href="/h2h?view=guest"', false);
     }
 }

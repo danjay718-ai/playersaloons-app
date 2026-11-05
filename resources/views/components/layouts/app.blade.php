@@ -23,7 +23,7 @@
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
-<body class="{{ auth()->guest() ? (config('features.landing.version') === 'v3' ? 'guest-experience' : 'gr-experience') : '' }} bg-[#05080f] text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-[#c6ff3d] selection:text-[#05080f] antialiased overflow-x-clip">
+<body class="{{ config('features.landing.version') === 'v3' ? 'guest-experience' : 'gr-experience' }} bg-[#05080f] text-zinc-100 min-h-screen flex flex-col font-sans selection:bg-[#c6ff3d] selection:text-[#05080f] antialiased overflow-x-clip">
 
     <!-- Global Background FX -->
     <div class="fixed inset-0 pointer-events-none z-0">

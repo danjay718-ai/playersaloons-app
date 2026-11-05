@@ -14,11 +14,11 @@
     </button>
     <div class="gr-table-panel" id="gr-table-{{ $game->id }}" x-show="open" x-cloak x-transition.opacity>
         @foreach($tournaments->take(2) as $tournament)
-            <a href="{{ route('tournaments.view', $tournament->uuid) }}" class="gr-table-row">
+            <a href="{{ route('tournaments.view', ['uuid' => $tournament->uuid, 'view' => 'guest']) }}" class="gr-table-row">
                 <span><strong>{{ $tournament->display_name }}@if($tournament->display_name !== $tournament->name)<span class="sr-only"> {{ $tournament->name }}</span>@endif</strong><small>{{ $tournament->start_at->copy()->setTimezone($arenaTimezone)->format('d M · H:i') }} {{ $arenaTimezone }}</small></span>
                 <b>{{ (float) $tournament->entry_fee > 0 ? $symbol.number_format((float) $tournament->entry_fee, 2) : __('Free') }}</b>
             </a>
         @endforeach
-        <a href="{{ route('games.show', $game) }}" class="gr-table-explore">{{ __('Explore :game', ['game' => $game->localizedName()]) }} <span aria-hidden="true">↗</span></a>
+        <a href="{{ route('games.show', ['game' => $game, 'view' => 'guest']) }}" class="gr-table-explore">{{ __('Explore :game', ['game' => $game->localizedName()]) }} <span aria-hidden="true">↗</span></a>
     </div>
 </article>
