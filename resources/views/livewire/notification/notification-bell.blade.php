@@ -1,6 +1,6 @@
-<div wire:poll.30s.visible="onNotificationReceived" class="relative" x-data="{ open: false }" @click.outside="open = false">
+<div wire:poll.30s.visible="onNotificationReceived" class="notification-bell relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
     {{-- Bell Button --}}
-    <button @click="open = !open"
+    <button type="button" @click="open = !open" :aria-expanded="open" aria-label="{{ __('Notifications') }}"
             class="relative p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 hover:border-purple-500/40 text-zinc-400 hover:text-purple-300 transition-all duration-200">
         <i data-lucide="bell" class="w-5 h-5"></i>
         @if($unreadCount > 0)
@@ -16,7 +16,7 @@
          x-transition:leave="transition ease-in duration-75"
          x-transition:leave-start="transform opacity-100 scale-100"
          x-transition:leave-end="transform opacity-0 scale-95"
-         class="fixed sm:absolute top-[70px] sm:top-auto right-4 sm:right-0 left-4 sm:left-auto mt-0 sm:mt-3 sm:w-80 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-2 origin-top sm:origin-top-right"
+         class="notification-panel fixed sm:absolute top-[70px] sm:top-auto right-4 sm:right-0 left-4 sm:left-auto mt-0 sm:mt-3 sm:w-80 bg-[#0e0a24] border border-purple-500/20 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 py-2 origin-top sm:origin-top-right"
          x-cloak>
 
         {{-- Header --}}

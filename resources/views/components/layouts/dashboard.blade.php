@@ -34,15 +34,14 @@
 <body x-data="chatInbox(@js(['enabled' => $chatInboxEnabled, 'url' => route('chat.inbox'), 'userUuid' => auth()->user()->uuid, 'initial' => $chatInboxInitial]))" class="theme-auth theme-player bg-[#05080f] text-zinc-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-[#c6ff3d] selection:text-[#05080f] relative cyber-grid">
     @php
         $bottomNavItems = [
-            ['label' => __('Overview'), 'icon' => 'layout-dashboard', 'url' => '/dashboard', 'pattern' => 'dashboard'],
-            ['label' => __('Tournaments'), 'icon' => 'calendar-days', 'url' => '/tournaments/browse?frequency=daily', 'pattern' => 'tournaments/browse*'],
-            ['label' => __('My Games'), 'icon' => 'trophy', 'url' => '/my-tournaments', 'pattern' => 'my-tournaments'],
-            ['label' => __('More'), 'icon' => 'grid-3x3', 'url' => null, 'pattern' => null],
+            ['label' => __('Home'), 'icon' => 'house', 'url' => '/dashboard', 'pattern' => 'dashboard'],
+            ['label' => __('Tournaments'), 'icon' => 'trophy', 'url' => '/tournaments/browse?frequency=daily', 'pattern' => 'tournaments/browse*'],
+            ['label' => __('Deposit'), 'icon' => 'plus', 'url' => '/wallet', 'pattern' => 'wallet'],
+            ['label' => __('H2H'), 'icon' => 'swords', 'url' => config('features.tournament_v2.enabled') ? '/h2h' : '/head-to-head', 'pattern' => config('features.tournament_v2.enabled') ? 'h2h' : 'head-to-head'],
+            ['label' => __('Me'), 'icon' => 'user-round', 'url' => '/profile', 'pattern' => 'profile'],
         ];
-        if (config('features.tournament_v2.enabled')) {
-            array_splice($bottomNavItems, 2, 0, [[
-                'label' => __('Head-to-Head'), 'icon' => 'swords', 'url' => '/h2h', 'pattern' => 'h2h',
-            ]]);
+        if (! config('features.tournament_v2.enabled') && ! config('features.player_wager.enabled')) {
+            unset($bottomNavItems[3]);
         }
     @endphp
     <div x-show="chatAlert" x-cloak role="status" class="fixed right-4 top-20 z-[100] flex max-w-sm items-center gap-3 rounded-xl border border-cyan-400/40 bg-[#0a1220] p-4 shadow-[0_14px_35px_rgba(0,0,0,0.75)]">
@@ -482,7 +481,8 @@
             @foreach($bottomNavItems as $item)
                 @if($item['url'])
                     <a href="{{ $item['url'] }}" wire:navigate
-                       class="mobile-nav-item {{ $item['pattern'] && request()->is($item['pattern']) ? 'active' : '' }}"
+                       class="mobile-nav-item {{ $item['icon'] === 'plus' ? 'mobile-nav-deposit' : '' }} {{ $item['pattern'] && request()->is($item['pattern']) ? 'active' : '' }}"
+                       @if($item['pattern'] && request()->is($item['pattern'])) aria-current="page" @endif
                        aria-label="{{ $item['label'] }}"
                        id="mobile-nav-{{ $loop->index }}">
                         <i data-lucide="{{ $item['icon'] }}" class="mobile-nav-icon"></i>

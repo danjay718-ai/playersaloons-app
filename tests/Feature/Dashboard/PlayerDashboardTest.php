@@ -49,6 +49,20 @@ class PlayerDashboardTest extends TestCase
         $this->game->translations()->create(['locale' => 'en', 'name' => 'Dashboard Game', 'description' => 'Dashboard test game.']);
     }
 
+    public function test_mobile_dashboard_links_use_existing_deposit_history_and_profile_pages(): void
+    {
+        $this->actingAs($this->player)->get('/dashboard')
+            ->assertOk()
+            ->assertSee('mobile-player-home', false)
+            ->assertSee('mobile-player-notifications', false)
+            ->assertSee('@dashboard_player')
+            ->assertSee('Available Balance')
+            ->assertSee('Hide balance')
+            ->assertSee('href="/my-tournaments?tSubTab=history"', false)
+            ->assertSee('mobile-nav-deposit', false)
+            ->assertSee('href="/profile"', false);
+    }
+
     public function test_completed_tournaments_award_platform_xp_once(): void
     {
         foreach (range(1, 5) as $number) {

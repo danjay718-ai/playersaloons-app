@@ -8,6 +8,44 @@
 @endphp
 
 <div class="player-dashboard min-w-0 max-w-full space-y-6 overflow-x-hidden" wire:poll.30s.visible>
+    <div class="mobile-player-home">
+        <header class="mobile-player-identity">
+            <a href="/profile" wire:navigate class="mobile-player-avatar" aria-label="{{ __('My Profile') }}">
+                @if($avatarUrl)<img src="{{ $avatarUrl }}" alt="" class="h-full w-full object-cover">@else<span>{{ strtoupper(substr($displayName, 0, 2)) }}</span>@endif
+            </a>
+            <div class="min-w-0 flex-1">
+                <h1 class="truncate" translate="no">{{ $displayName }}</h1>
+                <p class="truncate" translate="no">{{ '@'.$user->username }}</p>
+                <div class="mobile-player-level"><strong>{{ __('Level :level', ['level' => $progression->level]) }}</strong><span>{{ __(':xp XP', ['xp' => number_format($progression->experience_points)]) }}</span></div>
+            </div>
+            <div class="mobile-player-notifications"><livewire:notification.notification-bell key="mobile-dashboard-notifications" /></div>
+        </header>
+        <section class="mobile-balance-card" x-data="{ balanceVisible: true }" aria-label="{{ __('Available Balance') }}">
+            <div class="flex items-center gap-2">
+                <h2>{{ __('Available Balance') }}</h2>
+                <button type="button" @click="balanceVisible = !balanceVisible" :aria-pressed="!balanceVisible" :aria-label="balanceVisible ? @js(__('Hide balance')) : @js(__('Show balance'))" class="mobile-balance-toggle">
+                    <i data-lucide="eye" x-show="balanceVisible" aria-hidden="true"></i><i data-lucide="eye-off" x-show="!balanceVisible" x-cloak aria-hidden="true"></i>
+                </button>
+            </div>
+            <p class="mobile-balance-amount"><span x-show="balanceVisible">@currencySymbol{{ number_format($stats['balance'], 2) }}</span><span x-show="!balanceVisible" x-cloak aria-label="{{ __('Balance hidden') }}">••••••</span></p>
+            <div class="mobile-balance-actions">
+                @foreach([['Deposit', 'arrow-down-to-line', '/wallet'], ['Tournaments', 'trophy', '/tournaments/browse?frequency=daily'], ['History', 'history', '/my-tournaments?tSubTab=history']] as [$label, $icon, $url])
+                    <a href="{{ $url }}" wire:navigate><i data-lucide="{{ $icon }}" aria-hidden="true"></i><span>{{ __($label) }}</span></a>
+                @endforeach
+            </div>
+        </section>
+        <section class="mobile-services" aria-label="{{ __('Player services') }}">
+            @foreach([
+                ['Streams', 'tv', '/streams'], ['Weekly tournaments', 'calendar-range', '/tournaments/browse?frequency=weekly'],
+                ['Monthly tournaments', 'calendar-days', '/tournaments/browse?frequency=monthly'], ['Leaderboards', 'award', '/leaderboards'],
+                ['Chats', 'messages-square', '/chat'], ['Squads', 'users', '/teams'], ['Wallet', 'wallet', '/wallet'],
+                ['Support', 'headphones', '/contact'], ['Review us', 'star', '/reviews'],
+            ] as [$label, $icon, $url])
+                <a href="{{ $url }}" wire:navigate><span class="mobile-service-icon"><i data-lucide="{{ $icon }}" aria-hidden="true"></i></span><span>{{ __($label) }}</span></a>
+            @endforeach
+        </section>
+    </div>
+
     <x-player.dashboard-tabs :items="$navItems" />
 
     {{-- Command header: who you are, your level, and the three things you do most. --}}

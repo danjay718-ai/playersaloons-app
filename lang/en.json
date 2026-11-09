@@ -751,5 +751,16 @@
     "Completed": "Completed",
     "Cancelled": "Cancelled",
     "Refunded": "Refunded",
-    "Schedule pending": "Schedule pending"
+    "Schedule pending": "Schedule pending",
+    ":xp XP": ":xp XP",
+    "Available Balance": "Available Balance",
+    "Hide balance": "Hide balance",
+    "Show balance": "Show balance",
+    "Balance hidden": "Balance hidden",
+    "Player services": "Player services",
+    "Weekly tournaments": "Weekly tournaments",
+    "Monthly tournaments": "Monthly tournaments",
+    "Chats": "Chats",
+    "Review us": "Review us",
+    "Me": "Me"
 }
