@@ -21,7 +21,7 @@
 @endphp
 <div class="player-tournament-detail min-w-0 space-y-6 sm:space-y-8" wire:poll.10s.visible
      @resize.window.debounce.150ms="resizePanel()"
-     @tournament-content-opened.window="if ($event.detail.tournamentUuid === @js($tournament->uuid)) { openPanel($event.detail.tab); activeTab = $event.detail.tab; $nextTick(() => scrollToTab($event.detail.tab, $event.detail.focus)); }"
+     @tournament-content-opened.window="if ($event.detail.tournamentUuid === @js($tournament->uuid)) { openPanel($event.detail.tab); landingTab = null; activeTab = $event.detail.tab; $nextTick(() => scrollToTab($event.detail.tab, $event.detail.focus)); }"
      x-data="{ 
          canViewRestricted: @json($canViewRestricted),
          showJoinModal: false,
@@ -58,15 +58,18 @@
              return null;
          },
          scrollToTab(tab, focus = null) {
-             if (this.scrollEnabled && !this.panelOpen && this.activeTab === tab) scrollToTournamentContent(this.$root, tab, this.bracketView, focus);
+             if (this.scrollEnabled && !this.panelOpen && this.selectedTab === tab) scrollToTournamentContent(this.$root, tab, this.bracketView, focus);
          },
          selectBracketView(view) {
              this.bracketView = view;
              this.$nextTick(() => this.scrollToTab('matches'));
          },
          async selectTab(tab, scroll = true) {
-             if (scroll) this.openPanel(tab);
-             this.activeTab = tab;
+             if (scroll) {
+                 this.openPanel(tab);
+                 this.landingTab = null;
+                 this.activeTab = tab;
+             }
              if (this.panelOpen) this.$nextTick(() => { this.$refs.panelBody.scrollTop = 0; });
              if (tab === 'submit-results') this.$dispatch('tournament-result-selected', { tournamentUuid: @js($tournament->uuid) });
              const section = this.sectionFor(tab);
@@ -84,7 +87,8 @@
      }" 
      x-init="
          initRealtime();
-         selectTab(activeTab, false);
+         setDefaultTab(@js((int) $tournament->workflow_version === 2 && $isRegistered && $statusValue === 'ONGOING' ? 'submit-results' : 'overview'), @js(request()->query->has('activeTab') || request()->query->has('bracketView') || request()->query->has('match')));
+         selectTab(selectedTab, false).then(() => { if (compactView && selectedTab === 'submit-results') $nextTick(() => scrollToTab('submit-results')); });
          const underfilledNoticeKey = 'v2_underfilled_notice_{{ $tournament->uuid }}_{{ optional($tournament->start_at)->timestamp }}';
          if (@js($shouldShowUnderfilledNotice) && !localStorage.getItem(underfilledNoticeKey)) {
              showUnderfilledNotice = true;
@@ -436,8 +440,8 @@
                 type="button"
                 data-competition-tab="{{ $tab['id'] }}"
                 @click="selectTab('{{ $tab['id'] }}')"
-                :aria-pressed="activeTab === '{{ $tab['id'] }}'"
-                :class="activeTab === '{{ $tab['id'] }}' ? 'competition-section-selected' : ''"
+                :aria-pressed="selectedTab === '{{ $tab['id'] }}'"
+                :class="selectedTab === '{{ $tab['id'] }}' ? 'competition-section-selected' : ''"
                 class="competition-section-button">
                 <i data-lucide="{{ $tab['icon'] }}" class="h-4 w-4 shrink-0" aria-hidden="true"></i>
                 <span>{{ $tab['label'] }}</span>
@@ -455,19 +459,16 @@
          x-trap.noscroll="compactView && panelOpen">
         <header x-show="compactView && panelOpen" x-cloak class="competition-panel-header">
             <button type="button" @click="closePanel()" class="competition-panel-back" aria-label="{{ __('Return to competition') }}">
-                <i data-lucide="arrow-left" class="h-5 w-5" aria-hidden="true"></i>
+                <i data-lucide="arrow-left" class="h-5 w-5" aria-hidden="true"></i><span>{{ __('Return') }}</span>
             </button>
             <div class="min-w-0 flex-1">
                 <p class="truncate text-xs text-zinc-400">{{ $isHeadToHead ? __('Head-to-Head') : __('Tournament') }}</p>
                 <h2 id="competition-panel-title" class="text-base font-bold text-white" x-text="panelTitle"></h2>
             </div>
-            <button type="button" @click="closePanel()" class="competition-panel-back" aria-label="{{ __('Close section') }}">
-                <i data-lucide="x" class="h-5 w-5" aria-hidden="true"></i>
-            </button>
         </header>
         <div x-ref="panelBody" class="competition-panel-body" :class="{ 'competition-panel-body-open': compactView && panelOpen }">
         @guest
-            <aside x-show="activeTab !== 'overview' || panelOpen" class="competition-guest-invite">
+            <aside x-show="selectedTab !== 'overview' || panelOpen" class="competition-guest-invite">
                 <div class="min-w-0 flex-1">
                     <p class="text-sm font-bold text-white">{{ __('Your next match starts here') }}</p>
                     <p class="mt-1 text-xs leading-relaxed text-zinc-400">{{ __('Explore the competition. Create an account to join and play.') }}</p>
@@ -486,7 +487,7 @@
         </div>
 
         <!-- ===== OVERVIEW TAB ===== -->
-        <div data-tournament-content="overview" x-show="activeTab === 'overview'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div data-tournament-content="overview" x-show="selectedTab === 'overview'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div class="lg:col-span-8 space-y-6">
 
                 <!-- Essential Match Specs + Description -->
@@ -655,7 +656,7 @@
 
         @if((int) $tournament->workflow_version === 2 && $isRegistered)
             <!-- ===== SUBMIT RESULT TAB ===== -->
-            <div data-tournament-content="submit-results" x-show="activeTab === 'submit-results'" x-cloak style="display: none;" class="space-y-6">
+            <div data-tournament-content="submit-results" x-show="selectedTab === 'submit-results'" x-cloak style="display: none;" class="space-y-6">
                 @if($displayMatch)
                     <livewire:match.match-detail
                         :uuid="$displayMatch->uuid"
@@ -673,7 +674,7 @@
         @endif
 
         <!-- ===== PLAYERS TAB ===== -->
-        <div data-tournament-content="participants" x-show="activeTab === 'participants'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+        <div data-tournament-content="participants" x-show="selectedTab === 'participants'" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
             @if($tournament->registrations->count() > 0)
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     @foreach($tournament->registrations as $reg)
@@ -721,7 +722,7 @@
 
         <!-- ===== TEAM LOBBY TAB ===== -->
         @if($isTeamTournament)
-        <div data-tournament-content="team-lobby" x-show="activeTab === 'team-lobby'" x-cloak style="display:none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8">
+        <div data-tournament-content="team-lobby" x-show="selectedTab === 'team-lobby'" x-cloak style="display:none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-8">
             <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
                 <div class="flex items-center space-x-3 mb-6">
                     <span class="w-1.5 h-8 bg-amber-500 rounded-full"></span>
@@ -788,7 +789,7 @@
         @endif
 
         <!-- ===== FIXTURES & BRACKET TAB ===== -->
-        <div x-show="activeTab === 'matches'" x-cloak style="display:none;" class="rounded-2xl border border-zinc-800/70 bg-zinc-900/30 p-2">
+        <div x-show="selectedTab === 'matches'" x-cloak style="display:none;" class="rounded-2xl border border-zinc-800/70 bg-zinc-900/30 p-2">
             <div class="grid grid-cols-2 gap-2">
                 <button type="button" @click="selectBracketView('bracket')" :class="bracketView === 'bracket' ? 'bg-cyan-600 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-900 hover:text-white'" class="rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition">
                     Bracket
@@ -799,7 +800,7 @@
             </div>
         </div>
 
-        <div data-tournament-content="matches-fixtures" x-show="activeTab === 'matches' && bracketView === 'fixtures'" x-cloak style="display:none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+        <div data-tournament-content="matches-fixtures" x-show="selectedTab === 'matches' && bracketView === 'fixtures'" x-cloak style="display:none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
             <div class="flex items-center justify-between">
                 <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
                     <span class="w-1.5 h-8 bg-cyan-500 rounded-full"></span>
@@ -929,7 +930,7 @@
             @endif
         </div>
 
-        <div data-tournament-content="matches-bracket" x-show="activeTab === 'matches' && bracketView === 'bracket'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="w-full space-y-6">
+        <div data-tournament-content="matches-bracket" x-show="selectedTab === 'matches' && bracketView === 'bracket'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="w-full space-y-6">
             @if($rounds->isNotEmpty())
                 <div class="flex items-center justify-between">
                     <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
@@ -941,7 +942,7 @@
 
                 <!-- Bracket Scroll Container -->
                 <div class="overflow-x-auto pb-6 pt-2 relative" style="scrollbar-width: thin; scrollbar-color: #3f3f46 #09090b;">
-                    <div class="competition-bracket-rounds flex items-stretch gap-0 min-w-max">
+                    <div class="competition-bracket-rounds flex items-stretch gap-0 min-w-max" style="--mobile-bracket-height: {{ max(1, $rounds->max(fn ($item) => $item->matches->count())) * 176 }}px">
                         @foreach($rounds as $roundIndex => $round)
                             @php
                                 $roundCount = $rounds->count();
@@ -965,8 +966,11 @@
                                 </div>
 
                                 <!-- Matches in round with bracket layout -->
-                                <div class="flex-1 flex flex-col relative">
-                                    @php $matchCount = $round->matches->count(); @endphp
+                                <div class="competition-bracket-round-body flex-1 flex flex-col relative">
+                                    @php
+                                        $matchCount = $round->matches->count();
+                                        $nextMatches = $rounds->get($roundIndex + 1)?->matches->sortBy('id')->values();
+                                    @endphp
                                     @foreach($round->matches->sortBy('id')->values() as $mIdx => $match)
                                         @php
                                             $matchStatus = $match->status->value ?? $match->status;
@@ -1004,8 +1008,8 @@
                                             @endif
 
                                             <!-- Match Card -->
-                                            <div class="mx-3 w-full">
-                                                <div class="bg-zinc-900/80 backdrop-blur-md border {{ $viewerLostThisMatch ? 'border-rose-500/60 shadow-[0_0_24px_rgba(244,63,94,.16)]' : ($isMatchOngoing ? 'border-cyan-500/50 shadow-[0_0_20px_rgba(34,211,238,0.12)]' : ($isMatchCompleted ? 'border-zinc-800/50' : 'border-zinc-800')) }} rounded-2xl overflow-hidden transition-all duration-300 hover:border-zinc-600 hover:shadow-lg group">
+                                            <div class="competition-bracket-card-wrap mx-3 w-full">
+                                                <div class="competition-bracket-card bg-zinc-900/80 backdrop-blur-md border {{ $viewerLostThisMatch ? 'border-rose-500/60 shadow-[0_0_24px_rgba(244,63,94,.16)]' : ($isMatchOngoing ? 'border-cyan-500/50 shadow-[0_0_20px_rgba(34,211,238,0.12)]' : ($isMatchCompleted ? 'border-zinc-800/50' : 'border-zinc-800')) }} rounded-2xl overflow-hidden transition-all duration-300 hover:border-zinc-600 hover:shadow-lg group">
                                                     <!-- Match header -->
                                                     <div class="flex items-center justify-between px-3 py-2 border-b border-zinc-800/50 bg-zinc-950/50">
                                                         <span class="text-[8px] font-black text-zinc-700 uppercase tracking-widest">#{{ $mIdx + 1 }}</span>
@@ -1072,13 +1076,24 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        {{-- V2 pairs winners on arrival; connect only their recorded destination. --}}
+                                        @php
+                                            $targetIndex = (int) $tournament->workflow_version === 2
+                                                ? ($advancedMatch ? $nextMatches?->search(fn ($candidate) => $candidate->uuid === $advancedMatch->uuid) : false)
+                                                : intdiv($mIdx, 2);
+                                        @endphp
+                                        @if($nextMatches && $targetIndex !== false && $targetIndex !== null && isset($nextMatches[$targetIndex]))
+                                            <svg class="competition-bracket-mobile-path" viewBox="0 0 32 100" preserveAspectRatio="none" aria-hidden="true" data-bracket-from="{{ $match->uuid }}" data-bracket-to="{{ $nextMatches[$targetIndex]->uuid }}">
+                                                <path d="M 0 {{ 100 * ($mIdx + 0.5) / max(1, $matchCount) }} H 16 V {{ 100 * ($targetIndex + 0.5) / $nextMatches->count() }} H 32" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" />
+                                            </svg>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>
 
                             <!-- Connector line between rounds -->
                             @if(!$isLast)
-                                <div class="competition-bracket-connector flex items-center justify-center shrink-0" style="width: 36px; align-self: center;">
+                                <div class="competition-bracket-gap competition-bracket-connector flex items-center justify-center shrink-0" style="width: 36px; align-self: center;">
                                     @if((int) $tournament->workflow_version !== 2)<div class="h-px w-6 bg-zinc-700/70"></div>@endif
                                 </div>
                             @endif
@@ -1098,7 +1113,7 @@
         </div>
 
         <!-- ===== ACTIVITY TAB ===== -->
-        <div data-tournament-content="activity" x-show="activeTab === 'activity'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+        <div data-tournament-content="activity" x-show="selectedTab === 'activity'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
             <div class="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/60 rounded-[2rem] p-8">
                 <h2 class="text-2xl font-black font-orbitron tracking-widest text-white mb-8 flex items-center space-x-3">
                     <span class="w-1.5 h-8 bg-amber-500 rounded-full"></span>
@@ -1136,7 +1151,7 @@
         <!-- ===== STREAMS TAB ===== -->
         @php $streamItems = $streamService->streamsForTournament($tournament); $streamStatus = $streamService->statusLabel($tournament); @endphp
         @if(count($streamItems) > 0)
-        <div data-tournament-content="streams" x-show="activeTab === 'streams'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+        <div data-tournament-content="streams" x-show="selectedTab === 'streams'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
             <div class="flex items-center justify-between">
                 <h2 class="text-2xl font-black font-orbitron tracking-widest text-white flex items-center space-x-3">
                     <span class="w-1.5 h-8 bg-rose-500 rounded-full"></span>

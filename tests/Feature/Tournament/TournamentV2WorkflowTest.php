@@ -908,7 +908,9 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(MatchStatus::IN_PROGRESS, $destination->fresh()->status);
         self::assertSame(MatchStatus::IN_PROGRESS, $firstRound[1]->fresh()->status);
         self::assertSame(MatchStatus::IN_PROGRESS, $firstRound[3]->fresh()->status);
-        $page->call('$refresh')->assertSee("Advances to match #{$destination->id}");
+        $page->call('$refresh')->assertSee("Advances to match #{$destination->id}")
+            ->assertSee('data-bracket-from="'.$first->uuid.'" data-bracket-to="'.$destination->uuid.'"', false)
+            ->assertSee('data-bracket-from="'.$third->uuid.'" data-bracket-to="'.$destination->uuid.'"', false);
 
         // Replayed events must not duplicate either player or restart their match.
         foreach ([$first, $third] as $source) {

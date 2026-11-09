@@ -2548,9 +2548,9 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     .competition-main-action > :is(button, a, [role="status"], [role="alert"]) { max-width: 100%; padding-inline: 16px; letter-spacing: .04em; }
     .competition-main-action :is(button, a) > svg { flex-shrink: 0; }
     .competition-main-action :is(button, a) > span { min-width: 0; overflow-wrap: anywhere; }
-    .competition-bracket-rounds { display: grid; min-width: 0; gap: 24px; }
-    .competition-bracket-round { width: 100% !important; min-width: 0 !important; }
-    .competition-bracket-match { min-height: 0 !important; flex: none !important; padding-block: 6px; }
+    .competition-bracket-rounds { display: flex; min-width: max-content; gap: 0; }
+    .competition-bracket-round { width: 176px !important; min-width: 176px !important; flex-shrink: 0; }
+    .competition-bracket-match { min-height: 0 !important; flex: 1 0 0 !important; padding-block: 8px; z-index: 1; }
     .competition-bracket-connector { display: none; }
     .player-tournament-detail > div h1 { overflow-wrap: anywhere; }
     .player-tournament-detail > .relative .grid > div { min-width: 0; }
@@ -2850,8 +2850,24 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     .player-wallet-summary .mt-5 > .rounded-xl > p:last-child { grid-column: 1 / -1; }
 }
 
+.competition-bracket-mobile-path,
 .mobile-dialog-return { display: none; }
 @media (max-width: 1023px) {
+    .competition-panel-back { width: auto; min-width: 44px; gap: 8px; padding-inline: 12px; font-size: 12px; font-weight: 600; }
+    .competition-bracket-round > div:first-child { height: 44px; margin: 0 4px 12px; }
+    .competition-bracket-round-body { height: var(--mobile-bracket-height); flex: none; }
+    .competition-bracket-gap { display: block; width: 24px !important; }
+    .competition-bracket-gap > div { display: none; }
+    .competition-bracket-card-wrap { margin-inline: 4px; min-width: 0; }
+    .competition-bracket-card { border-radius: 12px; }
+    .competition-bracket-card > div:first-child { padding: 5px 8px; }
+    .competition-bracket-card > .py-2\.5 { padding: 5px 8px; }
+    .competition-bracket-card > .py-1 { padding-block: 1px; }
+    .competition-bracket-card .w-6 { width: 20px; height: 20px; }
+    .competition-bracket-card .text-xs { max-width: 90px !important; font-size: 11px; }
+    .competition-bracket-card > p { padding: 4px 6px; font-size: 9px; }
+    .competition-bracket-card > :is(button, a) { min-height: 44px; padding: 6px; font-size: 9px; }
+    .competition-bracket-mobile-path { display: block; position: absolute; top: 0; right: -28px; width: 32px; height: 100%; overflow: visible; color: #64748b; pointer-events: none; }
     .mobile-settings-modal-header { justify-content: flex-start; }
     .mobile-settings-modal-header > button { display: flex; width: auto; gap: 8px; padding-inline: 10px; font-size: 12px; }
     .player-profile-kyc .desktop-dialog-close { display: none; }
