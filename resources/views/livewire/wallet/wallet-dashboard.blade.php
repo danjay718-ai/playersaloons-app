@@ -1,4 +1,5 @@
-<div class="space-y-6 min-w-0" x-data="{ walletAction: 'deposit' }">
+<div class="player-wallet space-y-6 min-w-0" x-data="{ walletAction: 'deposit' }">
+    <h1 class="mobile-wallet-title">{{ __('Wallet') }}</h1>
     <x-ui.toasts />
 
     @if(request('deposit') === 'submitted')
@@ -14,7 +15,7 @@
         </section>
     @endunless
 
-    <section class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
+    <section class="player-wallet-summary rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
         <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
@@ -28,8 +29,8 @@
 
                 <div class="mt-5 grid gap-5 sm:grid-cols-3">
                     <div class="sm:col-span-2">
-                        <p class="font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Available Balance</p>
-                        <div class="mt-2 font-orbitron text-4xl font-black tracking-wide text-white md:text-5xl">
+                        <p class="player-wallet-balance-label font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Available Balance</p>
+                        <div class="player-wallet-balance mt-2 font-orbitron text-4xl font-black tracking-wide text-white md:text-5xl">
                             @currencySymbol{{ number_format((float)($wallet?->cached_balance ?? 0.00), 2) }}
                         </div>
                     </div>
@@ -46,7 +47,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-1.5">
+            <div class="player-wallet-actions grid grid-cols-2 gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-1.5">
                 <button type="button"
                     @click="walletAction = 'deposit'"
                     :class="walletAction === 'deposit' ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200' : 'border-transparent text-zinc-500 hover:text-zinc-200'"
@@ -65,7 +66,7 @@
         </div>
     </section>
 
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+    <div class="player-wallet-content grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
         <section class="space-y-6">
             <div x-show="walletAction === 'deposit'" x-cloak class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-xl md:p-6">
                 <div class="flex items-start justify-between gap-4">
@@ -218,7 +219,7 @@
                             $isCredit = (float) $entry->amount >= 0;
                             $entryType = $entry->type->value ?? $entry->type;
                         @endphp
-                        <div class="grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900/45 p-4 transition-colors hover:border-zinc-700 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                        <div class="player-wallet-entry grid gap-3 rounded-xl border border-zinc-800 bg-zinc-900/45 p-4 transition-colors hover:border-zinc-700 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="rounded-md border px-2 py-1 font-orbitron text-[9px] font-black uppercase tracking-widest {{ $isCredit ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' : 'border-red-500/25 bg-red-500/10 text-red-300' }}">
