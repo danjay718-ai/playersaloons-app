@@ -4,7 +4,7 @@
         <div>
             <p class="gr-eyebrow !mb-2"><span class="gr-slash">//</span> Player Command Center</p>
             <h1 class="player-my-games-title text-3xl md:text-5xl font-black font-orbitron tracking-tighter bg-gradient-to-r from-lime-300 via-cyan-300 to-white bg-clip-text text-transparent">
-                MY GAMES
+                <span class="mobile-games-title">{{ $tSubTab === 'history' ? __('Game history') : __('My games') }}</span><span class="desktop-games-title">MY GAMES</span>
             </h1>
             <p class="text-sm text-zinc-400 mt-2 font-medium">
                 Track your tournaments, head-to-head matches, result submissions, and completed results.
@@ -12,34 +12,37 @@
         </div>
     </div>
 
-    <!-- Competition Type -->
-    <div class="player-competition-tabs grid grid-cols-2 gap-2 rounded-2xl border border-cyan-500/20 bg-zinc-900/50 p-1.5 sm:max-w-lg">
-        <button type="button" wire:click="selectCompetition('tournaments')" class="rounded-xl px-4 py-3 font-orbitron text-[10px] font-black uppercase tracking-[0.18em] transition {{ $competitionTab === 'tournaments' ? 'player-competition-tab-active bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.3)]' : 'text-zinc-400 hover:text-white' }}">
-            <span class="inline-flex items-center justify-center gap-2"><i data-lucide="trophy" class="h-4 w-4"></i>Tournaments</span>
-        </button>
-        <button type="button" wire:click="selectCompetition('head_to_head')" class="rounded-xl px-4 py-3 font-orbitron text-[10px] font-black uppercase tracking-[0.18em] transition {{ $competitionTab === 'head_to_head' ? 'player-competition-tab-active bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.3)]' : 'text-zinc-400 hover:text-white' }}">
-            <span class="inline-flex items-center justify-center gap-2"><i data-lucide="swords" class="h-4 w-4"></i>Head-to-Head</span>
-        </button>
-    </div>
+    <div class="mobile-history-summary space-y-8">
+        <!-- Competition Type -->
+        <div class="player-competition-tabs grid grid-cols-2 gap-2 rounded-2xl border border-cyan-500/20 bg-zinc-900/50 p-1.5 sm:max-w-lg">
+            <button type="button" wire:click="selectCompetition('tournaments')" class="rounded-xl px-4 py-3 font-orbitron text-[10px] font-black uppercase tracking-[0.18em] transition {{ $competitionTab === 'tournaments' ? 'player-competition-tab-active bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.3)]' : 'text-zinc-400 hover:text-white' }}">
+                <span class="inline-flex items-center justify-center gap-2"><i data-lucide="trophy" class="h-4 w-4"></i>Tournaments</span>
+            </button>
+            <button type="button" wire:click="selectCompetition('head_to_head')" class="rounded-xl px-4 py-3 font-orbitron text-[10px] font-black uppercase tracking-[0.18em] transition {{ $competitionTab === 'head_to_head' ? 'player-competition-tab-active bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.3)]' : 'text-zinc-400 hover:text-white' }}">
+                <span class="inline-flex items-center justify-center gap-2"><i data-lucide="swords" class="h-4 w-4"></i>Head-to-Head</span>
+            </button>
+        </div>
 
-    <!-- Stats Banner -->
-    @if($competitionTab === 'tournaments')
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
-            <x-player.metric-card label="Total Tournaments" :value="$totalTournamentCount" icon="trophy" />
-            <x-player.metric-card label="Active" :value="$activeCount" tone="text-cyan-400" icon="zap" />
-            <x-player.metric-card label="Victories" :value="$matchWins" tone="text-emerald-400" icon="trophy" />
-            <x-player.metric-card label="Defeats" :value="$matchLosses" tone="text-rose-400" icon="skull" />
-            <x-player.metric-card label="Closed" :value="$closedTournamentCount" tone="text-zinc-400" icon="archive" />
-        </div>
-        <p class="text-xs text-zinc-400">{{ __('Each tournament counts once: Active, Victory, Defeat, or Closed. Victories mean tournament championships. Closed includes cancelled, refunded, withdrawn, or unresolved competitions.') }}</p>
-    @else
-        <div class="grid grid-cols-2 gap-6 lg:grid-cols-4">
-            <x-player.metric-card label="Active Head-to-Head" :value="$activeCount" tone="text-cyan-400" icon="zap" />
-            <x-player.metric-card label="Match History" :value="$historyCount" tone="text-violet-400" icon="calendar" />
-            <x-player.metric-card label="Match Wins" :value="$matchWins" tone="text-emerald-400" icon="trophy" />
-            <x-player.metric-card label="Match Losses" :value="$matchLosses" tone="text-rose-400" icon="skull" />
-        </div>
-    @endif
+        <!-- Stats Banner -->
+        @if($competitionTab === 'tournaments')
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-5">
+                <x-player.metric-card label="Total Tournaments" :value="$totalTournamentCount" icon="trophy" />
+                <x-player.metric-card label="Active" :value="$activeCount" tone="text-cyan-400" icon="zap" />
+                <x-player.metric-card label="Victories" :value="$matchWins" tone="text-emerald-400" icon="trophy" />
+                <x-player.metric-card label="Defeats" :value="$matchLosses" tone="text-rose-400" icon="skull" />
+                <x-player.metric-card label="Closed" :value="$closedTournamentCount" tone="text-zinc-400" icon="archive" />
+            </div>
+            <p class="text-xs text-zinc-400">{{ __('Each tournament counts once: Active, Victory, Defeat, or Closed. Victories mean tournament championships. Closed includes cancelled, refunded, withdrawn, or unresolved competitions.') }}</p>
+        @else
+            <div class="grid grid-cols-2 gap-6 lg:grid-cols-4">
+                <x-player.metric-card label="Active Head-to-Head" :value="$activeCount" tone="text-cyan-400" icon="zap" />
+                <x-player.metric-card label="Match History" :value="$historyCount" tone="text-violet-400" icon="calendar" />
+                <x-player.metric-card label="Match Wins" :value="$matchWins" tone="text-emerald-400" icon="trophy" />
+                <x-player.metric-card label="Match Losses" :value="$matchLosses" tone="text-rose-400" icon="skull" />
+            </div>
+        @endif
+
+    </div>
 
     <!-- Tabs -->
     <div class="player-status-tabs flex items-center space-x-2 bg-zinc-900/50 backdrop-blur-md border border-cyan-500/20 p-1.5 rounded-2xl max-w-fit">

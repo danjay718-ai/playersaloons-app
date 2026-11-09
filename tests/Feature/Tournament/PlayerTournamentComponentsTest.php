@@ -66,6 +66,19 @@ class PlayerTournamentComponentsTest extends TestCase
         $this->game = $this->makeGame('arena', 'Arena');
     }
 
+    public function test_mobile_game_grid_keeps_all_games_available_behind_view_more(): void
+    {
+        foreach (range(1, 6) as $number) {
+            $this->makeGame('mobile-game-'.$number, 'Mobile Game '.$number);
+        }
+
+        Livewire::actingAs($this->player)->test(PlayerTournamentList::class)
+            ->assertViewHas('popularGames', fn ($games) => $games->count() === 7)
+            ->assertSee('View more games')
+            ->assertSee('mobile-games-grid', false)
+            ->assertSee('Mobile Game 6');
+    }
+
     public function test_paid_tournament_join_shows_insufficient_balance_without_registering_or_charging(): void
     {
         $tournament = $this->makeTournament('Paid Cup', TournamentStatus::REGISTRATION_OPEN);

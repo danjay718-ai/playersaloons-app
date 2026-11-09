@@ -242,7 +242,7 @@
     @endif
 
     <!-- 2. Popular Games Rail -->
-    <section class="space-y-4">
+    <section class="{{ ! $publicView ? 'mobile-games-section' : '' }} space-y-4" x-data="{ allGames: false }" :class="{ 'mobile-games-expanded': allGames }">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <p class="gr-eyebrow !mb-1.5"><span class="gr-slash">//</span> {{ __('Discover your next arena') }}</p>
@@ -257,7 +257,7 @@
             <button type="button" aria-label="{{ __('Previous games') }}" @click="$refs.gamesRail.scrollBy({ left: -420, behavior: 'smooth' })" class="player-rail-button absolute -left-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-500/30 bg-zinc-950/95 text-white shadow-2xl transition hover:border-lime-400 hover:bg-lime-400 hover:text-zinc-950 sm:-left-3 sm:h-10 sm:w-10">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
             </button>
-            <div x-ref="gamesRail" class="flex snap-x snap-mandatory gap-3.5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div x-ref="gamesRail" class="mobile-games-grid flex snap-x snap-mandatory gap-3.5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @forelse($popularGames as $game)
                     <a href="{{ route('games.show', ['game' => $game, ...$gameContext]) }}" wire:navigate wire:key="game-{{ $game->slug }}" class="player-game-card group/game relative min-w-[160px] snap-start overflow-hidden rounded-2xl border border-cyan-500/20 bg-zinc-900 transition hover:border-lime-400/60 sm:min-w-[190px]">
                         <div class="aspect-[16/10] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105 group-hover/game:blur-[2px] group-focus-visible/game:scale-105 group-focus-visible/game:blur-[2px]">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(34,230,255,.3),transparent_45%),linear-gradient(135deg,#10192b,#05080f)] transition duration-500 group-hover/game:scale-105 group-hover/game:blur-[2px] group-focus-visible/game:scale-105 group-focus-visible/game:blur-[2px]"></div>@endif</div>
@@ -277,7 +277,19 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
             </button>
         </div>
+        @if(! $publicView && $popularGames->count() > 6)
+            <button type="button" class="mobile-games-more" @click="allGames = !allGames" :aria-expanded="allGames" x-text="allGames ? @js(__('Show fewer games')) : @js(__('View more games'))">{{ __('View more games') }}</button>
+        @endif
     </section>
+
+    @if(! $publicView)
+        <nav class="mobile-competition-switch" aria-label="{{ __('Competition type') }}">
+            <a href="{{ route('tournaments.browse', ['frequency' => $frequency ?: 'daily']) }}" wire:navigate @if(! $isHeadToHeadListing) aria-current="page" @endif>{{ __('Tournaments') }}</a>
+            @if(config('features.tournament_v2.enabled') || config('features.player_wager.enabled'))
+                <a href="{{ config('features.tournament_v2.enabled') ? route('platform-h2h') : '/head-to-head' }}" wire:navigate @if($isHeadToHeadListing) aria-current="page" @endif>{{ __('H2H') }}</a>
+            @endif
+        </nav>
+    @endif
 
     <!-- 3. Featured List (when present) -->
     @if($featuredTournaments->isNotEmpty())
