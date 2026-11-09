@@ -33,6 +33,18 @@ final class LanguageSwitchTest extends TestCase
         self::assertArrayHasKey('fr', app(LanguageRegistry::class)->supported());
     }
 
+    public function test_settings_language_list_uses_the_same_enabled_locales_and_update_action(): void
+    {
+        SystemSetting::query()->create(['key' => 'language.disabled.fr', 'value' => '1']);
+        $html = Blade::render('<x-localization.language-switcher variant="settings" />');
+
+        self::assertStringContainsString('settings-language-list', $html);
+        self::assertStringContainsString('value="en"', $html);
+        self::assertStringNotContainsString('value="fr"', $html);
+        self::assertStringContainsString(route('language.update'), $html);
+        self::assertStringContainsString('name="_token"', $html);
+    }
+
     public function test_guest_and_disabled_configured_default_fall_back_to_english(): void
     {
         SystemSetting::query()->create(['key' => 'language.disabled.fr', 'value' => '1']);

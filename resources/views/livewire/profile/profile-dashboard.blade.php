@@ -18,14 +18,44 @@
 
 <div
     class="player-profile space-y-6 min-w-0"
-    x-data="{ activeTab: 'profile', showKycDrawer: false, isEditingProfile: false, isEditingAccount: false }"
+    :class="{ 'mobile-settings-modal-active': mobileSettingsOpen || showKycDrawer }"
+    x-data="{ activeTab: 'profile', mobileSettingsOpen: false, settingsTitle: '', showKycDrawer: false, isEditingProfile: false, isEditingAccount: false }"
+    @keydown.escape.window="mobileSettingsOpen = false; showKycDrawer = false"
+    @resize.window="if (window.innerWidth >= 1024) { mobileSettingsOpen = false; if (['language', 'install'].includes(activeTab)) activeTab = 'profile' }"
     @profile-kyc-submitted.window="showKycDrawer = false"
     @profile-updated.window="isEditingProfile = false"
     @account-updated.window="isEditingAccount = false"
 >
     <x-ui.toasts />
 
-    <section class="player-profile-shell relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+    <div class="mobile-settings-home">
+        <h1>{{ __('Settings') }}</h1>
+        <div class="mobile-settings-player">
+            <div class="mobile-settings-avatar">@if($avatarUrl)<img src="{{ $avatarUrl }}" alt="" class="h-full w-full object-cover">@else{{ $initials }}@endif</div>
+            <div class="min-w-0"><h2 class="truncate" translate="no">{{ $playerName }}</h2><p class="truncate" translate="no">{{ '@'.$user->username }}</p><span>{{ __('Level :level', ['level' => $progression->level]) }} · {{ __(':points XP', ['points' => number_format($progression->experience_points)]) }}</span></div>
+        </div>
+        <div class="mobile-settings-list">
+            @foreach([
+                ['profile', 'Profile', 'user-round'], ['kyc', 'KYC', 'shield-check'], ['account', 'Account', 'id-card'],
+                ['security', 'Change password', 'key-round'], ['comms', 'Communication', 'bell'], ['appearance', 'Theme', 'palette'],
+                ['install', 'Install app', 'download'], ['language', 'Change language', 'languages'],
+            ] as [$key, $label, $icon])
+                <button type="button" @click="if (@js($key === 'kyc')) { showKycDrawer = true } else { activeTab = @js($key); settingsTitle = @js(__($label)); mobileSettingsOpen = true }" aria-haspopup="dialog">
+                    <span class="mobile-settings-icon"><i data-lucide="{{ $icon }}" aria-hidden="true"></i></span><span>{{ __($label) }}</span><i data-lucide="chevron-right" aria-hidden="true" class="mobile-settings-chevron"></i>
+                </button>
+            @endforeach
+        </div>
+        <button type="button" class="mobile-settings-logout" onclick="document.getElementById('logout-confirmation')?.showModal()"><i data-lucide="log-out" aria-hidden="true"></i>{{ __('Logout') }}</button>
+    </div>
+    <div class="mobile-settings-backdrop" x-show="mobileSettingsOpen" x-cloak @click="mobileSettingsOpen = false"></div>
+
+    <section class="player-profile-shell relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl"
+        :class="{ 'mobile-settings-open': mobileSettingsOpen }"
+        x-trap.inert.noscroll="mobileSettingsOpen"
+        :role="mobileSettingsOpen ? 'dialog' : null"
+        :aria-modal="mobileSettingsOpen ? 'true' : null"
+        :aria-labelledby="mobileSettingsOpen ? 'mobile-settings-title' : null">
+        <header class="mobile-settings-modal-header"><button type="button" @click="mobileSettingsOpen = false"><i data-lucide="arrow-left" aria-hidden="true"></i><span>{{ __('Return') }}</span></button><h2 id="mobile-settings-title" x-text="settingsTitle"></h2></header>
         <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-cyan-400 to-fuchsia-500"></div>
         <div class="grid grid-cols-1 xl:grid-cols-[360px_1fr]">
             <aside class="player-profile-identity border-b border-zinc-800 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_32%),linear-gradient(135deg,#111827,#09090b_68%)] p-5 sm:p-6 xl:border-b-0 xl:border-r">
@@ -71,8 +101,8 @@
                 </div>
             </aside>
 
-            <div class="p-5 sm:p-6">
-                <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div class="player-profile-content p-5 sm:p-6">
+                <div class="player-profile-summary grid grid-cols-1 gap-3 md:grid-cols-3">
                     <div class="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
                         <div class="flex items-center justify-between gap-3">
                             <p class="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-orbitron">KYC Status</p>
@@ -148,7 +178,7 @@
                     </div>
                 </div>
 
-                <div class="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
+                <div class="player-profile-tab-content mt-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-5">
                     <div x-show="activeTab === 'profile'" x-cloak>
                         <div class="mb-4 flex items-center justify-between border-b border-zinc-800 pb-3">
                             <div class="flex items-center gap-2">
@@ -303,6 +333,9 @@
                     </div>
 
                     <div x-show="activeTab === 'account'" x-cloak>
+                        @unless($emailVerified)
+                            <div class="mobile-settings-email"><p>{{ __('Verify your email to enable alerts.') }}</p><button type="button" wire:click="resendEmailVerification" wire:loading.attr="disabled">{{ __('Send verification link') }}</button></div>
+                        @endunless
                         <div class="mb-4 flex items-center justify-between border-b border-zinc-800 pb-3">
                             <div class="flex items-center gap-2">
                                 <i data-lucide="id-card" class="w-4 h-4 text-fuchsia-300"></i>
@@ -393,6 +426,12 @@
                         </form>
                     </div>
 
+                    <div class="mobile-settings-extra" x-show="activeTab === 'language'" x-cloak><x-localization.language-switcher variant="settings" /></div>
+                    <div class="mobile-settings-extra" x-show="activeTab === 'install'" x-cloak>
+                        <p>{{ __('Add the app to your home screen for quick access.') }}</p>
+                        <button type="button" class="pwa-install-btn" data-pwa-install-desktop data-pwa-install-mobile @click="mobileSettingsOpen = false"><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
+                    </div>
+
                     <div x-show="activeTab === 'appearance'" x-cloak>
                         <div class="mb-4 flex items-center gap-2 border-b border-zinc-800 pb-3">
                             <i data-lucide="palette" class="w-4 h-4 text-cyan-300"></i>
@@ -433,7 +472,7 @@
         </div>
     </section>
 
-    <div x-show="showKycDrawer" x-cloak class="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm" @click.self="showKycDrawer = false">
+    <div x-show="showKycDrawer" x-cloak x-trap.inert.noscroll="showKycDrawer" role="dialog" aria-modal="true" aria-label="{{ __('KYC') }}" class="player-profile-kyc fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm" @click.self="showKycDrawer = false">
         <aside class="h-full w-full max-w-lg overflow-y-auto border-l border-zinc-800 bg-zinc-950 p-5 shadow-2xl sm:p-6">
                 <div class="flex items-start justify-between gap-4 border-b border-zinc-800 pb-4">
                     <div>
@@ -442,7 +481,7 @@
                         <p class="mt-1 text-sm font-semibold text-zinc-450">Verify identity to unlock withdrawals.</p>
                     </div>
                     <button type="button" @click="showKycDrawer = false" title="Close KYC drawer" class="grid h-10 w-10 place-items-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white">
-                        <i data-lucide="x" class="w-5 h-5"></i>
+                        <i data-lucide="x" class="desktop-dialog-close w-5 h-5"></i><span class="mobile-dialog-return"><i data-lucide="arrow-left" class="w-5 h-5" aria-hidden="true"></i>{{ __('Return') }}</span>
                     </button>
                 </div>
 

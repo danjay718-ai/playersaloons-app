@@ -36,11 +36,13 @@
 
 @if($isVisible)
 
-<div {{ $attributes->merge(['class' => 'relative']) }} x-data="{ open: false }" @click.outside="open = false">
+<div {{ $attributes->merge(['class' => 'relative']) }} x-data="{ open: @js($variant === 'settings') }" @click.outside="open = @js($variant === 'settings')">
+    @if($variant !== 'settings')
     <button type="button" @click="open = !open" class="{{ $buttonClasses }} !px-2" aria-label="{{ __('Language') }}" aria-haspopup="true" :aria-expanded="open">
         <span class="fi fi-{{ $currentLanguage['flag'] ?? 'us' }} text-sm rounded-sm"></span>
         <i data-lucide="chevron-down" class="h-3 w-3"></i>
     </button>
+    @endif
 
     <div
         x-show="open"
@@ -50,7 +52,7 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="scale-100 opacity-100"
         x-transition:leave-end="scale-95 opacity-0"
-        class="absolute {{ $align === 'left' ? 'left-0' : 'right-0' }} z-50 mt-2 max-h-80 w-52 overflow-y-auto rounded-xl border py-1 shadow-2xl {{ $panelClasses }}"
+        class="{{ $variant === 'settings' ? 'settings-language-list' : 'absolute '.($align === 'left' ? 'left-0' : 'right-0').' z-50 mt-2 max-h-80 w-52 overflow-y-auto rounded-xl border py-1 shadow-2xl '.$panelClasses }}"
         x-cloak
     >
         @foreach($languages as $locale => $language)

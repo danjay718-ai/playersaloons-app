@@ -771,5 +771,15 @@
     "Messages": "Messages",
     "Back to conversations": "Back to conversations",
     "Message": "Message",
-    "Write a message...": "Write a message..."
+    "Write a message...": "Write a message...",
+    "Settings": "Settings",
+    "KYC": "KYC",
+    "Change password": "Change password",
+    "Communication": "Communication",
+    "Install app": "Install app",
+    "Change language": "Change language",
+    "Close settings": "Close settings",
+    "Send verification link": "Send verification link",
+    "Add the app to your home screen for quick access.": "Add the app to your home screen for quick access.",
+    "Return": "Return"
 }

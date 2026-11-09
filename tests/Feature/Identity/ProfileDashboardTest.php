@@ -44,6 +44,22 @@ class ProfileDashboardTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_mobile_settings_reuse_profile_actions_and_include_language_install_and_logout(): void
+    {
+        $response = $this->actingAs($this->user)->get('/profile')->assertOk()
+            ->assertSee('mobile-settings-list', false)
+            ->assertSee('Change password')
+            ->assertSee('Communication')
+            ->assertSee('Change language')
+            ->assertSee('settings-language-list', false)
+            ->assertSee('data-pwa-install-mobile', false)
+            ->assertSee('logout-confirmation', false)
+            ->assertSee('wire:submit="updatePassword"', false)
+            ->assertSee('wire:submit="submitKyc"', false);
+
+        $this->assertSame(1, substr_count($response->getContent(), 'id="currentPassword"'));
+    }
+
     public function test_profile_displays_real_level_and_xp(): void
     {
         $this->user->progression()->create(['level' => 4, 'experience_points' => 1750, 'tournaments_completed' => 8]);
