@@ -1,5 +1,6 @@
 <div
     class="player-global-chat min-h-[calc(100vh-5rem)]"
+    :class="{ 'mobile-chat-open': mobileConversationOpen }"
     x-data="chatConsole({
         endpoints: {
             conversations: '{{ route('chat.conversations') }}',
@@ -14,28 +15,29 @@
         currentUserUuid: '{{ auth()->user()->uuid }}'
     })"
 >
-    <div class="grid min-h-[calc(100vh-7rem)] grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside class="rounded-xl border border-purple-500/20 bg-[#080516]/90 shadow-[0_0_30px_rgba(88,28,135,0.18)] overflow-hidden">
-            <div class="border-b border-purple-500/15 bg-purple-950/20 p-4">
+    <div class="player-chat-layout grid min-h-[calc(100vh-7rem)] grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <aside class="player-chat-sidebar rounded-xl border border-purple-500/20 bg-[#080516]/90 shadow-[0_0_30px_rgba(88,28,135,0.18)] overflow-hidden">
+            <div class="player-chat-list-header border-b border-purple-500/15 bg-purple-950/20 p-4">
                 <div class="flex items-center justify-between gap-3">
                     <div>
-                        <p class="font-orbitron text-[10px] font-black uppercase tracking-[0.28em] text-fuchsia-300">Realtime Channels</p>
-                        <h2 class="mt-1 font-orbitron text-lg font-black uppercase tracking-widest text-zinc-100">Comms Hub</h2>
+                        <p class="font-orbitron text-[10px] font-black uppercase tracking-[0.28em] text-fuchsia-300"><span class="mobile-chat-desktop-copy">Realtime Channels</span></p>
+                        <h2 class="mt-1 font-orbitron text-lg font-black uppercase tracking-widest text-zinc-100"><span class="mobile-chat-desktop-copy">Comms Hub</span><span class="mobile-chat-only">{{ __('Messages') }}</span></h2>
                     </div>
                 </div>
 
-                <div class="mt-4 grid grid-cols-3 gap-2">
+                <div class="player-chat-filters mt-4 grid grid-cols-3 gap-2">
                     <button type="button" @click="filter = 'all'" :class="filter === 'all' ? activeFilterClass : idleFilterClass">All</button>
-                    <button type="button" @click="filter = 'direct'" :class="filter === 'direct' ? activeFilterClass : idleFilterClass">P2P</button>
+                    <button type="button" @click="filter = 'direct'" :class="filter === 'direct' ? activeFilterClass : idleFilterClass"><span class="mobile-chat-desktop-copy">P2P</span><span class="mobile-chat-only">{{ __('Players') }}</span></button>
                     <button type="button" @click="filter = 'team'" :class="filter === 'team' ? activeFilterClass : idleFilterClass">Teams</button>
                 </div>
             </div>
 
-            <div class="space-y-4 p-4">
+            <div class="player-chat-discovery space-y-4 p-4">
                 <form @submit.prevent="openDirect()" class="rounded-lg border border-zinc-800 bg-zinc-950/50 p-3">
-                    <label class="font-orbitron text-[9px] font-bold uppercase tracking-widest text-zinc-500">Search player</label>
+                    <label for="chat-player-search" class="font-orbitron text-[9px] font-bold uppercase tracking-widest text-zinc-500">{{ __('Search player') }}</label>
                     <div class="mt-2 flex gap-2">
                         <input
+                            id="chat-player-search"
                             x-model="playerSearch"
                             @input.debounce.250ms="searchPlayers()"
                             type="text"
@@ -81,11 +83,11 @@
                 </template>
             </div>
 
-            <div class="max-h-[42vh] overflow-y-auto border-t border-purple-500/10 p-2 xl:max-h-[calc(100vh-27rem)]">
+            <div class="player-chat-conversations max-h-[42vh] overflow-y-auto border-t border-purple-500/10 p-2 xl:max-h-[calc(100vh-27rem)]">
                 <template x-for="conversation in filteredConversations()" :key="conversation.uuid">
                     <button
                         type="button"
-                        @click="selectConversation(conversation)"
+                        @click="mobileConversationOpen = true; selectConversation(conversation)"
                         :class="selected?.uuid === conversation.uuid ? 'player-chat-conversation-active border-purple-400/50 bg-purple-950/35' : 'border-transparent bg-transparent hover:border-zinc-700 hover:bg-zinc-900/60'"
                         class="player-chat-conversation mb-1 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition"
                     >
@@ -107,20 +109,21 @@
             </div>
         </aside>
 
-        <section class="flex min-h-[680px] flex-col overflow-hidden rounded-xl border border-purple-500/20 bg-[#070412]/95 shadow-[0_0_35px_rgba(88,28,135,0.18)]">
-            <header class="flex flex-wrap items-center justify-between gap-3 border-b border-purple-500/15 bg-gradient-to-r from-purple-950/40 via-zinc-950 to-cyan-950/20 p-4">
+        <section class="player-chat-thread flex min-h-[680px] flex-col overflow-hidden rounded-xl border border-purple-500/20 bg-[#070412]/95 shadow-[0_0_35px_rgba(88,28,135,0.18)]">
+            <header class="player-chat-thread-header flex flex-wrap items-center justify-between gap-3 border-b border-purple-500/15 bg-gradient-to-r from-purple-950/40 via-zinc-950 to-cyan-950/20 p-4">
+                <button type="button" class="mobile-chat-back mobile-chat-only" @click="mobileConversationOpen = false; window.playerActiveChat = null" aria-label="{{ __('Back to conversations') }}"><i data-lucide="arrow-left" aria-hidden="true"></i></button>
                 <div class="min-w-0">
                     <p class="font-orbitron text-[9px] font-bold uppercase tracking-[0.35em] text-purple-300" x-text="selected?.type === 'direct' ? @js(__('Secure P2P Link')) : selected?.type === 'team' ? @js(__('Squad Channel')) : @js(__('Global Relay'))"></p>
                     <h3 class="mt-1 truncate font-orbitron text-base font-black uppercase tracking-widest text-zinc-100" x-text="selected?.title || @js(__('Loading channel...'))"></h3>
                 </div>
-                <button x-show="selected" x-cloak type="button" @click="toggleMute()" :aria-pressed="Boolean(selected?.notifications_muted)" class="rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-300 hover:border-fuchsia-500">
+                <button x-show="selected" x-cloak type="button" @click="toggleMute()" :aria-pressed="Boolean(selected?.notifications_muted)" class="player-chat-mute rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-300 hover:border-fuchsia-500">
                     <span x-show="!selected?.notifications_muted">{{ __('Mute notifications') }}</span>
                     <span x-show="selected?.notifications_muted">{{ __('Unmute notifications') }}</span>
                 </button>
             </header>
             <p x-show="selected?.notifications_muted" x-cloak class="px-4 pt-3 text-xs text-zinc-400">{{ __('Notifications muted. Messages still arrive.') }}</p>
 
-            <div x-ref="messagePane" class="flex-1 space-y-3 overflow-y-auto p-4">
+            <div x-ref="messagePane" class="player-chat-message-pane flex-1 space-y-3 overflow-y-auto p-4">
                 <template x-if="bootError">
                     <div class="flex h-full items-center justify-center text-center">
                         <div class="max-w-md rounded-xl border border-red-500/25 bg-red-950/10 p-5">
@@ -150,7 +153,7 @@
 
                 <template x-for="message in messages" :key="message.uuid">
                     <div :class="message.user.uuid === currentUserUuid ? 'justify-end' : 'justify-start'" class="flex">
-                        <div class="flex max-w-[88%] items-start gap-2" :class="message.user.uuid === currentUserUuid ? 'flex-row-reverse' : ''">
+                        <div class="player-chat-message flex max-w-[88%] items-start gap-2" :class="message.user.uuid === currentUserUuid ? 'flex-row-reverse' : ''">
                             <button type="button" @click="openPlayerProfile(message.user.uuid)" class="mt-1 flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-purple-500/20 bg-gradient-to-br from-fuchsia-500/30 to-cyan-500/30 text-[10px] font-black text-white">
                                 <template x-if="message.user.avatar_url">
                                     <img :src="message.user.avatar_url" :alt="message.user.username" class="h-full w-full object-cover">
@@ -158,7 +161,7 @@
                                 <span x-show="!message.user.avatar_url" x-text="message.user.initials"></span>
                             </button>
                             <div :class="message.user.uuid === currentUserUuid ? 'player-chat-bubble-own border-fuchsia-500/25 bg-fuchsia-950/20' : 'player-chat-bubble-other border-zinc-800 bg-zinc-950/70'" class="player-chat-bubble rounded-xl border px-3 py-2">
-                                <div class="mb-1 flex items-center gap-2" :class="message.user.uuid === currentUserUuid ? 'justify-end' : ''">
+                                <div class="player-chat-message-meta mb-1 flex items-center gap-2" :class="message.user.uuid === currentUserUuid ? 'justify-end' : ''">
                                     <button type="button" @click="openPlayerProfile(message.user.uuid)" class="font-orbitron text-[10px] font-black uppercase tracking-wider hover:underline" :class="message.user.uuid === currentUserUuid ? 'text-fuchsia-200' : 'text-cyan-200'" x-text="message.user.username"></button>
                                     <span class="text-xs text-zinc-400" x-text="@js(__('Level :level · :points XP')).replace(':level', message.user.level ?? 1).replace(':points', message.user.experience_points ?? 0)"></span>
                                     <span class="text-[9px] text-zinc-600" x-text="message.time"></span>
@@ -170,14 +173,15 @@
                 </template>
             </div>
 
-            <form @submit.prevent="sendMessage()" class="border-t border-purple-500/15 bg-black/20 p-4">
+            <form @submit.prevent="sendMessage()" class="player-chat-composer border-t border-purple-500/15 bg-black/20 p-4">
                 <div class="flex gap-2">
                     <textarea
+                        aria-label="{{ __('Message') }}"
                         x-model="draft"
                         @keydown.enter.prevent="if (!$event.shiftKey) sendMessage(); else draft += '\n'"
                         rows="1"
                         maxlength="1000"
-                        placeholder="Transmit message..."
+                        placeholder="{{ __('Write a message...') }}"
                         class="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-zinc-800 bg-zinc-950/80 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-fuchsia-500"
                     ></textarea>
                     <button type="submit" :disabled="sending || draft.trim().length === 0" class="rounded-xl border border-fuchsia-400/30 bg-fuchsia-600/25 px-4 font-orbitron text-xs font-black uppercase tracking-widest text-fuchsia-100 transition hover:bg-fuchsia-600/40 disabled:cursor-not-allowed disabled:opacity-40">

@@ -11,6 +11,7 @@ export function chatConsole(config) {
         pendingTeamJoin: null,
         teamJoinModalOpen: false,
         selected: null,
+        mobileConversationOpen: new URLSearchParams(window.location.search).has('conversation'),
         messages: [],
         draft: '',
         playerSearch: '',
@@ -42,7 +43,7 @@ export function chatConsole(config) {
                 this.initialized = true;
                 this.inboxHandler = () => this.syncInbox();
                 this.focusHandler = () => {
-                    window.playerActiveChat = !document.hidden && document.hasFocus() && !this.loadingMessages ? this.selected?.uuid : null;
+                    window.playerActiveChat = !document.hidden && document.hasFocus() && !this.loadingMessages && this.isConversationVisible() ? this.selected?.uuid : null;
                     if (window.playerActiveChat) this.loadSelectedMessages();
                 };
                 window.addEventListener('chat-inbox-updated', this.inboxHandler);
@@ -176,7 +177,7 @@ export function chatConsole(config) {
                 this.loadingMessages = false;
                 await this.$nextTick();
                 if (this.destroyed || this.selected?.uuid !== uuid || version !== this.messageRequestVersion) return;
-                window.playerActiveChat = !document.hidden && document.hasFocus() ? uuid : null;
+                window.playerActiveChat = !document.hidden && document.hasFocus() && this.isConversationVisible() ? uuid : null;
                 await this.acknowledgeCurrent();
             } catch (error) {
                 if (this.selected?.uuid === uuid && version === this.messageRequestVersion) {
@@ -188,9 +189,13 @@ export function chatConsole(config) {
             }
         },
 
+        isConversationVisible() {
+            return this.mobileConversationOpen || !window.matchMedia?.('(max-width: 1023px)')?.matches;
+        },
+
         async acknowledgeCurrent() {
             const uuid = this.selected?.uuid;
-            if (!uuid || this.loadingMessages || document.hidden || !document.hasFocus()) return;
+            if (!uuid || this.loadingMessages || document.hidden || !document.hasFocus() || !this.isConversationVisible()) return;
             const latest = Math.max(0, ...this.messages.map((message) => Number(message.id)));
             const read = Math.max(this.readThrough[uuid] || 0, this.selected.last_read_message_id || 0);
             if (latest <= read) return;
@@ -359,6 +364,7 @@ export function chatConsole(config) {
         },
 
         async upsertAndSelect(conversation) {
+            this.mobileConversationOpen = true;
             const index = this.conversations.findIndex((item) => item.uuid === conversation.uuid);
             if (index >= 0) {
                 this.conversations[index] = conversation;

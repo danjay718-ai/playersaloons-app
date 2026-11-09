@@ -250,3 +250,30 @@ test('muting or reading a conversation dismisses an already visible brief alert'
     await state.refreshInbox();
     assert.equal(state.chatAlert, null);
 });
+
+test('mobile conversation list does not acknowledge messages in the hidden thread', async (t) => {
+    const { win } = environment(t);
+    win.matchMedia = () => ({ matches: true });
+    const state = consoleState();
+    state.selected = { uuid: 'direct-a', last_read_message_id: 0 };
+    state.messages = [{ id: 42 }];
+    state.loadingMessages = false;
+    const requests = [];
+    state.request = async (url) => {
+        requests.push(url);
+        return { conversation: { is_unread: false } };
+    };
+
+    await state.acknowledgeCurrent();
+    assert.deepEqual(requests, []);
+
+    state.mobileConversationOpen = true;
+    await state.acknowledgeCurrent();
+    assert.deepEqual(requests, ['/messages/direct-a/read']);
+});
+
+test('a conversation link opens the mobile thread directly', (t) => {
+    const { win } = environment(t);
+    win.location.search = '?conversation=direct-a';
+    assert.equal(consoleState().mobileConversationOpen, true);
+});
