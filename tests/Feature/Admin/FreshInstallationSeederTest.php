@@ -13,6 +13,7 @@ use App\Modules\Operations\Services\AdminDeletionService;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoSeeder;
 use Database\Seeders\FreshInstallationSeeder;
+use Database\Seeders\PublicNavigationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -51,7 +52,9 @@ final class FreshInstallationSeederTest extends TestCase
         $this->assertDatabaseCount('wallets', 3);
         $this->assertSame(0.0, (float) DB::table('wallets')->sum('cached_balance'));
         $this->assertDatabaseCount('landing_sections', 13);
-        $this->assertDatabaseCount('public_navigation_items', 4);
+        $this->assertDatabaseCount('public_navigation_items', 6);
+        $this->assertDatabaseHas('public_navigation_items', ['label' => 'Tournaments', 'url' => '/tournaments', 'is_active' => true]);
+        $this->assertDatabaseHas('system_settings', ['key' => 'cms.public_navigation_seeded', 'value' => '1']);
         $this->assertDatabaseCount('policy_pages', 5);
 
         $seededTables = [
@@ -79,6 +82,36 @@ final class FreshInstallationSeederTest extends TestCase
         $this->assertDatabaseCount('users', 3);
         $this->assertTrue(Hash::check('Admin@1234!', User::where('email', 'admin@playersaloons.com')->firstOrFail()->password));
         $this->assertTrue(Hash::check('Staff@1234!', User::where('email', 'staff@playersaloons.com')->firstOrFail()->password));
+    }
+
+    #[DataProvider('managedNavigationCases')]
+    public function test_navigation_marker_repair_preserves_existing_accounts_and_custom_menus(string $case): void
+    {
+        DB::table('system_settings')->updateOrInsert(['key' => 'cms.public_navigation_seeded'], ['value' => '1']);
+        if ($case === 'existing account') {
+            User::factory()->create();
+        } elseif ($case === 'renamed link') {
+            DB::table('public_navigation_items')->where('url', '/')->update(['label' => 'Welcome']);
+        } elseif ($case === 'disabled link') {
+            DB::table('public_navigation_items')->where('url', '/')->update(['is_active' => false]);
+        } else {
+            DB::table('public_navigation_items')->where('url', '/')->update(['deleted_at' => now()]);
+        }
+        $menu = DB::table('public_navigation_items')->orderBy('id')->get()->toArray();
+
+        $migration = require database_path('migrations/2026_11_12_000000_repair_fresh_navigation_seed_marker.php');
+        $migration->up();
+        $this->seed(PublicNavigationSeeder::class);
+
+        $this->assertDatabaseHas('system_settings', ['key' => 'cms.public_navigation_seeded', 'value' => '1']);
+        $this->assertEquals($menu, DB::table('public_navigation_items')->orderBy('id')->get()->toArray());
+    }
+
+    public static function managedNavigationCases(): array
+    {
+        return [
+            ['existing account'], ['renamed link'], ['disabled link'], ['deleted link'],
+        ];
     }
 
     public static function missingBootstrapCredentials(): array

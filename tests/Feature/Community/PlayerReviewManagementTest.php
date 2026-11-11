@@ -15,6 +15,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class PlayerReviewManagementTest extends TestCase
@@ -63,13 +64,20 @@ class PlayerReviewManagementTest extends TestCase
         $this->assertDatabaseHas('player_reviews', ['user_id' => $player->id, 'status' => 'pending', 'review' => 'Updated review requiring approval again.']);
     }
 
-    public function test_admin_can_approve_review_and_landing_displays_stars(): void
+    #[DataProvider('landingVersions')]
+    public function test_admin_can_approve_review_and_landing_displays_rating(string $version): void
     {
+        config(['features.landing.version' => $version]);
         $player = $this->user('public-reviewer@example.com', 'PLAYER');
         $admin = $this->user('review-admin@example.com', 'ADMIN');
         $review = PlayerReview::query()->create(['uuid' => Str::uuid(), 'user_id' => $player->id, 'rating' => 5, 'review' => 'Excellent competitive platform experience.', 'status' => 'pending']);
         Livewire::actingAs($admin)->test(PlayerReviewAdmin::class)->call('moderate', $review->id, 'approved')->assertSee('Review moderation updated.');
-        $this->get('/')->assertOk()->assertSee('Excellent competitive platform experience.')->assertSee('★★★★★');
+        $this->get('/')->assertOk()->assertSee('Excellent competitive platform experience.')->assertSee('5 out of 5');
+    }
+
+    public static function landingVersions(): array
+    {
+        return [['v3'], ['v4']];
     }
 
     public function test_moderation_notes_are_independent_and_preserve_other_review_drafts(): void

@@ -2,6 +2,13 @@ GATE: OPEN 15 (rounds used up)
 
 # Admin settings redesign verification
 
+Follow-up, 2026-11-12: the three PHP failures recorded below are resolved. The full PHP suite now passes **926 / 926 tests**, with **12,354 assertions**, using SQLite in memory. Pint and diff checks pass. The earlier design-gate result remains separate from this test repair.
+
+- Added a forward migration that clears the premature navigation seed marker only for an untouched, uninitialized three-link default menu. Fresh seeding now creates all six configured default links, including Tournaments. Existing accounts and renamed, disabled or deleted links are protected by regression tests.
+- Updated the review assertion to check the numeric rating used by the current landing UI, and covered both v3 and v4.
+- Updated public H2H navigation assertions to check the correct v3/v4 headers while retaining the check that authenticated dashboard navigation uses its own sidebar.
+- The migration was exercised only in the isolated tests; it was not applied to the running application's database. The earlier failures and counts below are the original review record.
+
 Updated `/admin/system-settings` with grouped nested navigation, one active settings panel, direct links and browser history. Switching panels retains unsaved inputs. Payment controls show the credentials for the selected deposit/payout providers. Existing Livewire save actions and authorization remain in place.
 
 ## Automated verification

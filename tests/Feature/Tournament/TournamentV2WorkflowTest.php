@@ -571,14 +571,16 @@ final class TournamentV2WorkflowTest extends TestCase
         self::assertSame(['change' => 'TournamentCancelled', 'match_uuid' => null], $event->broadcastWith());
     }
 
-    public function test_public_head_to_head_navigation_keeps_a_signed_in_player_in_the_public_shell(): void
+    #[DataProvider('publicShells')]
+    public function test_public_head_to_head_navigation_keeps_a_signed_in_player_in_the_public_shell(string $version, string $header): void
     {
+        config(['features.landing.version' => $version]);
         $player = $this->user('public-h2h-player@example.com', 'publich2hplayer', 'PLAYER');
 
         $this->actingAs($player)
             ->get(route('platform-h2h', ['view' => 'guest']))
             ->assertOk()
-            ->assertSee('id="public-nav"', false)
+            ->assertSee('class="'.$header.'"', false)
             ->assertDontSee('id="desktop-sidebar"', false);
 
         $this->actingAs($player)
@@ -593,8 +595,13 @@ final class TournamentV2WorkflowTest extends TestCase
                 'view' => 'guest',
             ]))
             ->assertOk()
-            ->assertSee('id="public-nav"', false)
+            ->assertSee('class="'.$header.'"', false)
             ->assertDontSee('id="desktop-sidebar"', false);
+    }
+
+    public static function publicShells(): array
+    {
+        return [['v3', 'guest-header'], ['v4', 'gr-header']];
     }
 
     public function test_admin_h2h_creation_forces_the_parent_to_two_players(): void
