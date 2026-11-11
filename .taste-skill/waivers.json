@@ -1,0 +1,17 @@
+[
+  {
+    "check": "overlap-text",
+    "target": "aside#admin-sidebar > div.shrink-0.p-4",
+    "reason": "The sidebar navigation clips its scrollable links above the fixed footer; offscreen link rectangles are not visible text overlap."
+  },
+  {
+    "check": "focus-ring",
+    "target": ".peer-focus\\:outline-none:is",
+    "reason": "This utility is present in the shared Tailwind bundle for other screens; the settings controls have explicit focus-visible outlines."
+  },
+  {
+    "check": "focus-ring",
+    "target": ".focus\\:outline-none:focus",
+    "reason": "This shared bundle utility does not remove the explicit focus-visible outlines provided by the settings controls."
+  }
+]

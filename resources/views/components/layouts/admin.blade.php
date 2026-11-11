@@ -2,12 +2,14 @@
     $accountTheme = auth()->user()?->theme ?? \App\Shared\Enums\UserTheme::default();
 @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $accountTheme->value }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="{{ $accountTheme->value }}" data-type="software">
 <head>
     <x-brand-icons />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="{{ $accountTheme->metaColor() }}">
+    <meta name="page-type" content="software">
+    <meta name="site-kind" content="software">
     <title>{{ $title ?? __('Admin Panel | GamersRival') }}</title>
 
     <x-site-fonts />
@@ -22,6 +24,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
 </head>
 <body class="font-sans theme-auth theme-admin bg-[#090d16] text-slate-100 h-screen overflow-hidden antialiased flex flex-col">
+    <a href="#admin-main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[300] focus:rounded-md focus:bg-blue-700 focus:px-4 focus:py-3 focus:text-white">{{ __('Skip to main content') }}</a>
 
     <!-- Mobile Header -->
     <header class="theme-header md:hidden flex items-center justify-between bg-[#0f172a] border-b border-slate-800 px-4 py-3 sticky top-0 z-50">
@@ -34,7 +37,7 @@
             <span class="text-[9px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-900/40 border border-indigo-700/30 rounded-full px-2 py-0.5">
                 {{ $mobileRole }}
             </span>
-            <button id="mobile-menu-toggle" class="p-2 text-slate-400 hover:text-white focus:outline-none">
+            <button id="mobile-menu-toggle" class="min-h-11 min-w-11 p-2 text-slate-400 hover:text-white focus-visible:outline-2 focus-visible:outline-blue-600" aria-label="{{ __('Open admin navigation') }}" aria-controls="mobile-menu" aria-expanded="false">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -52,14 +55,14 @@
                         <img src="/gamersrival-logo.webp" alt="GamersRival logo" width="32" height="32" style="width:32px;height:32px;object-fit:contain" class="object-contain">
                     </div>
                     <div>
-                        <h1 class="text-xs font-extrabold tracking-widest text-slate-200 uppercase">GamersRival</h1>
+                        <p class="text-xs font-extrabold tracking-widest text-slate-200 uppercase">GamersRival</p>
                         <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">{{ __('Control Terminal') }}</p>
                     </div>
                 </div>
             </div>
 
             <!-- Navigation Links -->
-            <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+            <nav class="flex-1 min-h-0 px-4 py-6 space-y-1.5 overflow-y-auto">
                 @php
                     $adminNavSections = [
                         [
@@ -154,7 +157,7 @@
                 $adminClockTimezone = app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value();
                 $adminClockNow = now($adminClockTimezone)->toIso8601String();
             @endphp
-            <div class="p-4 border-t border-slate-800 bg-[#0b0f19]/50 space-y-2">
+            <div class="shrink-0 p-4 border-t border-slate-800 bg-[#0b0f19]/50 space-y-2">
                 <div x-data="systemClock(@js(['now' => $adminClockNow, 'timezone' => $adminClockTimezone]))" class="rounded-lg border border-slate-800/70 bg-slate-900/40 px-4 py-2.5">
                     <div class="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-indigo-300"><i data-lucide="clock-3" class="h-3.5 w-3.5"></i>{{ __('App time (:timezone)', ['timezone' => $adminClockTimezone]) }}</div>
                     <p class="mt-1 font-mono text-sm font-bold text-slate-100" x-text="time"></p>
@@ -179,9 +182,9 @@
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
             <!-- Topbar (Desktop only) -->
             <header class="theme-header hidden md:flex h-16 border-b border-slate-800 bg-[#0f172a] px-8 items-center justify-between sticky top-0 z-30">
-                <div class="flex items-center space-x-3">
+                <div class="flex min-w-0 items-center space-x-3">
                     <span class="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
-                    <h2 class="font-extrabold text-sm uppercase tracking-widest text-slate-200">
+                    <h2 class="truncate font-extrabold text-sm uppercase tracking-widest text-slate-200">
                         {{ $admin_title ?? __('System Administration') }}
                     </h2>
                 </div>
@@ -207,7 +210,7 @@
                             $pulseClass = '';
                         }
                     @endphp
-                    <div class="flex items-center space-x-2 text-xs bg-slate-900 border border-slate-800 rounded-full px-3 py-1.5 text-slate-400">
+                    <div class="hidden xl:flex items-center space-x-2 text-xs bg-slate-900 border border-slate-800 rounded-full px-3 py-1.5 text-slate-400">
                         <span class="w-2 h-2 rounded-full {{ $statusColor }} {{ $pulseClass }}"></span>
                         <span>{{ $systemStatus }}</span>
                     </div>
@@ -230,7 +233,7 @@
                             <div class="w-9 h-9 rounded-full bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-300 text-xs font-bold shrink-0">
                                 {{ strtoupper(substr(auth()->user()?->username ?? 'A', 0, 2)) }}
                             </div>
-                            <div class="flex flex-col items-start min-w-0">
+                            <div class="hidden lg:flex flex-col items-start min-w-0 max-w-40">
                                 <span class="text-xs font-semibold text-slate-200 truncate leading-tight">{{ auth()->user()?->username }}</span>
                                 <span class="text-[9px] font-semibold uppercase tracking-wider {{ $roleClass }} inline-flex items-center gap-1 border rounded-full px-2 py-0.5 mt-1">
                                     <i data-lucide="shield" class="w-2.5 h-2.5"></i>
@@ -269,7 +272,7 @@
             </header>
 
             <!-- Main Content Container -->
-            <main class="flex-1 p-6 md:p-8 overflow-y-auto min-h-0">
+            <main id="admin-main" tabindex="-1" class="flex-1 p-6 md:p-8 overflow-y-auto min-h-0">
                 {{ $slot }}
             </main>
         </div>
@@ -286,7 +289,7 @@
                     </div>
                     <span class="font-extrabold tracking-widest text-slate-200 uppercase text-xs">GamersRival</span>
                 </div>
-                <button id="mobile-menu-close" class="p-2 text-slate-400 hover:text-white">
+                <button id="mobile-menu-close" class="min-h-11 min-w-11 p-2 text-slate-400 hover:text-white" aria-label="{{ __('Close admin navigation') }}">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -382,11 +385,15 @@
             if(toggle && menu) {
                 toggle.addEventListener('click', () => {
                     menu.classList.remove('hidden');
+                    toggle.setAttribute('aria-expanded', 'true');
+                    close?.focus();
                 });
             }
 
             const closeMenu = () => {
                 if(menu) menu.classList.add('hidden');
+                toggle?.setAttribute('aria-expanded', 'false');
+                toggle?.focus();
             };
 
             if(close) close.addEventListener('click', closeMenu);

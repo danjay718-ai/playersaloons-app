@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './admin-settings.css';
 
 /* ───────────────────────────────────
    PREVENT GLOBAL HORIZONTAL SCROLL

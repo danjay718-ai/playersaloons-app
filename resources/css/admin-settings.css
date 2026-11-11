@@ -1,0 +1,134 @@
+/* Settings use the account palette and one shared control style. */
+.admin-settings {
+    --settings-action: #1d4ed8;
+    --settings-action-hover: #1e40af;
+    --settings-selected: rgba(37, 99, 235, .1);
+    --settings-indicator: #93c5fd;
+    --settings-success: #34d399;
+    max-width: 1240px;
+    margin-inline: auto;
+    color: var(--theme-text);
+    font-size: 14px;
+    line-height: 1.6;
+}
+html[data-theme='light'] .admin-settings { --theme-text-muted: #475569; --settings-indicator: #1d4ed8; --settings-success: #047857; }
+.admin-settings [x-cloak] { display: none !important; }
+.settings-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+.settings-eyebrow { display: flex; gap: 10px; color: var(--theme-text-muted); font-size: 12px; margin-bottom: 12px; }
+.settings-heading h1 { color: var(--theme-text-strong); font-size: clamp(26px, 3vw, 32px); line-height: 1.2; font-weight: 650; letter-spacing: -.035em; }
+.settings-heading > div > p:last-child { margin-top: 10px; color: var(--theme-text-muted); }
+.settings-access { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border: 1px solid var(--theme-border); border-radius: 6px; font-size: 12px; white-space: nowrap; }
+.settings-access svg, .settings-access i { width: 15px; height: 15px; }
+.settings-workspace { display: grid; gap: 28px; align-items: start; }
+.settings-navigation { min-width: 0; }
+.settings-mobile-label { display: block; margin-bottom: 8px; font-weight: 600; }
+.settings-desktop-nav { display: none; }
+.settings-content { min-width: 0; }
+.settings-panel-intro { margin-bottom: 22px; }
+.settings-panel-intro h2 { color: var(--theme-text-strong); font-weight: 600; font-size: 20px; letter-spacing: -.02em; }
+.settings-panel-intro p { margin-top: 4px; color: var(--theme-text-muted); font-size: 13px; }
+.admin-settings .settings-content > section {
+    border: 1px solid var(--theme-border);
+    background: var(--theme-panel);
+    border-radius: 10px;
+    padding: 26px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, .02);
+}
+.admin-settings .settings-content > section > h3,
+.settings-card-header h3 { color: var(--theme-text-strong); font-size: 17px; line-height: 1.5; font-weight: 600; letter-spacing: -.015em; }
+.admin-settings .settings-content > section > p,
+.settings-card-header p { color: var(--theme-text-muted); font-size: 13px; line-height: 1.7; }
+.admin-settings .settings-content > section > p:first-child { margin-bottom: 7px; font-size: 11px; letter-spacing: .06em; }
+.admin-settings .settings-content > section > p + h3 { margin-top: 0; }
+.admin-settings label:not(.settings-provider, .settings-toggle-row) { font-weight: 500; font-size: 13px; text-transform: none; letter-spacing: normal; color: var(--theme-text); }
+.admin-settings :is(input:not([type='radio'], [type='checkbox']), select) { min-height: 44px; width: 100%; min-width: 0; border: 1px solid var(--theme-border); border-radius: 6px; padding: 10px 12px; background: var(--theme-panel-soft); color: var(--theme-text-strong); font-size: 13px; }
+.admin-settings :is(input, select, button, a):focus-visible { outline: 2px solid var(--settings-indicator); outline-offset: 3px; }
+.admin-settings input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--settings-action); flex-shrink: 0; }
+.settings-form-fields { min-width: 0; display: grid; gap: 18px; }
+.admin-settings fieldset:disabled { opacity: .7; }
+.admin-settings button { cursor: pointer; transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease; }
+.admin-settings button:disabled { opacity: .55; cursor: wait; }
+.admin-settings .settings-save { display: inline-flex; align-items: center; justify-content: center; justify-self: start; min-height: 44px; border-radius: 6px; background: var(--settings-action); padding: 11px 18px; border: 1px solid var(--settings-action); color: white; font-size: 13px; font-weight: 600; line-height: 1.5; }
+.admin-settings .settings-save:hover:not(:disabled) { background: var(--settings-action-hover); border-color: var(--settings-action-hover); transform: translateY(-1px); }
+.admin-settings button:active:not(:disabled) { transform: translateY(1px); }
+.settings-progress { color: var(--theme-text-muted); font-size: 13px; }
+.settings-notice, .settings-error-summary { display: flex; align-items: center; gap: 9px; margin-bottom: 20px; padding: 12px 16px; border-radius: 6px; background: var(--theme-panel); border: 1px solid #10b981; color: var(--theme-text); }
+.settings-notice svg { width: 18px; height: 18px; color: #10b981; }
+.settings-error-summary { border-color: #ef4444; }
+.settings-error { color: #ef4444; font-size: 13px; margin-top: 6px; }
+.admin-settings .settings-content > .settings-payment-panel { padding: 0; overflow: hidden; }
+.settings-card-header { display: flex; align-items: start; justify-content: space-between; gap: 20px; padding: 24px 26px; border-bottom: 1px solid var(--theme-border); }
+.settings-card-header p { margin-top: 6px; max-width: 490px; }
+.settings-tag { border-radius: 4px; background: var(--theme-panel-soft); padding: 4px 8px; font-size: 10px; white-space: nowrap; border: 1px solid var(--theme-border); color: var(--theme-text-muted); }
+.settings-payment-body { padding: 26px; min-width: 0; }
+.settings-subheading { display: flex; gap: 12px; align-items: start; margin-bottom: 20px; }
+.settings-step { display: grid; place-items: center; flex-shrink: 0; width: 29px; height: 29px; border: 1px solid var(--theme-border); border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--theme-text-muted); }
+.settings-subheading h4 { font-size: 14px; font-weight: 600; color: var(--theme-text-strong); }
+.settings-subheading p { margin-top: 2px; font-size: 12px; color: var(--theme-text-muted); }
+.settings-provider-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.settings-provider { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--theme-border); border-radius: 7px; padding: 17px; cursor: pointer; transition: background-color 150ms ease, border-color 150ms ease; }
+.settings-provider:hover { background: var(--theme-panel-soft); }
+.settings-provider.is-selected { border-color: var(--settings-indicator); background: var(--settings-selected); }
+.settings-provider input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.settings-provider:focus-within { outline: 2px solid var(--settings-indicator); outline-offset: 3px; }
+.settings-provider strong { display: block; font-size: 17px; font-weight: 650; letter-spacing: -.025em; color: var(--theme-text-strong); }
+.settings-provider small { display: block; font-size: 11px; color: var(--theme-text-muted); margin-top: 3px; }
+.settings-choice { width: 17px; height: 17px; flex-shrink: 0; border: 1px solid var(--theme-border); border-radius: 50%; background: var(--theme-panel); }
+.is-selected .settings-choice { border: 5px solid var(--settings-indicator); }
+.settings-toggle-row { display: flex; justify-content: space-between; gap: 15px; align-items: center; padding-block: 0 22px; }
+.settings-toggle-row strong { font-size: 13px; font-weight: 500; }
+.settings-toggle-row small { display: block; color: var(--theme-text-muted); font-size: 12px; margin-top: 2px; }
+.settings-credential-grid { display: grid; gap: 18px; }
+.settings-field-label { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.settings-credential-status { color: var(--theme-text-muted); font-size: 10px; }
+.settings-credential-status.is-configured { color: var(--settings-success); }
+.settings-secret { display: flex; position: relative; }
+.admin-settings .settings-secret input { padding-right: 65px; }
+.settings-secret button { position: absolute; right: 3px; top: 0; bottom: 0; min-width: 56px; color: var(--theme-text-muted); font-size: 11px; font-weight: 600; }
+.settings-secret button:hover { color: var(--theme-text-strong); }
+.settings-help { display: flex; align-items: start; gap: 6px; margin-top: 12px; color: var(--theme-text-muted); font-size: 12px; line-height: 1.7; }
+.settings-help svg { width: 13px; height: 13px; margin-top: 4px; flex-shrink: 0; }
+.settings-divider { margin-block: 26px; border-top: 1px solid var(--theme-border); }
+.settings-payout-fields { display: grid; gap: 20px; }
+.admin-settings .settings-file { padding: 0; font-size: 12px; }
+.settings-file::file-selector-button { min-height: 44px; border: 0; border-right: 1px solid var(--theme-border); padding: 10px 14px; margin-right: 12px; background: var(--theme-panel-soft); color: var(--theme-text-strong); cursor: pointer; font-weight: 600; }
+.settings-info { padding: 12px 14px; background: var(--theme-panel-soft); border-left: 2px solid var(--settings-action); color: var(--theme-text-muted); font-size: 12px; }
+.settings-endpoint + .settings-endpoint { margin-top: 16px; }
+.settings-endpoint > label { display: block; margin-bottom: 8px; }
+.settings-endpoint > div { display: flex; gap: 8px; }
+.admin-settings .settings-endpoint input { font-family: ui-monospace, monospace; font-size: 11px; }
+.settings-copy { flex-shrink: 0; min-height: 44px; border: 1px solid var(--theme-border); border-radius: 6px; padding: 10px 14px; color: var(--theme-text); font-size: 12px; font-weight: 500; }
+.settings-copy:hover { background: var(--theme-panel-soft); }
+.settings-card-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px 26px; border-top: 1px solid var(--theme-border); background: var(--theme-panel-soft); }
+.settings-card-footer p { max-width: 275px; font-size: 11px; color: var(--theme-text-muted); }
+.settings-card-footer .settings-save { flex-shrink: 0; }
+@media (min-width: 1200px) {
+    .settings-workspace { grid-template-columns: 190px minmax(0, 1fr); gap: 32px; }
+    .settings-navigation { position: sticky; top: 0; }
+    .settings-mobile-label, .settings-mobile-select { display: none; }
+    .settings-desktop-nav { display: block; }
+    .settings-nav-group + .settings-nav-group { margin-top: 26px; }
+    .settings-nav-group > p { color: var(--theme-text-muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 9px; padding-left: 12px; }
+    .settings-nav-group ul { border-left: 1px solid var(--theme-border); margin-left: 12px; padding-left: 8px; }
+    .settings-nav-group a { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 10px; border-radius: 5px; font-size: 12px; color: var(--theme-text-muted); transition: color 150ms ease, background-color 150ms ease; }
+    .settings-nav-group a:hover { background: var(--theme-panel-soft); color: var(--theme-text-strong); }
+    .settings-nav-group a[aria-current='page'] { background: var(--settings-selected); color: var(--settings-indicator); font-weight: 600; }
+    .settings-nav-group svg, .settings-nav-group i { width: 15px; height: 15px; flex-shrink: 0; }
+}
+@media (max-width: 639px) {
+    .settings-heading { align-items: start; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+    .settings-workspace { gap: 22px; }
+    .admin-settings .settings-content > section { padding: 20px; }
+    .settings-card-header { padding: 20px; flex-direction: column; gap: 10px; }
+    .settings-payment-body { padding: 20px; }
+    .settings-provider-options { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .settings-provider { padding: 14px; }
+    .settings-card-footer { padding: 20px; align-items: stretch; flex-direction: column; gap: 14px; }
+    .admin-settings .settings-save { width: 100%; }
+    .settings-endpoint > div { flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .admin-settings :is(button, a, label) { transition: none; }
+    .admin-settings button:hover:not(:disabled), .admin-settings button:active:not(:disabled) { transform: none; }
+}
