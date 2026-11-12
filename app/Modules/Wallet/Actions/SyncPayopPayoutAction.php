@@ -17,7 +17,13 @@ class SyncPayopPayoutAction
     public function execute(string $reference, ?string $expectedUuid = null): void
     {
         // Never trust the IPN's status or bank details; query the authenticated merchant API.
-        $data = app(PayopPayoutService::class)->fetch($reference);
+        $pending = Withdrawal::query()->where('payout_provider', 'payop')->where(function ($query) use ($reference, $expectedUuid): void {
+            $query->where('payout_reference', $reference);
+            if ($expectedUuid !== null) {
+                $query->orWhere('uuid', $expectedUuid);
+            }
+        })->first();
+        $data = app(PayopPayoutService::class)->fetch($reference, $pending?->gatewayConfiguration?->values());
         $uuid = $data['metadata']['internalWithdrawalId'] ?? null;
         if (! is_string($uuid) || ($expectedUuid !== null && $uuid !== $expectedUuid)) {
             throw new LogicException('PayOp payout has no matching withdrawal reference.');

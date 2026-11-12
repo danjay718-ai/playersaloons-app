@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Operations\Services\SystemSettings;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use App\Modules\Tournament\Services\TournamentTimezone;
 use App\Modules\Wallet\Actions\UpdatePaymentSettingsAction;
 use App\Modules\Wallet\Services\PaymentSettings;
 use App\Shared\Support\Currency;
 use DateTimeZone;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
@@ -28,6 +30,8 @@ class SystemSettingsAdmin extends AdminComponent
     public bool $paymentsEnabled = true;
 
     public array $paymentCredentials = [];
+
+    public array $resetPaymentCredentials = [];
 
     public string $currencyCode = 'EUR';
 
@@ -73,38 +77,39 @@ class SystemSettingsAdmin extends AdminComponent
 
     public function mount(): void
     {
+        $values = app(SystemSettings::class)->all();
         $payments = app(PaymentSettings::class);
         $this->paymentProvider = $payments->provider();
         $this->paymentsEnabled = $payments->enabled();
         $this->payoutProvider = $payments->payoutProvider();
         $this->currencyCode = Currency::code();
-        $settings = SystemSetting::query()->whereIn('key', ['referral.enabled', 'referral.referrer_reward', 'referral.referred_reward'])->pluck('value', 'key');
+        $settings = $values;
         $this->referralEnabled = filter_var($settings['referral.enabled'] ?? true, FILTER_VALIDATE_BOOL);
         $this->referrerReward = (string) ($settings['referral.referrer_reward'] ?? '5.00');
         $this->referredReward = (string) ($settings['referral.referred_reward'] ?? '2.00');
-        $feeSettings = SystemSetting::query()->whereIn('key', ['deposit_fee.enabled', 'deposit_fee.fixed', 'deposit_fee.percentage'])->pluck('value', 'key');
+        $feeSettings = $values;
         $this->depositFeeEnabled = filter_var($feeSettings['deposit_fee.enabled'] ?? false, FILTER_VALIDATE_BOOL);
         $this->depositFeeFixed = (string) ($feeSettings['deposit_fee.fixed'] ?? '0.00');
         $this->depositFeePercentage = (string) ($feeSettings['deposit_fee.percentage'] ?? '0.00');
 
         $this->platformCommissionPercentage = (string) (
-            SystemSetting::query()->where('key', 'platform.commission_percentage')->value('value')
-            ?? SystemSetting::query()->where('key', 'h2h.commission_percentage')->value('value')
+            ($values['platform.commission_percentage'] ?? null)
+            ?? ($values['h2h.commission_percentage'] ?? null)
             ?? '10.00'
         );
 
-        $this->defaultWaitingResultTime = (int) (SystemSetting::query()->where('key', 'tournament.waiting_result_time_default')->value('value') ?? 30);
+        $this->defaultWaitingResultTime = (int) (($values['tournament.waiting_result_time_default'] ?? null) ?? 30);
         $this->tournamentTimezone = app(TournamentTimezone::class)->value();
 
-        $langSettings = SystemSetting::query()->whereIn('key', ['language_switcher.show_guest', 'language_switcher.show_admin'])->pluck('value', 'key');
+        $langSettings = $values;
         $this->showLanguageSwitcherGuest = filter_var($langSettings['language_switcher.show_guest'] ?? false, FILTER_VALIDATE_BOOL);
         $this->showLanguageSwitcherAdmin = filter_var($langSettings['language_switcher.show_admin'] ?? false, FILTER_VALIDATE_BOOL);
 
-        $authSettings = SystemSetting::query()->whereIn('key', ['auth.login_max_attempts', 'auth.login_lockout_minutes'])->pluck('value', 'key');
+        $authSettings = $values;
         $this->loginMaxAttempts = (int) ($authSettings['auth.login_max_attempts'] ?? 5);
         $this->loginLockoutMinutes = (int) ($authSettings['auth.login_lockout_minutes'] ?? 15);
 
-        $notificationSettings = SystemSetting::query()->whereIn('key', ['notifications.dispute_email', 'notifications.dispute_name'])->pluck('value', 'key');
+        $notificationSettings = $values;
         $this->disputeNotificationEmail = (string) ($notificationSettings['notifications.dispute_email'] ?? 'info@playersaloons.com');
         $this->disputeNotificationName = (string) ($notificationSettings['notifications.dispute_name'] ?? 'PlayerSaloons Disputes');
     }
@@ -126,8 +131,9 @@ class SystemSettingsAdmin extends AdminComponent
             }
             $credentials['payop.payout_certificate'] = base64_encode($certificate);
         }
-        $action->execute($this->actor(), $this->paymentProvider, $this->paymentsEnabled, $credentials, $this->payoutProvider);
+        $action->execute($this->actor(), $this->paymentProvider, $this->paymentsEnabled, $credentials, $this->payoutProvider, $this->resetPaymentCredentials);
         $this->paymentCredentials = [];
+        $this->resetPaymentCredentials = [];
         $this->payopPayoutCertificate = null;
         session()->flash('success', __('Payment settings updated.'));
     }
@@ -136,10 +142,18 @@ class SystemSettingsAdmin extends AdminComponent
     {
         $this->authorizeManagement();
         $this->validate(['currencyCode' => ['required', 'in:EUR,GBP,USD']]);
-        SystemSetting::query()->updateOrCreate(
-            ['key' => 'currency.code'],
-            ['value' => $this->currencyCode, 'updated_by' => Auth::id()]
-        );
+        DB::transaction(function (): void {
+            $setting = SystemSetting::query()->firstOrCreate(['key' => 'currency.code'], ['value' => Currency::code()]);
+            $setting = SystemSetting::query()->lockForUpdate()->findOrFail($setting->id);
+            $hasMoney = SystemSetting::query()->where('key', 'currency.locked')->value('value') === 'true'
+                || DB::table('ledger_entries')->exists() || DB::table('payment_checkouts')->exists()
+                || DB::table('withdrawals')->exists() || DB::table('wallets')->where('cached_balance', '!=', 0)->exists()
+                || DB::table('tournaments')->where('entry_fee', '>', 0)->orWhere('prize_pool', '>', 0)->exists();
+            if ($setting->value !== $this->currencyCode && $hasMoney) {
+                throw ValidationException::withMessages(['currencyCode' => __('Currency cannot change after financial activity has started.')]);
+            }
+            app(SystemSettings::class)->save($this->actor(), ['currency.code' => $this->currencyCode]);
+        });
         Currency::forget();
         session()->flash('success', __('Currency settings updated.'));
         $this->redirect('/admin/system-settings');
@@ -149,10 +163,7 @@ class SystemSettingsAdmin extends AdminComponent
     {
         $this->authorizeManagement();
         $this->validate(['defaultWaitingResultTime' => ['required', 'integer', 'min:1', 'max:1440']]);
-        SystemSetting::query()->updateOrCreate(
-            ['key' => 'tournament.waiting_result_time_default'],
-            ['value' => (string) $this->defaultWaitingResultTime, 'updated_by' => Auth::id()]
-        );
+        app(SystemSettings::class)->save($this->actor(), ['tournament.waiting_result_time_default' => (string) $this->defaultWaitingResultTime]);
         session()->flash('success', __('Tournament timing settings updated.'));
     }
 
@@ -160,10 +171,7 @@ class SystemSettingsAdmin extends AdminComponent
     {
         $this->authorizeManagement();
         $this->validate(['tournamentTimezone' => ['required', 'timezone']]);
-        SystemSetting::query()->updateOrCreate(
-            ['key' => 'tournament.timezone'],
-            ['value' => $this->tournamentTimezone, 'updated_by' => Auth::id()]
-        );
+        app(SystemSettings::class)->save($this->actor(), ['tournament.timezone' => $this->tournamentTimezone]);
         $timezone->forget();
         session()->flash('success', __('App timezone updated. Refresh other open pages to use the new timezone.'));
         $this->redirect('/admin/system-settings');
@@ -176,10 +184,7 @@ class SystemSettingsAdmin extends AdminComponent
             'platformCommissionPercentage' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
         ]);
 
-        SystemSetting::query()->updateOrCreate(
-            ['key' => 'platform.commission_percentage'],
-            ['value' => number_format((float) $this->platformCommissionPercentage, 2, '.', ''), 'updated_by' => Auth::id()]
-        );
+        app(SystemSettings::class)->save($this->actor(), ['platform.commission_percentage' => number_format((float) $this->platformCommissionPercentage, 2, '.', '')]);
 
         session()->flash('success', 'Platform commission settings updated.');
     }
@@ -193,13 +198,11 @@ class SystemSettingsAdmin extends AdminComponent
             'depositFeePercentage' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
         ]);
 
-        foreach ([
+        app(SystemSettings::class)->save($this->actor(), [
             'deposit_fee.enabled' => $this->depositFeeEnabled ? 'true' : 'false',
             'deposit_fee.fixed' => number_format((float) $this->depositFeeFixed, 2, '.', ''),
             'deposit_fee.percentage' => number_format((float) $this->depositFeePercentage, 2, '.', ''),
-        ] as $key => $value) {
-            SystemSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'updated_by' => Auth::id()]);
-        }
+        ]);
 
         session()->flash('success', 'Deposit fee settings updated.');
     }
@@ -213,13 +216,11 @@ class SystemSettingsAdmin extends AdminComponent
             'referredReward' => ['required', 'numeric', 'min:0', 'max:10000', 'decimal:0,2'],
         ]);
 
-        foreach ([
+        app(SystemSettings::class)->save($this->actor(), [
             'referral.enabled' => $this->referralEnabled ? 'true' : 'false',
             'referral.referrer_reward' => number_format((float) $this->referrerReward, 2, '.', ''),
             'referral.referred_reward' => number_format((float) $this->referredReward, 2, '.', ''),
-        ] as $key => $value) {
-            SystemSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'updated_by' => Auth::id()]);
-        }
+        ]);
 
         session()->flash('success', 'Referral settings updated.');
     }
@@ -232,12 +233,10 @@ class SystemSettingsAdmin extends AdminComponent
             'showLanguageSwitcherAdmin' => ['boolean'],
         ]);
 
-        foreach ([
+        app(SystemSettings::class)->save($this->actor(), [
             'language_switcher.show_guest' => $this->showLanguageSwitcherGuest ? 'true' : 'false',
             'language_switcher.show_admin' => $this->showLanguageSwitcherAdmin ? 'true' : 'false',
-        ] as $key => $value) {
-            SystemSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'updated_by' => Auth::id()]);
-        }
+        ]);
 
         session()->flash('success', 'Language switcher settings updated.');
     }
@@ -250,12 +249,10 @@ class SystemSettingsAdmin extends AdminComponent
             'loginLockoutMinutes' => ['required', 'integer', 'min:1', 'max:1440'],
         ]);
 
-        foreach ([
+        app(SystemSettings::class)->save($this->actor(), [
             'auth.login_max_attempts' => (string) $this->loginMaxAttempts,
             'auth.login_lockout_minutes' => (string) $this->loginLockoutMinutes,
-        ] as $key => $value) {
-            SystemSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'updated_by' => Auth::id()]);
-        }
+        ]);
 
         session()->flash('success', 'Authentication security settings updated.');
     }
@@ -268,12 +265,10 @@ class SystemSettingsAdmin extends AdminComponent
             'disputeNotificationName' => ['required', 'string', 'max:100'],
         ]);
 
-        foreach ([
+        app(SystemSettings::class)->save($this->actor(), [
             'notifications.dispute_email' => strtolower(trim($this->disputeNotificationEmail)),
             'notifications.dispute_name' => trim($this->disputeNotificationName),
-        ] as $key => $value) {
-            SystemSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'updated_by' => Auth::id()]);
-        }
+        ]);
 
         session()->flash('success', 'Dispute notification settings updated.');
     }
@@ -310,6 +305,7 @@ class SystemSettingsAdmin extends AdminComponent
                 'stripe_webhook_secret' => ['key' => 'stripe.webhook_secret', 'label' => 'Stripe webhook secret'],
                 'payop_payout_token' => ['key' => 'payop.payout_token', 'label' => 'PayOp payout JWT token'],
             ],
+            'paymentCredentialSources' => collect(PaymentSettings::CREDENTIALS)->mapWithKeys(fn (string $key): array => [$key => app(PaymentSettings::class)->source($key)])->all(),
             'configuredPaymentCredentials' => collect(PaymentSettings::CREDENTIALS)->mapWithKeys(
                 fn (string $key): array => [$key => app(PaymentSettings::class)->credential($key) !== '']
             )->all(),

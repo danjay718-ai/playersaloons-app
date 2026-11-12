@@ -87,6 +87,7 @@
                                 <div wire:key="payment-{{ $field }}" x-show="deposit === @js(str_starts_with($field, 'payop_') ? 'payop' : 'stripe')" x-cloak x-data="{ reveal: false }">
                                     <div class="settings-field-label"><label for="payment-{{ $field }}">{{ __($details['label']) }}</label><span class="settings-credential-status {{ $configuredPaymentCredentials[$details['key']] ? 'is-configured' : '' }}">{{ $configuredPaymentCredentials[$details['key']] ? __('Configured') : __('Not configured') }}</span></div>
                                     <div class="settings-secret"><input id="payment-{{ $field }}" :type="reveal ? 'text' : 'password'" type="password" wire:model="paymentCredentials.{{ $field }}" autocomplete="new-password" spellcheck="false" aria-describedby="credential-help"><button type="button" @click="reveal = !reveal" :aria-pressed="reveal" aria-label="{{ __('Show or hide :credential', ['credential' => __($details['label'])]) }}"><span x-text="reveal ? @js(__('Hide')) : @js(__('Show'))"></span></button></div>
+                                    <label class="settings-help"><input type="checkbox" wire:model="resetPaymentCredentials" value="{{ $details['key'] }}">{{ __('Use environment value instead of saved override') }} · {{ $paymentCredentialSources[$details['key']] === 'database' ? __('Saved override') : __('Environment') }}</label>
                                     @error('credentials.'.$details['key'])<p role="alert" class="settings-error">{{ $message }}</p>@enderror
                                 </div>
                             @endforeach
@@ -108,6 +109,7 @@
                             <div x-data="{ reveal: false }">
                                 <div class="settings-field-label"><label for="payment-payop_payout_token">{{ __('PayOp payout JWT token') }}</label><span class="settings-credential-status {{ $configuredPaymentCredentials['payop.payout_token'] ? 'is-configured' : '' }}">{{ $configuredPaymentCredentials['payop.payout_token'] ? __('Configured') : __('Not configured') }}</span></div>
                                 <div class="settings-secret"><input id="payment-payop_payout_token" :type="reveal ? 'text' : 'password'" type="password" wire:model="paymentCredentials.payop_payout_token" autocomplete="new-password" spellcheck="false"><button type="button" @click="reveal = !reveal" :aria-pressed="reveal" aria-label="{{ __('Show or hide :credential', ['credential' => __('PayOp payout JWT token')]) }}"><span x-text="reveal ? @js(__('Hide')) : @js(__('Show'))"></span></button></div>
+                                <label class="settings-help"><input type="checkbox" wire:model="resetPaymentCredentials" value="payop.payout_token">{{ __('Use environment value instead of saved override') }} · {{ $paymentCredentialSources['payop.payout_token'] === 'database' ? __('Saved override') : __('Environment') }}</label>
                                 @error('credentials.payop.payout_token')<p role="alert" class="settings-error">{{ $message }}</p>@enderror
                             </div>
                             <div>
@@ -115,6 +117,7 @@
                                 <input id="payop-payout-certificate" type="file" wire:model="payopPayoutCertificate" class="settings-file">
                                 <p class="settings-help">{{ __('Upload the binary x25519.pub certificate from PayOp Settings → Certificates. Leave empty to keep the saved certificate.') }}</p>
                                 <p wire:loading wire:target="payopPayoutCertificate" role="status" class="settings-progress">{{ __('Uploading certificate...') }}</p>
+                                <label class="settings-help"><input type="checkbox" wire:model="resetPaymentCredentials" value="payop.payout_certificate">{{ __('Use environment value instead of saved override') }} · {{ $paymentCredentialSources['payop.payout_certificate'] === 'database' ? __('Saved override') : __('Environment') }}</label>
                                 @error('payopPayoutCertificate')<p role="alert" class="settings-error">{{ $message }}</p>@enderror
                             </div>
                             <p class="settings-info">{{ __('PayOp bank payouts must be enabled for this merchant and currency. Gateway payout fees are paid from the merchant PayOp balance.') }}</p>
@@ -154,7 +157,7 @@
             </section>
             <section x-show="section === 'general'" x-cloak data-settings-panel="general" class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
                 <h3 class="text-xl font-bold text-white">{{ __('App currency') }}</h3>
-                <p class="mt-2 text-sm leading-6 text-slate-400">{{ __('Used for wallets, prizes, entry fees and new payments across admin and player pages. Existing amounts are not converted.') }}</p>
+                <p class="mt-2 text-sm leading-6 text-slate-400">{{ __('Used for wallets, prizes, entry fees and new payments across admin and player pages. Currency is locked after financial activity starts.') }}</p>
                 <form wire:submit="saveCurrencySettings" class="mt-5 space-y-4">
                     <fieldset @disabled(! $canManageSettings) class="settings-form-fields">
                         <label class="block text-xs font-bold text-slate-400" for="currencyCode">{{ __('Currency') }}</label>

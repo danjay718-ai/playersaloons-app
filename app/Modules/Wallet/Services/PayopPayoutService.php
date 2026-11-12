@@ -13,9 +13,9 @@ use LogicException;
 
 class PayopPayoutService
 {
-    private function client(): PendingRequest
+    private function client(?array $credentials = null): PendingRequest
     {
-        $token = app(PaymentSettings::class)->credential('payop.payout_token');
+        $token = $credentials['payout_token'] ?? app(PaymentSettings::class)->credential('payop.payout_token');
         if ($token === '') {
             throw new LogicException('PayOp payout token is not configured.');
         }
@@ -23,9 +23,9 @@ class PayopPayoutService
         return Http::acceptJson()->asJson()->withToken($token)->connectTimeout(5)->timeout(20);
     }
 
-    public function certificate(): string
+    public function certificate(?array $credentials = null): string
     {
-        $key = base64_decode(app(PaymentSettings::class)->credential('payop.payout_certificate'), true);
+        $key = base64_decode($credentials['payout_certificate'] ?? app(PaymentSettings::class)->credential('payop.payout_certificate'), true);
         if (! function_exists('sodium_crypto_box_seal') || $key === false || strlen($key) !== 32) {
             throw new LogicException('A valid PayOp payout certificate and Sodium are required.');
         }
@@ -34,10 +34,10 @@ class PayopPayoutService
         return $key;
     }
 
-    public function assertBankPayoutAvailable(string $currency): void
+    public function assertBankPayoutAvailable(string $currency, ?array $credentials = null): void
     {
-        $this->certificate();
-        $response = $this->client()->get('https://api.payop.com/v1/instrument-settings/payment-methods/available-withdrawal-for-user');
+        $this->certificate($credentials);
+        $response = $this->client($credentials)->get('https://api.payop.com/v1/instrument-settings/payment-methods/available-withdrawal-for-user');
         if (! $response->successful() || (int) $response->json('status') !== 1) {
             throw new LogicException('Unable to verify PayOp payout availability.');
         }
@@ -51,6 +51,7 @@ class PayopPayoutService
 
     public function submit(Withdrawal $withdrawal): string
     {
+        $credentials = $withdrawal->gatewayConfiguration?->values();
         $recipient = $withdrawal->payout_recipient;
         if (! is_array($recipient)) {
             throw new LogicException('Withdrawal bank details are missing.');
@@ -61,9 +62,9 @@ class PayopPayoutService
             'clientId' => $withdrawal->uuid,
             'metadata' => ['internalWithdrawalId' => $withdrawal->uuid],
         ]];
-        $encrypted = sodium_crypto_box_seal(json_encode($payload, JSON_THROW_ON_ERROR), $this->certificate());
+        $encrypted = sodium_crypto_box_seal(json_encode($payload, JSON_THROW_ON_ERROR), $this->certificate($credentials));
         // A stable key prevents double payment. Never retry with a fresh key after an uncertain response.
-        $response = $this->client()->withHeader('idempotency-key', $withdrawal->uuid)
+        $response = $this->client($credentials)->withHeader('idempotency-key', $withdrawal->uuid)
             ->post('https://api.payop.com/v1/withdrawals/create-mass', ['data' => base64_encode($encrypted)]);
         $reference = $response->json('data.0.id');
         if (in_array($response->status(), [400, 401, 403, 422], true)) {
@@ -76,9 +77,9 @@ class PayopPayoutService
         return $reference;
     }
 
-    public function fetch(string $reference): array
+    public function fetch(string $reference, ?array $credentials = null): array
     {
-        $response = $this->client()->get('https://api.payop.com/v1/withdrawals/user-withdrawals', ['query' => ['identifier' => $reference]]);
+        $response = $this->client($credentials)->get('https://api.payop.com/v1/withdrawals/user-withdrawals', ['query' => ['identifier' => $reference]]);
         if (! $response->successful() || (int) $response->json('status') !== 1 || ! is_array($response->json('data'))) {
             throw new LogicException('PayOp payout verification is unavailable.');
         }

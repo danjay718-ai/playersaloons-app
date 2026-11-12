@@ -51,12 +51,6 @@ class SystemSettingsSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'key' => 'feature.kyc_required',
-                'value' => 'true',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
                 'key' => 'referral.enabled',
                 'value' => 'true',
                 'created_at' => now(),

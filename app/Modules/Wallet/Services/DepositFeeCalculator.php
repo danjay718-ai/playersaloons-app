@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Wallet\Services;
 
-use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Operations\Services\SystemSettings;
 
 class DepositFeeCalculator
 {
@@ -12,9 +12,9 @@ class DepositFeeCalculator
     public function calculate(float $credit): array
     {
         $credit = max(0, $credit);
-        $enabled = filter_var(SystemSetting::query()->where('key', 'deposit_fee.enabled')->value('value') ?? false, FILTER_VALIDATE_BOOL);
-        $fixed = $enabled ? (float) (SystemSetting::query()->where('key', 'deposit_fee.fixed')->value('value') ?? 0) : 0;
-        $percentage = $enabled ? (float) (SystemSetting::query()->where('key', 'deposit_fee.percentage')->value('value') ?? 0) : 0;
+        $enabled = filter_var(app(SystemSettings::class)->get('deposit_fee.enabled') ?? false, FILTER_VALIDATE_BOOL);
+        $fixed = $enabled ? (float) (app(SystemSettings::class)->get('deposit_fee.fixed') ?? 0) : 0;
+        $percentage = $enabled ? (float) (app(SystemSettings::class)->get('deposit_fee.percentage') ?? 0) : 0;
         $fee = round($fixed + ($credit * $percentage / 100), 2);
 
         return [

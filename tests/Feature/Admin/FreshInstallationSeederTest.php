@@ -61,6 +61,7 @@ final class FreshInstallationSeederTest extends TestCase
             'migrations', 'roles', 'permissions', 'role_has_permissions', 'model_has_roles',
             'users', 'user_profiles', 'wallets', 'landing_sections', 'landing_section_items',
             'public_navigation_items', 'policy_pages', 'system_settings',
+            'payment_gateways', 'gateway_configurations', 'gateway_credentials',
         ];
         foreach (Schema::getTables() as $table) {
             if (! in_array($table['name'], $seededTables, true) && ! str_starts_with($table['name'], 'sqlite_')) {

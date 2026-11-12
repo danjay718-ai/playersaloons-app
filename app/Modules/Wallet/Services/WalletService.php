@@ -11,6 +11,7 @@ use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\WalletStatus;
+use App\Shared\Support\Currency;
 use App\Shared\Support\DecimalMoney;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +59,7 @@ class WalletService
             $currentBalance = (string) ($wallet->getAttribute('cached_balance') ?? '0.00');
             $newBalance = DecimalMoney::format(DecimalMoney::toMinor($currentBalance) + $amountMinor);
 
+            Currency::lockForFinancialActivity();
             $ledgerEntry = LedgerEntry::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'wallet_id' => $wallet->getKey(),
@@ -182,6 +184,7 @@ class WalletService
             // Store debit amount as negative in ledger entries
             $negativeAmount = DecimalMoney::format(-$amountMinor);
 
+            Currency::lockForFinancialActivity();
             $ledgerEntry = LedgerEntry::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'wallet_id' => $wallet->getKey(),

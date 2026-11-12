@@ -57,16 +57,16 @@ class CurrencyAndIncomeTest extends TestCase
         self::assertDatabaseMissing('system_settings', ['key' => 'currency.code']);
     }
 
-    public function test_currency_setting_applies_to_admin_player_and_both_competition_forms_without_converting_balances(): void
+    public function test_currency_can_be_selected_before_financial_activity_and_applies_to_new_records(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-17 10:00:00', 'UTC'));
         config()->set('features.tournament_v2.enabled', true);
         $player = $this->user('currency-player', 'PLAYER');
-        $wallet = $this->wallet($player, '20.00');
         Livewire::actingAs($this->admin)->test(SystemSettingsAdmin::class)
             ->set('currencyCode', 'GBP')->call('saveCurrencySettings')->assertHasNoErrors()
             ->assertRedirect('/admin/system-settings');
         self::assertSame('GBP', Currency::code());
+        $wallet = $this->wallet($player, '20.00');
         self::assertSame('20.00', $wallet->fresh()->cached_balance);
 
         $game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'currency-game', 'is_active' => true]);
@@ -104,13 +104,13 @@ class CurrencyAndIncomeTest extends TestCase
         $wallets->credit($player->fresh(), '5.00', LedgerType::PRIZE, Wallet::class, (string) $player->id);
         $wallets->credit($player->fresh(), '3.00', LedgerType::PLATFORM_COMMISSION, Wallet::class, (string) $player->id);
 
-        Livewire::actingAs($this->admin)->test(EscrowCashflowAdmin::class)
-            ->assertViewHas('totalFeeIncome', '16.00')
-            ->set('dateFrom', '2026-10-17')->set('dateTo', '2026-10-17')
+        $report = Livewire::actingAs($this->admin)->test(EscrowCashflowAdmin::class);
+        $report->assertViewHas('totalFeeIncome', '16.00');
+        $report->set('dateFrom', '2026-10-17')->set('dateTo', '2026-10-17')
             ->assertViewHas('serviceFeeIncome', fn ($value) => (float) $value === 10.0)
             ->assertViewHas('topUpFeeIncome', fn ($value) => (float) $value === 2.0)
-            ->assertViewHas('totalFeeIncome', '12.00')
-            ->set('typeFilter', LedgerType::DEPOSIT->value)->set('search', 'does not match')
+            ->assertViewHas('totalFeeIncome', '12.00');
+        $report->set('typeFilter', LedgerType::DEPOSIT->value)->set('search', 'does not match')
             ->assertViewHas('totalFeeIncome', '12.00');
     }
 
@@ -127,7 +127,7 @@ class CurrencyAndIncomeTest extends TestCase
             {
                 $this->params = $params;
 
-                return ['{"id":"cs_currency","object":"checkout.session","url":"https://checkout.stripe.test/currency"}', 200, []];
+                return [json_encode(['id' => 'cs_currency_'.$params['metadata']['currency'], 'object' => 'checkout.session', 'url' => 'https://checkout.stripe.test/currency']), 200, []];
             }
         };
         $original = ApiRequestor::httpClient();

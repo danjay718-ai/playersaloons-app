@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Wallet\Models\Deposit;
 use App\Modules\Wallet\Models\Wallet;
+use App\Modules\Wallet\Services\PaymentSettings;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -74,10 +75,11 @@ class StripeWebhookTest extends TestCase
     {
         SystemSetting::query()->create(['key' => 'payments.provider', 'value' => 'payop']);
         SystemSetting::query()->create(['key' => 'payments.enabled', 'value' => 'false']);
-        SystemSetting::query()->create([
-            'key' => 'payments.stripe.webhook_secret',
-            'value' => Crypt::encryptString($this->webhookSecret),
+        $settings = app(PaymentSettings::class);
+        $settings->current('stripe')->credentials()->where('name', 'webhook_secret')->update([
+            'value' => Crypt::encryptString($this->webhookSecret), 'uses_environment' => false,
         ]);
+        $settings->forget();
         config(['services.stripe.webhook_secret' => 'unused-environment-secret']);
         $wallet = $this->createWallet('10.00');
         $payload = $this->checkoutSessionPayload('cs_pending_switch', 2500, ['wallet_id' => (string) $wallet->getKey()]);

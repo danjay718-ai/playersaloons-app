@@ -57,7 +57,7 @@ class ProcessWithdrawalAction
         if ($withdrawal->payout_currency !== Currency::code()) {
             throw new LogicException('Withdrawal currency no longer matches the wallet currency.');
         }
-        $service->assertBankPayoutAvailable($withdrawal->payout_currency);
+        $service->assertBankPayoutAvailable($withdrawal->payout_currency, $withdrawal->gatewayConfiguration?->values());
         $claimed = DB::transaction(function () use ($withdrawal): bool {
             $locked = Withdrawal::query()->lockForUpdate()->findOrFail($withdrawal->getKey());
             if ($locked->payout_submitted_at !== null) {

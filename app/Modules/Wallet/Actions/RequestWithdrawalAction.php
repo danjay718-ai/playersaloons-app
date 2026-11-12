@@ -6,15 +6,18 @@ namespace App\Modules\Wallet\Actions;
 
 use App\Modules\Identity\Models\KycSubmission;
 use App\Modules\Identity\Models\User;
+use App\Modules\Operations\Services\SystemSettings;
 use App\Modules\Wallet\Events\WithdrawalRequested;
 use App\Modules\Wallet\Exceptions\InsufficientBalanceException;
 use App\Modules\Wallet\Exceptions\WithdrawalEligibilityException;
+use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Models\Withdrawal;
 use App\Modules\Wallet\Services\PaymentSettings;
 use App\Modules\Wallet\Services\PayopPayoutService;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\WithdrawalStatus;
 use App\Shared\Support\Currency;
+use App\Shared\Support\DecimalMoney;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -40,6 +43,10 @@ class RequestWithdrawalAction
             throw new WithdrawalEligibilityException('Unsupported withdrawal gateway.');
         }
         $currency = Currency::code();
+        if (! KycSubmission::query()->where('user_id', $user->id)->where('status', KycStatus::APPROVED)->exists()) {
+            throw new WithdrawalEligibilityException('KYC must be approved to request a withdrawal.', 'Your identity verification must be approved before you can withdraw. Check your verification status in Profile.');
+        }
+        $configuration = $provider === 'payop' ? app(PaymentSettings::class)->capture('payop') : null;
         if ($provider === 'payop') {
             if (is_string($recipient['iban'] ?? null)) {
                 $recipient['iban'] = strtoupper(str_replace(' ', '', $recipient['iban']));
@@ -61,7 +68,21 @@ class RequestWithdrawalAction
             $recipient['email'] = $user->email;
         }
 
-        return DB::transaction(function () use ($user, $amountFloat, $provider, $currency, $recipient): Withdrawal {
+        if ($provider === 'payop') {
+            try {
+                app(PayopPayoutService::class)->assertBankPayoutAvailable($currency, $configuration->values());
+            } catch (\LogicException $exception) {
+                throw new WithdrawalEligibilityException($exception->getMessage(), __('Bank withdrawals are currently unavailable. Please contact support.'));
+            }
+        }
+
+        return DB::transaction(function () use ($user, $amountFloat, $provider, $currency, $recipient, $configuration): Withdrawal {
+            // Verify sufficient balance
+            $wallet = Wallet::query()->where('user_id', $user->getKey())->lockForUpdate()->first();
+            if (! $wallet) {
+                throw new WithdrawalEligibilityException('User does not have a wallet.', 'Your wallet is unavailable. Please contact support.');
+            }
+
             // Verify KYC is approved
             $kyc = KycSubmission::query()
                 ->where('user_id', $user->getKey())
@@ -75,12 +96,6 @@ class RequestWithdrawalAction
                 );
             }
 
-            // Verify sufficient balance
-            $wallet = $user->wallet;
-            if (! $wallet) {
-                throw new WithdrawalEligibilityException('User does not have a wallet.', 'Your wallet is unavailable. Please contact support.');
-            }
-
             $currentBalance = (float) $wallet->getAttribute('cached_balance');
             if ($currentBalance < $amountFloat) {
                 throw new InsufficientBalanceException(
@@ -90,14 +105,22 @@ class RequestWithdrawalAction
                 );
             }
 
-            if ($provider === 'payop') {
-                try {
-                    app(PayopPayoutService::class)->assertBankPayoutAvailable($currency);
-                } catch (\LogicException $e) {
-                    throw new WithdrawalEligibilityException($e->getMessage(), __('Bank withdrawals are currently unavailable. Please contact support.'));
-                }
+            $policy = app(SystemSettings::class);
+            $minimum = DecimalMoney::toMinor((string) $policy->get('wallet.withdrawal_limit_min', '10.00'));
+            $maximum = DecimalMoney::toMinor((string) $policy->get('wallet.withdrawal_limit_max_daily', '1000.00'));
+            $minor = DecimalMoney::toMinor($amountFloat);
+            $today = now('UTC')->startOfDay();
+            // The wallet lock serializes all requests for this player, including the daily total check.
+            $requested = Withdrawal::query()->where('wallet_id', $wallet->id)
+                ->where('created_at', '>=', $today)->where('created_at', '<', $today->copy()->addDay())
+                ->whereNotIn('status', [WithdrawalStatus::REJECTED->value, WithdrawalStatus::FAILED->value])->sum('amount');
+            if ($minor < $minimum || $minor + DecimalMoney::toMinor((string) $requested) > $maximum) {
+                throw ValidationException::withMessages(['amount' => __('Withdrawal must meet the minimum and stay within your daily limit.')]);
             }
 
+            if (Currency::lockForFinancialActivity() !== $currency) {
+                throw ValidationException::withMessages(['amount' => __('Payment settings changed. Reload this page and try again.')]);
+            }
             $withdrawal = Withdrawal::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'wallet_id' => $wallet->getKey(),
@@ -105,6 +128,7 @@ class RequestWithdrawalAction
                 'amount' => $amountFloat,
                 'status' => WithdrawalStatus::PENDING,
                 'payout_provider' => $provider,
+                'gateway_configuration_id' => $configuration?->id,
                 'payout_currency' => $currency,
                 'payout_recipient' => $provider === 'payop' ? $recipient : null,
             ]);

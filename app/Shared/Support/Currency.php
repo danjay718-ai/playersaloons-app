@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Shared\Support;
 
 use App\Modules\Operations\Models\SystemSetting;
+use Illuminate\Support\Facades\DB;
 
 final class Currency
 {
@@ -23,6 +24,23 @@ final class Currency
         $request->attributes->set('app_currency', $code);
 
         return $code;
+    }
+
+    /** Freeze the denomination before the first payment or ledger write can race an admin change. */
+    public static function lockForFinancialActivity(): string
+    {
+        if (SystemSetting::query()->where('key', 'currency.locked')->value('value') === 'true') {
+            return self::code();
+        }
+
+        return DB::transaction(function (): string {
+            $setting = SystemSetting::query()->firstOrCreate(['key' => 'currency.code'], ['value' => self::code()]);
+            $setting = SystemSetting::query()->lockForUpdate()->findOrFail($setting->id);
+            SystemSetting::query()->updateOrCreate(['key' => 'currency.locked'], ['value' => 'true']);
+            self::forget();
+
+            return (string) $setting->value;
+        });
     }
 
     public static function symbol(): string

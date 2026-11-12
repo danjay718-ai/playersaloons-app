@@ -50,7 +50,8 @@ class PaymentGatewayTest extends TestCase
             ->assertSee('Payment settings updated.')
             ->assertDontSee('new-secret-value');
 
-        $stored = SystemSetting::query()->where('key', 'payments.payop.secret')->value('value');
+        $configuration = app(PaymentSettings::class)->current('payop');
+        $stored = $configuration->credentials->firstWhere('name', 'secret')->getRawOriginal('value');
         self::assertNotSame('new-secret-value', $stored);
         self::assertSame('new-secret-value', Crypt::decryptString($stored));
         self::assertSame('payop', app(PaymentSettings::class)->provider());
@@ -58,7 +59,8 @@ class PaymentGatewayTest extends TestCase
             ->assertSet('paymentCredentials', [])->assertDontSee('new-secret-value')
             ->call('savePaymentSettings')->assertHasNoErrors();
         self::assertSame('new-secret-value', app(PaymentSettings::class)->credential('payop.secret'));
-        $this->assertDatabaseHas('system_settings', ['key' => 'payments.payop.secret', 'updated_by' => $admin->id]);
+        $this->assertSame($admin->id, $configuration->updated_by);
+        $this->assertDatabaseMissing('system_settings', ['key' => 'payments.payop.secret']);
     }
 
     public function test_gateway_settings_reject_unknown_gateways_missing_keys_and_unauthorized_changes(): void

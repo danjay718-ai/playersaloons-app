@@ -7,12 +7,17 @@ namespace App\Http\Controllers;
 use App\Modules\Identity\Models\User;
 use App\Modules\Wallet\Actions\ProcessDepositAction;
 use App\Modules\Wallet\Models\Deposit;
+use App\Modules\Wallet\Models\GatewayConfiguration;
+use App\Modules\Wallet\Models\PaymentCheckout;
+use App\Modules\Wallet\Models\PaymentGateway;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\PaymentSettings;
 use App\Shared\Support\Currency;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\StripeObject;
 use Stripe\Webhook;
@@ -24,19 +29,40 @@ class StripeWebhookController extends Controller
     {
         $payload = $request->getContent();
         $signature = (string) $request->header('Stripe-Signature', '');
-        $webhookSecret = app(PaymentSettings::class)->credential('stripe.webhook_secret');
-
-        if ($webhookSecret === '') {
+        $data = json_decode($payload, true);
+        $reference = is_array($data) ? ($data['data']['object']['id'] ?? null) : null;
+        $checkoutId = is_array($data) ? ($data['data']['object']['metadata']['checkout_id'] ?? null) : null;
+        $checkout = is_string($reference) ? PaymentCheckout::query()->where('provider', 'stripe')->where('provider_reference', $reference)->first() : null;
+        if (! $checkout && is_string($checkoutId) && Str::isUuid($checkoutId)) {
+            $checkout = PaymentCheckout::query()->where('provider', 'stripe')->whereNull('provider_reference')->find($checkoutId);
+        }
+        $secrets = [app(PaymentSettings::class)->credential('stripe.webhook_secret')];
+        if ($checkout?->gatewayConfiguration) {
+            $secrets[] = $checkout->gatewayConfiguration->credential('webhook_secret');
+        }
+        // Pre-migration sessions have no local checkout; retain their original verifier.
+        foreach (GatewayConfiguration::query()->with('credentials')->where('legacy', true)
+            ->where('payment_gateway_id', PaymentGateway::query()->where('provider', 'stripe')->select('id'))->get() as $configuration) {
+            $secrets[] = $configuration->credential('webhook_secret');
+        }
+        $secrets = array_unique(array_filter($secrets));
+        if ($secrets === []) {
             Log::error('Stripe webhook secret is not configured.');
 
             return response()->json(['message' => 'Stripe webhook is not configured.'], 500);
         }
-
-        try {
-            $event = Webhook::constructEvent($payload, $signature, $webhookSecret);
-        } catch (UnexpectedValueException) {
-            return response()->json(['message' => 'Invalid Stripe webhook payload.'], 400);
-        } catch (SignatureVerificationException) {
+        $event = null;
+        foreach ($secrets as $secret) {
+            try {
+                $event = Webhook::constructEvent($payload, $signature, $secret);
+                break;
+            } catch (UnexpectedValueException) {
+                return response()->json(['message' => 'Invalid Stripe webhook payload.'], 400);
+            } catch (SignatureVerificationException) {
+                // A pending checkout can still use an earlier account's endpoint.
+            }
+        }
+        if ($event === null) {
             return response()->json(['message' => 'Invalid Stripe webhook signature.'], 400);
         }
 
@@ -83,13 +109,20 @@ class StripeWebhookController extends Controller
             return response()->json(['message' => 'Stripe checkout session amount is invalid.'], 422);
         }
 
-        $processDeposit->execute(
-            $wallet,
-            number_format($creditAmount, 2, '.', ''),
-            'stripe',
-            (string) $session->id,
-            number_format($feeAmount, 2, '.', '')
-        );
+        if ($checkout && ((int) $checkout->wallet_id !== (int) $wallet->id
+            || $checkout->currency !== $paidCurrency
+            || (int) round((float) $checkout->total * 100) !== (int) round($chargedTotal * 100)
+            || (int) round((float) $checkout->amount * 100) !== (int) round($creditAmount * 100))) {
+            return response()->json(['message' => 'Stripe checkout does not match the saved payment.'], 422);
+        }
+        DB::transaction(function () use ($checkout, $processDeposit, $wallet, $creditAmount, $feeAmount, $session): void {
+            $locked = $checkout ? PaymentCheckout::query()->lockForUpdate()->findOrFail($checkout->id) : null;
+            if ($locked && $locked->completed_at !== null) {
+                return;
+            }
+            $processDeposit->execute($wallet, number_format($creditAmount, 2, '.', ''), 'stripe', (string) $session->id, number_format($feeAmount, 2, '.', ''));
+            $locked?->update(['provider_reference' => (string) $session->id, 'completed_at' => now()]);
+        });
 
         return response()->json(['received' => true, 'handled' => true]);
     }

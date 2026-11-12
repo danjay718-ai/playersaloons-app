@@ -17,6 +17,7 @@ use App\Modules\Wallet\Actions\SyncPayopPayoutAction;
 use App\Modules\Wallet\Exceptions\PayoutSubmissionRejectedException;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Models\Withdrawal;
+use App\Modules\Wallet\Services\PaymentSettings;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
@@ -73,7 +74,8 @@ class PayopPayoutTest extends TestCase
             ->assertSet('payopPayoutCertificate', null)->assertSet('paymentCredentials', [])->assertDontSee('saved-payout-token');
         $this->assertDatabaseHas('system_settings', ['key' => 'payments.provider', 'value' => 'stripe']);
         $this->assertDatabaseHas('system_settings', ['key' => 'payments.payout_provider', 'value' => 'payop']);
-        self::assertNotSame('saved-payout-token', SystemSetting::query()->where('key', 'payments.payop.payout_token')->value('value'));
+        self::assertNotSame('saved-payout-token', app(PaymentSettings::class)->current('payop')->credentials->firstWhere('name', 'payout_token')->getRawOriginal('value'));
+        $this->assertDatabaseMissing('system_settings', ['key' => 'payments.payop.payout_token']);
     }
 
     public function test_admin_cannot_enable_unavailable_bank_payouts_or_invalid_certificates(): void

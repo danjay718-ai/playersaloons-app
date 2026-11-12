@@ -17,6 +17,7 @@ use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Policies\DisputePolicy;
 use App\Modules\Match\Policies\MatchPolicy;
+use App\Modules\Operations\Services\SystemSettings;
 use App\Modules\Team\Models\Team;
 use App\Modules\Team\Policies\TeamPolicy;
 use App\Modules\Tournament\Models\Tournament;
@@ -27,6 +28,7 @@ use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Models\Withdrawal;
 use App\Modules\Wallet\Policies\WalletPolicy;
 use App\Modules\Wallet\Policies\WithdrawalPolicy;
+use App\Modules\Wallet\Services\PaymentSettings;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
@@ -43,6 +45,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(SystemSettings::class);
+        $this->app->scoped(PaymentSettings::class);
         $this->app->extend('translation.loader', fn ($loader) => new CatalogTranslationLoader($loader));
     }
 

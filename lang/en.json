@@ -875,5 +875,12 @@
     "to continue.": "to continue.",
     "Open admin navigation": "Open admin navigation",
     "Close admin navigation": "Close admin navigation",
-    "Skip to main content": "Skip to main content"
+    "Skip to main content": "Skip to main content",
+    "Use environment value instead of saved override": "Use environment value instead of saved override",
+    "Saved override": "Saved override",
+    "Environment": "Environment",
+    "Currency cannot change after financial activity has started.": "Currency cannot change after financial activity has started.",
+    "Withdrawal must meet the minimum and stay within your daily limit.": "Withdrawal must meet the minimum and stay within your daily limit.",
+    "Payment settings changed. Reload this page and try again.": "Payment settings changed. Reload this page and try again.",
+    "Used for wallets, prizes, entry fees and new payments across admin and player pages. Currency is locked after financial activity starts.": "Used for wallets, prizes, entry fees and new payments across admin and player pages. Currency is locked after financial activity starts."
 }

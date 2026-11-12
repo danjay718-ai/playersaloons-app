@@ -32,12 +32,19 @@ class Withdrawal extends Model
         'reviewed_at',
         'processed_at',
         'payout_provider',
+        'gateway_configuration_id',
         'payout_currency',
         'payout_recipient',
         'payout_reference',
         'payout_status',
         'payout_submitted_at',
     ];
+
+    /** @return BelongsTo<GatewayConfiguration, $this> */
+    public function gatewayConfiguration(): BelongsTo
+    {
+        return $this->belongsTo(GatewayConfiguration::class);
+    }
 
     /**
      * Get the attributes that should be cast.

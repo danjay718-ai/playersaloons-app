@@ -19,15 +19,15 @@ class PayopPayoutWebhookController extends Controller
         ]);
         $reference = $data['transaction']['withdrawalId'];
         $uuid = $data['transaction']['metadata']['internalWithdrawalId'] ?? null;
-        $exists = Withdrawal::query()->where('payout_provider', 'payop')->whereNotNull('payout_submitted_at')
+        $withdrawal = Withdrawal::query()->where('payout_provider', 'payop')->whereNotNull('payout_submitted_at')
             ->where(function ($query) use ($reference, $uuid): void {
                 $query->where('payout_reference', $reference);
                 if ($uuid !== null) {
                     $query->orWhere(fn ($query) => $query->whereNull('payout_reference')->where('uuid', $uuid));
                 }
-            })->exists();
-        if ($exists) {
-            $sync->execute($reference);
+            })->first();
+        if ($withdrawal) {
+            $sync->execute($reference, $withdrawal->uuid);
         }
 
         return response()->json(['received' => true]);

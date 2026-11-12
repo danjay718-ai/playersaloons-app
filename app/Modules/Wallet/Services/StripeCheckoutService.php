@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Wallet\Services;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Wallet\Models\PaymentCheckout;
 use App\Modules\Wallet\Models\Wallet;
 use App\Shared\Support\Currency;
+use Illuminate\Support\Str;
 use LogicException;
 use Stripe\StripeClient;
 
@@ -20,13 +22,19 @@ class StripeCheckoutService
             throw new LogicException('Deposit amount must be greater than zero.');
         }
 
-        $secret = app(PaymentSettings::class)->credential('stripe.secret');
+        $configuration = app(PaymentSettings::class)->capture('stripe');
+        $secret = $configuration->credential('secret');
         if ($secret === '') {
             throw new LogicException('Stripe secret key is not configured.');
         }
 
         $breakdown = $this->feeCalculator->calculate($amount);
-        $currency = Currency::code();
+        $currency = Currency::lockForFinancialActivity();
+        $checkout = PaymentCheckout::query()->create([
+            'id' => Str::uuid()->toString(), 'wallet_id' => $wallet->id, 'provider' => 'stripe',
+            'gateway_configuration_id' => $configuration->id, 'currency' => $currency,
+            'amount' => $breakdown['credit'], 'fee_amount' => $breakdown['fee'], 'total' => $breakdown['total'],
+        ]);
         $stripe = new StripeClient($secret);
 
         $session = $stripe->checkout->sessions->create([
@@ -47,6 +55,7 @@ class StripeCheckoutService
             ],
             'metadata' => [
                 'type' => 'wallet_deposit',
+                'checkout_id' => $checkout->id,
                 'user_id' => (string) $user->getKey(),
                 'user_uuid' => (string) $user->uuid,
                 'wallet_id' => (string) $wallet->getKey(),
@@ -63,6 +72,11 @@ class StripeCheckoutService
         if (! is_string($url) || $url === '') {
             throw new LogicException('Stripe did not return a Checkout URL.');
         }
+
+        if ($session->id === '') {
+            throw new LogicException('Stripe did not return a Checkout session identifier.');
+        }
+        $checkout->update(['provider_reference' => $session->id]);
 
         return $url;
     }

@@ -21,8 +21,9 @@ class PayopCheckoutService
         }
 
         $settings = app(PaymentSettings::class);
-        $publicKey = $settings->credential('payop.public_key');
-        $secret = $settings->credential('payop.secret');
+        $configuration = $settings->capture('payop');
+        $publicKey = $configuration->credential('public_key');
+        $secret = $configuration->credential('secret');
         if ($publicKey === '' || $secret === '') {
             throw new LogicException('PayOp credentials are not configured.');
         }
@@ -30,7 +31,8 @@ class PayopCheckoutService
         $breakdown = app(DepositFeeCalculator::class)->calculate($amount);
         $checkout = PaymentCheckout::query()->create([
             'id' => Str::uuid()->toString(), 'wallet_id' => $wallet->getKey(), 'provider' => 'payop',
-            'currency' => Currency::code(), 'amount' => $breakdown['credit'],
+            'gateway_configuration_id' => $configuration->id,
+            'currency' => Currency::lockForFinancialActivity(), 'amount' => $breakdown['credit'],
             'fee_amount' => $breakdown['fee'], 'total' => $breakdown['total'],
         ]);
 
