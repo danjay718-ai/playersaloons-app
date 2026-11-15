@@ -36,7 +36,7 @@ class SyncPayopPayoutAction
             }
             if ($withdrawal->payout_currency !== ($data['currency'] ?? null)
                 || ! is_numeric($data['amount'] ?? null)
-                || DecimalMoney::toMinor((string) $data['amount']) !== DecimalMoney::toMinor($withdrawal->amount)
+                || DecimalMoney::toMinor((string) $data['amount']) !== DecimalMoney::toMinor($withdrawal->payout_amount)
                 || ($withdrawal->payout_reference !== null && $withdrawal->payout_reference !== $reference)
                 || $withdrawal->payout_submitted_at === null) {
                 throw new LogicException('PayOp payout verification mismatch.');

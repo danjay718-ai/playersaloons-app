@@ -25,12 +25,15 @@ Payop withdrawal requests retain their configuration for submission, callbacks, 
 
 ## Financial rules
 
+- Admin Settings → Fees & commission has separate deposit and withdrawal fee switches. Disabling a switch removes that fee for new requests; it does not alter pending payment snapshots. Withdrawal fees default to disabled with a configurable 10% rate. A 100.00 withdrawal with the fee enabled debits 100.00 and pays 90.00; verified payout failures refund the full 100.00. Processed withdrawal fees appear in the income report.
 - Deposit fees are deducted from the entered payment amount: at 10% with no fixed fee, a 100.00 payment credits 90.00 to the wallet and records a 10.00 fee. Both gateways use this breakdown. Pending payments keep the amounts captured when their checkout was created. A fixed fee of zero means no additional flat deduction. Deposit fee settings remain separate from competition commissions.
 - Currency changes are rejected after balances, ledger entries, payments, withdrawals or funded tournaments exist. The first payment/ledger write also freezes the denomination under the same currency-row lock used by the admin change, preventing an initial payment from racing a currency edit.
 - Withdrawal minimums and daily totals are enforced in `RequestWithdrawalAction`, shared by Livewire and the API. The default minimum is 10.00 and the daily maximum is 1000.00. Days use UTC. Pending, under-review, approved and processed requests count; rejected and failed requests do not. The wallet row is locked before reading the daily total.
 - Grouped settings saves use one transaction, including their before/after activity record. Readers use a scoped settings snapshot; model saves invalidate it. Workers receive a new scope for each job.
 
 ## Deployment and rollback
+
+The withdrawal fee migration adds a zero-default `fee_amount`, preserving existing payouts. Apply migrations before deploying the updated app and workers. A rollback refuses to discard nonzero fee snapshots.
 
 Run `php artisan migrate --force` during deployment before starting the updated application/queue workers. Back up encrypted settings and retain the application encryption key. The migration's rollback restores current database overrides to the previous store, but refuses to discard an earlier credential version still referenced by an unsettled payment.
 

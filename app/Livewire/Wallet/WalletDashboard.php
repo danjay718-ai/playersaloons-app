@@ -14,6 +14,7 @@ use App\Modules\Wallet\Models\Withdrawal;
 use App\Modules\Wallet\Services\DepositCheckoutService;
 use App\Modules\Wallet\Services\DepositFeeCalculator;
 use App\Modules\Wallet\Services\PaymentSettings;
+use App\Modules\Wallet\Services\WithdrawalFeeCalculator;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Support\Currency;
 use Illuminate\Support\Facades\Auth;
@@ -136,6 +137,7 @@ class WalletDashboard extends Component
             'wallet' => $wallet,
             'ledgerEntries' => $ledgerEntries,
             'depositBreakdown' => $feeCalculator->calculate(is_numeric($this->depositAmount) ? (float) $this->depositAmount : 0),
+            'withdrawalBreakdown' => app(WithdrawalFeeCalculator::class)->calculate(is_numeric($this->amount) ? (float) $this->amount : 0),
             'emailVerified' => $user->hasVerifiedEmail(),
             'withdrawalKycApproved' => KycSubmission::query()->where('user_id', $user->getKey())->where('status', KycStatus::APPROVED)->exists(),
         ])->layout('components.layouts.dashboard', [

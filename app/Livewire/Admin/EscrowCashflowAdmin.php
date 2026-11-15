@@ -9,7 +9,9 @@ use App\Modules\Tournament\Models\Tournament;
 use App\Modules\Wallet\Models\Deposit;
 use App\Modules\Wallet\Models\LedgerEntry;
 use App\Modules\Wallet\Models\Wallet;
+use App\Modules\Wallet\Models\Withdrawal;
 use App\Shared\Enums\LedgerType;
+use App\Shared\Enums\WithdrawalStatus;
 use App\Shared\Support\DecimalMoney;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\WithPagination;
@@ -64,7 +66,7 @@ final class EscrowCashflowAdmin extends AdminComponent
     {
         $platformUser = User::query()->with('wallet')->where('email', 'platform@playersaloons.com')->first();
         $platformWalletId = $platformUser?->wallet?->id;
-        $platformPosition = (float) ($platformUser?->wallet?->cached_balance ?? 0);
+        $platformPosition = (float) ($platformUser?->wallet->cached_balance ?? 0);
         $userWalletLiability = (float) Wallet::query()
             ->when($platformWalletId !== null, fn (Builder $query) => $query->where('id', '!=', $platformWalletId))
             ->sum('cached_balance');
@@ -84,15 +86,19 @@ final class EscrowCashflowAdmin extends AdminComponent
             ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $this->dateFrom))
             ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $this->dateTo))
             ->sum('fee_amount');
+        $withdrawalFeeIncome = Withdrawal::query()->where('status', WithdrawalStatus::PROCESSED->value)
+            ->when($this->dateFrom !== '', fn (Builder $query) => $query->whereDate('processed_at', '>=', $this->dateFrom))
+            ->when($this->dateTo !== '', fn (Builder $query) => $query->whereDate('processed_at', '<=', $this->dateTo))
+            ->sum('fee_amount');
         $totalFeeIncome = DecimalMoney::format(
-            DecimalMoney::toMinor((string) $serviceFeeIncome) + DecimalMoney::toMinor((string) $topUpFeeIncome)
+            DecimalMoney::toMinor((string) $serviceFeeIncome) + DecimalMoney::toMinor((string) $topUpFeeIncome) + DecimalMoney::toMinor((string) $withdrawalFeeIncome)
         );
         $flowByType = (clone $flowQuery)
             ->selectRaw('type, SUM(amount) as net_amount, SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as inflow, SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as outflow, COUNT(*) as entry_count')
             ->groupBy('type')
             ->orderBy('type')
             ->get()
-            ->keyBy(fn (LedgerEntry $entry) => $entry->type->value);
+            ->keyBy(fn (LedgerEntry $entry) => $entry->getRawOriginal('type'));
 
         $entries = $this->filteredLedgerQuery()
             ->with('wallet.user')
@@ -117,6 +123,7 @@ final class EscrowCashflowAdmin extends AdminComponent
             'sponsoredCommitments' => $sponsoredCommitments,
             'serviceFeeIncome' => $serviceFeeIncome,
             'topUpFeeIncome' => $topUpFeeIncome,
+            'withdrawalFeeIncome' => $withdrawalFeeIncome,
             'totalFeeIncome' => $totalFeeIncome,
         ])->layout('components.layouts.admin', ['admin_title' => __('Wallets & Transactions')]);
     }

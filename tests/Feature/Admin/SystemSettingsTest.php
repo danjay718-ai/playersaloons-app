@@ -81,6 +81,7 @@ class SystemSettingsTest extends TestCase
             ['saveAuthenticationSettings', 'loginMaxAttempts', 7, 1, 'auth.login_max_attempts', '7'],
             ['savePlatformCommissionSettings', 'platformCommissionPercentage', '12.50', '101', 'platform.commission_percentage', '12.50'],
             ['saveDepositFeeSettings', 'depositFeeFixed', '2.50', '-1', 'deposit_fee.fixed', '2.50'],
+            ['saveWithdrawalFeeSettings', 'withdrawalFeePercentage', '10.00', '100.00', 'withdrawal_fee.percentage', '10.00'],
             ['saveReferralSettings', 'referrerReward', '6.50', '-1', 'referral.referrer_reward', '6.50'],
             ['saveLanguageSwitcherSettings', 'showLanguageSwitcherGuest', true, null, 'language_switcher.show_guest', 'true'],
             ['saveDisputeNotificationSettings', 'disputeNotificationEmail', 'disputes@example.com', 'invalid', 'notifications.dispute_email', 'disputes@example.com'],

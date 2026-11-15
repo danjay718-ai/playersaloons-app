@@ -47,6 +47,10 @@ class SystemSettingsAdmin extends AdminComponent
 
     public string $depositFeePercentage = '0.00';
 
+    public bool $withdrawalFeeEnabled = false;
+
+    public string $withdrawalFeePercentage = '10.00';
+
     public string $platformCommissionPercentage = '10.00';
 
     public int $defaultWaitingResultTime = 30;
@@ -91,6 +95,8 @@ class SystemSettingsAdmin extends AdminComponent
         $this->depositFeeEnabled = filter_var($feeSettings['deposit_fee.enabled'] ?? false, FILTER_VALIDATE_BOOL);
         $this->depositFeeFixed = (string) ($feeSettings['deposit_fee.fixed'] ?? '0.00');
         $this->depositFeePercentage = (string) ($feeSettings['deposit_fee.percentage'] ?? '0.00');
+        $this->withdrawalFeeEnabled = filter_var($values['withdrawal_fee.enabled'] ?? false, FILTER_VALIDATE_BOOL);
+        $this->withdrawalFeePercentage = (string) ($values['withdrawal_fee.percentage'] ?? '10.00');
 
         $this->platformCommissionPercentage = (string) (
             ($values['platform.commission_percentage'] ?? null)
@@ -205,6 +211,20 @@ class SystemSettingsAdmin extends AdminComponent
         ]);
 
         session()->flash('success', 'Deposit fee settings updated.');
+    }
+
+    public function saveWithdrawalFeeSettings(): void
+    {
+        $this->authorizeManagement();
+        $this->validate([
+            'withdrawalFeeEnabled' => ['boolean'],
+            'withdrawalFeePercentage' => ['required', 'numeric', 'min:0', 'max:99.99', 'decimal:0,2'],
+        ]);
+        app(SystemSettings::class)->save($this->actor(), [
+            'withdrawal_fee.enabled' => $this->withdrawalFeeEnabled ? 'true' : 'false',
+            'withdrawal_fee.percentage' => number_format((float) $this->withdrawalFeePercentage, 2, '.', ''),
+        ]);
+        session()->flash('success', __('Withdrawal fee settings updated.'));
     }
 
     public function saveReferralSettings(): void

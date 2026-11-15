@@ -161,13 +161,20 @@
                         <label for="amount" class="mb-2 block text-sm font-semibold text-zinc-300">{{ __('Withdrawal amount') }}</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-fuchsia-300">@currencySymbol</span>
-                            <input wire:model="amount" id="amount" type="number" step="0.01" min="1" required
+                            <input wire:model.live.debounce.250ms="amount" id="amount" type="number" step="0.01" min="1" required
                                 class="h-12 w-full rounded-xl border border-zinc-800 bg-zinc-900/70 pl-9 pr-4 font-orbitron text-sm font-bold text-white outline-none transition-colors placeholder:text-zinc-700 focus:border-fuchsia-400/60"
                                 placeholder="0.00">
                         </div>
                         @error('amount') <span class="mt-2 block text-xs font-bold text-red-400">{{ $message }}</span> @enderror
                     </div>
 
+                    @if((float) $withdrawalBreakdown['total'] > 0)
+                        <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs text-zinc-300">
+                            <div class="flex justify-between"><span>{{ __('Wallet debit') }}</span><span>@currencySymbol{{ $withdrawalBreakdown['total'] }}</span></div>
+                            <div class="mt-2 flex justify-between"><span>{{ __('Processing fee deducted') }}</span><span>@currencySymbol{{ $withdrawalBreakdown['fee'] }}</span></div>
+                            <div class="mt-2 flex justify-between font-bold"><span>{{ __('You receive') }}</span><span>@currencySymbol{{ $withdrawalBreakdown['payout'] }}</span></div>
+                        </div>
+                    @endif
                     <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-200">
                         <div class="flex gap-3">
                             <i data-lucide="shield-check" class="mt-0.5 h-4 w-4 shrink-0"></i>
@@ -194,6 +201,7 @@
                 @forelse($withdrawalRequests as $withdrawalRequest)
                     <div class="mt-3 flex flex-wrap justify-between gap-2 border-b border-zinc-800 pb-3 text-sm">
                         <span class="text-zinc-200">{{ $withdrawalRequest->payout_currency ?? \App\Shared\Support\Currency::code() }} {{ $withdrawalRequest->amount }}</span>
+                        @if((float) $withdrawalRequest->fee_amount > 0)<span class="text-zinc-400">{{ __('Processing fee deducted') }}: @currencySymbol{{ $withdrawalRequest->fee_amount }} · {{ __('You receive') }}: @currencySymbol{{ $withdrawalRequest->payout_amount }}</span>@endif
                         <span class="text-zinc-300">{{ __(ucwords(str_replace('_', ' ', $withdrawalRequest->status->value))) }}{{ $withdrawalRequest->payout_status ? ' · '.__('PayOp').': '.__($withdrawalRequest->payout_status) : '' }}</span>
                         @if($withdrawalRequest->payout_status === 'unknown')<p class="w-full text-zinc-400">{{ __('Your payout is awaiting confirmation. Please contact support before making another request.') }}</p>@endif
                     </div>

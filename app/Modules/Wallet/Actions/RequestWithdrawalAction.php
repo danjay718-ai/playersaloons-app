@@ -14,6 +14,7 @@ use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Models\Withdrawal;
 use App\Modules\Wallet\Services\PaymentSettings;
 use App\Modules\Wallet\Services\PayopPayoutService;
+use App\Modules\Wallet\Services\WithdrawalFeeCalculator;
 use App\Shared\Enums\KycStatus;
 use App\Shared\Enums\WithdrawalStatus;
 use App\Shared\Support\Currency;
@@ -121,11 +122,16 @@ class RequestWithdrawalAction
             if (Currency::lockForFinancialActivity() !== $currency) {
                 throw ValidationException::withMessages(['amount' => __('Payment settings changed. Reload this page and try again.')]);
             }
+            $breakdown = app(WithdrawalFeeCalculator::class)->calculate($amountFloat);
+            if (DecimalMoney::toMinor($breakdown['payout']) <= 0) {
+                throw ValidationException::withMessages(['amount' => __('Withdrawal amount must exceed the processing fee.')]);
+            }
             $withdrawal = Withdrawal::query()->create([
                 'uuid' => Str::uuid()->toString(),
                 'wallet_id' => $wallet->getKey(),
                 'user_id' => $user->getKey(),
                 'amount' => $amountFloat,
+                'fee_amount' => $breakdown['fee'],
                 'status' => WithdrawalStatus::PENDING,
                 'payout_provider' => $provider,
                 'gateway_configuration_id' => $configuration?->id,

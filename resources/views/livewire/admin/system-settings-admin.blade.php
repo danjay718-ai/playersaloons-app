@@ -276,6 +276,21 @@
                     </fieldset>
                 </form>
             </section>
+            <section x-show="section === 'fees'" x-cloak data-settings-panel="fees" class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+                <h3 class="text-xl font-bold text-white">{{ __('Withdrawal processing fee') }}</h3>
+                <p class="mt-2 text-sm text-slate-500">{{ __('Deducted from the withdrawal amount. Turning this off removes the fee for new requests; pending requests keep their original fee.') }}</p>
+                <form wire:submit="saveWithdrawalFeeSettings" class="mt-6 space-y-5">
+                    <fieldset @disabled(! $canManageSettings) class="settings-form-fields">
+                        <label class="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-200">{{ __('Charge withdrawal processing fees') }}<input wire:model="withdrawalFeeEnabled" type="checkbox" class="rounded border-slate-700 bg-slate-900 text-emerald-500"></label>
+                        <div>
+                            <label for="withdrawalFeePercentage" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Percentage fee') }}</label>
+                            <input id="withdrawalFeePercentage" wire:model="withdrawalFeePercentage" type="number" min="0" max="99.99" step="0.01" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                            @error('withdrawalFeePercentage')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                        </div>
+                        <button wire:target="saveWithdrawalFeeSettings" type="submit" wire:loading.attr="disabled" class="settings-save">{{ __('Save withdrawal fee settings') }}</button>
+                    </fieldset>
+                </form>
+            </section>
             <section x-show="section === 'localization'" x-cloak data-settings-panel="localization" class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ __('Localization') }}</p>
                 <h3 class="mt-1 text-xl font-bold text-white">{{ __('Language switcher visibility') }}</h3>

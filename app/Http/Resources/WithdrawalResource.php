@@ -28,6 +28,8 @@ class WithdrawalResource extends JsonResource
             'payout_status' => $this->payout_status,
             'payout_reference' => $this->payout_reference,
             'amount' => $this->amount,
+            'fee_amount' => $this->fee_amount,
+            'payout_amount' => $this->payout_amount,
             'status' => $this->status->value ?? $this->status,
             'created_at' => $this->created_at,
             'reviewed_at' => $this->reviewed_at,

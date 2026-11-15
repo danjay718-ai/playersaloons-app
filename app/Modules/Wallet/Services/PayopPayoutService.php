@@ -57,7 +57,7 @@ class PayopPayoutService
             throw new LogicException('Withdrawal bank details are missing.');
         }
         $payload = [[
-            'method' => 20, 'type' => 1, 'amount' => $withdrawal->amount, 'currency' => $withdrawal->payout_currency,
+            'method' => 20, 'type' => 1, 'amount' => $withdrawal->payout_amount, 'currency' => $withdrawal->payout_currency,
             'additionalData' => ['beneficiary' => ['account' => $recipient['iban'], 'name' => $recipient['name']], 'email' => $recipient['email']],
             'clientId' => $withdrawal->uuid,
             'metadata' => ['internalWithdrawalId' => $withdrawal->uuid],

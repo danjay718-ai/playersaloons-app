@@ -13,6 +13,7 @@ use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Tournament\Services\TournamentTimezone;
 use App\Modules\Wallet\Actions\ProcessDepositAction;
 use App\Modules\Wallet\Models\Wallet;
+use App\Modules\Wallet\Models\Withdrawal;
 use App\Modules\Wallet\Services\StripeCheckoutService;
 use App\Modules\Wallet\Services\WalletService;
 use App\Shared\Enums\LedgerType;
@@ -143,6 +144,18 @@ class CurrencyAndIncomeTest extends TestCase
         } finally {
             ApiRequestor::setHttpClient($original);
         }
+    }
+
+    public function test_income_counts_only_completed_withdrawal_fees_using_the_processing_date(): void
+    {
+        $wallet = $this->wallet($this->admin);
+        foreach (['processed', 'approved', 'failed', 'rejected'] as $status) {
+            Withdrawal::query()->create(['uuid' => Str::uuid(), 'wallet_id' => $wallet->id, 'user_id' => $this->admin->id,
+                'amount' => '100.00', 'fee_amount' => '10.00', 'status' => $status, 'processed_at' => '2026-11-14 12:00:00']);
+        }
+        $report = Livewire::actingAs($this->admin)->test(EscrowCashflowAdmin::class);
+        $report->assertViewHas('withdrawalFeeIncome', fn ($value) => (float) $value === 10.0)->assertViewHas('totalFeeIncome', '10.00');
+        $report->set('dateFrom', '2026-11-15')->assertViewHas('totalFeeIncome', '0.00');
     }
 
     private function user(string $name, string $role): User

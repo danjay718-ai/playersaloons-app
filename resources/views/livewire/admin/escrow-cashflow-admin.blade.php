@@ -12,10 +12,11 @@
     <section class="rounded-xl border border-emerald-500/30 bg-[#0f172a] p-5">
         <h3 class="text-sm font-black text-emerald-300">{{ __('PlayerSaloons income') }}</h3>
         <p class="mt-1 text-xs text-slate-400">{{ __('Fees collected before expenses. User deposits and prize funds are excluded. These totals use the selected dates only.') }}</p>
-        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+        <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div><p class="text-xs text-slate-400">{{ __('Competition service fees') }}</p><p class="mt-2 text-xl font-bold text-white">@money($serviceFeeIncome)</p><p class="mt-1 text-xs text-slate-500">{{ __('Fees credited to the platform wallet from competitions and cancellations.') }}</p></div>
             <div><p class="text-xs text-slate-400">{{ __('Wallet top-up fees') }}</p><p class="mt-2 text-xl font-bold text-white">@money($topUpFeeIncome)</p><p class="mt-1 text-xs text-slate-500">{{ __('Extra fees collected on completed wallet top-ups, before payment processing costs.') }}</p></div>
-            <div><p class="text-xs text-slate-400">{{ __('Total fees collected') }}</p><p class="mt-2 text-xl font-bold text-emerald-300">@money($totalFeeIncome)</p><p class="mt-1 text-xs text-slate-500">{{ __('Competition fees plus wallet top-up fees. This is income before expenses, not net profit.') }}</p></div>
+            <div><p class="text-xs text-slate-400">{{ __('Withdrawal fees') }}</p><p class="mt-2 text-xl font-bold text-white">@money($withdrawalFeeIncome)</p><p class="mt-1 text-xs text-slate-500">{{ __('Fees retained on processed withdrawals only.') }}</p></div>
+            <div><p class="text-xs text-slate-400">{{ __('Total fees collected') }}</p><p class="mt-2 text-xl font-bold text-emerald-300">@money($totalFeeIncome)</p><p class="mt-1 text-xs text-slate-500">{{ __('Competition, deposit and withdrawal fees before expenses. This is not net profit.') }}</p></div>
         </div>
         <button type="button" wire:click="$set('typeFilter', 'PLATFORM_COMMISSION')" class="mt-4 text-xs font-bold text-emerald-400 hover:text-emerald-300">{{ __('View service fee transactions') }} →</button>
     </section>

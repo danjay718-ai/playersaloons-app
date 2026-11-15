@@ -59,6 +59,7 @@
                             </td>
                             <td class="p-4 text-slate-200 font-bold">
                                 @currencySymbol{{ number_format((float)$withdrawal->amount, 2) }}
+                                <span class="block text-[10px] font-normal text-slate-400">{{ __('Payout amount') }}: @currencySymbol{{ $withdrawal->payout_amount }} · {{ __('Fee') }}: @currencySymbol{{ $withdrawal->fee_amount }}</span>
                             </td>
                             <td class="p-4 text-slate-450">
                                 {{ $withdrawal->created_at->format('Y-m-d H:i') }}
@@ -143,6 +144,9 @@
                         </div>
                     @endif
 
+                    <div class="rounded-lg border border-slate-800 p-4 text-slate-300">
+                        {{ __('Wallet debit') }}: @currencySymbol{{ $selectedWithdrawal->amount }} · {{ __('Fee') }}: @currencySymbol{{ $selectedWithdrawal->fee_amount }} · {{ __('Payout amount') }}: @currencySymbol{{ $selectedWithdrawal->payout_amount }}
+                    </div>
                     <!-- User and Amount Summary -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#0b0f19] border border-slate-800 rounded-xl p-4">
                         <div>

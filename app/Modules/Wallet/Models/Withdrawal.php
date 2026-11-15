@@ -4,12 +4,15 @@ namespace App\Modules\Wallet\Models;
 
 use App\Modules\Identity\Models\User;
 use App\Shared\Enums\WithdrawalStatus;
+use App\Shared\Support\DecimalMoney;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property WithdrawalStatus $status
  * @property string $amount
+ * @property string $fee_amount
+ * @property-read string $payout_amount
  * @property array{iban: string, name: string, email: string}|null $payout_recipient
  */
 class Withdrawal extends Model
@@ -27,6 +30,7 @@ class Withdrawal extends Model
         'user_id',
         'status',
         'amount',
+        'fee_amount',
         'reviewed_by',
         'review_notes',
         'reviewed_at',
@@ -56,11 +60,17 @@ class Withdrawal extends Model
         return [
             'status' => WithdrawalStatus::class,
             'amount' => 'decimal:2',
+            'fee_amount' => 'decimal:2',
             'reviewed_at' => 'datetime',
             'processed_at' => 'datetime',
             'payout_recipient' => 'encrypted:array',
             'payout_submitted_at' => 'datetime',
         ];
+    }
+
+    public function getPayoutAmountAttribute(): string
+    {
+        return DecimalMoney::format(DecimalMoney::toMinor($this->amount) - DecimalMoney::toMinor($this->fee_amount ?? '0.00'));
     }
 
     /**

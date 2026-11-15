@@ -201,6 +201,44 @@ class PayopPayoutTest extends TestCase
         $this->assertDatabaseCount('ledger_entries', 1);
     }
 
+    public function test_withdrawal_fee_is_deducted_from_the_payout_and_verified_against_the_snapshotted_net_amount(): void
+    {
+        $this->setting('withdrawal_fee.enabled', 'true');
+        $this->setting('withdrawal_fee.percentage', '10.00');
+        $withdrawal = $this->approved();
+        self::assertSame('50.00', $withdrawal->amount);
+        self::assertSame('5.00', $withdrawal->fee_amount);
+        self::assertSame('45.00', $withdrawal->payout_amount);
+        $this->setting('withdrawal_fee.enabled', 'false');
+        app(ProcessWithdrawalAction::class)->execute($withdrawal, $this->reviewer);
+        Http::assertSent(function (Request $request): bool {
+            if ($request->method() !== 'POST') {
+                return false;
+            }
+            $payload = json_decode(sodium_crypto_box_seal_open(base64_decode($request['data']), $this->keypair), true, flags: JSON_THROW_ON_ERROR);
+
+            return $payload[0]['amount'] === '45.00';
+        });
+        $this->fakeApi($withdrawal, 2);
+        app(SyncPayopPayoutAction::class)->execute($this->reference);
+        self::assertSame(WithdrawalStatus::PROCESSED, $withdrawal->fresh()->status);
+        self::assertSame('50.00', $withdrawal->wallet->fresh()->cached_balance);
+        $this->assertDatabaseHas('ledger_entries', ['type' => 'WITHDRAWAL', 'amount' => '-50.00']);
+    }
+
+    public function test_failed_payout_refunds_the_gross_withdrawal_including_its_fee_once(): void
+    {
+        $this->setting('withdrawal_fee.enabled', 'true');
+        $this->setting('withdrawal_fee.percentage', '10.00');
+        $withdrawal = $this->submitted();
+        $this->fakeApi($withdrawal, 3);
+        app(SyncPayopPayoutAction::class)->execute($this->reference);
+        app(SyncPayopPayoutAction::class)->execute($this->reference);
+        self::assertSame('100.00', $withdrawal->wallet->fresh()->cached_balance);
+        $this->assertDatabaseHas('ledger_entries', ['type' => 'REFUND', 'amount' => '50.00']);
+        $this->assertDatabaseCount('ledger_entries', 2);
+    }
+
     public function test_verified_rejection_refunds_once_and_a_new_request_can_use_returned_funds(): void
     {
         $withdrawal = $this->submitted();
@@ -364,7 +402,7 @@ class PayopPayoutTest extends TestCase
 
     private function fakeApi(?Withdrawal $withdrawal = null, int $state = 1, array $overrides = []): void
     {
-        $data = $withdrawal ? array_replace(['identifier' => $this->reference, 'status' => $state, 'amount' => $withdrawal->amount,
+        $data = $withdrawal ? array_replace(['identifier' => $this->reference, 'status' => $state, 'amount' => $withdrawal->payout_amount,
             'currency' => $withdrawal->payout_currency, 'metadata' => ['internalWithdrawalId' => $withdrawal->uuid]], $overrides) : [];
         $this->resetHttp();
         Http::fake([
