@@ -5,22 +5,23 @@ declare(strict_types=1);
 namespace App\Modules\Wallet\Services;
 
 use App\Modules\Operations\Services\SystemSettings;
+use App\Shared\Support\DecimalMoney;
 
 class DepositFeeCalculator
 {
     /** @return array{credit: string, fee: string, total: string} */
-    public function calculate(float $credit): array
+    public function calculate(float $amount): array
     {
-        $credit = max(0, $credit);
+        $total = max(0, DecimalMoney::toMinor($amount));
         $enabled = filter_var(app(SystemSettings::class)->get('deposit_fee.enabled') ?? false, FILTER_VALIDATE_BOOL);
-        $fixed = $enabled ? (float) (app(SystemSettings::class)->get('deposit_fee.fixed') ?? 0) : 0;
-        $percentage = $enabled ? (float) (app(SystemSettings::class)->get('deposit_fee.percentage') ?? 0) : 0;
-        $fee = round($fixed + ($credit * $percentage / 100), 2);
+        $fixed = $enabled ? DecimalMoney::toMinor((string) app(SystemSettings::class)->get('deposit_fee.fixed', '0.00')) : 0;
+        $percentage = $enabled ? DecimalMoney::toMinor((string) app(SystemSettings::class)->get('deposit_fee.percentage', '0.00')) : 0;
+        $fee = min($total, $fixed + DecimalMoney::percentage($total, $percentage));
 
         return [
-            'credit' => number_format($credit, 2, '.', ''),
-            'fee' => number_format($fee, 2, '.', ''),
-            'total' => number_format($credit + $fee, 2, '.', ''),
+            'credit' => DecimalMoney::format($total - $fee),
+            'fee' => DecimalMoney::format($fee),
+            'total' => DecimalMoney::format($total),
         ];
     }
 }

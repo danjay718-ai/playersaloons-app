@@ -9,11 +9,14 @@ use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Wallet\Models\Deposit;
 use App\Modules\Wallet\Models\Wallet;
 use App\Modules\Wallet\Services\PaymentSettings;
+use App\Modules\Wallet\Services\StripeCheckoutService;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Enums\WalletStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
+use Stripe\ApiRequestor;
+use Stripe\HttpClient\ClientInterface;
 use Tests\TestCase;
 
 class StripeWebhookTest extends TestCase
@@ -101,6 +104,43 @@ class StripeWebhookTest extends TestCase
 
         $this->assertSame('50.00', $wallet->fresh()?->cached_balance);
         $this->assertDatabaseHas('deposits', ['provider_reference' => 'cs_test_fee_123', 'amount' => '50.00', 'fee_amount' => '2.00']);
+    }
+
+    public function test_stripe_charges_the_entered_amount_and_credits_it_less_ten_percent_once(): void
+    {
+        config(['services.stripe.secret' => 'sk_test_deposit']);
+        foreach (['enabled' => 'true', 'fixed' => '0.00', 'percentage' => '10.00'] as $key => $value) {
+            SystemSetting::query()->updateOrCreate(['key' => 'deposit_fee.'.$key], ['value' => $value]);
+        }
+        $wallet = $this->createWallet('0.00');
+        $client = new class implements ClientInterface
+        {
+            public array $params = [];
+
+            public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
+            {
+                $this->params = $params;
+
+                return [json_encode(['id' => 'cs_net_deposit', 'object' => 'checkout.session', 'url' => 'https://checkout.stripe.test/net-deposit']), 200, []];
+            }
+        };
+        $original = ApiRequestor::httpClient();
+        ApiRequestor::setHttpClient($client);
+        try {
+            self::assertSame('https://checkout.stripe.test/net-deposit', app(StripeCheckoutService::class)->createDepositSession($wallet->user, $wallet, 100));
+        } finally {
+            ApiRequestor::setHttpClient($original);
+        }
+        self::assertSame(10000, $client->params['line_items'][0]['price_data']['unit_amount']);
+        self::assertSame('90.00', $client->params['metadata']['wallet_credit_amount']);
+        self::assertSame('10.00', $client->params['metadata']['processing_fee_amount']);
+        $payload = $this->checkoutSessionPayload('cs_net_deposit', 10000, $client->params['metadata']);
+        $this->postStripeWebhook($payload)->assertOk()->assertJson(['handled' => true]);
+        $this->postStripeWebhook($payload)->assertOk();
+        self::assertSame('90.00', $wallet->fresh()->cached_balance);
+        $this->assertDatabaseHas('payment_checkouts', ['provider_reference' => 'cs_net_deposit', 'amount' => '90.00', 'fee_amount' => '10.00', 'total' => '100.00']);
+        $this->assertDatabaseHas('deposits', ['provider_reference' => 'cs_net_deposit', 'amount' => '90.00', 'fee_amount' => '10.00']);
+        $this->assertDatabaseCount('ledger_entries', 1);
     }
 
     public function test_webhook_rejects_mismatched_fee_metadata(): void

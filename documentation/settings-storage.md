@@ -25,6 +25,7 @@ Payop withdrawal requests retain their configuration for submission, callbacks, 
 
 ## Financial rules
 
+- Deposit fees are deducted from the entered payment amount: at 10% with no fixed fee, a 100.00 payment credits 90.00 to the wallet and records a 10.00 fee. Both gateways use this breakdown. Pending payments keep the amounts captured when their checkout was created. A fixed fee of zero means no additional flat deduction. Deposit fee settings remain separate from competition commissions.
 - Currency changes are rejected after balances, ledger entries, payments, withdrawals or funded tournaments exist. The first payment/ledger write also freezes the denomination under the same currency-row lock used by the admin change, preventing an initial payment from racing a currency edit.
 - Withdrawal minimums and daily totals are enforced in `RequestWithdrawalAction`, shared by Livewire and the API. The default minimum is 10.00 and the daily maximum is 1000.00. Days use UTC. Pending, under-review, approved and processed requests count; rejected and failed requests do not. The wallet row is locked before reading the daily total.
 - Grouped settings saves use one transaction, including their before/after activity record. Readers use a scoped settings snapshot; model saves invalidate it. Workers receive a new scope for each job.

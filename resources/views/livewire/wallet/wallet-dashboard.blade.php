@@ -87,7 +87,7 @@
                 <form wire:submit.prevent="deposit" class="mt-6 space-y-4">
                     @csrf
                     <div>
-                        <label for="depositAmount" class="mb-2 block font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">Amount</label>
+                        <label for="depositAmount" class="mb-2 block font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ __('Payment amount') }}</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-orbitron text-sm font-black text-emerald-300">@currencySymbol</span>
                             <input wire:model.live.debounce.250ms="depositAmount" id="depositAmount" type="number" step="0.01" min="1" required
@@ -99,8 +99,8 @@
 
                     @if((float) $depositBreakdown['credit'] > 0)
                         <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs">
-                            <div class="flex justify-between text-zinc-400"><span>Wallet credit</span><span class="font-bold text-white">@currencySymbol{{ $depositBreakdown['credit'] }}</span></div>
-                            <div class="mt-2 flex justify-between text-zinc-400"><span>Processing fee</span><span class="font-bold text-amber-300">@currencySymbol{{ $depositBreakdown['fee'] }}</span></div>
+                            <div class="flex justify-between text-zinc-400"><span>{{ __('Wallet credit') }}</span><span class="font-bold text-white">@currencySymbol{{ $depositBreakdown['credit'] }}</span></div>
+                            <div class="mt-2 flex justify-between text-zinc-400"><span>{{ __('Processing fee deducted') }}</span><span class="font-bold text-amber-300">@currencySymbol{{ $depositBreakdown['fee'] }}</span></div>
                             <div class="mt-3 flex justify-between border-t border-zinc-800 pt-3 text-zinc-300"><span class="font-bold">{{ __('Total charge') }}</span><span class="font-black text-emerald-300">@currencySymbol{{ $depositBreakdown['total'] }}</span></div>
                         </div>
                     @endif

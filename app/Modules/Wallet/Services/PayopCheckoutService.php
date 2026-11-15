@@ -29,6 +29,9 @@ class PayopCheckoutService
         }
 
         $breakdown = app(DepositFeeCalculator::class)->calculate($amount);
+        if ((float) $breakdown['credit'] <= 0) {
+            throw new LogicException('Deposit amount must exceed the processing fee.');
+        }
         $checkout = PaymentCheckout::query()->create([
             'id' => Str::uuid()->toString(), 'wallet_id' => $wallet->getKey(), 'provider' => 'payop',
             'gateway_configuration_id' => $configuration->id,

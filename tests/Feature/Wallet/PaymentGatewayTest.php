@@ -80,7 +80,7 @@ class PaymentGatewayTest extends TestCase
         app(UpdatePaymentSettingsAction::class)->execute($viewer, 'payop', false, []);
     }
 
-    public function test_payop_checkout_uses_saved_totals_and_a_signed_invoice_then_redirects(): void
+    public function test_payop_deducts_ten_percent_and_credits_the_remaining_amount_once(): void
     {
         $user = $this->user();
         $wallet = $this->wallet($user);
@@ -88,21 +88,32 @@ class PaymentGatewayTest extends TestCase
         Http::fake(['api.payop.com/v1/invoices/create' => Http::response(['status' => 1, 'data' => 'ignored'], 200, ['identifier' => $invoice])]);
         $this->setting('payments.provider', 'payop');
         $this->setting('deposit_fee.enabled', 'true');
-        $this->setting('deposit_fee.fixed', '2.00');
+        $this->setting('deposit_fee.percentage', '10.00');
 
-        Livewire::actingAs($user)->test(WalletDashboard::class)
+        $form = Livewire::actingAs($user)->test(WalletDashboard::class)
             ->assertSee('PayOp')->assertDontSee('Stripe Sandbox')->assertDontSee('4242 4242')
-            ->set('depositAmount', '50')->call('deposit')
+            ->set('depositAmount', '100');
+        $form->assertViewHas('depositBreakdown', ['credit' => '90.00', 'fee' => '10.00', 'total' => '100.00']);
+        $form->assertSee('Payment amount')->assertSee('Processing fee deducted')->call('deposit')
             ->assertRedirect('https://checkout.payop.com/en/payment/invoice-preprocessing/'.$invoice);
         $checkout = PaymentCheckout::query()->sole();
-        self::assertSame('50.00', $checkout->amount);
-        self::assertSame('52.00', $checkout->total);
+        self::assertSame('90.00', $checkout->amount);
+        self::assertSame('10.00', $checkout->fee_amount);
+        self::assertSame('100.00', $checkout->total);
         self::assertSame($wallet->id, $checkout->wallet_id);
         Http::assertSent(fn (Request $request): bool => $request['order']['id'] === $checkout->id
-            && $request['order']['amount'] === '52.00'
-            && $request['signature'] === hash('sha256', '52.00:USD:'.$checkout->id.':payop-secret')
+            && $request['order']['amount'] === '100.00'
+            && $request['signature'] === hash('sha256', '100.00:USD:'.$checkout->id.':payop-secret')
             && $request['payer']['email'] === $user->email);
         self::assertSame('25.00', $wallet->fresh()->cached_balance);
+
+        Http::fake(['api.payop.com/v1/invoices/'.$invoice => Http::response($this->invoice($checkout))]);
+        $payload = ['invoice' => ['id' => $invoice]];
+        $this->postJson('/payop/webhook', $payload)->assertOk()->assertJson(['handled' => true]);
+        $this->postJson('/payop/webhook', $payload)->assertOk();
+        self::assertSame('115.00', $wallet->fresh()->cached_balance);
+        $this->assertDatabaseHas('deposits', ['provider_reference' => $invoice, 'amount' => '90.00', 'fee_amount' => '10.00']);
+        $this->assertDatabaseCount('ledger_entries', 1);
     }
 
     public function test_disabled_deposits_do_not_call_any_gateway(): void

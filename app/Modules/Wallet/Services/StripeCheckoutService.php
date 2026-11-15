@@ -29,6 +29,9 @@ class StripeCheckoutService
         }
 
         $breakdown = $this->feeCalculator->calculate($amount);
+        if ((float) $breakdown['credit'] <= 0) {
+            throw new LogicException('Deposit amount must exceed the processing fee.');
+        }
         $currency = Currency::lockForFinancialActivity();
         $checkout = PaymentCheckout::query()->create([
             'id' => Str::uuid()->toString(), 'wallet_id' => $wallet->id, 'provider' => 'stripe',
