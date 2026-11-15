@@ -195,6 +195,51 @@ class PaymentGatewayTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_expired_invoice_details_can_be_reconciled_from_verified_payment_status_once(): void
+    {
+        $checkout = $this->checkout();
+        Http::fake([
+            'api.payop.com/v1/invoices/*' => Http::response(['message' => 'Invoice is overdue'], 422),
+            'api.payop.com/v1/checkout/check-invoice-status/*' => Http::response(['status' => 1, 'data' => ['isSuccess' => true, 'status' => 'success']]),
+        ]);
+        $this->artisan('payments:reconcile-payop-deposits', ['invoice' => $checkout->provider_reference])->assertSuccessful();
+        $this->postJson('/payop/webhook', ['invoice' => ['id' => $checkout->provider_reference]])->assertOk();
+        self::assertSame('75.00', Wallet::query()->findOrFail($checkout->wallet_id)->cached_balance);
+        self::assertNotNull($checkout->fresh()->completed_at);
+        $this->assertDatabaseCount('deposits', 1);
+        $this->assertDatabaseCount('ledger_entries', 1);
+        Http::assertSentCount(2);
+    }
+
+    #[DataProvider('unpaidStatuses')]
+    public function test_expired_invoice_is_not_credited_unless_provider_confirms_success(string $status, bool $isSuccess): void
+    {
+        $checkout = $this->checkout();
+        Http::fake([
+            'api.payop.com/v1/invoices/*' => Http::response(['message' => 'Invoice is overdue'], 422),
+            'api.payop.com/v1/checkout/check-invoice-status/*' => Http::response(['status' => 1, 'data' => ['isSuccess' => $isSuccess, 'status' => $status]]),
+        ]);
+        $this->postJson('/payop/webhook', ['invoice' => ['id' => $checkout->provider_reference, 'status' => 1]])->assertOk()->assertJson(['handled' => false]);
+        $this->assertDatabaseCount('deposits', 0);
+        self::assertNull($checkout->fresh()->completed_at);
+    }
+
+    public static function unpaidStatuses(): array
+    {
+        return [['pending', true], ['fail', true], ['success', false], ['unknown', true]];
+    }
+
+    public function test_expired_invoice_status_cannot_bind_an_unverified_invoice_to_a_checkout(): void
+    {
+        $checkout = $this->checkout();
+        $invoice = $checkout->provider_reference;
+        $checkout->update(['provider_reference' => null]);
+        Http::fake(['api.payop.com/*' => Http::response(['message' => 'Invoice is overdue'], 422)]);
+        $this->postJson('/payop/webhook', ['invoice' => ['id' => $invoice], 'transaction' => ['order' => ['id' => $checkout->id]]])->assertStatus(503);
+        $this->assertDatabaseCount('deposits', 0);
+        Http::assertSentCount(1);
+    }
+
     public function test_timeout_after_remote_invoice_creation_can_be_recovered_by_verified_order(): void
     {
         $checkout = $this->checkout();

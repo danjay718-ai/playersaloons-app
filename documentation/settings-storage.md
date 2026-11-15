@@ -35,6 +35,8 @@ Payop withdrawal requests retain their configuration for submission, callbacks, 
 
 The withdrawal fee migration adds a zero-default `fee_amount`, preserving existing payouts. Apply migrations before deploying the updated app and workers. A rollback refuses to discard nonzero fee snapshots.
 
+Payop Checkout IPN must point to `/payop/webhook` on the public application URL. The scheduler also runs `payments:reconcile-payop-deposits` every ten minutes, using the same idempotent verification action as callbacks. To reconcile one invoice, run `php artisan payments:reconcile-payop-deposits <invoice-id>`. It credits only verified payments and preserves the original fee/amount snapshot. When the details API returns `Invoice is overdue`, a successful payment-status response is accepted only for an invoice already linked when checkout was created; it cannot bind an arbitrary invoice to an unverified checkout.
+
 Run `php artisan migrate --force` during deployment before starting the updated application/queue workers. Back up encrypted settings and retain the application encryption key. The migration's rollback restores current database overrides to the previous store, but refuses to discard an earlier credential version still referenced by an unsettled payment.
 
 The local MySQL migration was applied after creating a private encrypted backup under `/tmp/playersaloons-encrypted-settings-before-*.json`. Credential preservation was checked without printing secret values. Generated backups are not part of the repository.
