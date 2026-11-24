@@ -17,6 +17,10 @@ class PlayStrategyGamesSeeder extends Seeder
     {
         $this->call(GameCategorySeeder::class);
 
+        if (! config('features.playstrategy.enabled', true)) {
+            return;
+        }
+
         $cardBoardCategory = GameCategory::query()
             ->where('slug', GameCategory::CARD_BOARD_GAMES_SLUG)
             ->firstOrFail();
@@ -105,9 +109,11 @@ class PlayStrategyGamesSeeder extends Seeder
                 }
             }
 
-            $game->platforms()->syncWithoutDetaching([$webPlatform->id]);
+            if ($game->platforms()->count() === 0) {
+                $game->platforms()->syncWithoutDetaching([$webPlatform->id]);
+            }
 
-            GameTranslation::query()->updateOrCreate(
+            GameTranslation::query()->firstOrCreate(
                 ['game_id' => $game->id, 'locale' => 'en'],
                 ['name' => $entry['name'], 'description' => $entry['description']],
             );
