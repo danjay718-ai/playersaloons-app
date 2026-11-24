@@ -52,7 +52,7 @@ class RecoverableDeletionTest extends TestCase
         $this->superAdmin = User::factory()->create();
         $this->superAdmin->assignRole('SUPER_ADMIN');
         $this->actingAs($this->superAdmin);
-        $this->game = Game::create(['uuid' => Str::uuid(), 'slug' => 'preserved-game', 'is_active' => true]);
+        $this->game = Game::create(['uuid' => Str::uuid(), 'slug' => 'preserved-game', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $this->game->translations()->create(['locale' => 'en', 'name' => 'Preserved Game']);
     }
 

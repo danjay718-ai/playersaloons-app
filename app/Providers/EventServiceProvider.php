@@ -24,6 +24,7 @@ use App\Modules\Match\Listeners\AdvanceWinnerListener;
 use App\Modules\Match\Listeners\ArmV2RoundDeadlineListener;
 use App\Modules\Match\Listeners\ArmV2StalledMatchTimerListener;
 use App\Modules\Match\Listeners\BroadcastBracketUpdateListener;
+use App\Modules\Match\Listeners\DispatchPlayStrategyGameCreationListener;
 use App\Modules\Match\Listeners\NotifyAdminsOfDisputeListener;
 use App\Modules\Match\Listeners\NotifyDisputeRulingListener;
 use App\Modules\Match\Listeners\NotifyParticipantsListener;
@@ -152,6 +153,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         MatchStarted::class => [
             ArmV2RoundDeadlineListener::class,
+            DispatchPlayStrategyGameCreationListener::class,
             NotifyParticipantsListener::class,
             BroadcastTournamentUpdateListener::class,
         ],
@@ -186,6 +188,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         MatchRematchCreated::class => [
             PrepareMatchRoomListener::class,
+            DispatchPlayStrategyGameCreationListener::class,
             BroadcastBracketUpdateListener::class,
             NotifyParticipantsListener::class,
             BroadcastTournamentUpdateListener::class,

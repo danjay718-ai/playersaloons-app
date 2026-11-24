@@ -20,10 +20,13 @@ class AutoForfeitJob implements ShouldQueue
         $matches = GameMatch::query()
             ->where('status', MatchStatus::WAITING_FOR_CONFIRMATION)
             ->whereHas('tournament', fn ($tournaments) => $tournaments->where('workflow_version', 1))
-            ->with('tournament')
+            ->with('tournament.game')
             ->get();
 
         foreach ($matches as $match) {
+            if ($match->isProviderManaged()) {
+                continue;
+            }
             if ($match->isTimedOut()) {
                 $action->execute($match);
             }

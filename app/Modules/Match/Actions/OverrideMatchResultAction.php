@@ -6,6 +6,7 @@ namespace App\Modules\Match\Actions;
 
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Events\MatchCompleted;
+use App\Modules\Match\Models\ExternalMatchGame;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\StateMachines\MatchStateMachine;
@@ -88,6 +89,15 @@ final readonly class OverrideMatchResultAction
             if ($locked->status !== MatchStatus::COMPLETED) {
                 throw new LogicException('The match could not be advanced to a completed state.');
             }
+
+            ExternalMatchGame::query()
+                ->where('match_id', $locked->id)
+                ->whereNotIn('status', [ExternalMatchGame::STATUS_COMPLETED, ExternalMatchGame::STATUS_DRAW])
+                ->update([
+                    'status' => ExternalMatchGame::STATUS_COMPLETED,
+                    'next_poll_at' => null,
+                    'updated_at' => now(),
+                ]);
 
             return $locked;
         }, 3);

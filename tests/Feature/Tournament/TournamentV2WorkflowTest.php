@@ -110,7 +110,7 @@ final class TournamentV2WorkflowTest extends TestCase
         config()->set('features.tournament_v2.enabled', true);
         $this->seed([RolesAndPermissionsSeeder::class, PlatformSystemUserSeeder::class, SystemSettingsSeeder::class]);
         $this->admin = $this->user('v2-admin@example.com', 'v2admin', 'SUPER_ADMIN');
-        $this->game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'v2-game', 'is_active' => true]);
+        $this->game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'v2-game', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $this->platform = Platform::query()->create(['name' => 'PC', 'slug' => 'pc-v2', 'is_active' => true]);
         $this->game->platforms()->attach($this->platform);
         GameTournamentDefault::query()->create([

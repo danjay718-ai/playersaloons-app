@@ -27,4 +27,12 @@ return [
     'team_finder' => [
         'enabled' => (bool) env('TEAM_FINDER_ENABLED', false),
     ],
+
+    'playstrategy' => [
+        'enabled' => (bool) env('PLAYSTRATEGY_ENABLED', true),
+    ],
+
+    'google_auth' => [
+        'enabled' => (bool) env('GOOGLE_AUTH_ENABLED', true),
+    ],
 ];

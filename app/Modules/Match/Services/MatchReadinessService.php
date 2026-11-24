@@ -165,6 +165,11 @@ final class MatchReadinessService
                 return;
             }
 
+            // Provider-managed matches rely on PlayStrategy results or admin review, not readiness auto-forfeit.
+            if ($locked->isProviderManaged()) {
+                return;
+            }
+
             $readyId = $this->readyRegistrationId($locked);
             if ($readyId !== null) {
                 $absentId = $readyId === $locked->player_a_registration_id

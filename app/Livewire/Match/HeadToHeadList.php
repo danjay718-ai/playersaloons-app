@@ -61,7 +61,7 @@ class HeadToHeadList extends Component
 
     public function mount(): void
     {
-        $this->gameId = (string) Game::query()->where('is_active', true)->value('id');
+        $this->gameId = (string) Game::query()->availableInCatalog()->value('id');
     }
 
     public function createChallenge(CreateHeadToHeadChallengeAction $action): void
@@ -232,7 +232,7 @@ class HeadToHeadList extends Component
         }
 
         return view('livewire.match.head-to-head-list', [
-            'games' => Game::query()->with('translations')->where('is_active', true)->get(),
+            'games' => Game::query()->with('translations')->availableInCatalog()->get(),
             'platforms' => Platform::query()->where('is_active', true)->get(),
             'waitingChallenges' => $waitingChallenges,
             'activeMatches' => $activeMatches,

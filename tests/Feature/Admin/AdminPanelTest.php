@@ -64,6 +64,7 @@ class AdminPanelTest extends TestCase
         $this->game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'test-game',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
 
@@ -228,6 +229,7 @@ class AdminPanelTest extends TestCase
         $archived = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'archived-racer',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => false,
         ]);
         $archived->translations()->create([

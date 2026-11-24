@@ -204,7 +204,98 @@
                     @endif
                 </div>
 
-                @if($isResultConflict && $activeDispute)
+                @if($isProviderManaged ?? false)
+                    @php
+                        $isTerminalMatch = in_array($statusVal, ['completed', 'forfeited'], true);
+                        $extStatus = $externalMatchGame?->status;
+                        $attemptNum = $externalMatchGame?->attempt_number ?? max(1, (int) ($match->active_attempt_number ?? 1));
+
+                        if ($isTerminalMatch) {
+                            $badgeLabel = __('Attempt #:num · Completed', ['num' => $attemptNum]);
+                            $badgeClasses = 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200';
+                        } elseif ($extStatus === \App\Modules\Match\Models\ExternalMatchGame::STATUS_NEEDS_ADMIN_REVIEW) {
+                            $badgeLabel = __('Attempt #:num · Admin Review', ['num' => $attemptNum]);
+                            $badgeClasses = 'border-amber-400/45 bg-amber-500/15 text-amber-200';
+                        } elseif ($extStatus === \App\Modules\Match\Models\ExternalMatchGame::STATUS_CREATED && $externalMatchGame?->play_url) {
+                            $badgeLabel = __('Attempt #:num · Live Board', ['num' => $attemptNum]);
+                            $badgeClasses = 'border-cyan-400/40 bg-cyan-500/15 text-cyan-200';
+                        } else {
+                            $badgeLabel = __('Attempt #:num · Preparing', ['num' => $attemptNum]);
+                            $badgeClasses = 'border-zinc-700 bg-zinc-900 text-zinc-300';
+                        }
+                    @endphp
+
+                    <div
+                        class="playstrategy-match-card rounded-2xl border border-cyan-500/30 bg-zinc-950/85 p-5 space-y-4"
+                        @if(! $isTerminalMatch && $extStatus === \App\Modules\Match\Models\ExternalMatchGame::STATUS_CREATED && $externalMatchGame?->play_url)
+                            wire:poll.12s.visible="pollPlayStrategyResult"
+                        @endif
+                    >
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-300 font-orbitron">{{ __('PlayStrategy Automated Match') }}</p>
+                                <p class="mt-1 text-xs text-zinc-300">{{ __('Actual gameplay takes place on PlayStrategy. Verified results sync automatically once the game finishes.') }}</p>
+                            </div>
+                            <span class="rounded-full border px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider {{ $badgeClasses }}">
+                                {{ $badgeLabel }}
+                            </span>
+                        </div>
+
+                        @if($isTerminalMatch)
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-100">
+                                <span class="font-semibold">{{ __('This PlayStrategy match has been finalized.') }}</span>
+                                @if($externalMatchGame && $externalMatchGame->play_url)
+                                    <a href="{{ $externalMatchGame->play_url }}" target="_blank" rel="noopener noreferrer" class="playstrategy-btn-secondary inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl border border-cyan-400/45 bg-cyan-500/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-cyan-100 transition hover:bg-cyan-500/25">
+                                        <span>{{ __('View Game on PlayStrategy') }}</span>
+                                        <span aria-hidden="true">↗</span>
+                                    </a>
+                                @endif
+                            </div>
+                        @elseif($extStatus === \App\Modules\Match\Models\ExternalMatchGame::STATUS_NEEDS_ADMIN_REVIEW)
+                            @php
+                                $isAbortedGame = in_array(strtolower((string) $externalMatchGame->provider_status), ['aborted', 'nostart'], true);
+                            @endphp
+                            <div role="alert" class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-100 space-y-3">
+                                <div>
+                                    <p class="font-bold text-amber-200">
+                                        {{ $isAbortedGame ? __('Match Disputed — Game Aborted on PlayStrategy') : __('Admin review required') }}
+                                    </p>
+                                    <p class="mt-1 leading-relaxed text-amber-100/90">
+                                        @if($isAbortedGame)
+                                            {{ __('This game ended as aborted on PlayStrategy without an official winner (for example, no moves were played or the game was aborted early). Please upload a screenshot below in the Dispute Manager so an admin can review and resolve this match.') }}
+                                        @else
+                                            {{ $externalMatchGame->last_error }} {{ __('Please upload a screenshot below in the Dispute Manager for admin review.') }}
+                                        @endif
+                                    </p>
+                                </div>
+                                @if($externalMatchGame->play_url)
+                                    <a href="{{ $externalMatchGame->play_url }}" target="_blank" rel="noopener noreferrer" class="playstrategy-btn-secondary inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl border border-amber-400/45 bg-amber-500/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-100 transition hover:bg-amber-500/25">
+                                        <span>{{ __('View Game on PlayStrategy') }}</span>
+                                        <span aria-hidden="true">↗</span>
+                                    </a>
+                                @endif
+                            </div>
+                        @elseif($externalMatchGame && $externalMatchGame->play_url)
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <a href="{{ $externalMatchGame->play_url }}" target="_blank" rel="noopener noreferrer" class="playstrategy-btn-primary inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">
+                                    <span>{{ __('Play Match on PlayStrategy') }}</span>
+                                    <span aria-hidden="true">↗</span>
+                                </a>
+                                <span class="inline-flex items-center gap-2 text-xs font-semibold text-cyan-200">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true"></span>
+                                    <span>{{ __('Auto-syncing result from PlayStrategy…') }}</span>
+                                </span>
+                            </div>
+                        @else
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 text-xs text-zinc-300">
+                                <span>{{ __('Preparing your PlayStrategy match board. This page refreshes automatically.') }}</span>
+                                @if($isAdmin)
+                                    <button type="button" wire:click="adminCreatePlayStrategyGame" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-indigo-500">{{ __('Create Board Now') }}</button>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                @elseif($isResultConflict && $activeDispute)
                     <div data-match-content="dispute" role="alert" class="rounded-xl border border-red-500/40 bg-red-950/25 p-5 text-red-100">
                         <div class="flex items-center gap-2 text-sm font-bold"><i data-lucide="shield-alert" class="h-5 w-5"></i>{{ $match->resolution_reason === 'unconfirmed_result_timeout' ? __('Result requires review') : __('Result conflict detected') }}</div>
                         <p class="mt-2 text-xs leading-relaxed text-red-100/80">{{ $match->resolution_reason === 'unconfirmed_result_timeout' ? __('A loss or draw was reported without an opponent response before the deadline. Upload a screenshot for admin review. You may also provide a written reason.') : __('The results conflict. Upload a screenshot for admin review. You may also provide a written reason.') }}</p>
@@ -387,10 +478,16 @@
                         <div class="bg-red-950/25 border border-red-900/40 rounded-xl p-4 space-y-2 text-red-400">
                             <div class="flex items-center space-x-2 font-bold text-sm">
                                 <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                                <span>Active Dispute Logged</span>
+                                <span>{{ ($isProviderManaged ?? false) && in_array(strtolower((string) ($externalMatchGame?->provider_status ?? '')), ['aborted', 'nostart'], true) ? __('Dispute Opened — PlayStrategy Game Aborted') : __('Active Dispute Logged') }}</span>
                             </div>
-                            <p class="text-xs text-red-400/80 leading-relaxed">
-                                A dispute has been opened for this match. Each participant may submit one screenshot evidence file (PNG, JPG, or WEBP, max 2MB) for admins to review and declare the correct bracket winner.
+                            <p class="text-xs text-red-400/85 leading-relaxed">
+                                @if(($isProviderManaged ?? false) && in_array(strtolower((string) ($externalMatchGame?->provider_status ?? '')), ['aborted', 'nostart'], true))
+                                    {{ __('This match is disputed because the PlayStrategy game was aborted without an official winner. Please upload a screenshot (PNG, JPG, or WEBP, max 2MB) showing what happened so an admin can review and resolve this match.') }}
+                                @elseif(($isProviderManaged ?? false) && !empty($activeDispute->reason))
+                                    {{ $activeDispute->reason }} {{ __('Each participant may upload one screenshot (PNG, JPG, or WEBP, max 2MB) for admin review.') }}
+                                @else
+                                    {{ __('A dispute has been opened for this match. Each participant may submit one screenshot evidence file (PNG, JPG, or WEBP, max 2MB) for admins to review and declare the correct bracket winner.') }}
+                                @endif
                             </p>
                         </div>
 

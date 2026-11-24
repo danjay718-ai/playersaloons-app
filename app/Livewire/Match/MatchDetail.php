@@ -9,13 +9,16 @@ use App\Modules\Identity\Models\PlayerDisputeStrike;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
+use App\Modules\Match\Actions\CreatePlayStrategyMatchGameAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\OverrideMatchResultAction;
 use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
+use App\Modules\Match\Actions\SyncPlayStrategyMatchResultAction;
 use App\Modules\Match\Actions\VoteForRematchAction;
+use App\Modules\Match\Models\ExternalMatchGame;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Services\MatchReadinessService;
 use App\Modules\Match\Support\DisputeRulingMessage;
@@ -24,6 +27,7 @@ use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -100,6 +104,93 @@ class MatchDetail extends Component
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to finalize the match result.'));
         }
+    }
+
+    public function pollPlayStrategyResult(SyncPlayStrategyMatchResultAction $sync): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        $match = GameMatch::query()
+            ->where('uuid', $this->uuid)
+            ->with(['tournament.game', 'externalGames', 'playerARegistration', 'playerBRegistration'])
+            ->first();
+
+        if ($match === null || ! $match->isProviderManaged()) {
+            return;
+        }
+
+        if (! in_array($match->status, [MatchStatus::READY, MatchStatus::IN_PROGRESS], true)) {
+            return;
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        $isAllowed = $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])
+            || $match->playerARegistration?->includesUser($user->id)
+            || $match->playerBRegistration?->includesUser($user->id);
+
+        if (! $isAllowed) {
+            return;
+        }
+
+        $externalGame = $match->activeExternalGame();
+        if ($externalGame === null || $externalGame->status !== ExternalMatchGame::STATUS_CREATED) {
+            return;
+        }
+
+        // Coordinate polling across both participants' browsers so PlayStrategy is queried at most once every 10s.
+        if (! Cache::add("playstrategy:live-poll:{$externalGame->id}", true, now()->addSeconds(10))) {
+            return;
+        }
+
+        $sync->execute($externalGame->id);
+    }
+
+    public function syncPlayStrategyResult(SyncPlayStrategyMatchResultAction $sync): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        $match = GameMatch::query()
+            ->where('uuid', $this->uuid)
+            ->with(['tournament.game', 'externalGames', 'playerARegistration', 'playerBRegistration'])
+            ->firstOrFail();
+
+        /** @var User $user */
+        $user = Auth::user();
+        $isAllowed = $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])
+            || $match->playerARegistration?->includesUser($user->id)
+            || $match->playerBRegistration?->includesUser($user->id);
+
+        if (! $isAllowed) {
+            return;
+        }
+
+        $externalGame = $match->activeExternalGame();
+        if ($externalGame === null) {
+            session()->flash('error', __('PlayStrategy board is still being prepared.'));
+
+            return;
+        }
+
+        $sync->execute($externalGame->id);
+        session()->flash('message', __('PlayStrategy match status refreshed.'));
+    }
+
+    public function adminCreatePlayStrategyGame(CreatePlayStrategyMatchGameAction $create): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (! $user?->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
+            abort(403);
+        }
+
+        $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
+        $create->execute((int) $match->id, max(1, (int) ($match->active_attempt_number ?? 1)));
+        session()->flash('message', __('PlayStrategy game creation check completed.'));
     }
 
     public function mount(string $uuid, bool $embedded = false): void
@@ -389,7 +480,7 @@ class MatchDetail extends Component
             ->with(['playerARegistration', 'playerBRegistration'])
             ->firstOrFail();
 
-        if ($match->status !== MatchStatus::DISPUTED || ! in_array($match->resolution_reason, ['conflicting_submissions', 'unconfirmed_result_timeout'], true)) {
+        if ($match->status !== MatchStatus::DISPUTED || ! in_array($match->resolution_reason, ['conflicting_submissions', 'unconfirmed_result_timeout', 'playstrategy_admin_review'], true)) {
             session()->flash('error', 'There is no result conflict to explain.');
 
             return;
@@ -551,9 +642,14 @@ class MatchDetail extends Component
         $isAdmin = Auth::check() && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
         $layout = $isAdmin ? 'components.layouts.admin' : 'components.layouts.dashboard';
 
+        $isProviderManaged = $match->isProviderManaged();
+        $externalMatchGame = $isProviderManaged ? $match->activeExternalGame() : null;
+
         $view = view('livewire.match.match-detail', [
             'match' => $match,
             'isParticipant' => $isParticipant,
+            'isProviderManaged' => $isProviderManaged,
+            'externalMatchGame' => $externalMatchGame,
             'isDefeated' => $isDefeated,
             'defeatMessage' => $defeatMessage,
             'isSubmitter' => $isSubmitter,

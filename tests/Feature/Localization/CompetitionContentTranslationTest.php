@@ -38,7 +38,7 @@ final class CompetitionContentTranslationTest extends TestCase
         $this->app->useLangPath($this->temporaryLangPath);
         $this->app->forgetInstance('translation.loader');
         $this->app->forgetInstance('translator');
-        $this->game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'translation-game', 'is_active' => true]);
+        $this->game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'translation-game', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $this->admin = User::query()->create([
             'uuid' => Str::uuid(), 'email' => 'copy-admin@example.com',
             'username' => 'copy_admin', 'password' => bcrypt('password'), 'status' => 'active',

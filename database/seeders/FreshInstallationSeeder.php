@@ -21,6 +21,7 @@ final class FreshInstallationSeeder extends Seeder
                 RolesAndPermissionsSeeder::class,
                 PlatformSystemUserSeeder::class,
                 AdminUserSeeder::class,
+                GameCategorySeeder::class,
                 PolicyPageSeeder::class,
                 LandingPageSeeder::class,
                 PublicNavigationSeeder::class,

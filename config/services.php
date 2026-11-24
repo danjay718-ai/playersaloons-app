@@ -43,6 +43,20 @@ return [
     'twitch' => ['client_id' => env('TWITCH_CLIENT_ID'), 'access_token' => env('TWITCH_ACCESS_TOKEN')],
     'facebook' => ['access_token' => env('FACEBOOK_ACCESS_TOKEN')],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
+    'playstrategy' => [
+        'base_url' => rtrim((string) env('PLAYSTRATEGY_BASE_URL', 'https://playstrategy.org'), '/'),
+        'client_id' => (string) env('PLAYSTRATEGY_CLIENT_ID', 'gamersrival.com'),
+        'redirect_uri' => env('PLAYSTRATEGY_REDIRECT_URI'),
+        'scopes' => (string) env('PLAYSTRATEGY_OAUTH_SCOPES', 'challenge:write'),
+        'timeout_seconds' => (int) env('PLAYSTRATEGY_TIMEOUT_SECONDS', 10),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

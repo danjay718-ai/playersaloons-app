@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Modules\CMS\Actions\DeleteGameCategoryAction;
+use App\Modules\CMS\Actions\ReorderGameCategoryAction;
+use App\Modules\CMS\Actions\SaveGameCategoryAction;
+use App\Modules\CMS\Actions\ToggleGameCategoryStatusAction;
 use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\GameCategory;
 use App\Modules\CMS\Models\GameTranslation;
 use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Models\LandingSectionItem;
@@ -14,6 +19,8 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Operations\Services\AdminDeletionService;
 use App\Modules\Operations\Services\GameDeletionService;
+use App\Modules\Tournament\Models\Tournament;
+use App\Shared\Enums\TournamentStatus;
 use Database\Seeders\LandingPageSeeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +30,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use LogicException;
 
 class CmsAdmin extends AdminComponent
 {
@@ -41,6 +49,9 @@ class CmsAdmin extends AdminComponent
 
     #[Url(as: 'game_records')]
     public string $gameRecordTab = 'active';
+
+    #[Url(as: 'game_category')]
+    public string $gameCategoryFilter = '';
 
     #[Url(as: 'game_status')]
     public string $gameCatalogFilter = '';
@@ -88,6 +99,18 @@ class CmsAdmin extends AdminComponent
 
     public string $gameSlug = '';
 
+    public ?int $gameCategoryId = null;
+
+    public string $gameGameplayProvider = Game::PROVIDER_MANUAL;
+
+    public string $playStrategyPreset = '';
+
+    public string $gamePlayStrategyVariant = 'standard';
+
+    public int $gamePlayStrategyClockLimit = 300;
+
+    public int $gamePlayStrategyClockIncrement = 3;
+
     public string $gameDescription = '';
 
     public string $gameBannerPath = '';
@@ -130,6 +153,35 @@ class CmsAdmin extends AdminComponent
     public array $permanentDeleteReferences = [];
 
     public string $permanentDeleteConfirmation = '';
+
+    // Game category management
+    public bool $showCategoryManagerModal = false;
+
+    public bool $showCategoryModal = false;
+
+    public ?int $selectedCategoryId = null;
+
+    public string $categoryName = '';
+
+    public string $categorySlug = '';
+
+    public int $categoryDisplayOrder = 1;
+
+    public bool $categoryIsActive = true;
+
+    public string $categoryError = '';
+
+    #[Locked]
+    public ?int $confirmDeactivateCategoryId = null;
+
+    #[Locked]
+    public string $confirmDeactivateCategoryName = '';
+
+    #[Locked]
+    public int $confirmDeactivateCategoryGamesCount = 0;
+
+    #[Locked]
+    public int $confirmDeactivateCategoryOpenTournamentsCount = 0;
 
     // Platform modals / forms
     public bool $showPlatformModal = false;
@@ -302,11 +354,190 @@ class CmsAdmin extends AdminComponent
     public function clearGameFilters(): void
     {
         $this->gameSearch = '';
+        $this->gameCategoryFilter = '';
         $this->gameCatalogFilter = '';
         $this->gamePlatformFilter = '';
         $this->gameTemplateFilter = '';
         $this->gameArtworkFilter = '';
         $this->resetPage('games_page');
+    }
+
+    public function setGameCategoryFilter(string $slug = ''): void
+    {
+        $this->gameCategoryFilter = trim($slug);
+        $this->resetPage('games_page');
+    }
+
+    public function updatingGameCategoryFilter(): void
+    {
+        $this->resetPage('games_page');
+    }
+
+    public function canManageCategories(): bool
+    {
+        return $this->actor()->can('games.manage') || $this->actor()->can('cms.manage');
+    }
+
+    public function openCategoryManager(): void
+    {
+        $this->categoryError = '';
+        $this->showCategoryManagerModal = true;
+    }
+
+    public function closeCategoryManager(): void
+    {
+        $this->showCategoryManagerModal = false;
+        $this->categoryError = '';
+    }
+
+    public function openCreateCategoryModal(): void
+    {
+        abort_unless($this->canManageCategories(), 403);
+        $this->resetValidation();
+        $this->categoryError = '';
+        $this->selectedCategoryId = null;
+        $this->categoryName = '';
+        $this->categorySlug = '';
+        $this->categoryDisplayOrder = ((int) GameCategory::query()->max('display_order')) + 1;
+        $this->categoryIsActive = true;
+        $this->showCategoryModal = true;
+    }
+
+    public function openEditCategoryModal(int $categoryId): void
+    {
+        abort_unless($this->canManageCategories(), 403);
+        $this->resetValidation();
+        $this->categoryError = '';
+        $category = GameCategory::query()->findOrFail($categoryId);
+        $this->selectedCategoryId = (int) $category->id;
+        $this->categoryName = $category->name;
+        $this->categorySlug = $category->slug;
+        $this->categoryDisplayOrder = (int) $category->display_order;
+        $this->categoryIsActive = (bool) $category->is_active;
+        $this->showCategoryModal = true;
+    }
+
+    public function updatedCategoryName(string $name): void
+    {
+        if ($this->selectedCategoryId === null) {
+            $this->categorySlug = Str::slug($name);
+        }
+    }
+
+    public function saveCategory(SaveGameCategoryAction $action): void
+    {
+        abort_unless($this->canManageCategories(), 403);
+        $this->categoryError = '';
+        $this->categorySlug = Str::slug($this->categorySlug !== '' ? $this->categorySlug : $this->categoryName);
+
+        $this->validate([
+            'categoryName' => 'required|string|max:120',
+            'categorySlug' => ['required', 'string', 'max:120', 'alpha_dash', Rule::unique('game_categories', 'slug')->ignore($this->selectedCategoryId)],
+            'categoryDisplayOrder' => 'required|integer|min:0|max:65535',
+            'categoryIsActive' => 'boolean',
+        ]);
+
+        $category = $this->selectedCategoryId !== null
+            ? GameCategory::query()->findOrFail($this->selectedCategoryId)
+            : null;
+
+        $saved = $action->execute($this->actor(), [
+            'name' => $this->categoryName,
+            'slug' => $this->categorySlug,
+            'display_order' => $this->categoryDisplayOrder,
+            'is_active' => $this->categoryIsActive,
+        ], $category);
+
+        if ($category !== null && $this->gameCategoryFilter === $category->slug && $saved->slug !== $category->slug) {
+            $this->gameCategoryFilter = $saved->slug;
+        }
+
+        $this->showCategoryModal = false;
+        $this->selectedCategoryId = null;
+        session()->flash('success', $category !== null ? __('Game category updated successfully.') : __('Game category created successfully.'));
+    }
+
+    public function requestCategoryStatusChange(int $categoryId, ToggleGameCategoryStatusAction $action): void
+    {
+        abort_unless($this->canManageCategories(), 403);
+        $this->categoryError = '';
+        $category = GameCategory::query()->findOrFail($categoryId);
+
+        if (! $category->is_active) {
+            $action->execute($this->actor(), $category, true);
+            session()->flash('success', __('Category ":name" activated.', ['name' => $category->name]));
+
+            return;
+        }
+
+        $this->confirmDeactivateCategoryId = (int) $category->id;
+        $this->confirmDeactivateCategoryName = $category->name;
+        $this->confirmDeactivateCategoryGamesCount = $category->games()->count();
+        $this->confirmDeactivateCategoryOpenTournamentsCount = Tournament::query()
+            ->whereHas('game', fn ($games) => $games->where('game_category_id', $category->id))
+            ->whereIn('status', [
+                TournamentStatus::PUBLISHED->value,
+                TournamentStatus::REGISTRATION_OPEN->value,
+                TournamentStatus::REGISTRATION_CLOSED->value,
+                TournamentStatus::CHECKIN_OPEN->value,
+                TournamentStatus::CHECKIN_CLOSED->value,
+                TournamentStatus::BRACKET_GENERATED->value,
+                TournamentStatus::ONGOING->value,
+            ])
+            ->count();
+    }
+
+    public function cancelDeactivateCategory(): void
+    {
+        $this->reset([
+            'confirmDeactivateCategoryId',
+            'confirmDeactivateCategoryName',
+            'confirmDeactivateCategoryGamesCount',
+            'confirmDeactivateCategoryOpenTournamentsCount',
+        ]);
+    }
+
+    public function confirmDeactivateCategory(ToggleGameCategoryStatusAction $action): void
+    {
+        abort_unless($this->canManageCategories(), 403);
+        if ($this->confirmDeactivateCategoryId === null) {
+            return;
+        }
+
+        $category = GameCategory::query()->findOrFail($this->confirmDeactivateCategoryId);
+        $action->execute($this->actor(), $category, false);
+        $this->cancelDeactivateCategory();
+        session()->flash('success', __('Category ":name" deactivated. Player discovery and new registrations are now hidden/blocked while ongoing matches continue.', ['name' => $category->name]));
+    }
+
+    public function moveCategory(int $categoryId, string $direction, ReorderGameCategoryAction $action): void
+    {
+        abort_unless($this->canManageCategories(), 403);
+        $this->categoryError = '';
+        $category = GameCategory::query()->findOrFail($categoryId);
+        $action->execute($this->actor(), $category, $direction);
+        session()->flash('success', __('Category order updated.'));
+    }
+
+    public function deleteCategory(int $categoryId, DeleteGameCategoryAction $action): void
+    {
+        abort_unless($this->canManageCategories(), 403);
+        $this->categoryError = '';
+
+        try {
+            $category = GameCategory::query()->findOrFail($categoryId);
+            $deletedSlug = $category->slug;
+            $action->execute($this->actor(), $category);
+
+            if ($this->gameCategoryFilter === $deletedSlug) {
+                $this->gameCategoryFilter = '';
+            }
+
+            session()->flash('success', __('Game category deleted.'));
+        } catch (LogicException $e) {
+            $this->categoryError = $e->getMessage();
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     public function updatingGameSearch(): void
@@ -583,6 +814,57 @@ class CmsAdmin extends AdminComponent
         $this->gameSlug = Str::slug($name);
     }
 
+    public function updatedPlayStrategyPreset(string $variant): void
+    {
+        $variant = trim($variant);
+        if ($variant === '') {
+            if ($this->selectedGameId === null) {
+                $this->gameGameplayProvider = Game::PROVIDER_MANUAL;
+            }
+
+            return;
+        }
+
+        $catalog = Game::playStrategyCatalog();
+        $preset = $catalog[$variant] ?? null;
+        if ($preset === null) {
+            return;
+        }
+
+        $this->gameGameplayProvider = Game::PROVIDER_PLAYSTRATEGY;
+        $this->gamePlayStrategyVariant = $variant;
+        $this->gameName = $preset['name'];
+        $this->gameSlug = $preset['slug'];
+        $this->gameDescription = $preset['description'];
+        $this->gamePlayStrategyClockLimit = $preset['clock_limit'];
+        $this->gamePlayStrategyClockIncrement = $preset['clock_increment'];
+        $this->gameIdLabel = 'PlayStrategy Username';
+        $this->gameIdExample = 'Linked via PlayStrategy OAuth';
+        $this->gameIdInstructions = 'Connect your PlayStrategy account in your Profile before joining. Match links and results sync automatically.';
+
+        if ($preset['artwork'] !== null) {
+            $this->gameCardImagePath = $preset['artwork'];
+            $this->gameBannerPath = $preset['artwork'];
+        } else {
+            $this->gameCardImagePath = '';
+            $this->gameBannerPath = '';
+        }
+
+        $webPlatformId = Platform::query()->where('slug', 'web-browser')->value('id');
+        if ($webPlatformId !== null) {
+            $this->gamePlatformIds = [(int) $webPlatformId];
+        }
+
+        $this->resetValidation();
+    }
+
+    public function updatedGameGameplayProvider(string $provider): void
+    {
+        if ($provider !== Game::PROVIDER_PLAYSTRATEGY) {
+            $this->playStrategyPreset = '';
+        }
+    }
+
     public function openGameCreateModal(): void
     {
         $this->resetGameForm();
@@ -609,6 +891,12 @@ class CmsAdmin extends AdminComponent
 
         $this->gameName = $translation !== null ? $translation->name : '';
         $this->gameSlug = $game->slug;
+        $this->gameCategoryId = (int) $game->game_category_id;
+        $this->gameGameplayProvider = (string) ($game->gameplay_provider ?: Game::PROVIDER_MANUAL);
+        $psSettings = $game->playStrategySettings();
+        $this->gamePlayStrategyVariant = $psSettings['variant'];
+        $this->gamePlayStrategyClockLimit = $psSettings['clock_limit'];
+        $this->gamePlayStrategyClockIncrement = $psSettings['clock_increment'];
         $this->gameDescription = $translation->description ?? '';
         $this->gameBannerPath = (string) ($game->bannerUrl() ?? '');
         $this->gameCardImagePath = (string) ($game->cardArtworkUrl() ?? '');
@@ -642,17 +930,27 @@ class CmsAdmin extends AdminComponent
 
     public function saveGameTranslation(): void
     {
+        abort_unless($this->canManageCategories(), 403);
         $this->gameConnectionMethod = 'server_room';
         $this->gameLocale = 'en';
-        $this->gameSlug = Str::slug($this->gameName);
+        $this->gameSlug = Str::slug($this->gameSlug !== '' && $this->gameGameplayProvider === Game::PROVIDER_PLAYSTRATEGY
+            ? $this->gameSlug
+            : $this->gameName);
 
         $newGameNeedsArtwork = $this->selectedGameId === null
             && $this->gameCardImage === null
-            && $this->gameBannerImage === null;
+            && $this->gameBannerImage === null
+            && $this->gameCardImagePath === ''
+            && $this->gameBannerPath === '';
 
         $this->validate([
             'gameName' => 'required|string|max:255',
             'gameSlug' => ['required', 'string', 'max:150', 'alpha_dash', Rule::unique('games', 'slug')->ignore($this->selectedGameId)],
+            'gameCategoryId' => ['required', 'integer', 'exists:game_categories,id'],
+            'gameGameplayProvider' => ['required', Rule::in([Game::PROVIDER_MANUAL, Game::PROVIDER_PLAYSTRATEGY])],
+            'gamePlayStrategyVariant' => ['required_if:gameGameplayProvider,playstrategy', 'string', 'max:80'],
+            'gamePlayStrategyClockLimit' => ['required_if:gameGameplayProvider,playstrategy', 'integer', 'min:60', 'max:7200'],
+            'gamePlayStrategyClockIncrement' => ['required_if:gameGameplayProvider,playstrategy', 'integer', 'min:0', 'max:120'],
             'gameDescription' => 'nullable|string',
             'gameBannerPath' => 'nullable|string|max:255',
             'gameCardImage' => [Rule::requiredIf($newGameNeedsArtwork), 'nullable', 'image', 'mimes:jpg,jpeg,png,webp'],
@@ -671,21 +969,59 @@ class CmsAdmin extends AdminComponent
         ], [
             'gameSlug.unique' => 'This game name generates a slug already in use. Choose a different game name.',
             'gameSlug.required' => 'Enter a game name containing letters or numbers to generate its slug.',
+            'gameCategoryId.required' => 'Select a game category.',
             'gameCardImage.required' => 'Upload either a game logo or a game cover photo.',
             'gameBannerImage.required' => 'Upload either a game cover photo or a game logo.',
         ]);
 
+        if ($this->gameGameplayProvider === Game::PROVIDER_PLAYSTRATEGY) {
+            $normalizedVariant = match (strtolower(trim($this->gamePlayStrategyVariant))) {
+                '', 'chess' => 'standard',
+                'draughts' => 'international',
+                default => trim($this->gamePlayStrategyVariant),
+            };
+            $this->gamePlayStrategyVariant = $normalizedVariant;
+
+            $alreadyExists = Game::query()
+                ->withoutTrashed()
+                ->where('gameplay_provider', Game::PROVIDER_PLAYSTRATEGY)
+                ->when($this->selectedGameId !== null, fn ($q) => $q->whereKeyNot($this->selectedGameId))
+                ->get(['id', 'provider_config'])
+                ->contains(fn (Game $existing): bool => strtolower($existing->playStrategyVariant()) === strtolower($normalizedVariant));
+
+            if ($alreadyExists) {
+                $this->addError('gamePlayStrategyVariant', __('This PlayStrategy game is already added to the catalog.'));
+
+                return;
+            }
+        }
+
         DB::transaction(function (): void {
+            $providerConfig = $this->gameGameplayProvider === Game::PROVIDER_PLAYSTRATEGY
+                ? [
+                    'variant' => trim($this->gamePlayStrategyVariant) ?: 'standard',
+                    'clock_limit' => max(60, (int) $this->gamePlayStrategyClockLimit),
+                    'clock_increment' => max(0, (int) $this->gamePlayStrategyClockIncrement),
+                    'rated' => false,
+                ]
+                : null;
+
             $game = $this->selectedGameId
                 ? Game::query()->findOrFail($this->selectedGameId)
                 : Game::query()->create([
                     'uuid' => Str::uuid()->toString(),
                     'slug' => Str::slug($this->gameSlug),
+                    'game_category_id' => (int) $this->gameCategoryId,
+                    'gameplay_provider' => $this->gameGameplayProvider,
+                    'provider_config' => $providerConfig,
                     'is_active' => $this->gameIsActive,
                 ]);
 
             $media = [
                 'slug' => Str::slug($this->gameSlug),
+                'game_category_id' => (int) $this->gameCategoryId,
+                'gameplay_provider' => $this->gameGameplayProvider,
+                'provider_config' => $providerConfig,
                 'is_active' => $this->gameIsActive,
                 'card_image_path' => $this->removeGameCardImage ? null : ($this->gameCardImagePath !== '' ? $this->gameCardImagePath : null),
                 'banner_path' => $this->removeGameBannerImage ? null : ($this->gameBannerPath !== '' ? $this->gameBannerPath : null),
@@ -829,6 +1165,12 @@ class CmsAdmin extends AdminComponent
         $this->selectedGameId = null;
         $this->gameName = '';
         $this->gameSlug = '';
+        $this->gameCategoryId = $this->defaultGameCategoryId();
+        $this->gameGameplayProvider = Game::PROVIDER_MANUAL;
+        $this->playStrategyPreset = '';
+        $this->gamePlayStrategyVariant = 'standard';
+        $this->gamePlayStrategyClockLimit = 300;
+        $this->gamePlayStrategyClockIncrement = 3;
         $this->gameDescription = '';
         $this->gameBannerPath = '';
         $this->gameCardImagePath = '';
@@ -843,6 +1185,16 @@ class CmsAdmin extends AdminComponent
         $this->removeGameBannerImage = false;
         $this->reset('gameCardImage', 'gameBannerImage');
         $this->resetValidation();
+    }
+
+    private function defaultGameCategoryId(): ?int
+    {
+        $id = GameCategory::query()
+            ->where('slug', GameCategory::VIDEO_GAMES_SLUG)
+            ->value('id')
+            ?? GameCategory::query()->ordered()->value('id');
+
+        return $id !== null ? (int) $id : null;
     }
 
     public function selectLandingSection(int $sectionId): void
@@ -1119,11 +1471,13 @@ class CmsAdmin extends AdminComponent
                 'games' => Game::query()
                     ->when($this->gameRecordTab === 'deleted' && $this->canViewDeletedGames(), fn ($query) => $query->onlyTrashed(), fn ($query) => $query->withoutTrashed())
                     ->with([
+                        'category:id,name,slug,is_active',
                         'translations:id,game_id,locale,name,description',
                         'platforms:id,name',
                         'tournamentDefaults:id,game_id,default_platform_id,tournament_banner_path',
                         'headToHeadDefaults:id,game_id,default_platform_id,head_to_head_banner_path',
                     ])
+                    ->when($this->gameCategoryFilter !== '', fn ($query) => $query->inCategorySlug($this->gameCategoryFilter))
                     ->when($this->gameSearch !== '', function ($query): void {
                         $term = '%'.$this->gameSearch.'%';
                         $query->where(function ($games) use ($term): void {
@@ -1142,7 +1496,29 @@ class CmsAdmin extends AdminComponent
                     ->when($this->gameArtworkFilter === 'missing_card', fn ($query) => $query->whereNull('card_image_path'))
                     ->when($this->gameArtworkFilter === 'missing_banner', fn ($query) => $query->whereNull('banner_path'))
                     ->orderBy('slug')
-                    ->paginate(10, ['id', 'uuid', 'slug', 'banner_path', 'card_image_path', 'is_active', 'deleted_at'], 'games_page'),
+                    ->paginate(10, ['id', 'uuid', 'slug', 'game_category_id', 'gameplay_provider', 'provider_config', 'banner_path', 'card_image_path', 'is_active', 'deleted_at'], 'games_page'),
+                'gameCategories' => GameCategory::query()
+                    ->ordered()
+                    ->withCount([
+                        'games as active_record_count' => fn ($query) => $query->withoutTrashed(),
+                        'allGames as deleted_record_count' => fn ($query) => $query->onlyTrashed(),
+                        'allGames as total_games_count',
+                    ])
+                    ->get(),
+                'allGamesTabCount' => ($this->gameRecordTab === 'deleted' && $this->canViewDeletedGames())
+                    ? Game::onlyTrashed()->count()
+                    : Game::query()->withoutTrashed()->count(),
+                'defaultGameCategoryId' => $this->defaultGameCategoryId(),
+                'cardBoardCategoryId' => GameCategory::query()->where('slug', GameCategory::CARD_BOARD_GAMES_SLUG)->value('id'),
+                'usedPlayStrategyVariants' => Game::query()
+                    ->withoutTrashed()
+                    ->where('gameplay_provider', Game::PROVIDER_PLAYSTRATEGY)
+                    ->when($this->selectedGameId !== null, fn ($query) => $query->whereKeyNot($this->selectedGameId))
+                    ->get(['id', 'provider_config'])
+                    ->map(fn (Game $game): string => strtolower($game->playStrategyVariant()))
+                    ->unique()
+                    ->values()
+                    ->all(),
                 'gamePlatforms' => Platform::query()->orderBy('name')->get(['id', 'name']),
             ],
         };

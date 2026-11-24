@@ -36,7 +36,7 @@ class DeletedGamesTest extends TestCase
         $this->admin = User::factory()->create();
         $this->admin->assignRole('SUPER_ADMIN');
         $this->actingAs($this->admin);
-        $this->game = Game::create(['uuid' => Str::uuid(), 'slug' => 'recoverable-game', 'is_active' => true]);
+        $this->game = Game::create(['uuid' => Str::uuid(), 'slug' => 'recoverable-game', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $this->game->translations()->create(['locale' => 'en', 'name' => 'Recoverable Game']);
     }
 

@@ -5,16 +5,22 @@ declare(strict_types=1);
 namespace App\Livewire\Tournament;
 
 use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\GameCategory;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Tournament\Models\Tournament;
 use App\Shared\Enums\RegistrationStatus;
 use App\Shared\Enums\TournamentStatus;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
 trait TournamentListTrait
 {
     use WithPagination;
+
+    #[Url]
+    public string $category = '';
 
     #[Url]
     public string $search = '';
@@ -44,6 +50,40 @@ trait TournamentListTrait
 
     public int $featuredLimit = 4;
 
+    public function mountTournamentListTrait(): void
+    {
+        $this->category = trim($this->category);
+        $this->clearIncompatibleGameSelection();
+    }
+
+    public function selectCategory(string $slug = ''): void
+    {
+        $this->category = trim($slug);
+        $this->clearIncompatibleGameSelection();
+        $this->featuredLimit = 4;
+        $this->resetPage();
+        $this->resetPage('featuredPage');
+    }
+
+    public function selectGame(string $gameId = ''): void
+    {
+        $normalized = trim($gameId);
+        $this->gameId = $this->gameId === $normalized ? '' : $normalized;
+        $this->clearIncompatibleGameSelection();
+        $this->featuredLimit = 4;
+        $this->resetPage();
+        $this->resetPage('featuredPage');
+    }
+
+    public function updatedCategory(): void
+    {
+        $this->category = trim($this->category);
+        $this->clearIncompatibleGameSelection();
+        $this->featuredLimit = 4;
+        $this->resetPage();
+        $this->resetPage('featuredPage');
+    }
+
     public function updatingSearch(): void
     {
         $this->resetPage();
@@ -51,7 +91,14 @@ trait TournamentListTrait
 
     public function updatingGameId(): void
     {
+        $this->featuredLimit = 4;
         $this->resetPage();
+        $this->resetPage('featuredPage');
+    }
+
+    public function updatedGameId(): void
+    {
+        $this->clearIncompatibleGameSelection();
     }
 
     public function updatingActiveTab(): void
@@ -89,11 +136,57 @@ trait TournamentListTrait
         $this->featuredLimit += 4;
     }
 
+    protected function clearIncompatibleGameSelection(): void
+    {
+        $this->gameId = trim($this->gameId);
+        if ($this->gameId === '') {
+            return;
+        }
+
+        $isCompatible = Game::query()
+            ->availableInCatalog()
+            ->inCategorySlug($this->category)
+            ->whereKey($this->gameId)
+            ->exists();
+
+        if (! $isCompatible) {
+            $this->gameId = '';
+        }
+    }
+
+    /** @return Collection<int, GameCategory> */
+    protected function getGameCategories(): Collection
+    {
+        return GameCategory::query()
+            ->active()
+            ->ordered()
+            ->withCount(['games as active_games_count' => fn (Builder $games) => $games->where('games.is_active', true)->whereNull('games.deleted_at')])
+            ->get();
+    }
+
+    protected function allCatalogGamesCount(): int
+    {
+        return Game::query()->availableInCatalog()->count();
+    }
+
+    protected function selectedGameModel(): ?Game
+    {
+        if ($this->gameId === '') {
+            return null;
+        }
+
+        return Game::query()
+            ->availableInCatalog()
+            ->inCategorySlug($this->category)
+            ->with(['translations', 'category'])
+            ->find($this->gameId);
+    }
+
     protected function getTournamentQuery()
     {
         $query = Tournament::query()
-            ->whereHas('game', fn ($games) => $games->availableInCatalog())
-            ->with(['game.translations', 'platform'])
+            ->whereHas('game', fn (Builder $games) => $games->availableInCatalog()->inCategorySlug($this->category))
+            ->with(['game.translations', 'game.category', 'platform'])
             ->withCount(['registrations' => function ($q) {
                 $q->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value]);
             }])
@@ -131,7 +224,12 @@ trait TournamentListTrait
 
     protected function getGames()
     {
-        return Game::query()->with('translations')->where('is_active', true)->get();
+        return Game::query()
+            ->availableInCatalog()
+            ->inCategorySlug($this->category)
+            ->with(['translations', 'category'])
+            ->orderBy('slug')
+            ->get();
     }
 
     protected function getPopularGames()
@@ -139,11 +237,12 @@ trait TournamentListTrait
         $activeStatuses = array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing'));
 
         return Game::query()
-            ->with('translations')
+            ->availableInCatalog()
+            ->inCategorySlug($this->category)
+            ->with(['translations', 'category'])
             ->withCount(['tournaments as active_tournaments_count' => fn ($query) => $query
                 ->whereIn('status', $activeStatuses)
                 ->when(! config('features.tournament_v2.enabled'), fn ($tournaments) => $tournaments->where('workflow_version', 1))])
-            ->where('is_active', true)
             ->when($this->gameSearch !== '', function ($query): void {
                 $term = '%'.$this->gameSearch.'%';
                 $query->where(function ($games) use ($term): void {
@@ -159,12 +258,15 @@ trait TournamentListTrait
     protected function getFeaturedTournaments()
     {
         $query = Tournament::query()
-            ->whereHas('game', fn ($games) => $games->availableInCatalog())
-            ->with(['game.translations', 'platform'])
+            ->whereHas('game', fn (Builder $games) => $games->availableInCatalog()->inCategorySlug($this->category))
+            ->with(['game.translations', 'game.category', 'platform'])
             ->withCount(['registrations' => fn ($query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])])
             ->where('is_featured', true)
             ->whereIn('status', array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing')))
+            ->when($this->gameId !== '', fn ($query) => $query->where('game_id', $this->gameId))
             ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency))
+            ->when($this->competitionType !== '', fn ($query) => $query->where('competition_type', $this->competitionType))
+            ->when($this->platformId !== '', fn ($query) => $query->forPlatform((int) $this->platformId))
             ->orderBy('start_at')
             ->limit($this->featuredLimit);
         $this->applyWorkflowFlag($query);
@@ -175,10 +277,13 @@ trait TournamentListTrait
     protected function featuredTournamentCount(): int
     {
         $query = Tournament::query()
-            ->whereHas('game', fn ($games) => $games->availableInCatalog())
+            ->whereHas('game', fn (Builder $games) => $games->availableInCatalog()->inCategorySlug($this->category))
             ->where('is_featured', true)
             ->whereIn('status', array_merge($this->statusesForTab('upcoming'), $this->statusesForTab('ongoing')))
-            ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency));
+            ->when($this->gameId !== '', fn ($query) => $query->where('game_id', $this->gameId))
+            ->when($this->frequency !== '', fn ($query) => $query->where('frequency', $this->frequency))
+            ->when($this->competitionType !== '', fn ($query) => $query->where('competition_type', $this->competitionType))
+            ->when($this->platformId !== '', fn ($query) => $query->forPlatform((int) $this->platformId));
         $this->applyWorkflowFlag($query);
 
         return $query->count();

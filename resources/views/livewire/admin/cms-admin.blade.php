@@ -1,21 +1,78 @@
-<div class="admin-game-management" x-data="gameManagementUi($wire)">
+<div class="admin-game-management" x-data="gameManagementUi($wire, {{ Js::from($defaultGameCategoryId ?? null) }})">
 
 
     <!-- Feedback Alerts -->
     @if(session()->has('success'))
-        <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-lg text-sm mb-6 flex items-center">
-            <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+        <div role="status" class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-3 rounded-lg text-sm mb-6 flex items-center">
+            <i data-lucide="check-circle" class="w-4 h-4 mr-2 shrink-0"></i>
             <span>{{ session('success') }}</span>
+        </div>
+    @endif
+    @if(session()->has('error'))
+        <div role="alert" class="bg-red-500/10 border border-red-500/25 text-red-300 px-4 py-3 rounded-lg text-sm mb-6 flex items-center">
+            <i data-lucide="alert-circle" class="w-4 h-4 mr-2 shrink-0"></i>
+            <span>{{ session('error') }}</span>
         </div>
     @endif
 
     <!-- Games Tab Content -->
     @if($tab === 'games')
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div><h2 class="text-lg font-black text-white">Game Management</h2><p class="mt-1 text-xs text-slate-500">Create games, assign platforms, manage artwork, tournament templates, or soft delete catalog entries while preserving connected history.</p></div>
-            <button type="button" x-on:click="openCreateGame()" class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500">
-                <i data-lucide="plus" class="h-4 w-4"></i><span>Add New Game</span>
-            </button>
+            <div><h2 class="text-lg font-black text-white">Game Management</h2><p class="mt-1 text-xs text-slate-400">Create games, organize categories, assign platforms, manage artwork, or soft delete catalog entries while preserving connected history.</p></div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" wire:click="openCategoryManager" class="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:border-cyan-400/60 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400">
+                    <i data-lucide="folder-kanban" class="h-4 w-4 text-cyan-400"></i><span>{{ __('Manage Categories') }}</span>
+                </button>
+                @if($this->canManageCategories())
+                    <button type="button" x-on:click="openCreateGame()" class="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400">
+                        <i data-lucide="plus" class="h-4 w-4"></i><span>Add New Game</span>
+                    </button>
+                @endif
+            </div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="mb-4 rounded-xl border border-slate-800 bg-[#0b1220] p-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-2">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">{{ __('Game Categories') }}</span>
+                <span wire:loading wire:target="setGameCategoryFilter,gameSearch,gameCatalogFilter,gamePlatformFilter,gameTemplateFilter,gameArtworkFilter,setGameRecordTab" class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-cyan-300">
+                    <span class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>{{ __('Updating catalog…') }}
+                </span>
+            </div>
+            <div role="tablist" aria-label="{{ __('Filter games by category') }}" x-data="categoryTablist()" @keydown="onKeydown($event)" class="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected="{{ $gameCategoryFilter === '' ? 'true' : 'false' }}"
+                    wire:click="setGameCategoryFilter('')"
+                    class="inline-flex min-h-[38px] shrink-0 items-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 {{ $gameCategoryFilter === '' ? 'border-lime-400/70 bg-lime-400/15 text-lime-200' : 'border-slate-800 bg-slate-900/70 text-slate-300 hover:border-slate-600 hover:text-white' }}"
+                >
+                    <span>{{ __('All Games') }}</span>
+                    <span class="rounded-full bg-slate-950/80 px-2 py-0.5 font-mono text-[10px] tabular-nums {{ $gameCategoryFilter === '' ? 'text-lime-300' : 'text-slate-400' }}">{{ $allGamesTabCount }}</span>
+                </button>
+                @foreach($gameCategories as $category)
+                    @php
+                        $tabCount = ($gameRecordTab === 'deleted' && $this->canViewDeletedGames())
+                            ? (int) $category->deleted_record_count
+                            : (int) $category->active_record_count;
+                        $isSelected = $gameCategoryFilter === $category->slug;
+                    @endphp
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected="{{ $isSelected ? 'true' : 'false' }}"
+                        wire:key="admin-cat-tab-{{ $category->id }}"
+                        wire:click="setGameCategoryFilter('{{ $category->slug }}')"
+                        class="inline-flex min-h-[38px] shrink-0 items-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 {{ $isSelected ? 'border-lime-400/70 bg-lime-400/15 text-lime-200' : 'border-slate-800 bg-slate-900/70 text-slate-300 hover:border-slate-600 hover:text-white' }}"
+                    >
+                        <span>{{ $category->name }}</span>
+                        <span class="rounded-full bg-slate-950/80 px-2 py-0.5 font-mono text-[10px] tabular-nums {{ $isSelected ? 'text-lime-300' : 'text-slate-400' }}">{{ $tabCount }}</span>
+                        @if(! $category->is_active)
+                            <span class="rounded border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-amber-300">{{ __('Inactive') }}</span>
+                        @endif
+                    </button>
+                @endforeach
+            </div>
         </div>
         <div class="mb-5 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -43,6 +100,7 @@
                             <th class="p-4">Game Slug</th>
                             <th class="p-4">Logo / Cover Photo</th>
                             <th class="p-4">Name (EN)</th>
+                            <th class="p-4">{{ __('Category') }}</th>
                             <th class="p-4">Platforms</th>
                             <th class="p-4">Description</th>
                             <th class="p-4">Catalog status</th>
@@ -78,6 +136,23 @@
                                         </span>
                                         <span class="mt-1 block text-[9px] font-bold uppercase tracking-wider {{ $game->headToHeadDefaults ? 'text-fuchsia-300' : 'text-slate-600' }}">
                                             {{ $game->headToHeadDefaults ? 'H2H template configured' : 'H2H template not configured' }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="p-4">
+                                    @if($game->category)
+                                        <span class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-bold {{ $game->category->is_active ? 'border-cyan-500/25 bg-cyan-500/10 text-cyan-200' : 'border-amber-500/35 bg-amber-500/10 text-amber-200' }}">
+                                            <span>{{ $game->category->name }}</span>
+                                        </span>
+                                        @if(! $game->category->is_active)
+                                            <span class="mt-1 block text-[9px] font-bold uppercase tracking-wider text-amber-300">{{ __('Category inactive') }}</span>
+                                        @endif
+                                    @else
+                                        <span class="text-[10px] text-slate-500">—</span>
+                                    @endif
+                                    @if($game->isPlayStrategyManaged())
+                                        <span class="mt-1 inline-flex items-center gap-1 rounded border border-lime-400/35 bg-lime-400/10 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-lime-300">
+                                            PlayStrategy · {{ $game->playStrategyVariant() }}
                                         </span>
                                     @endif
                                 </td>
@@ -118,6 +193,11 @@
                                                 'id' => $game->id,
                                                 'locale' => 'en',
                                                 'slug' => $game->slug,
+                                                'categoryId' => (int) $game->game_category_id,
+                                                'gameplayProvider' => (string) ($game->gameplay_provider ?: 'manual'),
+                                                'playStrategyVariant' => $game->playStrategySettings()['variant'],
+                                                'playStrategyClockLimit' => $game->playStrategySettings()['clock_limit'],
+                                                'playStrategyClockIncrement' => $game->playStrategySettings()['clock_increment'],
                                                 'isActive' => (bool) $game->is_active,
                                                 'bannerPath' => $game->bannerUrl() ?? '',
                                                 'cardImagePath' => $game->cardArtworkUrl() ?? '',
@@ -137,7 +217,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="p-8 text-center text-slate-500 italic">No games found. Add the first game to the catalog.</td>
+                                <td colspan="8" class="p-8 text-center text-slate-500 italic">No games found. Add the first game to the catalog or clear your category filter.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -444,11 +524,44 @@
                         <label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900 px-4 py-3"><input type="checkbox" wire:model="gameIsActive" class="rounded border-slate-700 bg-slate-950 text-indigo-500"><span><span class="block text-xs font-bold text-white">Active in catalog</span><span class="mt-0.5 block text-[10px] text-slate-500">Visible to players and tournament creation.</span></span></label>
                     </div>
 
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Game Name</label>
-                        <input type="text" wire:model.live.debounce.150ms="gameName" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                        @error('gameName') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="admin-game-category" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">{{ __('Category') }} *</label>
+                            <select id="admin-game-category" wire:model.live="gameCategoryId" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                                <option value="">{{ __('Select category') }}</option>
+                                @foreach($gameCategories as $category)
+                                    <option value="{{ $category->id }}">
+                                        {{ $category->name }}{{ ! $category->is_active ? ' ('.__('Inactive').')' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('gameCategoryId') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label for="admin-game-name" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Game Name *</label>
+                            <input id="admin-game-name" type="text" wire:model.live.debounce.150ms="gameName" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            @error('gameName') <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        </div>
                     </div>
+
+                    @if($selectedGameId === null && ((int) $gameCategoryId === (int) ($cardBoardCategoryId ?? 0) || $gameGameplayProvider === 'playstrategy'))
+                        <div class="rounded-lg border border-cyan-500/35 bg-cyan-950/20 p-4 space-y-2">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label for="admin-ps-preset" class="text-[10px] font-bold uppercase tracking-wider text-cyan-300">{{ __('Quick-Fill from PlayStrategy Catalog (Optional)') }}</label>
+                                <span class="text-[10px] text-slate-400">{{ __('Or leave blank to add any manual Card/Board game') }}</span>
+                            </div>
+                            <select id="admin-ps-preset" wire:model.live="playStrategyPreset" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-cyan-400 focus:outline-none">
+                                <option value="">{{ __('— Manual Card / Board Game (Enter details below) —') }}</option>
+                                @foreach(\App\Modules\CMS\Models\Game::playStrategyCatalog() as $presetKey => $preset)
+                                    @php($isUsed = in_array(strtolower($presetKey), $usedPlayStrategyVariants ?? [], true))
+                                    <option value="{{ $presetKey }}" {{ $isUsed ? 'disabled' : '' }}>
+                                        {{ $preset['name'] }} ({{ $presetKey }}) — {{ (int) ($preset['clock_limit'] / 60) }}m + {{ $preset['clock_increment'] }}s{{ $isUsed ? ' · '.__('Already Added') : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-[10px] leading-relaxed text-slate-400">{{ __('Selecting a PlayStrategy game automatically fills the name, slug, description, clock settings, Web Browser platform, and PlayStrategy provider. Each PlayStrategy game can only be added once.') }}</p>
+                        </div>
+                    @endif
 
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Description</label>
@@ -472,6 +585,43 @@
                     </div>
 
                     <fieldset class="rounded-lg border border-slate-800 bg-slate-900/60 p-4"><legend class="px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Supported Platforms {{ $selectedGameId ? '' : '*' }}</legend><div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">@forelse($gamePlatforms as $platform)<label class="flex items-center gap-2 rounded border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300"><input type="checkbox" wire:model="gamePlatformIds" value="{{ $platform->id }}" class="rounded border-slate-700 bg-slate-900 text-indigo-500"> {{ $platform->name }}</label>@empty<p class="col-span-full text-xs text-amber-300">Create platforms first from the Platforms tab.</p>@endforelse</div>@error('gamePlatformIds')<p class="mt-2 text-xs text-red-400">Select at least one supported platform when adding a game.</p>@enderror @error('gamePlatformIds.*')<p class="mt-2 text-xs text-red-400">{{ $message }}</p>@enderror</fieldset>
+
+                    <fieldset class="rounded-lg border border-cyan-900/40 bg-cyan-950/10 p-4">
+                        <legend class="px-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300">{{ __('Gameplay Provider') }}</legend>
+                        <p class="mb-3 text-[10px] leading-relaxed text-slate-400">{{ __('Gameplay provider is configured independently from game category. Choose PlayStrategy for automated external board matches and verified API results.') }}</p>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <label for="admin-game-provider" class="block text-[10px] font-bold uppercase text-slate-400">{{ __('Provider') }}</label>
+                                <select id="admin-game-provider" wire:model.live="gameGameplayProvider" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white">
+                                    <option value="manual">{{ __('Manual (Player-Reported)') }}</option>
+                                    <option value="playstrategy">{{ __('PlayStrategy (Automated Boards)') }}</option>
+                                </select>
+                                @error('gameGameplayProvider')<span class="text-xs text-red-400">{{ $message }}</span>@enderror
+                            </div>
+                            @if($gameGameplayProvider === 'playstrategy')
+                                <div>
+                                    <label for="admin-ps-variant" class="block text-[10px] font-bold uppercase text-slate-400">{{ __('PlayStrategy Variant') }}</label>
+                                    <select id="admin-ps-variant" wire:model="gamePlayStrategyVariant" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white">
+                                        @foreach(\App\Modules\CMS\Models\Game::PLAYSTRATEGY_VARIANTS as $variantKey => $variantLabel)
+                                            @php($variantUsed = in_array(strtolower($variantKey), $usedPlayStrategyVariants ?? [], true))
+                                            <option value="{{ $variantKey }}" {{ $variantUsed ? 'disabled' : '' }}>{{ $variantLabel }} ({{ $variantKey }}){{ $variantUsed ? ' · '.__('Already Added') : '' }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('gamePlayStrategyVariant')<span class="text-xs text-red-400">{{ $message }}</span>@enderror
+                                </div>
+                                <div>
+                                    <label for="admin-ps-clock" class="block text-[10px] font-bold uppercase text-slate-400">{{ __('Clock Limit (seconds)') }}</label>
+                                    <input id="admin-ps-clock" wire:model="gamePlayStrategyClockLimit" type="number" min="60" max="7200" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white">
+                                    @error('gamePlayStrategyClockLimit')<span class="text-xs text-red-400">{{ $message }}</span>@enderror
+                                </div>
+                                <div>
+                                    <label for="admin-ps-inc" class="block text-[10px] font-bold uppercase text-slate-400">{{ __('Clock Increment (seconds)') }}</label>
+                                    <input id="admin-ps-inc" wire:model="gamePlayStrategyClockIncrement" type="number" min="0" max="120" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white">
+                                    @error('gamePlayStrategyClockIncrement')<span class="text-xs text-red-400">{{ $message }}</span>@enderror
+                                </div>
+                            @endif
+                        </div>
+                    </fieldset>
 
                     <fieldset class="rounded-lg border border-cyan-900/40 bg-cyan-950/10 p-4">
                         <legend class="px-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300">Player Connection Details</legend>
@@ -498,6 +648,185 @@
                 </form>
             </div>
         </div>
+
+        <!-- Manage Game Categories Modal -->
+        @if($showCategoryManagerModal)
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="manage-categories-title" x-on:keydown.escape.window="$wire.closeCategoryManager()">
+                <div class="fixed inset-0 bg-black/65 backdrop-blur-sm" wire:click="closeCategoryManager"></div>
+                <div class="relative z-10 max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-slate-800 bg-[#0f172a] shadow-2xl">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-[#0b0f19] px-6 py-4">
+                        <div>
+                            <h3 id="manage-categories-title" class="text-sm font-bold uppercase tracking-wider text-white">{{ __('Game Categories') }}</h3>
+                            <p class="mt-0.5 text-xs text-slate-400">{{ __('Create, rename, reorder, activate, or deactivate categories. Categories referenced by any game (including archived games) cannot be deleted.') }}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            @if($this->canManageCategories())
+                                <button type="button" wire:click="openCreateCategoryModal" class="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-500">
+                                    <i data-lucide="plus" class="h-3.5 w-3.5"></i><span>{{ __('Add Category') }}</span>
+                                </button>
+                            @endif
+                            <button type="button" wire:click="closeCategoryManager" aria-label="{{ __('Close categories manager') }}" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white">
+                                <i data-lucide="x" class="h-5 w-5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-4">
+                        @if($categoryError !== '')
+                            <div role="alert" class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">
+                                {{ $categoryError }}
+                            </div>
+                        @endif
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-800">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-800 bg-slate-950/60 text-[10px] font-bold uppercase text-slate-400">
+                                        <th class="p-3">{{ __('Order') }}</th>
+                                        <th class="p-3">{{ __('Category') }}</th>
+                                        <th class="p-3">{{ __('Games') }}</th>
+                                        <th class="p-3">{{ __('Status') }}</th>
+                                        <th class="p-3 text-right">{{ __('Actions') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/70">
+                                    @forelse($gameCategories as $category)
+                                        @php($hasAnyGames = (int) $category->total_games_count > 0)
+                                        <tr wire:key="manage-cat-{{ $category->id }}" class="hover:bg-slate-900/50">
+                                            <td class="p-3 font-mono text-slate-300">
+                                                <div class="inline-flex items-center gap-1">
+                                                    <span class="w-6 tabular-nums">{{ $category->display_order }}</span>
+                                                    @if($this->canManageCategories())
+                                                        <button type="button" wire:click="moveCategory({{ $category->id }}, 'up')" @disabled($loop->first) aria-label="{{ __('Move :name up', ['name' => $category->name]) }}" class="rounded border border-slate-700 bg-slate-900 p-1 text-slate-300 hover:border-cyan-400/50 hover:text-white disabled:opacity-30"><i data-lucide="chevron-up" class="h-3.5 w-3.5"></i></button>
+                                                        <button type="button" wire:click="moveCategory({{ $category->id }}, 'down')" @disabled($loop->last) aria-label="{{ __('Move :name down', ['name' => $category->name]) }}" class="rounded border border-slate-700 bg-slate-900 p-1 text-slate-300 hover:border-cyan-400/50 hover:text-white disabled:opacity-30"><i data-lucide="chevron-down" class="h-3.5 w-3.5"></i></button>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td class="p-3">
+                                                <span class="block font-bold text-white">{{ $category->name }}</span>
+                                                <span class="font-mono text-[10px] text-slate-400">{{ $category->slug }}</span>
+                                            </td>
+                                            <td class="p-3 font-mono tabular-nums text-slate-300">
+                                                <span>{{ (int) $category->active_record_count }} {{ __('active') }}</span>
+                                                @if((int) $category->deleted_record_count > 0)
+                                                    <span class="block text-[10px] text-amber-300">{{ (int) $category->deleted_record_count }} {{ __('archived') }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="p-3">
+                                                <span class="inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] font-bold uppercase {{ $category->is_active ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/35 bg-amber-500/10 text-amber-300' }}">
+                                                    <span class="h-1.5 w-1.5 rounded-full {{ $category->is_active ? 'bg-emerald-400' : 'bg-amber-400' }}"></span>
+                                                    {{ $category->is_active ? __('Active') : __('Inactive') }}
+                                                </span>
+                                            </td>
+                                            <td class="p-3 text-right">
+                                                @if($this->canManageCategories())
+                                                    <div class="inline-flex flex-wrap items-center justify-end gap-1.5">
+                                                        <button type="button" wire:click="openEditCategoryModal({{ $category->id }})" class="rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-slate-200 hover:border-indigo-400 hover:text-white">{{ __('Edit') }}</button>
+                                                        <button type="button" wire:click="requestCategoryStatusChange({{ $category->id }})" class="rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold {{ $category->is_active ? 'border-amber-500/40 bg-amber-500/10 text-amber-200 hover:bg-amber-500/20' : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20' }}">
+                                                            {{ $category->is_active ? __('Deactivate') : __('Activate') }}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            wire:click="deleteCategory({{ $category->id }})"
+                                                            @disabled($hasAnyGames)
+                                                            title="{{ $hasAnyGames ? __('Cannot delete while active or archived games belong to this category.') : __('Delete category') }}"
+                                                            class="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-red-300 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                                                        >
+                                                            {{ __('Delete') }}
+                                                        </button>
+                                                    </div>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="p-6 text-center text-slate-400">{{ __('No game categories created yet.') }}</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- Create / Edit Game Category Modal -->
+        @if($showCategoryModal)
+            <div class="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="category-form-title" x-on:keydown.escape.window="$wire.set('showCategoryModal', false)">
+                <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" wire:click="$set('showCategoryModal', false)"></div>
+                <div class="relative z-10 w-full max-w-md overflow-hidden rounded-xl border border-slate-800 bg-[#0f172a] shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-800 bg-[#0b0f19] px-6 py-4">
+                        <h3 id="category-form-title" class="text-sm font-bold uppercase tracking-wider text-slate-200">
+                            {{ $selectedCategoryId ? __('Edit Game Category') : __('Create Game Category') }}
+                        </h3>
+                        <button type="button" wire:click="$set('showCategoryModal', false)" aria-label="{{ __('Close category form') }}" class="text-slate-400 hover:text-white">
+                            <i data-lucide="x" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+                    <form wire:submit.prevent="saveCategory" class="p-6 space-y-4 text-xs">
+                        <div>
+                            <label for="cat-name" class="mb-1 block text-[10px] font-bold uppercase text-slate-400">{{ __('Category Name') }} *</label>
+                            <input id="cat-name" type="text" wire:model.live.debounce.150ms="categoryName" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+                            @error('categoryName')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror
+                        </div>
+                        <div>
+                            <label for="cat-slug" class="mb-1 block text-[10px] font-bold uppercase text-slate-400">{{ __('Unique Slug') }} *</label>
+                            <input id="cat-slug" type="text" wire:model="categorySlug" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 font-mono text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+                            @error('categorySlug')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="cat-order" class="mb-1 block text-[10px] font-bold uppercase text-slate-400">{{ __('Display Order') }}</label>
+                                <input id="cat-order" type="number" min="0" wire:model="categoryDisplayOrder" class="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+                                @error('categoryDisplayOrder')<span class="mt-1 block text-xs text-red-400">{{ $message }}</span>@enderror
+                            </div>
+                            <label class="flex items-center gap-2.5 self-end rounded-lg border border-slate-800 bg-slate-900 px-3 py-2.5 text-xs font-semibold text-slate-200">
+                                <input type="checkbox" wire:model="categoryIsActive" class="rounded border-slate-700 bg-slate-950 text-indigo-500">
+                                <span>{{ __('Active') }}</span>
+                            </label>
+                        </div>
+                        <div class="flex justify-end gap-2 border-t border-slate-800 pt-4">
+                            <button type="button" wire:click="$set('showCategoryModal', false)" class="rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold uppercase text-slate-200 hover:bg-slate-700">{{ __('Cancel') }}</button>
+                            <button type="submit" wire:loading.attr="disabled" wire:target="saveCategory" class="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-indigo-500 disabled:opacity-50">{{ __('Save Category') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
+
+        <!-- Deactivate Category Confirmation Modal -->
+        @if($confirmDeactivateCategoryId !== null)
+            @teleport('body')
+                <div class="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="deactivate-category-title" x-on:keydown.escape.window="$wire.cancelDeactivateCategory()">
+                    <button type="button" wire:click="cancelDeactivateCategory" class="absolute inset-0 bg-black/75 backdrop-blur-sm" aria-label="{{ __('Close deactivation dialog') }}"></button>
+                    <div class="relative z-10 w-full max-w-lg rounded-2xl border border-amber-500/40 bg-[#0f172a] p-6 text-slate-200 shadow-2xl">
+                        <div class="flex items-start gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/15 text-amber-300">
+                                <i data-lucide="alert-triangle" class="h-5 w-5"></i>
+                            </div>
+                            <div>
+                                <h3 id="deactivate-category-title" class="text-base font-bold text-white">{{ __('Deactivate ":name"?', ['name' => $confirmDeactivateCategoryName]) }}</h3>
+                                <p class="mt-1 text-xs text-slate-400">
+                                    {{ __('Affects :games game(s) and :tournaments active/open tournament(s).', ['games' => $confirmDeactivateCategoryGamesCount, 'tournaments' => $confirmDeactivateCategoryOpenTournamentsCount]) }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <ul class="mt-4 space-y-2 rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-xs leading-relaxed text-slate-300">
+                            <li class="flex gap-2"><span class="text-amber-300 font-bold">•</span><span>{{ __('Hides this category, its games, and its tournaments from player discovery, game selectors, All Games, and featured results.') }}</span></li>
+                            <li class="flex gap-2"><span class="text-amber-300 font-bold">•</span><span>{{ __('Blocks new registrations for tournaments in this category across web and API.') }}</span></li>
+                            <li class="flex gap-2"><span class="text-emerald-300 font-bold">•</span><span>{{ __('Preserves accepted registrations, ongoing match access, cancellation rights, bracket advancement, payouts, and admin access.') }}</span></li>
+                        </ul>
+
+                        <div class="mt-5 flex justify-end gap-2">
+                            <button type="button" wire:click="cancelDeactivateCategory" class="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-bold uppercase text-slate-200 hover:bg-slate-800">{{ __('Cancel') }}</button>
+                            <button type="button" wire:click="confirmDeactivateCategory" wire:loading.attr="disabled" wire:target="confirmDeactivateCategory" class="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold uppercase text-slate-950 hover:bg-amber-400 disabled:opacity-50">{{ __('Deactivate Category') }}</button>
+                        </div>
+                    </div>
+                </div>
+            @endteleport
+        @endif
     @endif
 
     <!-- Create/Edit Platform Modal -->
@@ -540,6 +869,7 @@
                 </form>
             </div>
         </div>
+
     @endif
 
     <!-- Create/Edit Landing Item Modal -->
@@ -619,6 +949,7 @@
                 </form>
             </div>
         </div>
+
     @endif
 
     <!-- Create/Edit Navigation Item Modal -->
@@ -699,6 +1030,7 @@
                 </form>
             </div>
         </div>
+
     @endif
 
     <!-- Delete Confirmation Modal -->

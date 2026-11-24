@@ -123,7 +123,7 @@ class ChatInboxTest extends TestCase
     public function test_tournament_team_chat_has_personal_mute_controls_and_keeps_membership_authorization(): void
     {
         [$sender, $recipient] = $this->players();
-        $game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'chat-game', 'is_active' => true]);
+        $game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'chat-game', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid(), 'name' => 'Team Chat Cup', 'slug' => 'team-chat-cup', 'game_id' => $game->id,
             'created_by' => $recipient->id, 'status' => TournamentStatus::REGISTRATION_OPEN, 'max_participants' => 4, 'min_participants' => 2,

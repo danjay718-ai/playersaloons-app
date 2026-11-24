@@ -23,8 +23,8 @@ final class V2StalledMatchService
 
     public function armForTournament(int $tournamentId): void
     {
-        $tournament = Tournament::query()->find($tournamentId);
-        if ($tournament === null || (int) $tournament->workflow_version !== 2) {
+        $tournament = Tournament::query()->with('game')->find($tournamentId);
+        if ($tournament === null || (int) $tournament->workflow_version !== 2 || $tournament->game?->isPlayStrategyManaged()) {
             return;
         }
 

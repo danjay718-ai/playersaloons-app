@@ -195,7 +195,7 @@ class GuestCompetitionTest extends TestCase
 
     private function tournament(string $name, TournamentStatus $status = TournamentStatus::REGISTRATION_OPEN): Tournament
     {
-        $game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => Str::uuid(), 'is_active' => true]);
+        $game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => Str::uuid(), 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
 
         return Tournament::query()->create(['uuid' => Str::uuid(), 'name' => $name, 'slug' => Str::uuid(), 'game_id' => $game->id, 'created_by' => User::factory()->create()->id, 'workflow_version' => 1, 'competition_type' => 'tournament', 'status' => $status, 'entry_fee' => 0, 'max_participants' => 8, 'min_participants' => 2, 'start_at' => now()->addDay()]);
     }

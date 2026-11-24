@@ -884,6 +884,7 @@ class PlayerTournamentComponentsTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => $slug,
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         $game->translations()->create([

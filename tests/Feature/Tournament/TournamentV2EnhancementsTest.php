@@ -51,7 +51,8 @@ final class TournamentV2EnhancementsTest extends TestCase
         ]);
         $this->admin->assignRole('SUPER_ADMIN');
         $this->game = Game::query()->create([
-            'uuid' => Str::uuid(), 'slug' => 'enhancement-game', 'banner_path' => 'games/cover.webp', 'is_active' => true,
+            'uuid' => Str::uuid(), 'slug' => 'enhancement-game', 'banner_path' => 'games/cover.webp',
+            'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true,
         ]);
         $this->platform = Platform::query()->create(['name' => 'PC', 'slug' => 'enhancement-pc', 'is_active' => true]);
         $this->game->platforms()->attach($this->platform);
@@ -72,7 +73,7 @@ final class TournamentV2EnhancementsTest extends TestCase
         self::assertSame('/storage/schedules/custom.webp', $resolver->resolve($this->game, CompetitionType::TOURNAMENT, null, 'schedules/custom.webp'));
         self::assertSame('/storage/slots/custom.webp', $resolver->resolve($this->game, CompetitionType::TOURNAMENT, 'slots/custom.webp', 'schedules/custom.webp'));
 
-        $empty = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'empty-art', 'is_active' => true]);
+        $empty = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'empty-art', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         self::assertNull($resolver->resolve($empty, CompetitionType::TOURNAMENT));
     }
 

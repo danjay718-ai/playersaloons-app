@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Backgammon 3D Arena Card">
+  <defs>
+    <radialGradient id="bg-bg" cx="50%" cy="38%" r="72%">
+      <stop offset="0%" stop-color="#2a2117"/>
+      <stop offset="44%" stop-color="#0d1626"/>
+      <stop offset="100%" stop-color="#040812"/>
+    </radialGradient>
+    <radialGradient id="aura-gold" cx="52%" cy="42%" r="44%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.30"/>
+      <stop offset="55%" stop-color="#f59e0b" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="aura-sky" cx="28%" cy="32%" r="34%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tray-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1b2b42"/>
+      <stop offset="55%" stop-color="#0c1728"/>
+      <stop offset="100%" stop-color="#060c17"/>
+    </linearGradient>
+    <linearGradient id="gold-disc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="30%" stop-color="#fbbf24"/>
+      <stop offset="72%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+    <linearGradient id="dark-disc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7dd3fc"/>
+      <stop offset="22%" stop-color="#1e3a5f"/>
+      <stop offset="70%" stop-color="#091525"/>
+      <stop offset="100%" stop-color="#03070f"/>
+    </linearGradient>
+    <linearGradient id="die-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="die-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+    <linearGradient id="die-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+    <linearGradient id="bottom-fade-bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#040812" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#040812" stop-opacity="0.94"/>
+    </linearGradient>
+    <filter id="bg-shadow" x="-30%" y="-25%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="20" stdDeviation="16" flood-color="#010409" flood-opacity="0.8"/>
+    </filter>
+    <filter id="bg-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#bg-bg)"/>
+  <ellipse cx="420" cy="410" rx="340" ry="270" fill="url(#aura-gold)"/>
+  <ellipse cx="230" cy="310" rx="220" ry="180" fill="url(#aura-sky)"/>
+
+  <!-- 3D Perspective Backgammon Board Card -->
+  <g transform="translate(400, 505)" filter="url(#bg-shadow)">
+    <!-- Board Base Depth -->
+    <polygon points="-285,35 0,175 285,35 285,68 0,208 -285,68" fill="#081322" stroke="#fbbf24" stroke-opacity="0.35" stroke-width="1.5"/>
+    <!-- Board Top Surface -->
+    <polygon points="0,-135 285,35 0,175 -285,35" fill="url(#tray-top)" stroke="#fde68a" stroke-opacity="0.55" stroke-width="2.2"/>
+    <!-- Center Bar -->
+    <polygon points="-22,-122 22,-96 22,162 -22,136" fill="#07101d" stroke="#fbbf24" stroke-opacity="0.3"/>
+
+    <!-- Backgammon Triangular Points (Left Half) -->
+    <polygon points="-228,12 -184,-14 -128,48" fill="#fbbf24" fill-opacity="0.72"/>
+    <polygon points="-172,-21 -128,-47 -72,15" fill="#38bdf8" fill-opacity="0.45"/>
+    <polygon points="-116,-54 -72,-80 -16,-18" fill="#fbbf24" fill-opacity="0.72"/>
+
+    <!-- Backgammon Triangular Points (Right Half) -->
+    <polygon points="228,12 184,-14 128,48" fill="#38bdf8" fill-opacity="0.48"/>
+    <polygon points="172,-21 128,-47 72,15" fill="#fbbf24" fill-opacity="0.72"/>
+    <polygon points="116,-54 72,-80 16,-18" fill="#38bdf8" fill-opacity="0.48"/>
+
+    <!-- Lower Triangular Points -->
+    <polygon points="-155,88 -110,114 -68,46" fill="#38bdf8" fill-opacity="0.36"/>
+    <polygon points="155,88 110,114 68,46" fill="#fbbf24" fill-opacity="0.58"/>
+  </g>
+
+  <!-- Stacked 3D Obsidian & Cyan Checkers (Left) -->
+  <g transform="translate(268, 472)" filter="url(#bg-shadow)">
+    <!-- Disc 1 -->
+    <path d="M-64,26 L-64,46 C-64,64 64,64 64,46 L64,26 Z" fill="url(#dark-disc)" stroke="#38bdf8" stroke-opacity="0.45"/>
+    <ellipse cx="0" cy="26" rx="64" ry="24" fill="#102944" stroke="#7dd3fc" stroke-opacity="0.7" stroke-width="1.8"/>
+    <!-- Disc 2 -->
+    <path d="M-64,-6 L-64,14 C-64,32 64,32 64,14 L64,-6 Z" fill="url(#dark-disc)" stroke="#38bdf8" stroke-opacity="0.5"/>
+    <ellipse cx="0" cy="-6" rx="64" ry="24" fill="#133152" stroke="#bae6fd" stroke-opacity="0.8" stroke-width="1.8"/>
+    <ellipse cx="0" cy="-6" rx="44" ry="15" fill="none" stroke="#38bdf8" stroke-opacity="0.45" stroke-width="2"/>
+  </g>
+
+  <!-- Stacked 3D Champagne Gold Checkers (Right) -->
+  <g transform="translate(535, 452)" filter="url(#bg-shadow)">
+    <path d="M-62,48 L-62,68 C-62,86 62,86 62,68 L62,48 Z" fill="url(#gold-disc)"/>
+    <ellipse cx="0" cy="48" rx="62" ry="23" fill="#d97706" stroke="#fef3c7" stroke-opacity="0.7"/>
+    <path d="M-62,16 L-62,36 C-62,54 62,54 62,36 L62,16 Z" fill="url(#gold-disc)"/>
+    <ellipse cx="0" cy="16" rx="62" ry="23" fill="#f59e0b" stroke="#fef3c7" stroke-opacity="0.85"/>
+    <path d="M-62,-16 L-62,4 C-62,22 62,22 62,4 L62,-16 Z" fill="url(#gold-disc)"/>
+    <ellipse cx="0" cy="-16" rx="62" ry="23" fill="url(#gold-disc)" stroke="#fffbeb" stroke-width="2"/>
+    <ellipse cx="0" cy="-16" rx="42" ry="14" fill="none" stroke="#fffbeb" stroke-opacity="0.55" stroke-width="2"/>
+  </g>
+
+  <!-- Floating 3D Hero Dice Pair (Center Foreground) -->
+  <!-- Die 1 (Higher Left) -->
+  <g transform="translate(362, 315) rotate(-12)" filter="url(#bg-shadow)">
+    <polygon points="0,-68 64,-34 0,0 -64,-34" fill="url(#die-top)" stroke="#ffffff" stroke-width="1.5"/>
+    <polygon points="-64,-34 0,0 0,72 -64,38" fill="url(#die-left)" stroke="#cbd5e1" stroke-opacity="0.5"/>
+    <polygon points="64,-34 0,0 0,72 64,38" fill="url(#die-right)" stroke="#ffffff" stroke-opacity="0.7"/>
+    <!-- Pips on Top (5) -->
+    <ellipse cx="0" cy="-34" rx="7" ry="4.5" fill="#091525"/>
+    <ellipse cx="-26" cy="-34" rx="6" ry="3.8" fill="#091525"/>
+    <ellipse cx="26" cy="-34" rx="6" ry="3.8" fill="#091525"/>
+    <ellipse cx="0" cy="-50" rx="6" ry="3.8" fill="#091525"/>
+    <ellipse cx="0" cy="-18" rx="6" ry="3.8" fill="#091525"/>
+    <!-- Pips on Right (3) -->
+    <circle cx="18" cy="16" r="5.5" fill="#091525"/>
+    <circle cx="32" cy="19" r="5.5" fill="#091525"/>
+    <circle cx="46" cy="22" r="5.5" fill="#091525"/>
+    <!-- Pips on Left (6 glow gold) -->
+    <circle cx="-42" cy="4" r="4.8" fill="#fbbf24"/>
+    <circle cx="-22" cy="15" r="4.8" fill="#fbbf24"/>
+    <circle cx="-42" cy="28" r="4.8" fill="#fbbf24"/>
+    <circle cx="-22" cy="39" r="4.8" fill="#fbbf24"/>
+  </g>
+
+  <!-- Die 2 (Lower Right) -->
+  <g transform="translate(465, 392) rotate(14)" filter="url(#bg-shadow)">
+    <polygon points="0,-54 52,-27 0,0 -52,-27" fill="url(#die-top)" stroke="#fef3c7" stroke-width="1.5"/>
+    <polygon points="-52,-27 0,0 0,58 -52,31" fill="url(#die-left)"/>
+    <polygon points="52,-27 0,0 0,58 52,31" fill="url(#die-right)"/>
+    <!-- Single Hero Ace Pip on Top -->
+    <ellipse cx="0" cy="-27" rx="10" ry="6.2" fill="#f59e0b" filter="url(#bg-glow)"/>
+    <ellipse cx="0" cy="-27" rx="8" ry="5" fill="#d97706"/>
+    <!-- Side pips -->
+    <circle cx="24" cy="18" r="5" fill="#091525"/>
+    <circle cx="-26" cy="12" r="5" fill="#091525"/>
+    <circle cx="-26" cy="30" r="5" fill="#091525"/>
+  </g>
+
+  <circle cx="205" cy="240" r="3.5" fill="#fbbf24" opacity="0.75"/>
+  <circle cx="620" cy="270" r="3" fill="#38bdf8" opacity="0.7"/>
+  <rect x="0" y="650" width="800" height="350" fill="url(#bottom-fade-bg)"/>
+</svg>

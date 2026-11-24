@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Actions;
 
+use App\Modules\CMS\Models\Game;
 use App\Modules\Identity\Models\User;
 use App\Modules\Team\Models\Team;
 use App\Modules\Tournament\Events\TournamentFilled;
@@ -70,6 +71,22 @@ class RegisterForTournamentAction
             $locked = Tournament::query()->where('id', $tournament->getKey())->lockForUpdate()->first();
             if ($locked === null) {
                 throw new \RuntimeException('Tournament not found.');
+            }
+
+            $game = Game::withTrashed()->with('category')->find($locked->game_id);
+            if ($game === null || ! $game->isAvailableInCatalog()) {
+                throw new \LogicException(__('Registration is unavailable because this game or its category is currently inactive.'));
+            }
+
+            if ($game->isPlayStrategyManaged()) {
+                $playStrategyAccount = $user->playStrategyAccount()->first();
+                if ($playStrategyAccount === null) {
+                    throw new \LogicException(__('Link your verified PlayStrategy account in your Profile before joining this tournament.'));
+                }
+                if ($playStrategyAccount->isTokenExpired()) {
+                    throw new \LogicException(__('Your PlayStrategy connection has expired. Reconnect it in your Profile before joining.'));
+                }
+                $gameIdValue = $playStrategyAccount->external_username;
             }
 
             $platformId ??= $locked->platform_id;

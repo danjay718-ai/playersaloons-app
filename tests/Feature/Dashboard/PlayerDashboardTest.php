@@ -45,7 +45,7 @@ class PlayerDashboardTest extends TestCase
         $this->player->assignRole('PLAYER');
         $this->admin = User::factory()->create();
         $this->admin->assignRole('ADMIN');
-        $this->game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'dashboard-game', 'is_active' => true]);
+        $this->game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'dashboard-game', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $this->game->translations()->create(['locale' => 'en', 'name' => 'Dashboard Game', 'description' => 'Dashboard test game.']);
     }
 

@@ -350,7 +350,7 @@ class StreamList extends Component
         // ── Games with active streams ────────────────────────────────────────
         $games = Game::query()
             ->with('translations')
-            ->where('is_active', true)
+            ->when($isAdminView, fn ($query) => $query->where('is_active', true), fn ($query) => $query->availableInCatalog())
             ->whereHas('streamChannels', function ($q) {
                 $q->whereNotNull('user_id')
                     ->where('is_public', true)
@@ -380,7 +380,7 @@ class StreamList extends Component
         // ── Games with translations for form dropdown ───────────────────────
         $allGames = Game::query()
             ->with('translations')
-            ->where('is_active', true)
+            ->when($isAdminView, fn ($query) => $query->where('is_active', true), fn ($query) => $query->availableInCatalog())
             ->orderBy('slug')
             ->get();
 

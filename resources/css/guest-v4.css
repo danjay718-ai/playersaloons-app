@@ -141,8 +141,30 @@
 .gr-reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s, transform .6s; }
 .gr-reveal.is-in { opacity: 1; transform: none; }
 
-/* Game tables */
-.gr-tables { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; align-items: start; }
+/* Game tables & Category tabs */
+.gr-cat-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 24px; }
+.gr-cat-tabs { display: flex; align-items: center; gap: 8px; overflow-x: auto; max-width: 100%; padding-bottom: 2px; scrollbar-width: none; }
+.gr-cat-tabs::-webkit-scrollbar { display: none; }
+.gr-cat-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--gr-line); background: var(--gr-card); color: var(--gr-muted); font-size: 13px; font-weight: 700; white-space: nowrap; transition: border-color .2s, background .2s, color .2s, box-shadow .2s, transform .2s; }
+.gr-cat-tab:hover { border-color: #22e6ff66; color: var(--gr-ink); transform: translateY(-1px); }
+.gr-cat-tab:active { transform: translateY(0); }
+.gr-cat-tab.is-active { border-color: var(--gr-lime); background: var(--gr-lime); color: #081204; font-weight: 800; box-shadow: 0 0 22px #c6ff3d4d; }
+.gr-cat-count { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding-inline: 7px; border-radius: 999px; background: #05080f99; color: var(--gr-cyan); font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.gr-cat-tab.is-active .gr-cat-count { background: #08120424; color: #081204; }
+.gr-cat-tools { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.gr-cat-loading { font-size: 12px; font-weight: 700; color: var(--gr-cyan); letter-spacing: .04em; }
+.gr-cat-search { position: relative; display: flex; align-items: center; min-width: 220px; }
+.gr-cat-search svg { position: absolute; left: 13px; width: 15px; height: 15px; color: var(--gr-muted); pointer-events: none; }
+.gr-cat-search input { width: 100%; min-height: 44px; padding: 9px 14px 9px 38px; border-radius: 999px; border: 1px solid #22e6ff33; background: var(--gr-card); color: var(--gr-ink); font-size: 13px; transition: border-color .2s, box-shadow .2s; }
+.gr-cat-search input::placeholder { color: var(--gr-muted); }
+.gr-cat-search input:focus { border-color: var(--gr-lime); box-shadow: 0 0 0 3px #c6ff3d22; outline: none; }
+.gr-tables { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; align-items: start; transition: opacity .2s; }
+.gr-tables.is-loading { opacity: .55; }
+.gr-table-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 4px; }
+.gr-table-hub { font-size: 12px; font-weight: 700; color: var(--gr-muted); white-space: nowrap; }
+.gr-table-hub:hover { color: var(--gr-cyan); }
+.gr-empty-btn { margin-top: 16px; display: inline-flex; align-items: center; min-height: 42px; padding: 8px 18px; border-radius: 999px; background: var(--gr-lime); color: #081204; font-size: 13px; font-weight: 800; transition: filter .2s, transform .2s; }
+.gr-empty-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .gr-table { --accent: var(--gr-lime); --rx: 0deg; --ry: 0deg; position: relative; isolation: isolate; overflow: hidden; border-radius: 18px; border: 1px solid var(--gr-line); background: var(--gr-card); transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)); transition: border-color .25s, box-shadow .25s; }
 .gr-a1 { --accent: var(--gr-cyan); } .gr-a2 { --accent: var(--gr-yellow); } .gr-a3 { --accent: var(--gr-pink); } .gr-a4 { --accent: var(--gr-orange); }
 .gr-table:hover, .gr-table.is-open { border-color: var(--accent); box-shadow: 0 0 36px color-mix(in srgb, var(--accent) 28%, transparent); }
@@ -239,6 +261,9 @@
     .gr-section { margin-block: 64px; }
     .gr-head { display: block; }
     .gr-head-link { display: inline-block; margin-top: 16px; }
+    .gr-cat-bar { align-items: stretch; }
+    .gr-cat-tools { width: 100%; margin-left: 0; }
+    .gr-cat-search { flex: 1; min-width: 0; }
     .gr-tables { grid-template-columns: 1fr 1fr; gap: 12px; }
     .gr-table-head { min-height: 200px; padding: 14px; }
     .gr-table-name { font-size: 17px; padding-right: 30px; }

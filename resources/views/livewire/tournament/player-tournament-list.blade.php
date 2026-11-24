@@ -241,7 +241,7 @@
         </section>
     @endif
 
-    <!-- 2. Popular Games Rail -->
+    <!-- 2. Category Tabs & Popular Games Selector -->
     <section class="{{ ! $publicView ? 'mobile-games-section' : '' }} space-y-4" x-data="{ allGames: false }" :class="{ 'mobile-games-expanded': allGames }">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -253,24 +253,88 @@
             </div>
             <label class="relative block w-full sm:max-w-xs"><span class="sr-only">{{ __('Search game') }}</span><i data-lucide="search" class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"></i><input wire:model.live.debounce.250ms="gameSearch" type="search" placeholder="{{ __('Search game') }}" class="player-filter-field w-full rounded-xl border border-cyan-500/20 bg-zinc-950/85 py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-500 outline-none transition focus:border-lime-400/60 focus:ring-2 focus:ring-lime-400/15"></label>
         </div>
-        <div class="relative">
+
+        @if(isset($gameCategories) && $gameCategories->isNotEmpty())
+            <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-500/15 bg-zinc-900/55 p-2.5 backdrop-blur-md">
+                <div role="tablist" aria-label="{{ __('Game categories') }}" x-data="categoryTablist()" @keydown="onKeydown($event)" class="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected="{{ $category === '' ? 'true' : 'false' }}"
+                        wire:click="selectCategory('')"
+                        class="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-full px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 {{ $category === '' ? 'bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.32)]' : 'border border-white/10 bg-zinc-950/75 text-zinc-300 hover:border-cyan-400/45 hover:text-white' }}"
+                    >
+                        <span>{{ __('All Games') }}</span>
+                        <span class="rounded-full px-2 py-0.5 font-mono text-[10px] font-bold tabular-nums {{ $category === '' ? 'bg-zinc-950/15 text-zinc-950' : 'bg-white/5 text-cyan-300' }}">{{ $allCatalogGamesCount ?? $games->count() }}</span>
+                    </button>
+                    @foreach($gameCategories as $gameCategory)
+                        @php($isSelectedCategory = $category === $gameCategory->slug)
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected="{{ $isSelectedCategory ? 'true' : 'false' }}"
+                            wire:key="discovery-cat-{{ $gameCategory->id }}"
+                            wire:click="selectCategory('{{ $gameCategory->slug }}')"
+                            class="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-full px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 {{ $isSelectedCategory ? 'bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.32)]' : 'border border-white/10 bg-zinc-950/75 text-zinc-300 hover:border-cyan-400/45 hover:text-white' }}"
+                        >
+                            <span>{{ $gameCategory->name }}</span>
+                            <span class="rounded-full px-2 py-0.5 font-mono text-[10px] font-bold tabular-nums {{ $isSelectedCategory ? 'bg-zinc-950/15 text-zinc-950' : 'bg-white/5 text-cyan-300' }}">{{ (int) $gameCategory->active_games_count }}</span>
+                        </button>
+                    @endforeach
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span wire:loading wire:target="selectCategory,selectGame,gameId,category,gameSearch,search,platformId,frequency,activeTab" role="status" class="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold text-cyan-200">
+                        <span class="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse"></span>{{ __('Updating…') }}
+                    </span>
+                    @if(isset($selectedGame) && $selectedGame)
+                        <span class="inline-flex items-center gap-2 rounded-full border border-lime-400/40 bg-lime-400/10 px-3 py-1 text-xs font-bold text-lime-200">
+                            <span>{{ $selectedGame->localizedName() }}</span>
+                            <button type="button" wire:click="selectGame('')" aria-label="{{ __('Clear selected game') }}" class="rounded-full p-0.5 text-lime-300 hover:bg-lime-400/20 hover:text-white">×</button>
+                        </span>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        <div class="relative" wire:loading.class="opacity-65 transition-opacity" wire:target="selectCategory,gameSearch">
             <button type="button" aria-label="{{ __('Previous games') }}" @click="$refs.gamesRail.scrollBy({ left: -420, behavior: 'smooth' })" class="player-rail-button absolute -left-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-500/30 bg-zinc-950/95 text-white shadow-2xl transition hover:border-lime-400 hover:bg-lime-400 hover:text-zinc-950 sm:-left-3 sm:h-10 sm:w-10">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
             </button>
             <div x-ref="gamesRail" class="mobile-games-grid flex snap-x snap-mandatory gap-3.5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @forelse($popularGames as $game)
-                    <a href="{{ route('games.show', ['game' => $game, ...$gameContext]) }}" wire:navigate wire:key="game-{{ $game->slug }}" class="player-game-card group/game relative min-w-[160px] snap-start overflow-hidden rounded-2xl border border-cyan-500/20 bg-zinc-900 transition hover:border-lime-400/60 sm:min-w-[190px]">
-                        <div class="aspect-[16/10] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105 group-hover/game:blur-[2px] group-focus-visible/game:scale-105 group-focus-visible/game:blur-[2px]">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(34,230,255,.3),transparent_45%),linear-gradient(135deg,#10192b,#05080f)] transition duration-500 group-hover/game:scale-105 group-hover/game:blur-[2px] group-focus-visible/game:scale-105 group-focus-visible/game:blur-[2px]"></div>@endif</div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/15 to-transparent transition duration-300 group-hover/game:bg-black/45 group-focus-visible/game:bg-black/45"></div>
-                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center font-orbitron text-[11px] font-black uppercase tracking-[0.22em] text-lime-300 opacity-0 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] transition duration-300 group-hover/game:opacity-100 group-focus-visible/game:opacity-100">
-                            {{ __('View Game') }}
-                        </span>
-                        <div class="absolute inset-x-0 bottom-0 p-3">
-                            <h2 class="truncate font-orbitron text-xs font-black uppercase text-white">{{ $game->localizedName() }}</h2>
-                        </div>
-                    </a>
+                    @php($isSelectedGame = (string) $gameId === (string) $game->id)
+                    <div wire:key="game-{{ $game->slug }}" class="player-game-card group/game relative min-w-[168px] snap-start overflow-hidden rounded-2xl border bg-zinc-900 transition sm:min-w-[196px] {{ $isSelectedGame ? 'border-lime-400 shadow-[0_0_24px_rgba(198,255,61,.25)]' : 'border-cyan-500/20 hover:border-lime-400/60' }}">
+                        <button
+                            type="button"
+                            wire:click="selectGame('{{ $game->id }}')"
+                            aria-pressed="{{ $isSelectedGame ? 'true' : 'false' }}"
+                            class="block w-full text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-lime-400"
+                        >
+                            <div class="aspect-[16/10] overflow-hidden">@if($game->cardImageUrl())<img src="{{ $game->cardImageUrl() }}" alt="{{ $game->localizedName() }}" class="h-full w-full object-cover transition duration-500 group-hover/game:scale-105">@else<div class="h-full w-full bg-[radial-gradient(circle_at_top_right,rgba(34,230,255,.3),transparent_45%),linear-gradient(135deg,#10192b,#05080f)] transition duration-500 group-hover/game:scale-105"></div>@endif</div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent transition duration-300 group-hover/game:bg-black/35"></div>
+                            @if($isSelectedGame)
+                                <span class="absolute left-2.5 top-2.5 rounded-full bg-lime-400 px-2.5 py-0.5 font-orbitron text-[9px] font-black uppercase tracking-wider text-zinc-950">{{ __('Selected') }}</span>
+                            @endif
+                            <div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3">
+                                <h2 class="truncate font-orbitron text-xs font-black uppercase text-white">{{ $game->localizedName() }}</h2>
+                                <span class="shrink-0 font-mono text-[10px] font-bold tabular-nums text-cyan-300">{{ (int) ($game->active_tournaments_count ?? 0) }}</span>
+                            </div>
+                        </button>
+                        <a
+                            href="{{ route('games.show', ['game' => $game, ...$gameContext]) }}"
+                            wire:navigate
+                            aria-label="{{ __('Open :game hub', ['game' => $game->localizedName()]) }}"
+                            class="absolute right-2.5 top-2.5 z-10 inline-flex min-h-[28px] items-center rounded-full border border-white/15 bg-zinc-950/85 px-2.5 py-0.5 text-[10px] font-bold text-zinc-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400"
+                        >{{ __('View Game') }} ↗</a>
+                    </div>
                 @empty
-                    <div class="w-full rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-500">{{ __('No games match your search.') }}</div>
+                    <div class="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-400">
+                        <p>{{ __('No games match your current category or search.') }}</p>
+                        @if($category !== '' || $gameSearch !== '')
+                            <button type="button" wire:click="selectCategory(''); $set('gameSearch', '')" class="rounded-full bg-lime-400 px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-zinc-950 transition hover:brightness-105">{{ __('Show All Games') }}</button>
+                        @endif
+                    </div>
                 @endforelse
             </div>
             <button type="button" aria-label="{{ __('Next games') }}" @click="$refs.gamesRail.scrollBy({ left: 420, behavior: 'smooth' })" class="player-rail-button absolute -right-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-cyan-500/30 bg-zinc-950/95 text-white shadow-2xl transition hover:border-lime-400 hover:bg-lime-400 hover:text-zinc-950 sm:-right-3 sm:h-10 sm:w-10">
@@ -357,7 +421,7 @@
                 <span></span>
             </div>
 
-            <div class="flex flex-col gap-2.5">@foreach($tournaments as $tournament)<div wire:key="browse-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" :action-label="match ($activeTab) { 'upcoming' => 'Join', 'past' => 'View Results', default => 'View Tournament' }" :public-view="$publicView" /></div>@endforeach</div>
+            <div class="flex flex-col gap-2.5" wire:loading.class="opacity-60 transition-opacity" wire:target="selectCategory,selectGame,category,gameId,search,platformId,frequency,activeTab">@foreach($tournaments as $tournament)<div wire:key="browse-{{ $tournament->uuid }}"><x-player.tournament-card :tournament="$tournament" :action-label="match ($activeTab) { 'upcoming' => 'Join', 'past' => 'View Results', default => 'View Tournament' }" :public-view="$publicView" /></div>@endforeach</div>
             <div class="flex flex-col gap-4 border-t border-zinc-900/60 pt-6 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs text-zinc-400">{{ __('Showing :value1–:value2 of :value3 results', ['value1' => ($tournaments->firstItem()), 'value2' => ($tournaments->lastItem()), 'value3' => ($tournaments->total())]) }}</p>{{ $tournaments->links('vendor.livewire.custom-pagination') }}</div>
         @else
             <div class="rounded-2xl border border-dashed border-zinc-800 p-12 text-center"><i data-lucide="trophy" class="mx-auto h-9 w-9 text-zinc-700"></i><h3 class="mt-4 font-orbitron text-sm font-black uppercase text-zinc-300">{{ __('No :value1 found', ['value1' => (strtolower($competitionPlural))]) }}</h3><p class="mt-2 text-sm text-zinc-500">{{ __('Try changing the selected tab or filters.') }}</p></div>

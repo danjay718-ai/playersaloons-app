@@ -32,9 +32,13 @@ class SubmitMatchResultAction
         $submission = DB::transaction(function () use ($match, $submittedByUserId, $winnerRegistrationId, $notes, $proofFile): MatchResultSubmission {
             /** @var GameMatch $lockedMatch */
             $lockedMatch = GameMatch::query()
-                ->with(['playerARegistration', 'playerBRegistration'])
+                ->with(['tournament.game', 'playerARegistration', 'playerBRegistration'])
                 ->lockForUpdate()
                 ->findOrFail($match->getKey());
+
+            if ($lockedMatch->isProviderManaged()) {
+                throw new LogicException(__('Results for PlayStrategy matches are retrieved automatically from PlayStrategy.'));
+            }
 
             if ($lockedMatch->status !== MatchStatus::IN_PROGRESS) {
                 throw new LogicException('Results can be submitted once the match is in progress.');

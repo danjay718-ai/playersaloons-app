@@ -14,9 +14,7 @@ class PublicTournamentList extends Component
         $usesV2Discovery = (bool) config('features.tournament_v2.enabled');
         $isHeadToHeadListing = $this->competitionType === 'head_to_head';
         $featuredTournaments = $usesV2Discovery
-            ? $discovery->paginateOccurrences('upcoming', [
-                'competition_type' => $this->competitionType ?: 'tournament',
-            ], $this->featuredLimit, true, 'featuredPage')
+            ? $discovery->paginateOccurrences('upcoming', $this->featuredDiscoveryFilters(), $this->featuredLimit, true, 'featuredPage')
             : $this->getFeaturedTournaments();
 
         return view('livewire.tournament.player-tournament-list', [
@@ -25,6 +23,9 @@ class PublicTournamentList extends Component
                 : $this->getTournamentQuery()->paginate(9),
             'tournamentGroups' => null,
             'featuredGroups' => null,
+            'gameCategories' => $this->getGameCategories(),
+            'allCatalogGamesCount' => $this->allCatalogGamesCount(),
+            'selectedGame' => $this->selectedGameModel(),
             'games' => $this->getGames(),
             'popularGames' => $this->getPopularGames(),
             'featuredTournaments' => $featuredTournaments,
@@ -43,6 +44,7 @@ class PublicTournamentList extends Component
     {
         return [
             'search' => $this->search,
+            'category' => $this->category,
             'game_id' => $this->gameId,
             'frequency' => $this->frequency,
             // Guest discovery defaults to tournaments. H2H is an explicit
@@ -50,6 +52,18 @@ class PublicTournamentList extends Component
             'competition_type' => $this->competitionType ?: 'tournament',
             'platform_id' => $this->platformId,
             'max_teams' => $this->competitionType === 'head_to_head' ? '' : (string) ($this->selectedMaxTeams() ?? ''),
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function featuredDiscoveryFilters(): array
+    {
+        return [
+            'category' => $this->category,
+            'game_id' => $this->gameId,
+            'frequency' => $this->frequency,
+            'competition_type' => $this->competitionType ?: 'tournament',
+            'platform_id' => $this->platformId,
         ];
     }
 }

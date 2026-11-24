@@ -24,7 +24,7 @@ class LandingV4Test extends TestCase
     public function test_v4_is_the_default_guest_landing_and_keeps_account_connections(): void
     {
         $this->seed(LandingPageSeeder::class);
-        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'valorant', 'is_active' => true]);
+        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'valorant', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $game->translations()->create(['locale' => 'en', 'name' => 'Valorant', 'description' => 'Shooter.']);
 
         $this->get('/')->assertOk()
@@ -103,7 +103,7 @@ class LandingV4Test extends TestCase
         $editor->call('openEditLandingItemModal', $question->id)
             ->set('landingItemTitle', 'Custom question?')->set('landingItemBody', 'Custom answer.')
             ->call('saveLandingItem')->assertHasNoErrors();
-        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'editable', 'is_active' => true]);
+        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'editable', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $game->translations()->create(['locale' => 'en', 'name' => 'Editable game']);
 
         $this->get('/')->assertOk()->assertSee('Body hero')->assertSee('Subtitle hero')

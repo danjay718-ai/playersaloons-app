@@ -382,6 +382,8 @@ class ProfileDashboard extends Component
             'user' => $user,
             'progression' => app(PlayerProgressionService::class)->progressionFor($user),
             'latestKyc' => $latestKyc,
+            'playStrategyAccount' => $user->playStrategyAccount()->first(),
+            'googleAccount' => $user->googleAccount()->first(),
             'timezoneOptions' => $this->timezoneOptions(),
             'countries' => app(CountryEligibilityService::class)->selectableCountries(),
         ])->layout('components.layouts.dashboard', [

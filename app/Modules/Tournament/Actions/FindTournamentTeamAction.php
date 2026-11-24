@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tournament\Actions;
 
+use App\Modules\CMS\Models\Game;
 use App\Modules\Community\Services\ChatService;
 use App\Modules\Community\Services\NotificationService;
 use App\Modules\Identity\Models\User;
@@ -26,6 +27,11 @@ final class FindTournamentTeamAction
     {
         if ($tournament->status !== TournamentStatus::REGISTRATION_OPEN || (int) $tournament->team_size <= 1 || $tournament->platform_id === null) {
             throw new \LogicException('Team finding is not available for this tournament.');
+        }
+
+        $game = Game::withTrashed()->with('category')->find($tournament->game_id);
+        if ($game === null || ! $game->isAvailableInCatalog()) {
+            throw new \LogicException(__('Registration is unavailable because this game or its category is currently inactive.'));
         }
 
         $platformId ??= $tournament->platform_id;
