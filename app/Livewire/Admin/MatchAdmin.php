@@ -302,7 +302,7 @@ class MatchAdmin extends AdminComponent
         abort_unless($this->actor()->hasAnyRole(['ADMIN', 'SUPER_ADMIN']), 403);
 
         if (! $aiSettings->isConfigured()) {
-            session()->flash('error', __('Gemini API key is not configured.'));
+            session()->flash('error', __('AI provider API key is not configured. Configure it in System Settings → AI & API management.'));
 
             return;
         }

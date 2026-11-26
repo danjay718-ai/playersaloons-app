@@ -20,6 +20,8 @@ use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Models\MatchEvidence;
 use App\Modules\Match\Services\AiDisputeSettings;
 use App\Modules\Match\Services\GeminiDisputeAnalyzer;
+use App\Modules\Operations\Models\SystemSetting;
+use App\Modules\Operations\Services\AiProviderSettings;
 use App\Modules\Operations\Services\SystemSettings;
 use App\Modules\Tournament\Models\Bracket;
 use App\Modules\Tournament\Models\Round;
@@ -36,6 +38,7 @@ use Database\Seeders\SystemSettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -329,6 +332,126 @@ class AiDisputeManagementTest extends TestCase
         $this->assertSame('75.00', $settings->maxPrizeCap());
         $this->assertSame(15, $settings->evidenceWindowMinutes());
         $this->assertSame(4, $settings->maxRunsPerDispute());
+    }
+
+    public function test_admin_can_configure_encrypted_ai_provider_keys_test_connection_and_reset_to_env(): void
+    {
+        $secretKey = 'sk-test-super-secret-openai-key';
+
+        Livewire::actingAs($this->admin)
+            ->test(SystemSettingsAdmin::class)
+            ->set('aiProvider', 'openai')
+            ->set('aiApiKeys.openai', $secretKey)
+            ->set('aiModels.openai', 'gpt-4.1-mini')
+            ->set('aiBaseUrls.openai', 'https://api.openai.com/v1')
+            ->call('saveAiProviderSettings')
+            ->assertHasNoErrors()
+            ->assertSet('aiApiKeys', []);
+
+        $rawDbValue = SystemSetting::query()
+            ->where('key', 'ai.credentials.openai.api_key')
+            ->value('value');
+
+        $this->assertIsString($rawDbValue);
+        $this->assertNotSame($secretKey, $rawDbValue);
+
+        $providers = app(AiProviderSettings::class);
+        $this->assertSame('openai', $providers->activeProvider());
+        $this->assertSame($secretKey, $providers->apiKey('openai'));
+        $this->assertSame('database', $providers->source('openai'));
+        $this->assertSame('gpt-4.1-mini', $providers->model('openai'));
+
+        // Plaintext secret must never leak into activity_log
+        $leaked = DB::table('activity_log')
+            ->where('properties', 'like', '%'.$secretKey.'%')
+            ->exists();
+        $this->assertFalse($leaked);
+
+        // Live connection test success
+        Http::swap(new Factory);
+        Http::fake(['https://api.openai.com/v1/models' => Http::response(['data' => []], 200)]);
+
+        Livewire::actingAs($this->admin)
+            ->test(SystemSettingsAdmin::class)
+            ->set('aiProvider', 'openai')
+            ->call('testAiProviderConnection')
+            ->assertSet('aiConnectionTestResult.ok', true);
+
+        // Live connection test failure (401)
+        Http::swap(new Factory);
+        Http::fake(['https://api.openai.com/v1/models' => Http::response(['error' => 'invalid'], 401)]);
+
+        Livewire::actingAs($this->admin)
+            ->test(SystemSettingsAdmin::class)
+            ->set('aiProvider', 'openai')
+            ->call('testAiProviderConnection')
+            ->assertSet('aiConnectionTestResult.ok', false);
+
+        // Reset back to environment override
+        Livewire::actingAs($this->admin)
+            ->test(SystemSettingsAdmin::class)
+            ->set('aiProvider', 'openai')
+            ->set('resetAiCredentials', ['openai'])
+            ->call('saveAiProviderSettings')
+            ->assertHasNoErrors();
+
+        $this->assertSame('environment', app(AiProviderSettings::class)->source('openai'));
+        $this->assertDatabaseMissing('system_settings', ['key' => 'ai.credentials.openai.api_key']);
+    }
+
+    public function test_dispute_analyzer_uses_ui_configured_openai_compatible_provider_and_encrypted_key(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+
+        Livewire::actingAs($this->admin)
+            ->test(SystemSettingsAdmin::class)
+            ->set('aiProvider', 'openrouter')
+            ->set('aiApiKeys.openrouter', 'sk-or-test-key-999')
+            ->set('aiModels.openrouter', 'openai/gpt-4.1-mini')
+            ->call('saveAiProviderSettings')
+            ->assertHasNoErrors();
+
+        $this->configureAiSettings(enabled: true, mode: 'shadow');
+        ['dispute' => $dispute] = $this->createDisputedMatch();
+        $this->uploadBothEvidence($dispute);
+
+        Http::swap(new Factory);
+        Http::fake([
+            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
+                'choices' => [
+                    [
+                        'message' => [
+                            'content' => json_encode([
+                                'suggested_resolution' => 'player_b',
+                                'confidence' => 0.97,
+                                'summary' => 'OpenRouter vision confirms Player B victory.',
+                                'evidence_findings' => ['Scoreboard shows beta_player won 2-1.'],
+                                'red_flags' => [],
+                            ], JSON_THROW_ON_ERROR),
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $this->runAnalysisJob($dispute->id);
+
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://openrouter.ai/api/v1/chat/completions'
+            && $request->hasHeader('Authorization', 'Bearer sk-or-test-key-999'));
+
+        $analysis = $dispute->latestAiAnalysis()->firstOrFail();
+        $this->assertSame('openrouter', $analysis->provider);
+        $this->assertSame('openai/gpt-4.1-mini', $analysis->model);
+        $this->assertSame(DisputeAiAnalysis::STATUS_COMPLETED, $analysis->status);
+        $this->assertSame(DisputeAiAnalysis::SUGGESTED_PLAYER_B, $analysis->suggested_resolution);
+    }
+
+    public function test_non_admin_cannot_access_ai_provider_settings(): void
+    {
+        Livewire::actingAs($this->playerA)
+            ->test(SystemSettingsAdmin::class)
+            ->assertForbidden();
     }
 
     private function configureAiSettings(

@@ -79,7 +79,7 @@ class AnalyzeDisputeWithAiJob implements ShouldQueue
                 'match_dispute_id' => $dispute->id,
                 'analysis_version' => $nextVersion,
                 'evidence_count' => $evidenceCount,
-                'provider' => 'gemini',
+                'provider' => $settings->provider(),
                 'model' => $settings->model(),
                 'status' => DisputeAiAnalysis::STATUS_PENDING,
             ]);

@@ -59,9 +59,31 @@ return [
 
     'gemini' => [
         'api_key' => (string) env('GEMINI_API_KEY', ''),
+        'model' => (string) env('GEMINI_MODEL', env('GEMINI_DISPUTE_MODEL', 'gemini-2.5-flash')),
         'dispute_model' => (string) env('GEMINI_DISPUTE_MODEL', 'gemini-2.5-flash'),
         'base_url' => rtrim((string) env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'), '/'),
         'timeout_seconds' => (int) env('GEMINI_TIMEOUT_SECONDS', 30),
+    ],
+
+    'openai' => [
+        'api_key' => (string) env('OPENAI_API_KEY', ''),
+        'model' => (string) env('OPENAI_MODEL', 'gpt-4.1-mini'),
+        'base_url' => rtrim((string) env('OPENAI_BASE_URL', 'https://api.openai.com/v1'), '/'),
+        'timeout_seconds' => (int) env('OPENAI_TIMEOUT_SECONDS', 30),
+    ],
+
+    'anthropic' => [
+        'api_key' => (string) env('ANTHROPIC_API_KEY', ''),
+        'model' => (string) env('ANTHROPIC_MODEL', 'claude-sonnet-4-5'),
+        'base_url' => rtrim((string) env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1'), '/'),
+        'timeout_seconds' => (int) env('ANTHROPIC_TIMEOUT_SECONDS', 30),
+    ],
+
+    'openrouter' => [
+        'api_key' => (string) env('OPENROUTER_API_KEY', ''),
+        'model' => (string) env('OPENROUTER_MODEL', 'google/gemini-2.5-flash'),
+        'base_url' => rtrim((string) env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'), '/'),
+        'timeout_seconds' => (int) env('OPENROUTER_TIMEOUT_SECONDS', 30),
     ],
 
     'slack' => [

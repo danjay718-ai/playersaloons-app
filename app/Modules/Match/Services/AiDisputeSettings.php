@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Match\Services;
 
+use App\Modules\Operations\Services\AiProviderSettings;
 use App\Modules\Operations\Services\SystemSettings;
 
 final class AiDisputeSettings
@@ -12,16 +13,24 @@ final class AiDisputeSettings
 
     public const MODE_AUTO_RESOLVE = 'auto_resolve';
 
-    public function __construct(private readonly SystemSettings $settings) {}
+    public function __construct(
+        private readonly SystemSettings $settings,
+        private readonly AiProviderSettings $providers,
+    ) {}
 
     public function enabled(): bool
     {
         return filter_var($this->settings->get('ai.disputes.enabled', 'false'), FILTER_VALIDATE_BOOL);
     }
 
+    public function provider(): string
+    {
+        return $this->providers->activeProvider();
+    }
+
     public function isConfigured(): bool
     {
-        return trim((string) config('services.gemini.api_key', '')) !== '';
+        return $this->providers->isConfigured();
     }
 
     public function isActive(): bool
@@ -68,8 +77,6 @@ final class AiDisputeSettings
 
     public function model(): string
     {
-        $model = trim((string) config('services.gemini.dispute_model', 'gemini-2.5-flash'));
-
-        return $model !== '' ? $model : 'gemini-2.5-flash';
+        return $this->providers->model();
     }
 }

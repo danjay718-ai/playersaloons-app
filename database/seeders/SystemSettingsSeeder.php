@@ -82,6 +82,7 @@ class SystemSettingsSeeder extends Seeder
             ['key' => 'auth.login_lockout_minutes', 'value' => '15', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'notifications.dispute_email', 'value' => 'info@playersaloons.com', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'notifications.dispute_name', 'value' => 'PlayerSaloons Disputes', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'ai.provider', 'value' => 'gemini', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'ai.disputes.enabled', 'value' => 'false', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'ai.disputes.mode', 'value' => 'shadow', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'ai.disputes.min_confidence', 'value' => '0.95', 'created_at' => now(), 'updated_at' => now()],
