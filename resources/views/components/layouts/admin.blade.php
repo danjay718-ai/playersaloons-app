@@ -74,6 +74,7 @@
                                 ['label' => 'Matches & Disputes', 'icon' => 'swords', 'url' => '/admin/matches', 'permission' => 'matches.view'],
                                 ['label' => 'Streams', 'icon' => 'tv', 'url' => '/admin/streams', 'roles' => ['SUPER_ADMIN', 'ADMIN']],
                                 ['label' => 'KYC Submissions', 'icon' => 'file-check', 'url' => '/admin/kyc', 'permission' => 'kyc.view'],
+                                ['label' => 'Deposits', 'icon' => 'arrow-down-circle', 'url' => '/admin/deposits', 'permission' => 'deposits.view'],
                                 ['label' => 'Withdrawals', 'icon' => 'wallet', 'url' => '/admin/withdrawals', 'permission' => 'withdrawals.view'],
                                 ['label' => 'Wallets & Transactions', 'icon' => 'landmark', 'url' => '/admin/escrow-cashflow', 'permission' => 'withdrawals.view'],
                                 ['label' => 'User Directory', 'icon' => 'users', 'url' => '/admin/users', 'permission' => 'users.view'],

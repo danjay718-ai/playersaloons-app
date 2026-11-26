@@ -15,6 +15,12 @@ class PaymentCheckout extends Model
 
     protected $guarded = [];
 
+    /** @return BelongsTo<Wallet, $this> */
+    public function wallet(): BelongsTo
+    {
+        return $this->belongsTo(Wallet::class);
+    }
+
     /** @return BelongsTo<GatewayConfiguration, $this> */
     public function gatewayConfiguration(): BelongsTo
     {
@@ -23,6 +29,12 @@ class PaymentCheckout extends Model
 
     protected function casts(): array
     {
-        return ['amount' => 'decimal:2', 'fee_amount' => 'decimal:2', 'total' => 'decimal:2', 'completed_at' => 'datetime'];
+        return [
+            'amount' => 'decimal:2',
+            'fee_amount' => 'decimal:2',
+            'total' => 'decimal:2',
+            'completed_at' => 'datetime',
+            'failed_at' => 'datetime',
+        ];
     }
 }

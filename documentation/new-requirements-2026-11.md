@@ -1,14 +1,16 @@
 # PlayerSaloons — New Requirements Proposal
 
-Date: 2026-11-24  
-Status: Proposed / Not implemented
+Date: 2026-11-24 (Updated: 2026-11-26)  
+Status: **Sections 1–3 Implemented** (on branch `docs/new-system-requirements`) · **Section 4 (Optional Membership) Deferred pending research**  
+Next-Phase Blueprint: `documentation/implementation-plan-2026-11.md`
 
 ## Purpose
 
 Add game categories, improve tournament discovery, integrate PlayStrategy,
 and introduce optional membership. Preserve existing tournament, wallet,
-and prize workflows. This document is a requirements handoff for later work;
-creating it does not implement the features below.
+and prize workflows. Sections 1–3 have been implemented and verified;
+Section 4 remains deferred until EUR pricing, legal, and operating-cost
+research is completed.
 
 ## 1. Game Categories
 
@@ -80,7 +82,13 @@ Actual gameplay happens on PlayStrategy.
 
 ### Accounts and games
 
-- Link verified PlayStrategy accounts using OAuth.
+- Link verified PlayStrategy accounts using OAuth (live integration supports
+  PlayStrategy Personal OAuth2 Token linking with `challenge:write` scope
+  when standard third-party OAuth endpoints are unavailable; can upgrade to
+  standard OAuth PKCE or `ApiChallengeAdmin` once PlayStrategy grants
+  official partnership/admin credentials).
+- Handle revoked/expired PlayStrategy tokens gracefully by clearing/flagging
+  the token error state and prompting the player to reconnect in Profile.
 - Encrypt tokens and restrict access to authorized backend operations.
 - Keep gameplay provider separate from game category.
 - Store the external game ID against the correct match attempt.

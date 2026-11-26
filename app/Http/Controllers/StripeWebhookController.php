@@ -66,6 +66,18 @@ class StripeWebhookController extends Controller
             return response()->json(['message' => 'Invalid Stripe webhook signature.'], 400);
         }
 
+        if (in_array($event->type, ['checkout.session.expired', 'checkout.session.async_payment_failed'], true)) {
+            if ($checkout instanceof PaymentCheckout && $checkout->completed_at === null) {
+                $checkout->update([
+                    'provider_reference' => is_string($reference) && $reference !== '' ? $reference : $checkout->provider_reference,
+                    'status' => $event->type === 'checkout.session.expired' ? 'expired' : 'failed',
+                    'failed_at' => now(),
+                ]);
+            }
+
+            return response()->json(['received' => true, 'handled' => true]);
+        }
+
         if ($event->type !== 'checkout.session.completed') {
             return response()->json(['received' => true, 'handled' => false]);
         }
@@ -121,7 +133,7 @@ class StripeWebhookController extends Controller
                 return;
             }
             $processDeposit->execute($wallet, number_format($creditAmount, 2, '.', ''), 'stripe', (string) $session->id, number_format($feeAmount, 2, '.', ''));
-            $locked?->update(['provider_reference' => (string) $session->id, 'completed_at' => now()]);
+            $locked?->update(['provider_reference' => (string) $session->id, 'status' => 'completed', 'completed_at' => now()]);
         });
 
         return response()->json(['received' => true, 'handled' => true]);

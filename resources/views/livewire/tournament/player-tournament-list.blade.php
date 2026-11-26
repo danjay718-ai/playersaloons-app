@@ -109,7 +109,7 @@
             </div>
             <div id="competition-spotlight-preview" x-show="expanded" x-cloak class="grid min-w-0 gap-5 xl:grid-cols-12">
             <!-- Left: Active Competition Preview -->
-            <article class="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-3xl border border-cyan-500/25 bg-zinc-900/80 p-4 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.7)] sm:p-7 xl:col-span-7">
+            <article class="competition-spotlight-hero relative flex min-w-0 flex-col justify-between overflow-hidden rounded-3xl border border-cyan-500/25 bg-zinc-900/80 p-4 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.7)] sm:p-7 xl:col-span-7">
                 <img :src="current.banner" alt="" class="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25 transition-all duration-500">
                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#05080f] via-[#05080f]/90 to-[#05080f]/65"></div>
 
@@ -359,7 +359,7 @@
     @if($featuredTournaments->isNotEmpty())
     <section class="space-y-4">
         <div class="flex items-end justify-between gap-4"><div><p class="gr-eyebrow !mb-1.5 !text-amber-300"><span class="gr-slash">//</span> {{ __('Selected competitions') }}</p><h2 class="font-orbitron text-xl font-black uppercase text-white">{{ __('Featured :value1', ['value1' => ($competitionPlural)]) }}</h2></div><span class="hidden text-xs text-zinc-400 sm:block">{{ __('Highlights from active competitions') }}</span></div>
-        <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5" aria-hidden="true">
+        <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_minmax(0,110px)_minmax(0,120px)_minmax(0,160px)_44px] xl:items-center xl:gap-5" aria-hidden="true">
             <span></span>
             <span>{{ __('Competition') }}</span>
             <span>{{ __('Entry Fee') }}</span>
@@ -412,7 +412,7 @@
 
         @if($tournaments->count())
             <!-- Desktop Board Column Header -->
-            <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5" aria-hidden="true">
+            <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_minmax(0,110px)_minmax(0,120px)_minmax(0,160px)_44px] xl:items-center xl:gap-5" aria-hidden="true">
                 <span></span>
                 <span>{{ __('Competition') }}</span>
                 <span>{{ __('Entry Fee') }}</span>

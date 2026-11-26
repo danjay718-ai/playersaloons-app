@@ -114,21 +114,21 @@
     </div>
 
     {{-- 3. Entry Fee (Desktop — no inner label) --}}
-    <div class="hidden xl:block">
-        <span class="font-orbitron text-sm font-black text-white">
+    <div class="hidden min-w-0 xl:block">
+        <span class="block truncate font-orbitron text-sm font-black text-white">
             {{ $entryLabel }}
         </span>
     </div>
 
     {{-- 4. Prize (Desktop — right beside Entry Fee, no inner label) --}}
-    <div class="hidden xl:block">
-        <span class="font-orbitron text-sm font-black text-lime-300">
+    <div class="hidden min-w-0 xl:block">
+        <span class="block truncate font-orbitron text-sm font-black text-lime-300">
             {{ $prizeLabel }}
         </span>
     </div>
 
     {{-- 5. Full Capacity / Seats (Desktop — no inner label) --}}
-    <div class="hidden items-center gap-2.5 xl:flex">
+    <div class="hidden min-w-0 items-center gap-2.5 xl:flex">
         <div class="flex items-center gap-1" aria-hidden="true">
             @for($i = 0; $i < $pipTotal; $i++)
                 <span class="h-2 w-1.5 rounded-sm {{ $i < $pipFilled ? 'bg-cyan-400 shadow-[0_0_6px_#22e6ff]' : ($i === $pipFilled && $statusValue === 'REGISTRATION_OPEN' ? 'bg-lime-400/80 animate-pulse' : 'bg-white/10') }}"></span>

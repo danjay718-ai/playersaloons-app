@@ -31,6 +31,7 @@ use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\CmsContentAdmin;
 use App\Livewire\Admin\ComplianceAdmin;
 use App\Livewire\Admin\ContactInquiryAdmin;
+use App\Livewire\Admin\DepositAdmin;
 use App\Livewire\Admin\ErrorIncidentAdmin;
 use App\Livewire\Admin\EscrowCashflowAdmin;
 use App\Livewire\Admin\KycAdmin;
@@ -227,6 +228,7 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->group(function () {
     Route::get('/streams/{id}', StreamWatch::class)->name('admin.streams.watch');
     Route::get('/kyc', KycAdmin::class);
     Route::get('/kyc/document/{path}', KycDocumentController::class)->where('path', '.*')->name('admin.kyc.document');
+    Route::get('/deposits', DepositAdmin::class)->name('admin.deposits');
     Route::get('/withdrawals', WithdrawalAdmin::class);
     Route::get('/escrow-cashflow', EscrowCashflowAdmin::class)->name('admin.escrow-cashflow');
     Route::get('/users', UserAdmin::class);
