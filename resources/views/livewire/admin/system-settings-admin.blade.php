@@ -2,7 +2,7 @@
     $settingsGroups = [
         'Workspace' => ['general' => ['General', 'sliders-horizontal'], 'localization' => ['Languages', 'languages'], 'security' => ['Sign-in security', 'shield-check']],
         'Finance' => ['payments' => ['Payment gateways', 'credit-card'], 'fees' => ['Fees & commission', 'percent'], 'referrals' => ['Referral rewards', 'gift']],
-        'Operations' => ['competition' => ['Tournament timing', 'timer'], 'notifications' => ['Dispute alerts', 'bell']],
+        'Operations' => ['competition' => ['Tournament timing', 'timer'], 'notifications' => ['Dispute alerts', 'bell'], 'ai_disputes' => ['AI dispute assistant', 'sparkles']],
     ];
     if (app()->environment(['local', 'testing']) && auth()->user()?->hasRole('SUPER_ADMIN')) {
         $settingsGroups['Operations']['maintenance'] = ['Test data', 'database'];
@@ -306,6 +306,58 @@
                             <input wire:model="showLanguageSwitcherAdmin" type="checkbox" class="rounded border-slate-700 bg-slate-900 text-pink-500">
                         </label>
                         <button wire:target="saveLanguageSwitcherSettings" type="submit" wire:loading.attr="disabled" class="settings-save">{{ __('Save localization settings') }}</button><span wire:loading wire:target="saveLanguageSwitcherSettings" role="status" class="settings-progress">{{ __('Saving...') }}</span>
+                    </fieldset>
+                </form>
+            </section>
+            <section x-show="section === 'ai_disputes'" x-cloak data-settings-panel="ai_disputes" class="rounded-xl border border-slate-800 bg-slate-950/60 p-6">
+                @php($geminiConfigured = app(\App\Modules\Match\Services\AiDisputeSettings::class)->isConfigured())
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ __('Operations') }}</p>
+                        <h3 class="mt-1 text-xl font-bold text-white">{{ __('AI Dispute Assistant') }}</h3>
+                        <p class="mt-2 text-sm text-slate-400">{{ __('Analyzes uploaded dispute screenshots with Gemini Vision. Starts in Shadow/Advisory mode; live auto-resolve enforces strict confidence, prize cap, non-final, and zero-strike guardrails.') }}</p>
+                    </div>
+                    <span class="rounded-full border px-3 py-1 text-[10px] font-bold uppercase {{ $geminiConfigured ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/30 bg-amber-500/10 text-amber-300' }}">
+                        {{ $geminiConfigured ? __('Gemini API Key Configured') : __('GEMINI_API_KEY Not Set') }}
+                    </span>
+                </div>
+                <form wire:submit="saveAiDisputeSettings" class="mt-6 space-y-5">
+                    <fieldset @disabled(! $canManageSettings) class="settings-form-fields">
+                        <label class="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-200">
+                            <span>{{ __('Enable AI dispute analysis on screenshot uploads') }}</span>
+                            <input wire:model="aiDisputesEnabled" type="checkbox" class="rounded border-slate-700 bg-slate-900 text-indigo-500">
+                        </label>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="aiDisputesMode" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Operating Mode') }}</label>
+                                <select id="aiDisputesMode" wire:model="aiDisputesMode" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-white">
+                                    <option value="shadow">{{ __('Shadow / Advisory Only (Recommended)') }}</option>
+                                    <option value="auto_resolve">{{ __('Live Auto-Resolve (With Guardrails)') }}</option>
+                                </select>
+                                @error('aiDisputesMode')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="aiDisputesMinConfidence" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Minimum Confidence (0.50–1.00)') }}</label>
+                                <input id="aiDisputesMinConfidence" wire:model="aiDisputesMinConfidence" type="number" min="0.50" max="1.00" step="0.01" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                                @error('aiDisputesMinConfidence')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="aiDisputesMaxPrizeCap" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Max Auto-Resolve Prize Cap (:currency)', ['currency' => \App\Shared\Support\Currency::code()]) }}</label>
+                                <input id="aiDisputesMaxPrizeCap" wire:model="aiDisputesMaxPrizeCap" type="number" min="0" max="100000" step="0.01" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                                @error('aiDisputesMaxPrizeCap')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="aiDisputesEvidenceWindowMinutes" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Opponent Evidence Window (minutes)') }}</label>
+                                <input id="aiDisputesEvidenceWindowMinutes" wire:model="aiDisputesEvidenceWindowMinutes" type="number" min="1" max="1440" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                                @error('aiDisputesEvidenceWindowMinutes')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="aiDisputesMaxRunsPerDispute" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Max AI Runs per Dispute') }}</label>
+                                <input id="aiDisputesMaxRunsPerDispute" wire:model="aiDisputesMaxRunsPerDispute" type="number" min="1" max="10" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                                @error('aiDisputesMaxRunsPerDispute')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                        <button wire:target="saveAiDisputeSettings" type="submit" wire:loading.attr="disabled" class="settings-save">{{ __('Save AI dispute settings') }}</button><span wire:loading wire:target="saveAiDisputeSettings" role="status" class="settings-progress">{{ __('Saving...') }}</span>
                     </fieldset>
                 </form>
             </section>

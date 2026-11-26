@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Match\Actions;
 
 use App\Modules\Match\Events\BroadcastMatchUpdated;
+use App\Modules\Match\Jobs\AnalyzeDisputeWithAiJob;
+use App\Modules\Match\Jobs\EvaluateAiDisputeAutoResolveJob;
 use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Models\MatchEvidence;
+use App\Modules\Match\Services\AiDisputeSettings;
 use App\Modules\Tournament\Events\BroadcastTournamentUpdated;
 use App\Shared\Enums\DisputeStatus;
 use Illuminate\Http\UploadedFile;
@@ -68,25 +71,22 @@ class SubmitEvidenceAction
                 throw new LogicException('You have already submitted evidence for this dispute.');
             }
 
-            $path = null;
-            if ($file !== null) {
-                if (! $file->isValid()) {
-                    throw new InvalidArgumentException('Uploaded file is invalid.');
-                }
+            if (! $file->isValid()) {
+                throw new InvalidArgumentException('Uploaded file is invalid.');
+            }
 
-                if ($file->getSize() > self::MAX_FILE_BYTES) {
-                    throw new InvalidArgumentException('Evidence file size exceeds the 2MB limit.');
-                }
+            if ($file->getSize() > self::MAX_FILE_BYTES) {
+                throw new InvalidArgumentException('Evidence file size exceeds the 2MB limit.');
+            }
 
-                if (! in_array($file->getMimeType(), self::ALLOWED_MIME_TYPES, true)) {
-                    throw new InvalidArgumentException('Invalid file type. Only JPEG, PNG, and WebP images are allowed.');
-                }
+            if (! in_array($file->getMimeType(), self::ALLOWED_MIME_TYPES, true)) {
+                throw new InvalidArgumentException('Invalid file type. Only JPEG, PNG, and WebP images are allowed.');
+            }
 
-                // Store file on local public disk (switch to R2/S3 on deployment)
-                $path = $file->store("disputes/{$dispute->id}/evidence", 'public');
-                if ($path === false) {
-                    throw new LogicException('Failed to store evidence file.');
-                }
+            // Store screenshots on private disk (served via authorized MatchEvidenceController).
+            $path = $file->store("disputes/{$dispute->id}/evidence", 'local');
+            if ($path === false) {
+                throw new LogicException('Failed to store evidence file.');
             }
 
             // Update dispute status to under_review if it was open
@@ -109,6 +109,17 @@ class SubmitEvidenceAction
         $match = $evidence->dispute()->with('match.tournament:id,uuid')->firstOrFail()->match;
         BroadcastMatchUpdated::dispatch((string) $match->uuid, 'dispute_evidence_submitted');
         BroadcastTournamentUpdated::dispatch((string) $match->tournament->uuid, 'dispute_evidence_submitted', (string) $match->uuid);
+
+        $aiSettings = app(AiDisputeSettings::class);
+        if ($aiSettings->isActive()) {
+            AnalyzeDisputeWithAiJob::dispatch((int) $evidence->dispute_id);
+
+            $evidenceCount = MatchEvidence::query()->where('dispute_id', $evidence->dispute_id)->count();
+            if ($evidenceCount === 1) {
+                EvaluateAiDisputeAutoResolveJob::dispatch((int) $evidence->dispute_id)
+                    ->delay(now()->addMinutes($aiSettings->evidenceWindowMinutes()));
+            }
+        }
 
         return $evidence;
     }

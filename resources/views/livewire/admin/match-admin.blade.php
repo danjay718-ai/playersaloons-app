@@ -426,8 +426,8 @@
                                                     @foreach($disp->evidence as $ev)
                                                         <div class="rounded-lg border border-slate-800 bg-slate-950 p-2">
                                                             @if($ev->file_path)
-                                                                <a href="/storage/{{ $ev->file_path }}" target="_blank" class="group relative block overflow-hidden rounded-md">
-                                                                    <img src="/storage/{{ $ev->file_path }}" alt="Evidence from {{ $ev->uploadedBy?->username ?? 'player' }}" class="h-28 w-full object-cover opacity-80 transition-opacity group-hover:opacity-100">
+                                                                <a href="{{ route('match.evidence.show', $ev->uuid) }}" target="_blank" class="group relative block overflow-hidden rounded-md">
+                                                                    <img src="{{ route('match.evidence.show', $ev->uuid) }}" alt="Evidence from {{ $ev->uploadedBy?->username ?? 'player' }}" class="h-28 w-full object-cover opacity-80 transition-opacity group-hover:opacity-100">
                                                                 </a>
                                                             @else
                                                                 <p class="rounded-md border border-slate-800 bg-slate-900 px-3 py-5 text-center text-[10px] text-slate-500">No screenshot attached</p>
@@ -452,8 +452,8 @@
                                                     <span class="text-slate-300 font-bold block uppercase mt-0.5">{{ str_replace('_', ' ', $disp->resolution->value) }}</span>
                                                 </div>
                                                 <div>
-                                                    <span class="text-slate-500 block">Resolved By (Admin ID)</span>
-                                                    <span class="text-slate-300 block mt-0.5">{{ $disp->resolved_by }} · {{ $disp->resolved_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, H:i T') }}</span>
+                                                    <span class="text-slate-500 block">Resolved By</span>
+                                                    <span class="text-slate-300 block mt-0.5">{{ $disp->resolved_by !== null ? 'Admin #'.$disp->resolved_by : __('AI Auto-Resolved') }} · {{ $disp->resolved_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, H:i T') }}</span>
                                                 </div>
                                             </div>
                                         @endif
@@ -613,9 +613,9 @@
                                     @foreach($resolveDispute->evidence as $ev)
                                         <div class="min-w-0">
                                         @if($ev->file_path)
-                                        <a href="/storage/{{ $ev->file_path }}" target="_blank"
+                                        <a href="{{ route('match.evidence.show', $ev->uuid) }}" target="_blank"
                                            class="group relative block rounded-xl overflow-hidden border border-slate-800 bg-slate-950 hover:border-indigo-500/60 transition-all">
-                                            <img src="/storage/{{ $ev->file_path }}"
+                                            <img src="{{ route('match.evidence.show', $ev->uuid) }}"
                                                  alt="Evidence screenshot"
                                                  class="w-full h-36 object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
                                                  onerror="this.closest('a').innerHTML='<div class=\'flex flex-col items-center justify-center h-36 text-slate-600 gap-2\'><svg xmlns=\'http://www.w3.org/2000/svg\' class=\'w-8 h-8\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\'/></svg><span class=\'text-[10px]\'>No preview</span></div>'">
@@ -640,6 +640,86 @@
                                 <p class="text-[10px] text-slate-600">No evidence screenshots uploaded yet.</p>
                             </div>
                         @endif
+
+                        {{-- AI Dispute Assistant Panel --}}
+                        @php $aiAnalysis = $resolveDispute->latestAiAnalysis; @endphp
+                        <div class="rounded-xl border border-indigo-500/25 bg-indigo-950/20 p-4 space-y-3 text-xs">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="sparkles" class="h-4 w-4 text-indigo-400"></i>
+                                    <span class="font-bold uppercase tracking-wider text-indigo-300">{{ __('AI Dispute Assistant') }}</span>
+                                    @if($aiAnalysis)
+                                        @php
+                                            $aiStatusClass = match ($aiAnalysis->status) {
+                                                'completed' => $aiAnalysis->auto_resolved_at ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+                                                'pending' => 'bg-amber-500/15 text-amber-300 border-amber-500/30 animate-pulse',
+                                                default => 'bg-red-500/15 text-red-300 border-red-500/30',
+                                            };
+                                            $aiStatusLabel = match ($aiAnalysis->status) {
+                                                'completed' => $aiAnalysis->auto_resolved_at ? __('Auto-Resolved') : __('Advisory Ready'),
+                                                'pending' => __('Analyzing…'),
+                                                default => __('Analysis Unavailable'),
+                                            };
+                                        @endphp
+                                        <span class="inline-flex rounded border px-2 py-0.5 text-[9px] font-bold uppercase {{ $aiStatusClass }}">{{ $aiStatusLabel }}</span>
+                                    @endif
+                                </div>
+                                @if(Auth::user()?->hasAnyRole(['ADMIN', 'SUPER_ADMIN']))
+                                    <button
+                                        type="button"
+                                        wire:click="rerunAiAnalysis({{ $resolveDispute->id }})"
+                                        wire:loading.attr="disabled"
+                                        wire:target="rerunAiAnalysis({{ $resolveDispute->id }})"
+                                        class="rounded-lg border border-indigo-500/40 bg-indigo-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-200 transition hover:bg-indigo-500/25 disabled:opacity-50"
+                                    >
+                                        {{ __('Re-run AI Analysis') }}
+                                    </button>
+                                @endif
+                            </div>
+
+                            @if($aiAnalysis && $aiAnalysis->status === 'completed')
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-lg border border-slate-700 bg-slate-900/70 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-200">
+                                        {{ __('Suggested') }}: {{ str_replace('_', ' ', (string) $aiAnalysis->suggested_resolution) }}
+                                    </span>
+                                    <span class="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 font-mono text-[10px] font-bold text-cyan-300">
+                                        {{ number_format((float) $aiAnalysis->confidence * 100, 1) }}% {{ __('Confidence') }}
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">v{{ $aiAnalysis->analysis_version }} · {{ $aiAnalysis->model }}</span>
+                                </div>
+
+                                @if($aiAnalysis->summary)
+                                    <p class="leading-relaxed text-slate-300">{{ $aiAnalysis->summary }}</p>
+                                @endif
+
+                                @if(! empty($aiAnalysis->evidence_findings_json))
+                                    <ul class="list-disc space-y-1 pl-4 text-[11px] text-slate-300">
+                                        @foreach($aiAnalysis->evidence_findings_json as $finding)
+                                            <li>{{ $finding }}</li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+
+                                @if(! empty($aiAnalysis->red_flags_json))
+                                    <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200">
+                                        <span class="font-bold uppercase tracking-wider">{{ __('Red Flags') }}:</span>
+                                        {{ implode(', ', $aiAnalysis->red_flags_json) }}
+                                    </div>
+                                @endif
+
+                                @if($aiAnalysis->auto_resolve_blocked_reason)
+                                    <p class="text-[10px] text-slate-400">
+                                        {{ __('Auto-resolve guardrail') }}: <span class="font-mono text-slate-300">{{ $aiAnalysis->auto_resolve_blocked_reason }}</span>
+                                    </p>
+                                @endif
+                            @elseif($aiAnalysis && $aiAnalysis->status === 'failed')
+                                <p class="text-[11px] text-red-300">{{ __('AI analysis failed; proceed with manual review.') }} ({{ $aiAnalysis->error_message }})</p>
+                            @elseif($aiAnalysis && $aiAnalysis->status === 'pending')
+                                <p class="text-[11px] text-amber-200">{{ __('AI analysis is running in the background. You may still resolve manually at any time.') }}</p>
+                            @else
+                                <p class="text-[11px] text-slate-400">{{ __('No AI analysis has been run for this dispute yet.') }}</p>
+                            @endif
+                        </div>
 
                         <div class="border-t border-slate-800"></div>
 

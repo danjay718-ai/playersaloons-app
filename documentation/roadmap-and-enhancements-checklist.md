@@ -54,9 +54,9 @@ Status: **Aligned via Design Interview — Ready for Phased Implementation**
 - **Catalog Integrity:** Strictly exclude inactive categories/games, soft-deleted games, and closed occurrences (both Legacy and V2).
 
 ### Implementation Checklist
-- [ ] Shared `FindActiveTournamentsService` (ranked exact matches + closest fallback query, reusable by Livewire and future `/api/v2/*`)
-- [ ] Quick-Finder Livewire modal/component wired into Homepage hero, Player Dashboard, and Topbar
-- [ ] Feature tests covering exact matches, fallback matches, inactive category exclusion, and 1-click Join
+- [x] Shared `FindActiveTournamentsService` (ranked exact matches + closest fallback query, reusable by Livewire and future `/api/v2/*`)
+- [x] Quick-Finder Livewire modal/component wired into Homepage hero, Player Dashboard, and Topbar
+- [x] Feature tests covering exact matches, fallback matches, inactive category exclusion, and 1-click Join
 
 ---
 
@@ -77,12 +77,12 @@ Status: **Aligned via Design Interview — Ready for Phased Implementation**
   - **Full Audit Trail:** Persist structured AI verdict, confidence, reasoning, prompt/evidence references, and whether auto-resolved or admin-overridden.
 
 ### Implementation Checklist
-- [ ] Migration: `dispute_ai_analyses` table (dispute ID, provider/model, status, suggested resolution, confidence, reasoning JSON, evidence snapshot, applied flag)
-- [ ] Swappable `DisputeAiAnalyzerInterface` + `GeminiDisputeAnalyzer` client (HTTP + structured JSON schema + timeout/error safety)
-- [ ] Async `AnalyzeDisputeWithAiJob` triggered on evidence upload + scheduled/delayed evaluation check for auto-resolve eligibility after response window
-- [ ] System Settings controls (enable AI analysis, Shadow/Advisory vs Auto-Resolve toggle, confidence threshold, max prize cap, response window minutes)
-- [ ] Admin Dispute Modal UI showing AI summary, confidence badge, evidence checklist, and 1-click accept/override
-- [ ] Feature tests covering Shadow Mode, 1st-upload wait guard, prize-cap block, finals block, dishonesty-strike block, and `>=95%` eligible auto-resolve
+- [x] Migration: `dispute_ai_analyses` table (dispute ID, provider/model, status, suggested resolution, confidence, reasoning JSON, evidence snapshot, applied flag)
+- [x] `GeminiDisputeAnalyzer` client (HTTP + structured JSON schema + image resize + prompt-injection hardening + timeout/error safety)
+- [x] Async `AnalyzeDisputeWithAiJob` triggered on evidence upload + delayed `EvaluateAiDisputeAutoResolveJob` after response window
+- [x] System Settings controls (enable AI analysis, Shadow/Advisory vs Auto-Resolve toggle, confidence threshold, max prize cap, response window minutes)
+- [x] Admin Dispute Modal UI showing AI summary, confidence badge, evidence checklist, and 1-click re-run / override
+- [x] Feature tests covering Shadow Mode, 1st-upload wait guard, prize-cap block, finals block, dishonesty-strike block, and `>=95%` eligible auto-resolve
 
 ---
 

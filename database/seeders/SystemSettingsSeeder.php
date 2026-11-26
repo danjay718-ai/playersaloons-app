@@ -82,6 +82,12 @@ class SystemSettingsSeeder extends Seeder
             ['key' => 'auth.login_lockout_minutes', 'value' => '15', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'notifications.dispute_email', 'value' => 'info@playersaloons.com', 'created_at' => now(), 'updated_at' => now()],
             ['key' => 'notifications.dispute_name', 'value' => 'PlayerSaloons Disputes', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'ai.disputes.enabled', 'value' => 'false', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'ai.disputes.mode', 'value' => 'shadow', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'ai.disputes.min_confidence', 'value' => '0.95', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'ai.disputes.max_prize_cap', 'value' => '50.00', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'ai.disputes.evidence_window_minutes', 'value' => '10', 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'ai.disputes.max_runs_per_dispute', 'value' => '3', 'created_at' => now(), 'updated_at' => now()],
         ];
 
         foreach ($settings as $setting) {

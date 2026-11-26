@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\GoogleOAuthController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Community\ChatController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\MatchEvidenceController;
 use App\Http\Controllers\NewsletterUnsubscribeController;
 use App\Http\Controllers\PayopPayoutWebhookController;
 use App\Http\Controllers\PayopWebhookController;
@@ -143,6 +144,7 @@ Route::middleware('auth')->group(function () {
         ->name('verification.verify');
 
     Route::post('/logout', LogoutController::class)->name('logout');
+    Route::get('/match-evidence/{evidence:uuid}', MatchEvidenceController::class)->name('match.evidence.show');
 
     Route::get('/account-restricted', function (Request $request) {
         $block = $request->user()?->complianceBlocks()->active()->latest('created_at')->firstOrFail();

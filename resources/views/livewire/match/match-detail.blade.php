@@ -597,7 +597,7 @@
                                         <i data-lucide="{{ $ev->file_path ? 'image' : 'message-square-text' }}" class="w-4 h-4 text-violet-400"></i>
                                         <div class="truncate">
                                             @if($ev->file_path)
-                                                <a href="/storage/{{ $ev->file_path }}" target="_blank" class="block text-xs font-semibold text-zinc-300 hover:text-violet-400 transition-colors truncate">{{ __('Evidence File #:value1', ['value1' => ($ev->id)]) }}</a>
+                                                <a href="{{ route('match.evidence.show', $ev->uuid) }}" target="_blank" class="block text-xs font-semibold text-zinc-300 hover:text-violet-400 transition-colors truncate">{{ __('Evidence File #:value1', ['value1' => ($ev->id)]) }}</a>
                                             @else
                                                 <span class="block text-xs font-semibold text-zinc-300">{{ __('Dispute response #:value1 (no screenshot attached)', ['value1' => ($ev->id)]) }}</span>
                                             @endif

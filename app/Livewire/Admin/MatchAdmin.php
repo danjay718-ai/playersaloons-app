@@ -11,10 +11,14 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\OverrideMatchResultAction;
 use App\Modules\Match\Actions\ResolveDisputeAction;
 use App\Modules\Match\Actions\ResolveHeadToHeadDisputeAction;
+use App\Modules\Match\Jobs\AnalyzeDisputeWithAiJob;
+use App\Modules\Match\Models\DisputeAiAnalysis;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\HeadToHeadMatch;
 use App\Modules\Match\Models\MatchDispute;
+use App\Modules\Match\Services\AiDisputeSettings;
 use App\Shared\Enums\DisputeResolution;
+use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\HeadToHeadDisputeResolution;
 use App\Shared\Enums\HeadToHeadMatchStatus;
 use App\Shared\Enums\MatchStatus;
@@ -236,6 +240,22 @@ class MatchAdmin extends AdminComponent
             DB::transaction(function () use ($resolver, $blocker, $strikes, $dispute, $actor, $resolutionEnum): void {
                 $resolver->execute($dispute, $actor, $resolutionEnum);
 
+                $latestAi = DisputeAiAnalysis::query()
+                    ->where('match_dispute_id', $dispute->id)
+                    ->where('status', DisputeAiAnalysis::STATUS_COMPLETED)
+                    ->orderByDesc('analysis_version')
+                    ->first();
+
+                if ($latestAi instanceof DisputeAiAnalysis && $latestAi->suggested_resolution !== DisputeAiAnalysis::SUGGESTED_NEEDS_HUMAN) {
+                    $agreed = match ($latestAi->suggested_resolution) {
+                        DisputeAiAnalysis::SUGGESTED_PLAYER_A => $resolutionEnum === DisputeResolution::PLAYER_A,
+                        DisputeAiAnalysis::SUGGESTED_PLAYER_B => $resolutionEnum === DisputeResolution::PLAYER_B,
+                        DisputeAiAnalysis::SUGGESTED_REMATCH => in_array($resolutionEnum, [DisputeResolution::REMATCH, DisputeResolution::DRAW], true),
+                        default => false,
+                    };
+                    $latestAi->forceFill(['admin_agreed' => $agreed])->save();
+                }
+
                 if ($this->complianceUserId !== '') {
                     $participantUsers = collect([
                         $dispute->match->playerARegistration?->user,
@@ -275,6 +295,34 @@ class MatchAdmin extends AdminComponent
                 ? $e->getMessage()
                 : $this->safeError($e, 'Unable to resolve the match dispute.'));
         }
+    }
+
+    public function rerunAiAnalysis(int $disputeId, AiDisputeSettings $aiSettings): void
+    {
+        abort_unless($this->actor()->hasAnyRole(['ADMIN', 'SUPER_ADMIN']), 403);
+
+        if (! $aiSettings->isConfigured()) {
+            session()->flash('error', __('Gemini API key is not configured.'));
+
+            return;
+        }
+
+        $dispute = MatchDispute::query()->findOrFail($disputeId);
+        if ($dispute->status === DisputeStatus::RESOLVED) {
+            session()->flash('error', __('Cannot analyze an already resolved dispute.'));
+
+            return;
+        }
+
+        $runs = DisputeAiAnalysis::query()->where('match_dispute_id', $dispute->id)->count();
+        if ($runs >= $aiSettings->maxRunsPerDispute()) {
+            session()->flash('error', __('Maximum AI analysis runs reached for this dispute.'));
+
+            return;
+        }
+
+        AnalyzeDisputeWithAiJob::dispatch($dispute->id, true);
+        session()->flash('success', __('AI dispute analysis queued.'));
     }
 
     private function resetComplianceBanForm(): void
@@ -330,6 +378,7 @@ class MatchAdmin extends AdminComponent
             'round',
             'disputes.openedBy',
             'disputes.evidence.uploadedBy',
+            'disputes.latestAiAnalysis',
         ])->find($this->selectedMatchId);
         $match?->disputes->each(fn (MatchDispute $dispute) => $dispute->setRelation('match', $match));
 
@@ -353,6 +402,7 @@ class MatchAdmin extends AdminComponent
             'match.playerBRegistration.user' => fn ($query) => $query->withCount('disputeStrikes'),
             'openedBy',
             'evidence.uploadedBy',
+            'latestAiAnalysis',
         ])->find($this->selectedDisputeId);
     }
 

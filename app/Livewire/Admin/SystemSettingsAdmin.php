@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Modules\Match\Services\AiDisputeSettings;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Operations\Services\SystemSettings;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
@@ -69,6 +70,18 @@ class SystemSettingsAdmin extends AdminComponent
 
     public string $disputeNotificationName = 'PlayerSaloons Disputes';
 
+    public bool $aiDisputesEnabled = false;
+
+    public string $aiDisputesMode = AiDisputeSettings::MODE_SHADOW;
+
+    public string $aiDisputesMinConfidence = '0.95';
+
+    public string $aiDisputesMaxPrizeCap = '50.00';
+
+    public int $aiDisputesEvidenceWindowMinutes = 10;
+
+    public int $aiDisputesMaxRunsPerDispute = 3;
+
     public bool $showTournamentResetModal = false;
 
     public string $tournamentResetConfirmation = '';
@@ -118,6 +131,14 @@ class SystemSettingsAdmin extends AdminComponent
         $notificationSettings = $values;
         $this->disputeNotificationEmail = (string) ($notificationSettings['notifications.dispute_email'] ?? 'info@playersaloons.com');
         $this->disputeNotificationName = (string) ($notificationSettings['notifications.dispute_name'] ?? 'PlayerSaloons Disputes');
+
+        $aiDisputes = app(AiDisputeSettings::class);
+        $this->aiDisputesEnabled = $aiDisputes->enabled();
+        $this->aiDisputesMode = $aiDisputes->mode();
+        $this->aiDisputesMinConfidence = number_format($aiDisputes->minConfidence(), 2, '.', '');
+        $this->aiDisputesMaxPrizeCap = $aiDisputes->maxPrizeCap();
+        $this->aiDisputesEvidenceWindowMinutes = $aiDisputes->evidenceWindowMinutes();
+        $this->aiDisputesMaxRunsPerDispute = $aiDisputes->maxRunsPerDispute();
     }
 
     public function savePaymentSettings(UpdatePaymentSettingsAction $action): void
@@ -291,6 +312,30 @@ class SystemSettingsAdmin extends AdminComponent
         ]);
 
         session()->flash('success', 'Dispute notification settings updated.');
+    }
+
+    public function saveAiDisputeSettings(): void
+    {
+        $this->authorizeManagement();
+        $this->validate([
+            'aiDisputesEnabled' => ['boolean'],
+            'aiDisputesMode' => ['required', 'in:shadow,auto_resolve'],
+            'aiDisputesMinConfidence' => ['required', 'numeric', 'min:0.50', 'max:1.00'],
+            'aiDisputesMaxPrizeCap' => ['required', 'numeric', 'min:0', 'max:100000', 'decimal:0,2'],
+            'aiDisputesEvidenceWindowMinutes' => ['required', 'integer', 'min:1', 'max:1440'],
+            'aiDisputesMaxRunsPerDispute' => ['required', 'integer', 'min:1', 'max:10'],
+        ]);
+
+        app(SystemSettings::class)->save($this->actor(), [
+            'ai.disputes.enabled' => $this->aiDisputesEnabled ? 'true' : 'false',
+            'ai.disputes.mode' => $this->aiDisputesMode,
+            'ai.disputes.min_confidence' => number_format((float) $this->aiDisputesMinConfidence, 2, '.', ''),
+            'ai.disputes.max_prize_cap' => number_format((float) $this->aiDisputesMaxPrizeCap, 2, '.', ''),
+            'ai.disputes.evidence_window_minutes' => (string) $this->aiDisputesEvidenceWindowMinutes,
+            'ai.disputes.max_runs_per_dispute' => (string) $this->aiDisputesMaxRunsPerDispute,
+        ]);
+
+        session()->flash('success', __('AI dispute assistant settings updated.'));
     }
 
     public function openTournamentTestingReset(): void
