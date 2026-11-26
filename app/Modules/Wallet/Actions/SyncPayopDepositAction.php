@@ -34,7 +34,7 @@ class SyncPayopDepositAction
                 throw new RuntimeException('Payment verification unavailable.', 503);
             }
             if ($status->json('data.isSuccess') !== true || $status->json('data.status') !== 'success') {
-                if (in_array($status->json('data.status'), ['failed', 'expired'], true) && $checkout->completed_at === null) {
+                if (in_array($status->json('data.status'), ['failed', 'expired'], true)) {
                     $checkout->update(['status' => (string) $status->json('data.status'), 'failed_at' => now()]);
                 }
 
@@ -54,7 +54,7 @@ class SyncPayopDepositAction
                 throw new LogicException('Payment verification mismatch.', 422);
             }
             if ((int) ($invoice['status'] ?? -1) !== 1) {
-                if ((int) ($invoice['status'] ?? -1) === 5 && $checkout->completed_at === null) {
+                if ((int) ($invoice['status'] ?? -1) === 5) {
                     $checkout->update(['status' => 'failed', 'failed_at' => now()]);
                 }
 

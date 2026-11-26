@@ -517,8 +517,22 @@ html[data-theme='light'] .theme-player .theme-sidebar-logo-inner img {
     filter: saturate(1.15) contrast(1.08);
     transform: scale(1.08);
 }
-html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active) {
-    color: #dbeafe !important;
+html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active),
+html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active) :is(i, svg, span) {
+    color: #eff6ff !important;
+}
+html[data-theme='light'] .theme-player .theme-sidebar nav > p.sidebar-label {
+    color: #93c5fd !important;
+}
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child a[href='/admin'],
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child a[href='/admin'] :is(i, svg, span) {
+    color: #fde68a !important;
+    border-color: rgba(253, 230, 138, 0.35) !important;
+    background-color: rgba(251, 191, 36, 0.14) !important;
+}
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child a[href='/admin'] :is(i, svg, span) {
+    background-color: transparent !important;
+    border-color: transparent !important;
 }
 html[data-theme='light'] .theme-auth .theme-nav-active {
     background: #2563eb !important;
@@ -536,22 +550,28 @@ html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-active {
 html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-active :is(i, svg, span) {
     color: #1d4ed8 !important;
 }
-html[data-theme='light'] .theme-player .theme-nav-item:not(.theme-nav-active):hover {
+html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active):hover {
     background: #eef2f7 !important;
     border-color: #d7e0ea !important;
     color: #1d4ed8 !important;
     box-shadow: 0 5px 14px rgba(15, 23, 42, 0.14);
 }
-html[data-theme='light'] .theme-player .theme-nav-item:not(.theme-nav-active):hover :is(i, svg, span) {
+html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active):hover :is(i, svg, span) {
     color: #1d4ed8 !important;
 }
-html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button {
-    color: #dbeafe !important;
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button,
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button :is(i, svg, span) {
+    color: #eff6ff !important;
 }
-html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button:hover {
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button:hover,
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button:hover :is(i, svg, span) {
     background: #fff1f2 !important;
     border-color: #fecdd3 !important;
     color: #be123c !important;
+}
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button:hover :is(i, svg, span) {
+    background: transparent !important;
+    border-color: transparent !important;
 }
 html[data-theme='light'] .theme-player .theme-primary-action {
     background: #2563eb !important;
@@ -667,6 +687,13 @@ html[data-theme='light'] .theme-player .competition-section-button:hover { backg
 html[data-theme='light'] .theme-player .competition-section-selected { background: #2563eb; border-color: #1d4ed8; color: #ffffff; }
 html[data-theme='light'] .theme-player .competition-guest-invite { background: #eff6ff; border-color: #93c5fd; color: #0f172a; }
 html[data-theme='light'] .theme-player .competition-register-link { background: #2563eb; color: #ffffff; }
+html[data-theme='light'] .theme-player .find-tournament-modal-panel { background: #ffffff !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
+html[data-theme='light'] .theme-player .find-tournament-modal-panel > div:nth-child(2),
+html[data-theme='light'] .theme-player .find-tournament-modal-panel > div:last-child { background: #f1f5f9 !important; border-color: #dbe3ee !important; }
+html[data-theme='light'] .theme-player .find-tournament-result { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+html[data-theme='light'] .theme-player .find-tournament-cta { background: #2563eb !important; color: #ffffff !important; }
+html[data-theme='light'] .theme-player .find-tournament-trigger { background: #eff6ff !important; border-color: #93c5fd !important; color: #1d4ed8 !important; }
+html[data-theme='light'] .theme-player .find-tournament-trigger:hover { background: #dbeafe !important; border-color: #2563eb !important; color: #1e40af !important; }
 html[data-theme='light'] .theme-auth [class*='bg-[#0f172a]'] {
     background-color: var(--theme-panel) !important;
     border-color: var(--theme-border);

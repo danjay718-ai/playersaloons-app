@@ -42,6 +42,7 @@
     @auth
         <x-logout-confirmation />
     @endauth
+    <livewire:tournament.find-tournament-modal />
     <x-cookie-consent />
 
     @livewireScripts
