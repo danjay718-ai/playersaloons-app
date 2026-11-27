@@ -29,22 +29,23 @@
         default => __('Ask how GamersRival works, how to register, or how to find open tournaments.'),
     };
 @endphp
-<div
-    wire:ignore
-    data-ai-support-root
-    data-scope="{{ $resolvedScope }}"
-    data-surface="{{ $surface }}"
-    x-data="{
+@once
+<script>
+window.__grAiSupportWidget = window.__grAiSupportWidget || function (config) {
+    return {
         open: false,
         loading: false,
         input: '',
         error: '',
         zoomImage: null,
-        scope: @js($resolvedScope),
-        storageKey: 'gr_ai_support_chat_v1:' + @js($resolvedScope),
-        endpoint: @js(route('ai-support.ask')),
-        fallbackToken: @js(csrf_token()),
-        starters: @js($starters),
+        scope: config.scope,
+        storageKey: 'gr_ai_support_chat_v1:' + config.scope,
+        endpoint: config.endpoint,
+        fallbackToken: config.fallbackToken,
+        starters: config.starters || [],
+        rateLimitMsg: config.rateLimitMsg,
+        genericErrorMsg: config.genericErrorMsg,
+        networkErrorMsg: config.networkErrorMsg,
         messages: [],
         init() {
             try {
@@ -79,22 +80,22 @@
             this.persist();
         },
         csrfToken() {
-            return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || this.fallbackToken;
+            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.fallbackToken;
         },
         escapeHtml(str) {
             return String(str)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
-                .replace(/\x22/g, '&quot;')
+                .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         },
         formatInline(text) {
             return this.escapeHtml(text)
-                .replace(/\*\*\*(.+?)\*\*\*/g, '<strong class=\'font-semibold text-white\'><em>$1</em></strong>')
-                .replace(/\*\*(.+?)\*\*/g, '<strong class=\'font-semibold text-white\'>$1</strong>')
-                .replace(/(^|[\s(])\*([^*\n]+?)\*(?=[\s).,!?:;]|$)/g, '$1<em class=\'italic text-zinc-200\'>$2</em>')
-                .replace(/`([^`\n]+?)`/g, '<code class=\'rounded bg-white/10 px-1 py-0.5 font-mono text-[11px] text-cyan-200\'>$1</code>');
+                .replace(/\*\*\*(.+?)\*\*\*/g, '<strong class="font-semibold text-white"><em>$1</em></strong>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
+                .replace(/(^|[\s(])\*([^*\n]+?)\*(?=[\s).,!?:;]|$)/g, '$1<em class="italic text-zinc-200">$2</em>')
+                .replace(/`([^`\n]+?)`/g, '<code class="rounded bg-white/10 px-1 py-0.5 font-mono text-[11px] text-cyan-200">$1</code>');
         },
         formatMessage(raw) {
             const lines = String(raw || '').replace(/\r\n/g, '\n').split('\n');
@@ -118,10 +119,10 @@
                 if (ordered) {
                     if (listType !== 'ol') {
                         closeList();
-                        html.push('<ol class=\'list-decimal space-y-2 pl-4 marker:font-semibold marker:text-zinc-400\'>');
+                        html.push('<ol class="list-decimal space-y-2 pl-4 marker:font-semibold marker:text-zinc-400">');
                         listType = 'ol';
                     }
-                    html.push('<li class=\'leading-relaxed\'>' + this.formatInline(ordered[1]) + '</li>');
+                    html.push('<li class="leading-relaxed">' + this.formatInline(ordered[1]) + '</li>');
                     continue;
                 }
 
@@ -129,19 +130,19 @@
                 if (bullet) {
                     if (listType !== 'ul') {
                         closeList();
-                        html.push('<ul class=\'list-disc space-y-1.5 pl-4 marker:text-zinc-400\'>');
+                        html.push('<ul class="list-disc space-y-1.5 pl-4 marker:text-zinc-400">');
                         listType = 'ul';
                     }
-                    html.push('<li class=\'leading-relaxed\'>' + this.formatInline(bullet[1]) + '</li>');
+                    html.push('<li class="leading-relaxed">' + this.formatInline(bullet[1]) + '</li>');
                     continue;
                 }
 
                 closeList();
                 const heading = trimmed.match(/^#{1,3}\s+(.+)$/);
                 if (heading) {
-                    html.push('<p class=\'font-semibold text-white\'>' + this.formatInline(heading[1]) + '</p>');
+                    html.push('<p class="font-semibold text-white">' + this.formatInline(heading[1]) + '</p>');
                 } else {
-                    html.push('<p class=\'leading-relaxed\'>' + this.formatInline(trimmed) + '</p>');
+                    html.push('<p class="leading-relaxed">' + this.formatInline(trimmed) + '</p>');
                 }
             }
 
@@ -174,9 +175,7 @@
 
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) {
-                    this.error = data.message || (res.status === 429
-                        ? @js(__('Too many questions in a short time. Please wait a moment.'))
-                        : @js(__('Support assistant could not respond right now.')));
+                    this.error = data.message || (res.status === 429 ? this.rateLimitMsg : this.genericErrorMsg);
                     return;
                 }
 
@@ -191,13 +190,30 @@
                     this.scrollBottom();
                 }
             } catch (e) {
-                this.error = @js(__('Network error. Check your connection and try again.'));
+                this.error = this.networkErrorMsg;
             } finally {
                 this.loading = false;
                 this.scrollBottom();
             }
-        }
-    }"
+        },
+    };
+};
+</script>
+@endonce
+<div
+    wire:ignore
+    data-ai-support-root
+    data-scope="{{ $resolvedScope }}"
+    data-surface="{{ $surface }}"
+    x-data="window.__grAiSupportWidget(@js([
+        'scope' => $resolvedScope,
+        'endpoint' => route('ai-support.ask'),
+        'fallbackToken' => csrf_token(),
+        'starters' => $starters,
+        'rateLimitMsg' => __('Too many questions in a short time. Please wait a moment.'),
+        'genericErrorMsg' => __('Support assistant could not respond right now.'),
+        'networkErrorMsg' => __('Network error. Check your connection and try again.'),
+    ]))"
     @keydown.escape.window="if (zoomImage) { zoomImage = null; } else if (open) { open = false; }"
 >
     {{-- Fullscreen Screenshot Zoom Lightbox --}}
