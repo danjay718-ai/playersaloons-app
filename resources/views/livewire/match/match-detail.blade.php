@@ -1,8 +1,8 @@
-<div class="player-match-room space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))" @if($isParticipant && $match->status->value === 'ready') wire:poll.30s.visible="refreshMatchStatus" @elseif($isParticipant && in_array($match->status->value, ['in_progress', 'waiting_for_confirmation', 'disputed'])) wire:poll.30s.visible @endif>
+<div class="player-match-room flex flex-col gap-3 lg:block lg:space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))" @if($isParticipant && $match->status->value === 'ready') wire:poll.30s.visible="refreshMatchStatus" @elseif($isParticipant && in_array($match->status->value, ['in_progress', 'waiting_for_confirmation', 'disputed'])) wire:poll.30s.visible @endif>
     <x-ui.toasts />
 
     @if($isDefeated)
-        <div role="alert" class="flex items-start gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 text-rose-100 shadow-lg shadow-rose-950/20">
+        <div role="alert" class="order-1 flex items-start gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 text-rose-100 shadow-lg shadow-rose-950/20 lg:order-none">
             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-300">
                 <i data-lucide="shield-x" class="h-5 w-5"></i>
             </span>
@@ -13,9 +13,58 @@
         </div>
     @endif
 
+    @if(! $isAdmin)
+        {{-- Mobile & Tablet (< 1024px) Compact 1-Row Match Header --}}
+        <div class="order-1 flex items-center justify-between gap-2 rounded-xl border border-zinc-850 bg-zinc-900 px-3 py-2.5 shadow-md lg:hidden">
+            <div class="flex min-w-0 items-center gap-2">
+                @unless($embedded)
+                    <a href="/tournaments/{{ $match->tournament->uuid }}/view" wire:navigate aria-label="{{ __('Return to Tournament') }}" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-500/30 bg-violet-500/10 text-violet-300 transition-colors hover:bg-violet-500/20">
+                        <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i>
+                    </a>
+                @endunless
+                <span class="truncate font-orbitron text-xs font-black uppercase tracking-wide text-white">
+                    {{ __('Round :value1 • Match :value2', ['value1' => ($match->round?->round_number ?? '—'), 'value2' => ($roundMatchNumber)]) }}
+                </span>
+            </div>
+            <div class="shrink-0">
+                @include('livewire.match.partials._match-status-badge')
+            </div>
+        </div>
+
+        {{-- Mobile & Tablet (< 1024px) Compact 1-Row Side A / Side B Game IDs right above Submit Results --}}
+        @if($isParticipant)
+            @php
+                $compactSideA = $match->playerARegistration?->tournamentTeam?->members?->isNotEmpty()
+                    ? $match->playerARegistration->tournamentTeam->members->map(fn ($m) => $m->game_id_value ?: $m->user?->username)->filter()->implode(', ')
+                    : ($match->playerARegistration?->game_id_value ?: ($match->playerARegistration?->user?->username ? '@'.$match->playerARegistration->user->username : __('TBD')));
+                $compactSideB = $match->playerBRegistration?->tournamentTeam?->members?->isNotEmpty()
+                    ? $match->playerBRegistration->tournamentTeam->members->map(fn ($m) => $m->game_id_value ?: $m->user?->username)->filter()->implode(', ')
+                    : ($match->playerBRegistration?->game_id_value ?: ($match->playerBRegistration?->user?->username ? '@'.$match->playerBRegistration->user->username : __('TBD')));
+            @endphp
+            <div class="order-2 rounded-xl border border-cyan-900/40 bg-cyan-950/15 px-3 py-2 lg:hidden">
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="min-w-0 rounded-lg border border-zinc-800/80 bg-zinc-950/75 px-2.5 py-1.5">
+                        <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-500">{{ __('Side A ID') }}</span>
+                        <strong class="block truncate text-xs font-bold text-cyan-300" translate="no">{{ $compactSideA }}</strong>
+                    </div>
+                    <div class="min-w-0 rounded-lg border border-zinc-800/80 bg-zinc-950/75 px-2.5 py-1.5">
+                        <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-500">{{ __('Side B ID') }}</span>
+                        <strong class="block truncate text-xs font-bold text-fuchsia-300" translate="no">{{ $compactSideB }}</strong>
+                    </div>
+                </div>
+                @if($match->lobby_code || $match->lobby_password)
+                    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-zinc-800/70 pt-1.5 text-[11px] text-violet-200">
+                        @if($match->lobby_code)<span><span class="font-bold text-violet-400">{{ __('Lobby') }}:</span> {{ $match->lobby_code }}</span>@endif
+                        @if($match->lobby_password)<span><span class="font-bold text-violet-400">{{ __('Pass') }}:</span> {{ $match->lobby_password }}</span>@endif
+                    </div>
+                @endif
+            </div>
+        @endif
+    @endif
+
     @if(! $embedded || $isAdmin)
-    <!-- Match Header Card -->
-    <div class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+    <!-- Match Header Card (Desktop view untouched; shown on all widths for Admin) -->
+    <div class="{{ $isAdmin ? '' : 'hidden lg:block' }} decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
         <i data-lucide="gamepad-2" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -41,7 +90,7 @@
     @endif
 
     <!-- H2H Matchups Display -->
-    <div class="decorated-card match-room-card bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-850 rounded-2xl p-6 md:p-10 shadow-xl relative overflow-hidden">
+    <div class="{{ $isAdmin ? '' : 'order-4 lg:order-none' }} decorated-card match-room-card bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-850 rounded-2xl p-5 md:p-6 lg:p-10 shadow-xl relative overflow-hidden">
         <i data-lucide="swords" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="absolute inset-0 bg-gradient-to-r from-violet-600/5 to-fuchsia-600/5 pointer-events-none"></div>
 
@@ -142,7 +191,7 @@
             this.resultPanelTab = tab;
             if (@js(! $isAdmin)) this.$nextTick(() => scrollToMatchContent(this.$root, tab));
         }
-    }" @tournament-content-opened.window="if ($event.detail.matchUuid === @js($match->uuid)) resultPanelTab = 'submit'" @tournament-result-selected.window="if ($event.detail.tournamentUuid === @js($match->tournament->uuid)) resultPanelTab = 'submit'" class="match-result-workspace space-y-6">
+    }" @tournament-content-opened.window="if ($event.detail.matchUuid === @js($match->uuid)) resultPanelTab = 'submit'" @tournament-result-selected.window="if ($event.detail.tournamentUuid === @js($match->tournament->uuid)) resultPanelTab = 'submit'" class="{{ $isAdmin ? '' : 'order-3 lg:order-none' }} match-result-workspace space-y-6">
         <nav class="match-result-tabs grid grid-cols-2 gap-2 rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-1.5" aria-label="Match result sections">
             <button type="button" @click="selectResultPanel('submit')" :aria-pressed="resultPanelTab === 'submit'" :class="resultPanelTab === 'submit' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
                 <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0"></i><span class="truncate">Submit Results</span>
@@ -490,6 +539,24 @@
                         @endif
                     </div>
                 @endif
+
+                @if($isParticipant && in_array($statusVal, ['completed', 'forfeited'], true))
+                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-xs">
+                        @if($hasSubmittedMatchReport ?? false)
+                            <span class="font-semibold text-emerald-300">{{ __('Your match report / feedback has been submitted for admin review.') }}</span>
+                        @else
+                            <p class="text-zinc-400">{{ __('Believe there was an incorrect ruling or issue with this match?') }}</p>
+                            <button
+                                type="button"
+                                wire:click="openMatchReportModal"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-200 transition hover:bg-amber-500/20"
+                            >
+                                <i data-lucide="flag" class="h-3.5 w-3.5"></i>
+                                <span>{{ __('Report Match / Provide Feedback') }}</span>
+                            </button>
+                        @endif
+                    </div>
+                @endif
             </div>
 
             <!-- Dispute & Evidence Upload Panel -->
@@ -673,7 +740,53 @@
     </div>
 
     @if(! $isAdmin)
-        @include('livewire.match.partials._game-connection-details')
+        <div class="hidden lg:block">
+            @include('livewire.match.partials._game-connection-details')
+        </div>
+    @endif
+
+    @if($showMatchReportModal && $isParticipant && in_array($match->status->value ?? $match->status, ['completed', 'forfeited'], true))
+        <div class="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm" role="presentation" @keydown.escape.window="$wire.set('showMatchReportModal', false)">
+            <div role="dialog" aria-modal="true" aria-labelledby="match-report-title" class="w-full max-w-lg rounded-2xl border border-amber-500/35 bg-zinc-900 p-5 shadow-2xl sm:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 id="match-report-title" class="font-orbitron text-base font-bold uppercase tracking-wide text-white">{{ __('Report Match / Provide Feedback') }}</h2>
+                        <p class="mt-1 text-xs leading-relaxed text-zinc-400">{{ __('Submit a ruling petition, report an issue with this finalized match, or share feedback with tournament admins.') }}</p>
+                    </div>
+                    <button type="button" wire:click="$set('showMatchReportModal', false)" aria-label="{{ __('Close') }}" class="rounded-lg p-1 text-zinc-400 hover:bg-zinc-800 hover:text-white">
+                        <i data-lucide="x" class="h-4 w-4"></i>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="submitMatchReport" class="mt-5 space-y-4">
+                    <div>
+                        <label for="match-report-type" class="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-300">{{ __('Category') }}</label>
+                        <select id="match-report-type" wire:model="matchReportType" class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+                            <option value="ruling_appeal">{{ __('Ruling Petition / Incorrect Result') }}</option>
+                            <option value="report_match">{{ __('Report Match / Unsportsmanlike Conduct') }}</option>
+                            <option value="feedback">{{ __('Provide Match Feedback') }}</option>
+                        </select>
+                        @error('matchReportType') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="match-report-message" class="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-300">{{ __('Details') }}</label>
+                        <textarea id="match-report-message" wire:model="matchReportMessage" rows="4" maxlength="2000" placeholder="{{ __('Explain what happened, why the ruling should be reviewed, or share your feedback…') }}" class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none"></textarea>
+                        @error('matchReportMessage') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button type="button" wire:click="$set('showMatchReportModal', false)" class="rounded-xl border border-zinc-700 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800">
+                            {{ __('Cancel') }}
+                        </button>
+                        <button type="submit" wire:loading.attr="disabled" wire:target="submitMatchReport" class="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-zinc-950 hover:bg-amber-400 disabled:opacity-60">
+                            <span wire:loading.remove wire:target="submitMatchReport">{{ __('Submit Report') }}</span>
+                            <span wire:loading wire:target="submitMatchReport">{{ __('Submitting…') }}</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     @endif
 
     @if($isResultConflict && $activeDispute && $isParticipant && ! $hasSubmittedDisputeEvidence)

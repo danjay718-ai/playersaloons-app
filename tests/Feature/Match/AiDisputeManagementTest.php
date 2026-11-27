@@ -494,6 +494,45 @@ class AiDisputeManagementTest extends TestCase
             ->assertDontSee('50.0% Confidence');
     }
 
+    public function test_participant_can_submit_post_match_report_or_feedback_and_outsider_is_blocked(): void
+    {
+        ['match' => $match, 'regA' => $regA] = $this->createDisputedMatch();
+        $match->forceFill([
+            'status' => MatchStatus::COMPLETED,
+            'winner_registration_id' => $regA->id,
+            'resolution_reason' => 'admin_resolution',
+            'completed_at' => now(),
+        ])->save();
+
+        Livewire::actingAs($this->playerB)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->assertSee('Report Match / Provide Feedback')
+            ->assertSee('Side A ID')
+            ->assertSee('Side B ID')
+            ->call('openMatchReportModal')
+            ->assertSet('showMatchReportModal', true)
+            ->set('matchReportType', 'ruling_appeal')
+            ->set('matchReportMessage', 'The final scoreboard actually showed beta_player winning 13-11; please re-check.')
+            ->call('submitMatchReport')
+            ->assertHasNoErrors()
+            ->assertSet('showMatchReportModal', false)
+            ->assertSee('Your match report / feedback has been submitted for admin review.');
+
+        $this->assertDatabaseHas('contact_inquiries', [
+            'user_id' => $this->playerB->id,
+            'category' => 'tournament',
+            'status' => 'new',
+        ]);
+
+        // Outsider cannot submit a report for someone else's match
+        Livewire::actingAs($this->outsider)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->set('matchReportType', 'report_match')
+            ->set('matchReportMessage', 'Unauthorized report attempt by outsider.')
+            ->call('submitMatchReport')
+            ->assertForbidden();
+    }
+
     private function configureAiSettings(
         bool $enabled = true,
         string $mode = 'shadow',

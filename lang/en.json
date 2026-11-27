@@ -1189,5 +1189,22 @@
     "Both responses submitted — pending Admin review": "Both responses submitted — pending Admin review",
     "Both players have submitted their evidence. A tournament admin will review the proof and decide the final result.": "Both players have submitted their evidence. A tournament admin will review the proof and decide the final result.",
     "Your dispute response has been submitted.": "Your dispute response has been submitted.",
-    "Your evidence has been submitted and is now locked for admin review.": "Your evidence has been submitted and is now locked for admin review."
+    "Your evidence has been submitted and is now locked for admin review.": "Your evidence has been submitted and is now locked for admin review.",
+    "Side A ID": "Side A ID",
+    "Side B ID": "Side B ID",
+    "Lobby": "Lobby",
+    "Pass": "Pass",
+    "TBD": "TBD",
+    "Believe there was an incorrect ruling or issue with this match?": "Believe there was an incorrect ruling or issue with this match?",
+    "Report Match / Provide Feedback": "Report Match / Provide Feedback",
+    "Your match report / feedback has been submitted for admin review.": "Your match report / feedback has been submitted for admin review.",
+    "Match reports and feedback are available once the match has a finalized result.": "Match reports and feedback are available once the match has a finalized result.",
+    "Please provide at least 10 characters explaining your petition, report, or feedback.": "Please provide at least 10 characters explaining your petition, report, or feedback.",
+    "You have already submitted a report or feedback for this match.": "You have already submitted a report or feedback for this match.",
+    "Submit a ruling petition, report an issue with this finalized match, or share feedback with tournament admins.": "Submit a ruling petition, report an issue with this finalized match, or share feedback with tournament admins.",
+    "Ruling Petition / Incorrect Result": "Ruling Petition / Incorrect Result",
+    "Report Match / Unsportsmanlike Conduct": "Report Match / Unsportsmanlike Conduct",
+    "Provide Match Feedback": "Provide Match Feedback",
+    "Explain what happened, why the ruling should be reviewed, or share your feedback…": "Explain what happened, why the ruling should be reviewed, or share your feedback…",
+    "Submit Report": "Submit Report"
 }

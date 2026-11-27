@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Match;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
+use App\Modules\Community\Models\ContactInquiry;
 use App\Modules\Identity\Models\PlayerDisputeStrike;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
@@ -32,6 +33,7 @@ use App\Shared\Exceptions\InvalidStateTransitionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -66,6 +68,12 @@ class MatchDetail extends Component
     public string $serverRegion = '';
 
     public string $lobbyInstructions = '';
+
+    public bool $showMatchReportModal = false;
+
+    public string $matchReportType = 'ruling_appeal';
+
+    public string $matchReportMessage = '';
 
     public function confirmResult(ConfirmMatchResultAction $action)
     {
@@ -522,6 +530,109 @@ class MatchDetail extends Component
         }
     }
 
+    public function openMatchReportModal(): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        $this->resetValidation(['matchReportType', 'matchReportMessage']);
+        $this->matchReportType = 'ruling_appeal';
+        $this->matchReportMessage = '';
+        $this->showMatchReportModal = true;
+    }
+
+    public function submitMatchReport(): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (! $user) {
+            abort(403);
+        }
+
+        $match = GameMatch::query()
+            ->where('uuid', $this->uuid)
+            ->with(['tournament', 'round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration.user'])
+            ->firstOrFail();
+
+        $isParticipant = $match->playerARegistration?->includesUser($user->id)
+            || $match->playerBRegistration?->includesUser($user->id);
+
+        if (! $isParticipant) {
+            abort(403, 'Only match participants can submit a match report or feedback.');
+        }
+
+        if (! in_array($match->status, [MatchStatus::COMPLETED, MatchStatus::FORFEITED], true)) {
+            session()->flash('error', __('Match reports and feedback are available once the match has a finalized result.'));
+
+            return;
+        }
+
+        $this->validate([
+            'matchReportType' => ['required', 'string', 'in:ruling_appeal,report_match,feedback'],
+            'matchReportMessage' => ['required', 'string', 'min:10', 'max:2000'],
+        ], [
+            'matchReportMessage.min' => __('Please provide at least 10 characters explaining your petition, report, or feedback.'),
+        ]);
+
+        $matchTag = "[Match #{$match->id}]";
+        $alreadyReported = ContactInquiry::query()
+            ->where('user_id', $user->id)
+            ->where('category', 'tournament')
+            ->where('subject', 'like', "%{$matchTag}%")
+            ->exists();
+
+        if ($alreadyReported) {
+            $this->showMatchReportModal = false;
+            session()->flash('error', __('You have already submitted a report or feedback for this match.'));
+
+            return;
+        }
+
+        $typeLabel = match ($this->matchReportType) {
+            'ruling_appeal' => 'Ruling Petition / Appeal',
+            'report_match' => 'Match Report',
+            default => 'Match Feedback',
+        };
+
+        $subject = mb_substr("{$matchTag} {$typeLabel} — {$match->tournament->display_name}", 0, 150);
+        $winnerName = $match->winnerRegistration?->user?->username ?? 'None';
+        $fullMessage = implode("\n", [
+            "Type: {$typeLabel}",
+            "Tournament: {$match->tournament->display_name} (UUID: {$match->tournament->uuid})",
+            "Match: #{$match->id} (UUID: {$match->uuid}) · Round ".($match->round?->round_number ?? '—'),
+            "Status: {$match->status->value} · Winner: {$winnerName} · Resolution: ".($match->resolution_reason ?: 'standard'),
+            '',
+            'Player Note:',
+            trim($this->matchReportMessage),
+        ]);
+
+        $inquiry = ContactInquiry::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->id,
+            'name' => $user->profile?->display_name ?: $user->username,
+            'email' => $user->email,
+            'category' => 'tournament',
+            'subject' => $subject,
+            'message' => $fullMessage,
+            'status' => 'new',
+        ]);
+
+        activity()
+            ->causedBy($user)
+            ->performedOn($match)
+            ->event('match_report_submitted')
+            ->withProperties([
+                'contact_inquiry_id' => $inquiry->id,
+                'report_type' => $this->matchReportType,
+            ])
+            ->log('Player submitted post-match report or ruling petition');
+
+        $this->showMatchReportModal = false;
+        $this->matchReportMessage = '';
+        session()->flash('message', __('Your match report / feedback has been submitted for admin review.'));
+    }
+
     public function render()
     {
         $match = GameMatch::query()
@@ -651,6 +762,14 @@ class MatchDetail extends Component
         $isProviderManaged = $match->isProviderManaged();
         $externalMatchGame = $isProviderManaged ? $match->activeExternalGame() : null;
         $disputeReviewStatus = $this->buildPlayerDisputeReviewStatus($activeDispute);
+        $hasSubmittedMatchReport = $isParticipant
+            && $user !== null
+            && in_array($match->status, [MatchStatus::COMPLETED, MatchStatus::FORFEITED], true)
+            && ContactInquiry::query()
+                ->where('user_id', $user->id)
+                ->where('category', 'tournament')
+                ->where('subject', 'like', "%[Match #{$match->id}]%")
+                ->exists();
 
         $view = view('livewire.match.match-detail', [
             'match' => $match,
@@ -665,6 +784,7 @@ class MatchDetail extends Component
             'activeDispute' => $activeDispute,
             'disputeReviewStatus' => $disputeReviewStatus,
             'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,
+            'hasSubmittedMatchReport' => $hasSubmittedMatchReport,
             'isResultConflict' => $isResultConflict,
             'activeAttempt' => $activeAttempt,
             'opponentSubmissionOutcome' => $opponentSubmissionOutcome,

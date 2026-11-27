@@ -108,8 +108,11 @@ Status: **Aligned via Design Interview — Ready for Phased Implementation**
 
 ---
 
-## 7. Deferred Items (Pending Research)
+## 7. Deferred Items & Future Enhancements (Not Started Yet)
 
+- [ ] **Homepage / Player Dashboard "What's New" Announcement Popup Modal** *(Noted — Upcoming Feature)*
+  - [ ] Dismissible announcement / news popup modal on Homepage and/or Player Dashboard for partnerships, platform updates, and news (supporting rich text, image banner, or embedded/uploaded video)
+  - [ ] **Recommended Admin Management:** Extend existing **Admin → Broadcast Notifications** (`/admin/broadcasts`, `BroadcastNotificationAdmin` / `BroadcastMessage`) with display type (`banner` vs `popup_modal`), target surface (`homepage`, `player_dashboard`, `both`), optional video/image media + CTA link, active date window (`starts_at` / `ends_at`), and per-announcement dismiss tracking so users only see new updates once
 - [ ] **Optional Paid Membership / Subscription Pilot** *(Deferred)*
   - [ ] Research EUR pricing, legal/billing structure, 30-day validity, and operating-cost economics before finalizing scope
   - [ ] Revisit `documentation/new-requirements-2026-11.md` Section 4 once research is complete

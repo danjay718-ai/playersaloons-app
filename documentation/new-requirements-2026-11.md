@@ -225,6 +225,12 @@ frontend build, and browser verification during implementation.
 2. PlayStrategy integration.
 3. Membership pilot.
 
+## 8. Noted Future Enhancements (Backlog)
+
+- **"What's New" / Announcement Popup Modal (Homepage & Player Dashboard):**
+  - Dismissible modal popup for platform announcements, new partnerships, major updates, or promo videos (supporting text, image, or video-only mode).
+  - Recommended Admin management surface: extend existing **Admin → Broadcast Notifications** (`/admin/broadcasts`, `BroadcastMessage`) rather than adding a separate menu — adding modal display mode, target surface (`homepage` / `dashboard` / `both`), optional video/media URL or upload, active schedule window, and per-announcement dismissal persistence.
+
 ## Limitations
 
 - This document records proposed requirements, not completed work.
