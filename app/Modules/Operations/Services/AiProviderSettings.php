@@ -40,10 +40,10 @@ final class AiProviderSettings
             self::PROVIDER_GEMINI => [
                 'name' => 'Google Gemini',
                 'description' => 'Multimodal vision & fast structured JSON',
-                'default_model' => 'gemini-2.5-flash',
+                'default_model' => 'gemini-3.5-flash-lite',
                 'default_base_url' => 'https://generativelanguage.googleapis.com/v1beta',
                 'env_key' => 'GEMINI_API_KEY',
-                'recommended_models' => ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
+                'recommended_models' => ['gemini-3.5-flash-lite', 'gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-3.8-flash'],
             ],
             self::PROVIDER_OPENAI => [
                 'name' => 'OpenAI',
@@ -199,12 +199,14 @@ final class AiProviderSettings
         $model = $this->model($provider);
 
         try {
-            $request = Http::acceptJson()->connectTimeout(5)->timeout(10);
+            $request = Http::acceptJson()->asJson()->connectTimeout(5)->timeout(15);
 
             $response = match ($provider) {
                 self::PROVIDER_GEMINI => $request
                     ->withHeaders(['x-goog-api-key' => $apiKey])
-                    ->get("{$baseUrl}/models/".rawurlencode($model)),
+                    ->post("{$baseUrl}/models/".rawurlencode($model).':generateContent', [
+                        'contents' => [['role' => 'user', 'parts' => [['text' => 'Reply OK']]]],
+                    ]),
                 self::PROVIDER_ANTHROPIC => $request
                     ->withHeaders([
                         'x-api-key' => $apiKey,
@@ -227,13 +229,16 @@ final class AiProviderSettings
                 ];
             }
 
+            $upstreamMessage = trim((string) ($response->json('error.message') ?? ''));
+            $detail = $upstreamMessage !== '' ? ' — '.mb_substr($upstreamMessage, 0, 180) : '';
+
             return [
                 'ok' => false,
                 'status' => $response->status(),
                 'message' => __(':provider returned HTTP :status. Check the API key, model name, or base URL.', [
                     'provider' => $providerName,
                     'status' => $response->status(),
-                ]),
+                ]).$detail,
             ];
         } catch (Throwable $exception) {
             return [

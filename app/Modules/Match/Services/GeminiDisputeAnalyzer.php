@@ -245,7 +245,9 @@ PROMPT;
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException(sprintf('Gemini API request failed with HTTP %d.', $response->status()));
+            $upstream = trim((string) ($response->json('error.message') ?? ''));
+            $suffix = $upstream !== '' ? ' '.mb_substr($upstream, 0, 220) : '';
+            throw new RuntimeException(sprintf('Gemini API request failed with HTTP %d.%s', $response->status(), $suffix));
         }
 
         $body = $response->json();
@@ -409,10 +411,7 @@ PROMPT;
                         ob_start();
                         imagejpeg($resized, null, 82);
                         $compressed = ob_get_clean();
-                        imagedestroy($resized);
                         if (is_string($compressed) && $compressed !== '') {
-                            imagedestroy($image);
-
                             return [
                                 'mime_type' => 'image/jpeg',
                                 'base64' => base64_encode($compressed),
@@ -420,7 +419,6 @@ PROMPT;
                         }
                     }
                 }
-                imagedestroy($image);
             }
         }
 

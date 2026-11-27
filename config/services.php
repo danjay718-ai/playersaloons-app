@@ -59,10 +59,10 @@ return [
 
     'gemini' => [
         'api_key' => (string) env('GEMINI_API_KEY', ''),
-        'model' => (string) env('GEMINI_MODEL', env('GEMINI_DISPUTE_MODEL', 'gemini-2.5-flash')),
-        'dispute_model' => (string) env('GEMINI_DISPUTE_MODEL', 'gemini-2.5-flash'),
+        'model' => (string) env('GEMINI_MODEL', env('GEMINI_DISPUTE_MODEL', 'gemini-3.5-flash-lite')),
+        'dispute_model' => (string) env('GEMINI_DISPUTE_MODEL', 'gemini-3.5-flash-lite'),
         'base_url' => rtrim((string) env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'), '/'),
-        'timeout_seconds' => (int) env('GEMINI_TIMEOUT_SECONDS', 30),
+        'timeout_seconds' => (int) env('GEMINI_TIMEOUT_SECONDS', 60),
     ],
 
     'openai' => [
