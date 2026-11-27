@@ -302,7 +302,28 @@
                         @if($isParticipant && ! $hasSubmittedDisputeEvidence)
                             <button type="button" @click="$dispatch('open-dispute-statement')" class="mt-4 rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-500">Submit dispute details</button>
                         @elseif($isParticipant)
-                            <p class="mt-3 text-xs font-semibold text-emerald-300">Your dispute response has been submitted.</p>
+                            <p class="mt-3 text-xs font-semibold text-emerald-300">{{ __('Your dispute response has been submitted.') }}</p>
+                        @endif
+                        @if(! empty($disputeReviewStatus))
+                            @php
+                                $reviewToneClasses = match ($disputeReviewStatus['tone']) {
+                                    'pending' => 'border-cyan-400/40 bg-cyan-950/35 text-cyan-100',
+                                    'waiting' => 'border-indigo-400/40 bg-indigo-950/35 text-indigo-100',
+                                    default => 'border-amber-400/45 bg-amber-950/35 text-amber-100',
+                                };
+                                $reviewBadgeClasses = match ($disputeReviewStatus['tone']) {
+                                    'pending' => 'border-cyan-400/40 bg-cyan-500/20 text-cyan-200 animate-pulse',
+                                    'waiting' => 'border-indigo-400/40 bg-indigo-500/20 text-indigo-200',
+                                    default => 'border-amber-400/45 bg-amber-500/20 text-amber-200',
+                                };
+                            @endphp
+                            <div role="status" class="mt-4 rounded-xl border p-3.5 {{ $reviewToneClasses }}">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="text-xs font-bold">{{ $disputeReviewStatus['title'] }}</span>
+                                    <span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $reviewBadgeClasses }}">{{ $disputeReviewStatus['badge'] }}</span>
+                                </div>
+                                <p class="mt-1.5 text-xs leading-relaxed opacity-90">{{ $disputeReviewStatus['body'] }}</p>
+                            </div>
                         @endif
                     </div>
                 @elseif(((int) $match->tournament->workflow_version === 2 && in_array($statusVal, ['in_progress', 'waiting_for_confirmation']) && !$isSubmitter) || ((int) $match->tournament->workflow_version !== 2 && $statusVal === 'in_progress'))
@@ -518,11 +539,33 @@
                         </form>
                         @elseif($isParticipant)
                             <div class="rounded-xl border border-emerald-800/50 bg-emerald-950/20 p-4 text-center text-xs font-semibold text-emerald-300">
-                                Your evidence has been submitted and is now locked for admin review.
+                                {{ __('Your evidence has been submitted and is now locked for admin review.') }}
                             </div>
                         @else
                             <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 text-center text-xs text-zinc-400">
                                 Evidence submissions are available only to the two match participants.
+                            </div>
+                        @endif
+
+                        @if(! empty($disputeReviewStatus))
+                            @php
+                                $reviewToneClasses = match ($disputeReviewStatus['tone']) {
+                                    'pending' => 'border-cyan-400/40 bg-cyan-950/35 text-cyan-100',
+                                    'waiting' => 'border-indigo-400/40 bg-indigo-950/35 text-indigo-100',
+                                    default => 'border-amber-400/45 bg-amber-950/35 text-amber-100',
+                                };
+                                $reviewBadgeClasses = match ($disputeReviewStatus['tone']) {
+                                    'pending' => 'border-cyan-400/40 bg-cyan-500/20 text-cyan-200 animate-pulse',
+                                    'waiting' => 'border-indigo-400/40 bg-indigo-500/20 text-indigo-200',
+                                    default => 'border-amber-400/45 bg-amber-500/20 text-amber-200',
+                                };
+                            @endphp
+                            <div role="status" class="rounded-xl border p-4 {{ $reviewToneClasses }}">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="text-xs font-bold">{{ $disputeReviewStatus['title'] }}</span>
+                                    <span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $reviewBadgeClasses }}">{{ $disputeReviewStatus['badge'] }}</span>
+                                </div>
+                                <p class="mt-1.5 text-xs leading-relaxed opacity-90">{{ $disputeReviewStatus['body'] }}</p>
                             </div>
                         @endif
                     </div>

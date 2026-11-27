@@ -18,8 +18,10 @@ use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
 use App\Modules\Match\Actions\SyncPlayStrategyMatchResultAction;
 use App\Modules\Match\Actions\VoteForRematchAction;
+use App\Modules\Match\Models\DisputeAiAnalysis;
 use App\Modules\Match\Models\ExternalMatchGame;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Match\Models\MatchDispute;
 use App\Modules\Match\Services\MatchReadinessService;
 use App\Modules\Match\Support\DisputeRulingMessage;
 use App\Shared\Enums\DisputeStatus;
@@ -544,7 +546,7 @@ class MatchDetail extends Component
                     ->orderByDesc('submitted_at'),
                 'attempts.submissions',
                 'disputes' => function ($q) {
-                    $q->with('evidence.uploadedBy:id,username');
+                    $q->with(['evidence.uploadedBy:id,username', 'latestAiAnalysis']);
                 },
                 'rematchVotes',
             ])
@@ -593,6 +595,7 @@ class MatchDetail extends Component
                 $match->resolution_reason === 'opponent_submission_timeout' => "You lost because you did not report your result within {$responseMinutes} minutes after your opponent submitted.",
                 $match->resolution_reason === 'admin_resolution' && $hasDishonestyStrike => 'You lost after an admin confirmed dishonest result information or evidence during the dispute review.',
                 $match->resolution_reason === 'admin_resolution' => 'You lost after an admin resolved the dispute in your opponent\'s favor.',
+                $match->resolution_reason === 'ai_auto_resolution' => 'You lost after automated evidence review verified your opponent as the winner.',
                 default => 'You lost because your opponent was confirmed as the winner of this match.',
             };
         }
@@ -630,6 +633,7 @@ class MatchDetail extends Component
             $submissionUnavailableMessage = match (true) {
                 $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'opponent_submission_timeout' => "Result submission is closed because the {$responseMinutes}-minute response deadline expired.",
                 $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'admin_resolution' => 'Result submission is closed because an admin reviewed and resolved a dispute for this match.',
+                $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'ai_auto_resolution' => 'Result submission is closed because automated evidence review resolved the dispute for this match.',
                 $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'confirmed_submissions' => 'Result submission is closed because both players submitted matching results.',
                 in_array($match->status, [MatchStatus::IN_PROGRESS, MatchStatus::WAITING_FOR_CONFIRMATION], true) && $isSubmitter => 'Your result has already been submitted. Waiting for your opponent to report their result.',
                 $activeAttempt?->result_deadline_at?->isPast() => 'Your response deadline has expired. Result submission is closed while the match is finalized.',
@@ -644,6 +648,7 @@ class MatchDetail extends Component
 
         $isProviderManaged = $match->isProviderManaged();
         $externalMatchGame = $isProviderManaged ? $match->activeExternalGame() : null;
+        $disputeReviewStatus = $this->buildPlayerDisputeReviewStatus($activeDispute);
 
         $view = view('livewire.match.match-detail', [
             'match' => $match,
@@ -656,6 +661,7 @@ class MatchDetail extends Component
             'submissionUnavailableMessage' => $submissionUnavailableMessage,
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
+            'disputeReviewStatus' => $disputeReviewStatus,
             'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,
             'isResultConflict' => $isResultConflict,
             'activeAttempt' => $activeAttempt,
@@ -667,5 +673,93 @@ class MatchDetail extends Component
         return $this->embedded
             ? $view
             : $view->layout($layout, ['title' => 'Match Room | GamersRival', 'dashboard_title' => 'MATCH ROOM']);
+    }
+
+    /**
+     * Player-safe dispute review status without leaking internal AI confidence,
+     * suggested winners, or raw red-flag codes.
+     *
+     * @return array{tone: 'pending'|'waiting'|'escalated', badge: string, title: string, body: string}|null
+     */
+    private function buildPlayerDisputeReviewStatus(?MatchDispute $activeDispute): ?array
+    {
+        if (! $activeDispute instanceof MatchDispute) {
+            return null;
+        }
+
+        $evidenceCount = $activeDispute->evidence->count();
+        $latestAi = $activeDispute->latestAiAnalysis;
+
+        if ($latestAi instanceof DisputeAiAnalysis) {
+            if ($latestAi->status === DisputeAiAnalysis::STATUS_PENDING) {
+                return [
+                    'tone' => 'pending',
+                    'badge' => __('Checking Evidence'),
+                    'title' => __('Automated evidence check in progress'),
+                    'body' => __('We are reviewing the submitted proof. This page updates automatically once complete.'),
+                ];
+            }
+
+            if ($latestAi->status === DisputeAiAnalysis::STATUS_COMPLETED) {
+                $blockedReason = (string) ($latestAi->auto_resolve_blocked_reason ?? '');
+
+                if ($blockedReason === 'awaiting_opponent_response_window') {
+                    return [
+                        'tone' => 'waiting',
+                        'badge' => __('Awaiting Opponent'),
+                        'title' => __('Evidence received — waiting for opponent'),
+                        'body' => __('Your proof has been received. Waiting for your opponent to submit evidence before finalizing or escalating to an admin.'),
+                    ];
+                }
+
+                $isInconclusive = $latestAi->suggested_resolution === DisputeAiAnalysis::SUGGESTED_NEEDS_HUMAN
+                    || $latestAi->suggested_resolution === DisputeAiAnalysis::SUGGESTED_REMATCH
+                    || ! empty($latestAi->red_flags_json)
+                    || str_starts_with($blockedReason, 'red_flags_present')
+                    || $blockedReason === 'confidence_below_threshold';
+
+                if ($isInconclusive) {
+                    return [
+                        'tone' => 'escalated',
+                        'badge' => __('Admin Review'),
+                        'title' => __('No clear winner verified — escalated to Admin'),
+                        'body' => $evidenceCount >= 2
+                            ? __('Both players submitted evidence, but no clear winner could be automatically verified from the screenshots. A tournament admin will now manually review the proof and decide the final result.')
+                            : __('The submitted evidence could not automatically verify a clear winner. A tournament admin will manually review the proof and decide the final result.'),
+                    ];
+                }
+
+                return [
+                    'tone' => 'escalated',
+                    'badge' => __('Admin Review'),
+                    'title' => __('Queued for Admin resolution'),
+                    'body' => $evidenceCount >= 2
+                        ? __('Both players have submitted their evidence. A tournament admin will review the screenshots and finalize the match result.')
+                        : __('Your evidence has been received. A tournament admin will review the dispute and finalize the match result.'),
+                ];
+            }
+
+            if ($latestAi->status === DisputeAiAnalysis::STATUS_FAILED) {
+                return [
+                    'tone' => 'escalated',
+                    'badge' => __('Admin Review'),
+                    'title' => __('Escalated to Admin for manual review'),
+                    'body' => $evidenceCount >= 2
+                        ? __('Both players have submitted their evidence. A tournament admin will manually review the screenshots and decide the final result.')
+                        : __('Automated evidence check is temporarily unavailable. A tournament admin will manually review your submitted proof and resolve this dispute.'),
+                ];
+            }
+        }
+
+        if ($evidenceCount >= 2) {
+            return [
+                'tone' => 'escalated',
+                'badge' => __('Admin Review'),
+                'title' => __('Both responses submitted — pending Admin review'),
+                'body' => __('Both players have submitted their evidence. A tournament admin will review the proof and decide the final result.'),
+            ];
+        }
+
+        return null;
     }
 }

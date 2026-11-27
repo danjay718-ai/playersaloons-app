@@ -6,6 +6,7 @@ namespace Tests\Feature\Match;
 
 use App\Livewire\Admin\MatchAdmin;
 use App\Livewire\Admin\SystemSettingsAdmin;
+use App\Livewire\Match\MatchDetail;
 use App\Modules\CMS\Models\Game;
 use App\Modules\Identity\Models\PlayerDisputeStrike;
 use App\Modules\Identity\Models\User;
@@ -452,6 +453,34 @@ class AiDisputeManagementTest extends TestCase
         Livewire::actingAs($this->playerA)
             ->test(SystemSettingsAdmin::class)
             ->assertForbidden();
+    }
+
+    public function test_player_match_room_displays_clear_admin_escalation_notice_without_leaking_internal_ai_details(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        $this->configureAiSettings(enabled: true, mode: 'auto_resolve');
+
+        ['dispute' => $dispute, 'match' => $match] = $this->createDisputedMatch();
+        $match->forceFill(['resolution_reason' => 'conflicting_submissions'])->save();
+        $this->uploadBothEvidence($dispute);
+
+        $this->fakeGeminiResponse(
+            'needs_human_review',
+            0.50,
+            'Both screenshots show identical screens with no visible usernames.',
+            ['No usernames visible.'],
+            ['username_mismatch']
+        );
+        $this->runAnalysisJob($dispute->id);
+
+        Livewire::actingAs($this->playerA)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->assertSee('No clear winner verified — escalated to Admin')
+            ->assertSee('Both players submitted evidence, but no clear winner could be automatically verified from the screenshots.')
+            ->assertSee('A tournament admin will now manually review the proof and decide the final result.')
+            ->assertDontSee('username_mismatch')
+            ->assertDontSee('50.0% Confidence');
     }
 
     private function configureAiSettings(
