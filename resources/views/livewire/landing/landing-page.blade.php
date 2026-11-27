@@ -138,4 +138,5 @@
     @endif
 </main>
 @endif
+<x-announcement-popup-modal surface="homepage" />
 </div>

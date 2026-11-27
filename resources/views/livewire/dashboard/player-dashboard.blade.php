@@ -190,4 +190,5 @@
             </section>
         </aside>
     </div>
+    <x-announcement-popup-modal surface="player_dashboard" />
 </div>

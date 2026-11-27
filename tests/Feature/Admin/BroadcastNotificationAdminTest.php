@@ -182,4 +182,94 @@ class BroadcastNotificationAdminTest extends TestCase
             ->set('search', 'Maintenance')
             ->assertViewHas('broadcasts', fn ($p) => $p->total() === 1);
     }
+
+    // ── What's New Popup Modal Announcements ────────────────────────────────
+
+    public function test_admin_can_create_video_only_popup_announcement_without_body_message(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(BroadcastNotificationAdmin::class)
+            ->set('displayType', BroadcastMessage::DISPLAY_POPUP)
+            ->set('targetSurface', BroadcastMessage::SURFACE_BOTH)
+            ->set('badgeLabel', 'New Partnership')
+            ->set('title', 'PlayStrategy x GamersRival Trailer')
+            ->set('mediaType', BroadcastMessage::MEDIA_VIDEO)
+            ->set('mediaUrl', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+            ->set('isVideoOnly', true)
+            ->set('message', '')
+            ->set('ctaLabel', 'Play Now')
+            ->set('ctaUrl', '/tournaments/browse')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $popup = BroadcastMessage::query()->where('title', 'PlayStrategy x GamersRival Trailer')->firstOrFail();
+
+        $this->assertSame(BroadcastMessage::DISPLAY_POPUP, $popup->display_type);
+        $this->assertSame(BroadcastMessage::SURFACE_BOTH, $popup->target_surface);
+        $this->assertTrue($popup->is_video_only);
+        $this->assertSame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&playsinline=1', $popup->embedVideoUrl());
+        $this->assertSame('/tournaments/browse', $popup->safeCtaUrl());
+    }
+
+    public function test_popup_rejects_unsafe_javascript_urls(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(BroadcastNotificationAdmin::class)
+            ->set('displayType', BroadcastMessage::DISPLAY_POPUP)
+            ->set('title', 'Unsafe URL Test')
+            ->set('message', 'Body text')
+            ->set('ctaLabel', 'Click')
+            ->set('ctaUrl', 'javascript:alert(1)')
+            ->call('save')
+            ->assertHasErrors(['ctaUrl']);
+    }
+
+    public function test_popup_announcement_respects_surface_targeting_and_renders_on_homepage_and_dashboard(): void
+    {
+        $this->makeBroadcast([
+            'title' => 'Homepage Exclusive Update',
+            'message' => 'Visible on the homepage only.',
+            'display_type' => BroadcastMessage::DISPLAY_POPUP,
+            'target_surface' => BroadcastMessage::SURFACE_HOMEPAGE,
+            'badge_label' => 'Update Is Here',
+        ]);
+
+        $this->makeBroadcast([
+            'title' => 'Player Dashboard Partnership News',
+            'message' => 'Visible on player dashboard.',
+            'display_type' => BroadcastMessage::DISPLAY_BOTH,
+            'target_surface' => BroadcastMessage::SURFACE_PLAYER_DASHBOARD,
+            'badge_label' => 'New Partnership',
+            'cta_label' => 'View Tournaments',
+            'cta_url' => '/tournaments/browse',
+        ]);
+
+        $this->makeBroadcast([
+            'title' => 'Expired Popup Should Hide',
+            'message' => 'Old announcement.',
+            'display_type' => BroadcastMessage::DISPLAY_POPUP,
+            'target_surface' => BroadcastMessage::SURFACE_BOTH,
+            'ends_at' => now()->subMinute(),
+        ]);
+
+        BroadcastMessage::clearCaches();
+
+        // Guest Homepage receives only the homepage popup
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('data-announcement-popup-root', false)
+            ->assertSee('Homepage Exclusive Update')
+            ->assertDontSee('Player Dashboard Partnership News')
+            ->assertDontSee('Expired Popup Should Hide');
+
+        // Logged-in Player Dashboard receives only the dashboard popup
+        $player = $this->makeUser('PLAYER', 'popup-player@example.com');
+        $this->actingAs($player)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('data-announcement-popup-root', false)
+            ->assertSee('Player Dashboard Partnership News')
+            ->assertDontSee('Homepage Exclusive Update')
+            ->assertDontSee('Expired Popup Should Hide');
+    }
 }
