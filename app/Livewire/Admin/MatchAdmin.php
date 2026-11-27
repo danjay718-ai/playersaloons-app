@@ -429,11 +429,11 @@ class MatchAdmin extends AdminComponent
 
     public function render()
     {
-        // Only eager-load 'disputes' on the list when the dispute filter or dispute actions need it
+        // Only eager-load 'disputes.latestAiAnalysis' on the list when dispute badges or actions need it
         $with = ['tournament.game.translations', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration.user'];
-        if ($this->disputeFilter || ! $this->statusFilter) {
-            // include disputes for the quick-action gavel button in rows
-            $with[] = 'disputes';
+        if ($this->disputeFilter || ! $this->statusFilter || $this->statusFilter === MatchStatus::DISPUTED->value) {
+            // include disputes + latest AI review for queue badges and quick-action gavel button in rows
+            $with[] = 'disputes.latestAiAnalysis';
         }
 
         $query = GameMatch::query()

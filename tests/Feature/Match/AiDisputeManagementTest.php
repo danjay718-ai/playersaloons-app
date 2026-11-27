@@ -533,6 +533,47 @@ class AiDisputeManagementTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_review_surfaces_ai_reviewer_result_and_escalation_reason_in_queue_details_and_dispute_modal(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        $this->configureAiSettings(enabled: true, mode: 'auto_resolve', minConfidence: '0.95', maxPrizeCap: '50.00');
+
+        ['dispute' => $dispute, 'match' => $match] = $this->createDisputedMatch(
+            maxParticipants: 8,
+            roundNumber: 3,
+            totalRounds: 3,
+            entryFee: '5.00',
+            prizePool: '25.00',
+        );
+        $this->uploadBothEvidence($dispute);
+        $this->fakeGeminiResponse(
+            'player_a',
+            0.98,
+            'Scoreboard shows alpha_player won the final round 2-0.',
+            ['Scoreboard clearly displays alpha_player victory.'],
+            []
+        );
+        $this->runAnalysisJob($dispute->id);
+
+        Livewire::actingAs($this->admin)
+            ->test(MatchAdmin::class)
+            ->set('disputeFilter', true)
+            ->assertSee('AI Reviewed · Final')
+            ->call('selectMatch', $match->id)
+            ->assertSee('Reviewed by AI')
+            ->assertSee('Why Escalated')
+            ->assertSee('Tournament final matches always require manual admin review.')
+            ->assertSee('Player A (alpha_player)')
+            ->assertSee('Scoreboard shows alpha_player won the final round 2-0.')
+            ->call('openDisputeModal', $dispute->id)
+            ->assertSee('Reviewed by AI · Escalated to Admin')
+            ->assertSee('Why Escalated to Admin')
+            ->assertSee('Tournament final matches always require manual admin review.')
+            ->assertSee('98.0% Confidence')
+            ->assertSee('Player A (alpha_player)');
+    }
+
     private function configureAiSettings(
         bool $enabled = true,
         string $mode = 'shadow',
