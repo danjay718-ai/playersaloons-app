@@ -461,9 +461,18 @@ class AiDisputeManagementTest extends TestCase
         Queue::fake();
         $this->configureAiSettings(enabled: true, mode: 'auto_resolve');
 
-        ['dispute' => $dispute, 'match' => $match] = $this->createDisputedMatch();
+        ['tournament' => $tournament, 'dispute' => $dispute, 'match' => $match] = $this->createDisputedMatch();
+        $tournament->forceFill(['name' => 'Arena Cup'])->save();
         $match->forceFill(['resolution_reason' => 'conflicting_submissions'])->save();
         $this->uploadBothEvidence($dispute);
+
+        // Immediately after upload (while review job is queued/running), player sees neutral loading state without AI mention.
+        Livewire::actingAs($this->playerA)
+            ->test(MatchDetail::class, ['uuid' => $match->uuid])
+            ->assertSee('Reviewing submitted evidence')
+            ->assertSee('Your submitted proof is currently being reviewed.')
+            ->assertDontSee('AI')
+            ->assertDontSee('Automated');
 
         $this->fakeGeminiResponse(
             'needs_human_review',
@@ -477,8 +486,10 @@ class AiDisputeManagementTest extends TestCase
         Livewire::actingAs($this->playerA)
             ->test(MatchDetail::class, ['uuid' => $match->uuid])
             ->assertSee('No clear winner verified — escalated to Admin')
-            ->assertSee('Both players submitted evidence, but no clear winner could be automatically verified from the screenshots.')
-            ->assertSee('A tournament admin will now manually review the proof and decide the final result.')
+            ->assertSee('Both players submitted evidence, but no clear winner could be verified from the screenshots.')
+            ->assertSee('A tournament admin will now review the proof and decide the final result.')
+            ->assertDontSee('AI')
+            ->assertDontSee('automatically')
             ->assertDontSee('username_mismatch')
             ->assertDontSee('50.0% Confidence');
     }

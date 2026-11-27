@@ -22,12 +22,14 @@ use App\Modules\Match\Models\DisputeAiAnalysis;
 use App\Modules\Match\Models\ExternalMatchGame;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchDispute;
+use App\Modules\Match\Services\AiDisputeSettings;
 use App\Modules\Match\Services\MatchReadinessService;
 use App\Modules\Match\Support\DisputeRulingMessage;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
@@ -595,7 +597,7 @@ class MatchDetail extends Component
                 $match->resolution_reason === 'opponent_submission_timeout' => "You lost because you did not report your result within {$responseMinutes} minutes after your opponent submitted.",
                 $match->resolution_reason === 'admin_resolution' && $hasDishonestyStrike => 'You lost after an admin confirmed dishonest result information or evidence during the dispute review.',
                 $match->resolution_reason === 'admin_resolution' => 'You lost after an admin resolved the dispute in your opponent\'s favor.',
-                $match->resolution_reason === 'ai_auto_resolution' => 'You lost after automated evidence review verified your opponent as the winner.',
+                $match->resolution_reason === 'ai_auto_resolution' => 'You lost after evidence review confirmed your opponent as the winner.',
                 default => 'You lost because your opponent was confirmed as the winner of this match.',
             };
         }
@@ -633,7 +635,7 @@ class MatchDetail extends Component
             $submissionUnavailableMessage = match (true) {
                 $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'opponent_submission_timeout' => "Result submission is closed because the {$responseMinutes}-minute response deadline expired.",
                 $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'admin_resolution' => 'Result submission is closed because an admin reviewed and resolved a dispute for this match.',
-                $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'ai_auto_resolution' => 'Result submission is closed because automated evidence review resolved the dispute for this match.',
+                $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'ai_auto_resolution' => 'Result submission is closed because the dispute review has been finalized for this match.',
                 $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'confirmed_submissions' => 'Result submission is closed because both players submitted matching results.',
                 in_array($match->status, [MatchStatus::IN_PROGRESS, MatchStatus::WAITING_FOR_CONFIRMATION], true) && $isSubmitter => 'Your result has already been submitted. Waiting for your opponent to report their result.',
                 $activeAttempt?->result_deadline_at?->isPast() => 'Your response deadline has expired. Result submission is closed while the match is finalized.',
@@ -676,8 +678,8 @@ class MatchDetail extends Component
     }
 
     /**
-     * Player-safe dispute review status without leaking internal AI confidence,
-     * suggested winners, or raw red-flag codes.
+     * Player-safe dispute review status without mentioning AI/automation or leaking
+     * internal confidence scores, suggested winners, or raw red-flag codes.
      *
      * @return array{tone: 'pending'|'waiting'|'escalated', badge: string, title: string, body: string}|null
      */
@@ -689,17 +691,24 @@ class MatchDetail extends Component
 
         $evidenceCount = $activeDispute->evidence->count();
         $latestAi = $activeDispute->latestAiAnalysis;
+        $latestEvidenceAt = $activeDispute->evidence->max('created_at');
+
+        $isQueuedForReview = $evidenceCount > 0
+            && app(AiDisputeSettings::class)->isActive()
+            && ($latestAi === null || (int) $latestAi->evidence_count < $evidenceCount)
+            && $latestEvidenceAt !== null
+            && Carbon::parse($latestEvidenceAt)->greaterThan(now()->subMinutes(2));
+
+        if ($isQueuedForReview || ($latestAi instanceof DisputeAiAnalysis && $latestAi->status === DisputeAiAnalysis::STATUS_PENDING)) {
+            return [
+                'tone' => 'pending',
+                'badge' => __('Reviewing'),
+                'title' => __('Reviewing submitted evidence…'),
+                'body' => __('Your submitted proof is currently being reviewed. Please wait a moment — this page updates automatically.'),
+            ];
+        }
 
         if ($latestAi instanceof DisputeAiAnalysis) {
-            if ($latestAi->status === DisputeAiAnalysis::STATUS_PENDING) {
-                return [
-                    'tone' => 'pending',
-                    'badge' => __('Checking Evidence'),
-                    'title' => __('Automated evidence check in progress'),
-                    'body' => __('We are reviewing the submitted proof. This page updates automatically once complete.'),
-                ];
-            }
-
             if ($latestAi->status === DisputeAiAnalysis::STATUS_COMPLETED) {
                 $blockedReason = (string) ($latestAi->auto_resolve_blocked_reason ?? '');
 
@@ -708,7 +717,7 @@ class MatchDetail extends Component
                         'tone' => 'waiting',
                         'badge' => __('Awaiting Opponent'),
                         'title' => __('Evidence received — waiting for opponent'),
-                        'body' => __('Your proof has been received. Waiting for your opponent to submit evidence before finalizing or escalating to an admin.'),
+                        'body' => __('Your proof has been received. Waiting for your opponent to submit evidence before the review is finalized.'),
                     ];
                 }
 
@@ -724,8 +733,8 @@ class MatchDetail extends Component
                         'badge' => __('Admin Review'),
                         'title' => __('No clear winner verified — escalated to Admin'),
                         'body' => $evidenceCount >= 2
-                            ? __('Both players submitted evidence, but no clear winner could be automatically verified from the screenshots. A tournament admin will now manually review the proof and decide the final result.')
-                            : __('The submitted evidence could not automatically verify a clear winner. A tournament admin will manually review the proof and decide the final result.'),
+                            ? __('Both players submitted evidence, but no clear winner could be verified from the screenshots. A tournament admin will now review the proof and decide the final result.')
+                            : __('No clear winner could be verified from the submitted evidence. A tournament admin will review the proof and decide the final result.'),
                     ];
                 }
 
@@ -743,10 +752,10 @@ class MatchDetail extends Component
                 return [
                     'tone' => 'escalated',
                     'badge' => __('Admin Review'),
-                    'title' => __('Escalated to Admin for manual review'),
+                    'title' => __('Queued for Admin review'),
                     'body' => $evidenceCount >= 2
-                        ? __('Both players have submitted their evidence. A tournament admin will manually review the screenshots and decide the final result.')
-                        : __('Automated evidence check is temporarily unavailable. A tournament admin will manually review your submitted proof and resolve this dispute.'),
+                        ? __('Both players have submitted their evidence. A tournament admin will review the screenshots and decide the final result.')
+                        : __('Your evidence has been received. A tournament admin will review your proof and resolve this dispute.'),
                 ];
             }
         }

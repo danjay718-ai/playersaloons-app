@@ -317,9 +317,14 @@
                                     default => 'border-amber-400/45 bg-amber-500/20 text-amber-200',
                                 };
                             @endphp
-                            <div role="status" class="mt-4 rounded-xl border p-3.5 {{ $reviewToneClasses }}">
+                            <div role="status" @if($disputeReviewStatus['tone'] === 'pending') wire:poll.3s.visible @endif class="mt-4 rounded-xl border p-3.5 {{ $reviewToneClasses }}">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <span class="text-xs font-bold">{{ $disputeReviewStatus['title'] }}</span>
+                                    <span class="inline-flex items-center gap-2 text-xs font-bold">
+                                        @if($disputeReviewStatus['tone'] === 'pending')
+                                            <span class="h-3.5 w-3.5 rounded-full border-2 border-cyan-300/30 border-t-cyan-300 animate-spin" aria-hidden="true"></span>
+                                        @endif
+                                        {{ $disputeReviewStatus['title'] }}
+                                    </span>
                                     <span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $reviewBadgeClasses }}">{{ $disputeReviewStatus['badge'] }}</span>
                                 </div>
                                 <p class="mt-1.5 text-xs leading-relaxed opacity-90">{{ $disputeReviewStatus['body'] }}</p>
@@ -560,9 +565,14 @@
                                     default => 'border-amber-400/45 bg-amber-500/20 text-amber-200',
                                 };
                             @endphp
-                            <div role="status" class="rounded-xl border p-4 {{ $reviewToneClasses }}">
+                            <div role="status" @if($disputeReviewStatus['tone'] === 'pending') wire:poll.3s.visible @endif class="rounded-xl border p-4 {{ $reviewToneClasses }}">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <span class="text-xs font-bold">{{ $disputeReviewStatus['title'] }}</span>
+                                    <span class="inline-flex items-center gap-2 text-xs font-bold">
+                                        @if($disputeReviewStatus['tone'] === 'pending')
+                                            <span class="h-3.5 w-3.5 rounded-full border-2 border-cyan-300/30 border-t-cyan-300 animate-spin" aria-hidden="true"></span>
+                                        @endif
+                                        {{ $disputeReviewStatus['title'] }}
+                                    </span>
                                     <span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $reviewBadgeClasses }}">{{ $disputeReviewStatus['badge'] }}</span>
                                 </div>
                                 <p class="mt-1.5 text-xs leading-relaxed opacity-90">{{ $disputeReviewStatus['body'] }}</p>
