@@ -256,9 +256,16 @@ class FindTournamentTest extends TestCase
             'entry_fee' => '0.00',
         ]);
 
-        // Guest sees View & Join link
+        // Before applying any filter, modal prompts user to filter and does not dump all tournaments yet
         Livewire::test(FindTournamentModal::class)
             ->call('openModal')
+            ->assertSee('Start with a filter')
+            ->assertDontSee('PlayStrategy Daily Blitz');
+
+        // Guest sees View & Join link once a filter is applied
+        Livewire::test(FindTournamentModal::class)
+            ->call('openModal')
+            ->set('category', 'card-board-games')
             ->assertSee('PlayStrategy Daily Blitz')
             ->assertSee('View & Join')
             ->assertSee('/tournaments/'.$chessOpen->uuid.'/view?view=guest', false);
@@ -267,6 +274,7 @@ class FindTournamentTest extends TestCase
         Livewire::actingAs($this->player)
             ->test(FindTournamentModal::class)
             ->call('openModal')
+            ->set('budget', 'free')
             ->assertSee('PlayStrategy Daily Blitz')
             ->assertSee('Connect PlayStrategy')
             ->assertSee('/profile?tab=settings', false);
@@ -285,6 +293,7 @@ class FindTournamentTest extends TestCase
         Livewire::actingAs($this->player)
             ->test(FindTournamentModal::class)
             ->call('openModal')
+            ->set('gameId', (string) $this->chess->id)
             ->assertSee('Join Now')
             ->assertDontSee('Connect PlayStrategy');
     }

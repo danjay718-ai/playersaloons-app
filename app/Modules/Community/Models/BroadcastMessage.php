@@ -178,6 +178,7 @@ class BroadcastMessage extends Model
      *     media_url: string|null,
      *     embed_url: string|null,
      *     is_video_only: bool,
+     *     is_media_only: bool,
      *     cta_label: string|null,
      *     cta_url: string|null,
      *     published_at: string|null
@@ -192,19 +193,28 @@ class BroadcastMessage extends Model
                 ->activePopupsForSurface($surface)
                 ->limit(5)
                 ->get()
-                ->map(fn (self $item): array => [
-                    'uuid' => $item->uuid,
-                    'title' => $item->title,
-                    'message' => $item->message,
-                    'badge_label' => trim((string) ($item->badge_label ?? '')) ?: __("What's New"),
-                    'media_type' => $item->media_type ?: self::MEDIA_NONE,
-                    'media_url' => $item->resolvedMediaUrl(),
-                    'embed_url' => $item->embedVideoUrl(),
-                    'is_video_only' => (bool) $item->is_video_only && $item->media_type === self::MEDIA_VIDEO,
-                    'cta_label' => trim((string) ($item->cta_label ?? '')) ?: null,
-                    'cta_url' => $item->safeCtaUrl(),
-                    'published_at' => $item->created_at?->diffForHumans(),
-                ])
+                ->map(function (self $item): array {
+                    $mediaType = $item->media_type ?: self::MEDIA_NONE;
+                    $mediaUrl = $item->resolvedMediaUrl();
+                    $embedUrl = $item->embedVideoUrl();
+                    $hasMedia = $mediaType !== self::MEDIA_NONE && ($mediaUrl !== null || $embedUrl !== null);
+                    $hasMessage = trim($item->message) !== '';
+
+                    return [
+                        'uuid' => $item->uuid,
+                        'title' => $item->title,
+                        'message' => $item->message,
+                        'badge_label' => trim((string) ($item->badge_label ?? '')) ?: __("What's New"),
+                        'media_type' => $mediaType,
+                        'media_url' => $mediaUrl,
+                        'embed_url' => $embedUrl,
+                        'is_video_only' => (bool) $item->is_video_only && $mediaType === self::MEDIA_VIDEO,
+                        'is_media_only' => $hasMedia && ((bool) $item->is_video_only || ! $hasMessage),
+                        'cta_label' => trim((string) ($item->cta_label ?? '')) ?: null,
+                        'cta_url' => $item->safeCtaUrl(),
+                        'published_at' => $item->created_at?->diffForHumans(),
+                    ];
+                })
                 ->all()
         );
     }

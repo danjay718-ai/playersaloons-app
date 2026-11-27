@@ -77,7 +77,24 @@
                         </td>
                         <td class="p-4 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                <button wire:click="openEdit({{ $broadcast->id }})"
+                                @php
+                                    $rowPayload = [
+                                        'id' => $broadcast->id,
+                                        'title' => $broadcast->title,
+                                        'message' => $broadcast->message,
+                                        'display_type' => $broadcast->display_type ?: 'feed',
+                                        'target_surface' => $broadcast->target_surface ?: 'both',
+                                        'badge_label' => $broadcast->badge_label ?? '',
+                                        'media_type' => $broadcast->media_type ?: 'none',
+                                        'media_url' => $broadcast->media_url ?? '',
+                                        'is_video_only' => (bool) $broadcast->is_video_only,
+                                        'cta_label' => $broadcast->cta_label ?? '',
+                                        'cta_url' => $broadcast->cta_url ?? '',
+                                        'starts_at' => $broadcast->starts_at?->format('Y-m-d\TH:i') ?? '',
+                                        'ends_at' => $broadcast->ends_at?->format('Y-m-d\TH:i') ?? '',
+                                    ];
+                                @endphp
+                                <button type="button" @click="openEditModal(@js($rowPayload))"
                                         class="px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors">
                                     Edit
                                 </button>

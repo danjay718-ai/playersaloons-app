@@ -274,7 +274,7 @@ window.__grAiSupportWidget = window.__grAiSupportWidget || function (config) {
         role="dialog"
         aria-label="{{ $assistantTitle }}"
         data-ai-support-panel
-        class="fixed inset-x-3 bottom-3 z-[1060] flex h-[min(480px,74dvh)] flex-col overflow-hidden rounded-2xl border {{ $isAdminTheme ? 'border-sky-400/25 bg-[#0f172a]' : 'border-cyan-400/25 bg-[#0b1322]' }} text-zinc-100 shadow-[0_20px_60px_rgba(0,0,0,0.75)] sm:inset-x-auto sm:bottom-20 sm:right-6 sm:w-[360px] sm:max-w-[calc(100vw-2rem)]"
+        class="fixed inset-x-3 bottom-3 z-[1060] flex h-[min(460px,74dvh)] max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-2xl border {{ $isAdminTheme ? 'border-sky-400/25 bg-[#0f172a]' : 'border-cyan-400/25 bg-[#0b1322]' }} text-zinc-100 shadow-[0_20px_60px_rgba(0,0,0,0.75)] sm:inset-x-auto sm:bottom-20 sm:right-6 sm:h-[min(480px,72vh)] sm:w-[360px] sm:max-w-[calc(100vw-2rem)]"
     >
         {{-- Header --}}
         <header class="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 {{ $isAdminTheme ? 'bg-[#0b1120]' : 'bg-[#080e1a]' }} px-4 py-3">
@@ -326,7 +326,7 @@ window.__grAiSupportWidget = window.__grAiSupportWidget || function (config) {
         </header>
 
         {{-- Messages --}}
-        <div x-ref="messagesBox" class="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-3.5 text-xs">
+        <div x-ref="messagesBox" class="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-3.5 text-xs">
             {{-- Welcome & Starter Prompts --}}
             <div class="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-zinc-200">
                 <p class="leading-relaxed">{{ $welcomeText }}</p>
@@ -396,7 +396,7 @@ window.__grAiSupportWidget = window.__grAiSupportWidget || function (config) {
         </div>
 
         {{-- Input Form --}}
-        <form @submit.prevent="send()" class="flex shrink-0 items-center gap-2 border-t border-white/10 {{ $isAdminTheme ? 'bg-[#0b1120]' : 'bg-[#080e1a]' }} px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+        <form @submit.prevent="send()" class="relative z-10 flex shrink-0 items-center gap-2 border-t border-white/10 {{ $isAdminTheme ? 'bg-[#0b1120]' : 'bg-[#080e1a]' }} px-3 py-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <input
                 x-ref="promptInput"
                 x-model="input"
@@ -405,7 +405,7 @@ window.__grAiSupportWidget = window.__grAiSupportWidget || function (config) {
                 autocomplete="off"
                 placeholder="{{ __('Ask a question…') }}"
                 :disabled="loading"
-                class="min-h-[40px] flex-1 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-xs text-white placeholder-zinc-400 outline-none transition {{ $isAdminTheme ? 'focus:border-sky-400' : 'focus:border-[#c6ff3d]' }} disabled:opacity-60"
+                class="min-h-[42px] min-w-0 flex-1 rounded-xl border border-white/15 bg-white/[0.06] px-3 py-2 text-sm text-white placeholder-zinc-400 outline-none transition sm:text-xs {{ $isAdminTheme ? 'focus:border-sky-400' : 'focus:border-[#c6ff3d]' }} disabled:opacity-60"
             >
             <button
                 type="submit"
