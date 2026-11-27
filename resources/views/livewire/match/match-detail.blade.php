@@ -1,8 +1,8 @@
-<div class="player-match-room flex flex-col gap-3 lg:block lg:space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))" @if($isParticipant && $match->status->value === 'ready') wire:poll.30s.visible="refreshMatchStatus" @elseif($isParticipant && in_array($match->status->value, ['in_progress', 'waiting_for_confirmation', 'disputed'])) wire:poll.30s.visible @endif>
+<div class="player-match-room space-y-3 lg:space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))" @if($isParticipant && $match->status->value === 'ready') wire:poll.30s.visible="refreshMatchStatus" @elseif($isParticipant && in_array($match->status->value, ['in_progress', 'waiting_for_confirmation', 'disputed'])) wire:poll.30s.visible @endif>
     <x-ui.toasts />
 
     @if($isDefeated)
-        <div role="alert" class="order-1 flex items-start gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 text-rose-100 shadow-lg shadow-rose-950/20 lg:order-none">
+        <div role="alert" class="flex items-start gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 text-rose-100 shadow-lg shadow-rose-950/20">
             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-300">
                 <i data-lucide="shield-x" class="h-5 w-5"></i>
             </span>
@@ -14,20 +14,77 @@
     @endif
 
     @if(! $isAdmin)
-        {{-- Mobile & Tablet (< 1024px) Compact 1-Row Match Header --}}
-        <div class="order-1 flex items-center justify-between gap-2 rounded-xl border border-zinc-850 bg-zinc-900 px-3 py-2.5 shadow-md lg:hidden">
-            <div class="flex min-w-0 items-center gap-2">
-                @unless($embedded)
-                    <a href="/tournaments/{{ $match->tournament->uuid }}/view" wire:navigate aria-label="{{ __('Return to Tournament') }}" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-500/30 bg-violet-500/10 text-violet-300 transition-colors hover:bg-violet-500/20">
-                        <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i>
-                    </a>
-                @endunless
-                <span class="truncate font-orbitron text-xs font-black uppercase tracking-wide text-white">
-                    {{ __('Round :value1 • Match :value2', ['value1' => ($match->round?->round_number ?? '—'), 'value2' => ($roundMatchNumber)]) }}
-                </span>
+        @php
+            $compactPlayerAName = $match->playerARegistration?->team?->name
+                ?: ($match->playerARegistration?->user?->profile?->display_name
+                    ?: ($match->playerARegistration?->user?->username ?: __('TBD')));
+            $compactPlayerBName = $match->playerBRegistration?->team?->name
+                ?: ($match->playerBRegistration?->user?->profile?->display_name
+                    ?: ($match->playerBRegistration?->user?->username ?: __('TBD')));
+            $compactPlayerAWon = $match->winner_registration_id && $match->winner_registration_id === $match->player_a_registration_id;
+            $compactPlayerBWon = $match->winner_registration_id && $match->winner_registration_id === $match->player_b_registration_id;
+        @endphp
+
+        {{-- Mobile & Tablet (< 1024px) Compact 1-Row Match Fixture (Round + Player A vs Player B) --}}
+        <div data-match-content="matchup" class="rounded-xl border border-zinc-850 bg-gradient-to-b from-zinc-900 to-zinc-950 px-3 py-2.5 shadow-md lg:hidden">
+            <div class="flex items-center justify-between gap-2 border-b border-zinc-800/80 pb-2">
+                <div class="flex min-w-0 items-center gap-2">
+                    @unless($embedded)
+                        <a href="/tournaments/{{ $match->tournament->uuid }}/view" wire:navigate aria-label="{{ __('Return to Tournament') }}" class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-violet-500/30 bg-violet-500/10 text-violet-300 transition-colors hover:bg-violet-500/20">
+                            <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i>
+                        </a>
+                    @endunless
+                    <span class="truncate font-orbitron text-[11px] font-black uppercase tracking-wide text-zinc-200">
+                        {{ __('Round :value1 • Match :value2', ['value1' => ($match->round?->round_number ?? '—'), 'value2' => ($roundMatchNumber)]) }}
+                    </span>
+                </div>
+                <div class="shrink-0">
+                    @include('livewire.match.partials._match-status-badge')
+                </div>
             </div>
-            <div class="shrink-0">
-                @include('livewire.match.partials._match-status-badge')
+
+            <div class="mt-2.5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+                <div class="flex min-w-0 items-center gap-2">
+                    <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full border {{ $compactPlayerAWon ? 'border-emerald-400' : 'border-zinc-700' }} bg-zinc-950">
+                        @if($match->playerARegistration?->user?->profile?->avatar_url)
+                            <img src="{{ $match->playerARegistration->user->profile->avatar_url }}" alt="{{ $compactPlayerAName }}" class="h-full w-full object-cover">
+                        @elseif($match->playerARegistration?->user)
+                            <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-600 to-fuchsia-600 font-orbitron text-[10px] font-black text-white">{{ strtoupper(substr($match->playerARegistration->user->username, 0, 2)) }}</span>
+                        @else
+                            <div class="flex h-full w-full items-center justify-center text-zinc-500"><i data-lucide="user" class="h-4 w-4"></i></div>
+                        @endif
+                    </div>
+                    <div class="min-w-0">
+                        <p class="truncate text-xs font-bold {{ $compactPlayerAWon ? 'text-emerald-300' : 'text-white' }}" translate="no">{{ $compactPlayerAName }}</p>
+                        @if($compactPlayerAWon)
+                            <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400">{{ __('Winner') }}</span>
+                        @elseif($compactPlayerBWon)
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-rose-400">{{ __('Loser') }}</span>
+                        @endif
+                    </div>
+                </div>
+
+                <span class="px-1 font-orbitron text-xs font-black tracking-widest text-violet-400">VS</span>
+
+                <div class="flex min-w-0 items-center justify-end gap-2 text-right">
+                    <div class="min-w-0">
+                        <p class="truncate text-xs font-bold {{ $compactPlayerBWon ? 'text-emerald-300' : 'text-white' }}" translate="no">{{ $compactPlayerBName }}</p>
+                        @if($compactPlayerBWon)
+                            <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400">{{ __('Winner') }}</span>
+                        @elseif($compactPlayerAWon)
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-rose-400">{{ __('Loser') }}</span>
+                        @endif
+                    </div>
+                    <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full border {{ $compactPlayerBWon ? 'border-emerald-400' : 'border-zinc-700' }} bg-zinc-950">
+                        @if($match->playerBRegistration?->user?->profile?->avatar_url)
+                            <img src="{{ $match->playerBRegistration->user->profile->avatar_url }}" alt="{{ $compactPlayerBName }}" class="h-full w-full object-cover">
+                        @elseif($match->playerBRegistration?->user)
+                            <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-600 font-orbitron text-[10px] font-black text-white">{{ strtoupper(substr($match->playerBRegistration->user->username, 0, 2)) }}</span>
+                        @else
+                            <div class="flex h-full w-full items-center justify-center text-zinc-500"><i data-lucide="user" class="h-4 w-4"></i></div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -41,7 +98,7 @@
                     ? $match->playerBRegistration->tournamentTeam->members->map(fn ($m) => $m->game_id_value ?: $m->user?->username)->filter()->implode(', ')
                     : ($match->playerBRegistration?->game_id_value ?: ($match->playerBRegistration?->user?->username ? '@'.$match->playerBRegistration->user->username : __('TBD')));
             @endphp
-            <div class="order-2 rounded-xl border border-cyan-900/40 bg-cyan-950/15 px-3 py-2 lg:hidden">
+            <div class="rounded-xl border border-cyan-900/40 bg-cyan-950/15 px-3 py-2 lg:hidden">
                 <div class="grid grid-cols-2 gap-2">
                     <div class="min-w-0 rounded-lg border border-zinc-800/80 bg-zinc-950/75 px-2.5 py-1.5">
                         <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-500">{{ __('Side A ID') }}</span>
@@ -89,8 +146,8 @@
 
     @endif
 
-    <!-- H2H Matchups Display -->
-    <div class="{{ $isAdmin ? '' : 'order-4 lg:order-none' }} decorated-card match-room-card bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-850 rounded-2xl p-5 md:p-6 lg:p-10 shadow-xl relative overflow-hidden">
+    <!-- H2H Matchups Display (Desktop view untouched; replaced by compact fixture card above on Mobile & Tablet) -->
+    <div class="{{ $isAdmin ? '' : 'hidden lg:block' }} decorated-card match-room-card bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-850 rounded-2xl p-6 md:p-10 shadow-xl relative overflow-hidden">
         <i data-lucide="swords" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="absolute inset-0 bg-gradient-to-r from-violet-600/5 to-fuchsia-600/5 pointer-events-none"></div>
 
@@ -191,7 +248,7 @@
             this.resultPanelTab = tab;
             if (@js(! $isAdmin)) this.$nextTick(() => scrollToMatchContent(this.$root, tab));
         }
-    }" @tournament-content-opened.window="if ($event.detail.matchUuid === @js($match->uuid)) resultPanelTab = 'submit'" @tournament-result-selected.window="if ($event.detail.tournamentUuid === @js($match->tournament->uuid)) resultPanelTab = 'submit'" class="{{ $isAdmin ? '' : 'order-3 lg:order-none' }} match-result-workspace space-y-6">
+    }" @tournament-content-opened.window="if ($event.detail.matchUuid === @js($match->uuid)) resultPanelTab = 'submit'" @tournament-result-selected.window="if ($event.detail.tournamentUuid === @js($match->tournament->uuid)) resultPanelTab = 'submit'" class="match-result-workspace space-y-6">
         <nav class="match-result-tabs grid grid-cols-2 gap-2 rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-1.5" aria-label="Match result sections">
             <button type="button" @click="selectResultPanel('submit')" :aria-pressed="resultPanelTab === 'submit'" :class="resultPanelTab === 'submit' ? 'match-result-tab-active bg-violet-600 text-white shadow-lg' : ''" class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-[9px] font-black uppercase tracking-wider text-zinc-500 transition hover:bg-zinc-800 hover:text-white sm:text-[10px]">
                 <i data-lucide="clipboard-check" class="h-4 w-4 shrink-0"></i><span class="truncate">Submit Results</span>
