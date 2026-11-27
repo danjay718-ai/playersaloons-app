@@ -93,28 +93,44 @@
 
                     <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
                         <div class="flex items-center gap-2 text-zinc-400">
-                            <span wire:loading.remove>{{ __(':count open match(es) ready to join', ['count' => number_format($totalMatching)]) }}</span>
+                            <span wire:loading.remove>
+                                @if($hasActiveFilters)
+                                    {{ __(':count open match(es) ready to join', ['count' => number_format($totalMatching)]) }}
+                                @else
+                                    {{ __('Select at least one filter above to search open tournaments.') }}
+                                @endif
+                            </span>
                             <span wire:loading class="font-semibold text-cyan-300">{{ __('Searching open tournaments...') }}</span>
                         </div>
-                        <button
-                            type="button"
-                            wire:click="resetFilters"
-                            class="font-bold text-cyan-300 transition hover:text-lime-300"
-                        >
-                            {{ __('Reset filters') }}
-                        </button>
+                        @if($hasActiveFilters)
+                            <button
+                                type="button"
+                                wire:click="resetFilters"
+                                class="font-bold text-cyan-300 transition hover:text-lime-300"
+                            >
+                                {{ __('Reset filters') }}
+                            </button>
+                        @endif
                     </div>
                 </div>
 
                 {{-- Results List --}}
-                <div class="flex-1 space-y-3 overflow-y-auto px-5 py-4 sm:px-6" wire:loading.class="opacity-60">
-                    @if(! $exact && $results->isNotEmpty())
-                        <div role="status" class="rounded-xl border border-amber-400/35 bg-amber-400/10 px-4 py-2.5 text-xs font-semibold text-amber-200">
-                            {{ __('No exact matches for your filters — here are the closest open tournaments.') }}
+                <div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4 sm:px-6" wire:loading.class="opacity-60">
+                    @if(! $hasActiveFilters)
+                        <div class="rounded-2xl border border-dashed border-cyan-500/25 bg-zinc-900/40 px-6 py-10 text-center">
+                            <p class="font-orbitron text-sm font-black uppercase text-white">{{ __('Start with a filter') }}</p>
+                            <p class="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-zinc-400">
+                                {{ __('Choose a category, game, platform, entry fee, or start window — or type a keyword above — to see matching open tournaments.') }}
+                            </p>
                         </div>
-                    @endif
+                    @else
+                        @if(! $exact && $results->isNotEmpty())
+                            <div role="status" class="rounded-xl border border-amber-400/35 bg-amber-400/10 px-4 py-2.5 text-xs font-semibold text-amber-200">
+                                {{ __('No exact matches for your filters — here are the closest open tournaments.') }}
+                            </div>
+                        @endif
 
-                    @forelse($results as $tournament)
+                        @forelse($results as $tournament)
                         @php
                             $joined = (int) ($tournament->getAttribute('registrations_count') ?? 0);
                             $max = max(1, (int) $tournament->max_participants);
@@ -195,12 +211,13 @@
                                 @endif
                             </div>
                         </article>
-                    @empty
-                        <div class="rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center">
-                            <p class="font-orbitron text-sm font-black uppercase text-white">{{ __('No open tournaments right now') }}</p>
-                            <p class="mt-1.5 text-xs text-zinc-400">{{ __('Check back soon or browse the full schedule for upcoming events.') }}</p>
-                        </div>
-                    @endforelse
+                        @empty
+                            <div class="rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center">
+                                <p class="font-orbitron text-sm font-black uppercase text-white">{{ __('No open tournaments right now') }}</p>
+                                <p class="mt-1.5 text-xs text-zinc-400">{{ __('Check back soon or browse the full schedule for upcoming events.') }}</p>
+                            </div>
+                        @endforelse
+                    @endif
                 </div>
 
                 {{-- Footer --}}

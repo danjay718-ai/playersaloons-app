@@ -8,6 +8,7 @@ use App\Modules\Match\Services\AiDisputeSettings;
 use App\Modules\Operations\Actions\UpdateAiProviderSettingsAction;
 use App\Modules\Operations\Models\SystemSetting;
 use App\Modules\Operations\Services\AiProviderSettings;
+use App\Modules\Operations\Services\AiSupportAssistantService;
 use App\Modules\Operations\Services\SystemSettings;
 use App\Modules\Tournament\Actions\ResetTournamentTestingDataAction;
 use App\Modules\Tournament\Services\TournamentTimezone;
@@ -101,6 +102,8 @@ class SystemSettingsAdmin extends AdminComponent
 
     public int $aiDisputesMaxRunsPerDispute = 3;
 
+    public bool $aiSupportEnabled = true;
+
     public bool $showTournamentResetModal = false;
 
     public string $tournamentResetConfirmation = '';
@@ -165,6 +168,7 @@ class SystemSettingsAdmin extends AdminComponent
         $this->aiDisputesMaxPrizeCap = $aiDisputes->maxPrizeCap();
         $this->aiDisputesEvidenceWindowMinutes = $aiDisputes->evidenceWindowMinutes();
         $this->aiDisputesMaxRunsPerDispute = $aiDisputes->maxRunsPerDispute();
+        $this->aiSupportEnabled = app(AiSupportAssistantService::class)->isSettingEnabled();
     }
 
     public function savePaymentSettings(UpdatePaymentSettingsAction $action): void
@@ -388,6 +392,20 @@ class SystemSettingsAdmin extends AdminComponent
         ]);
 
         session()->flash('success', __('AI dispute assistant settings updated.'));
+    }
+
+    public function saveAiSupportSettings(): void
+    {
+        $this->authorizeManagement();
+        $this->validate([
+            'aiSupportEnabled' => ['boolean'],
+        ]);
+
+        app(SystemSettings::class)->save($this->actor(), [
+            'ai.support.enabled' => $this->aiSupportEnabled ? 'true' : 'false',
+        ]);
+
+        session()->flash('success', __('AI support assistant settings updated.'));
     }
 
     public function openTournamentTestingReset(): void

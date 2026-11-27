@@ -116,8 +116,8 @@ class BroadcastNotificationAdmin extends AdminComponent
 
     public function save(): void
     {
-        $videoOnlyEnabled = $this->displayType !== BroadcastMessage::DISPLAY_FEED
-            && $this->mediaType === BroadcastMessage::MEDIA_VIDEO
+        $mediaOnlyEnabled = $this->displayType !== BroadcastMessage::DISPLAY_FEED
+            && $this->mediaType !== BroadcastMessage::MEDIA_NONE
             && $this->isVideoOnly;
 
         $mediaFileRule = match ($this->mediaType) {
@@ -128,7 +128,7 @@ class BroadcastNotificationAdmin extends AdminComponent
 
         $this->validate([
             'title' => ['required', 'string', 'max:255'],
-            'message' => [$videoOnlyEnabled ? 'nullable' : 'required', 'string', 'max:2000'],
+            'message' => [$mediaOnlyEnabled ? 'nullable' : 'required', 'string', 'max:2000'],
             'displayType' => ['required', Rule::in([BroadcastMessage::DISPLAY_FEED, BroadcastMessage::DISPLAY_POPUP, BroadcastMessage::DISPLAY_BOTH])],
             'targetSurface' => ['required', Rule::in([BroadcastMessage::SURFACE_HOMEPAGE, BroadcastMessage::SURFACE_PLAYER_DASHBOARD, BroadcastMessage::SURFACE_BOTH])],
             'badgeLabel' => ['nullable', 'string', 'max:60'],
@@ -184,7 +184,7 @@ class BroadcastNotificationAdmin extends AdminComponent
             'media_url' => $isPopupEnabled ? $resolvedMedia : null,
             'cta_label' => $isPopupEnabled && trim($this->ctaLabel) !== '' ? trim($this->ctaLabel) : null,
             'cta_url' => $isPopupEnabled ? $resolvedCtaUrl : null,
-            'is_video_only' => $videoOnlyEnabled,
+            'is_video_only' => $mediaOnlyEnabled,
             'starts_at' => $this->startsAt ?: null,
             'ends_at' => $this->endsAt ?: null,
         ];
@@ -200,6 +200,7 @@ class BroadcastNotificationAdmin extends AdminComponent
         BroadcastMessage::clearCaches();
         $this->showFormModal = false;
         $this->resetForm();
+        $this->dispatch('broadcast-saved');
     }
 
     public function confirmExpire(int $id): void

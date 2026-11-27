@@ -80,6 +80,17 @@ class FindTournamentModal extends Component
         $this->competitionType = '';
     }
 
+    public function hasActiveFilters(): bool
+    {
+        return trim($this->search) !== ''
+            || trim($this->category) !== ''
+            || trim($this->gameId) !== ''
+            || trim($this->platformId) !== ''
+            || trim($this->budget) !== ''
+            || trim($this->timeWindow) !== ''
+            || trim($this->competitionType) !== '';
+    }
+
     public function render(FindActiveTournamentsService $finder): View
     {
         // Strictly lazy: zero DB queries while modal is closed.
@@ -92,6 +103,7 @@ class FindTournamentModal extends Component
                 'exact' => true,
                 'fallbackReason' => null,
                 'totalMatching' => 0,
+                'hasActiveFilters' => false,
                 'hasPlayStrategyLinked' => false,
                 'isGuest' => ! Auth::check(),
                 'currencySymbol' => '',
@@ -100,21 +112,31 @@ class FindTournamentModal extends Component
         }
 
         $options = $finder->filterOptions($this->category);
-        $found = $finder->find([
-            'search' => $this->search,
-            'category' => $this->category,
-            'game_id' => $this->gameId,
-            'platform_id' => $this->platformId,
-            'budget' => $this->budget,
-            'time_window' => $this->timeWindow,
-            'competition_type' => $this->competitionType,
-        ], 8);
+        $hasActiveFilters = $this->hasActiveFilters();
+        $found = $hasActiveFilters
+            ? $finder->find([
+                'search' => $this->search,
+                'category' => $this->category,
+                'game_id' => $this->gameId,
+                'platform_id' => $this->platformId,
+                'budget' => $this->budget,
+                'time_window' => $this->timeWindow,
+                'competition_type' => $this->competitionType,
+            ], 8)
+            : [
+                'tournaments' => collect(),
+                'exact' => true,
+                'fallback_reason' => null,
+                'total_matching' => 0,
+            ];
 
         $userId = Auth::id();
-        $hasPlayStrategyLinked = $userId !== null && ExternalProviderAccount::query()
-            ->where('user_id', $userId)
-            ->where('provider', ExternalProviderAccount::PROVIDER_PLAYSTRATEGY)
-            ->exists();
+        $hasPlayStrategyLinked = $hasActiveFilters
+            && $userId !== null
+            && ExternalProviderAccount::query()
+                ->where('user_id', $userId)
+                ->where('provider', ExternalProviderAccount::PROVIDER_PLAYSTRATEGY)
+                ->exists();
 
         return view('livewire.tournament.find-tournament-modal', [
             'categories' => $options['categories'],
@@ -124,6 +146,7 @@ class FindTournamentModal extends Component
             'exact' => $found['exact'],
             'fallbackReason' => $found['fallback_reason'],
             'totalMatching' => $found['total_matching'],
+            'hasActiveFilters' => $hasActiveFilters,
             'hasPlayStrategyLinked' => $hasPlayStrategyLinked,
             'isGuest' => $userId === null,
             'currencySymbol' => Currency::symbol(),

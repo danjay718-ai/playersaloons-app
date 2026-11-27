@@ -494,6 +494,32 @@
                             <button wire:target="saveAiDisputeSettings" type="submit" wire:loading.attr="disabled" class="settings-save">{{ __('Save AI dispute settings') }}</button><span wire:loading wire:target="saveAiDisputeSettings" role="status" class="settings-progress">{{ __('Saving...') }}</span>
                         </fieldset>
                     </form>
+
+                    <div class="settings-divider"></div>
+
+                    {{-- 03 AI Support Assistant --}}
+                    <form wire:submit="saveAiSupportSettings" class="space-y-5">
+                        <fieldset @disabled(! $canManageSettings) class="settings-form-fields">
+                            <legend class="sr-only">{{ __('AI support assistant') }}</legend>
+                            <div class="settings-subheading">
+                                <span class="settings-step">03</span>
+                                <div>
+                                    <h4>{{ __('AI support assistant') }}</h4>
+                                    <p>{{ __('Role-scoped floating help widget available on Homepage (guest), Player pages (player), and Admin panel (staff) using the active AI provider above. Guests and players never see admin-only documentation.') }}</p>
+                                </div>
+                            </div>
+
+                            <label class="settings-toggle-row">
+                                <span>
+                                    <strong>{{ __('Enable floating AI support widget') }}</strong>
+                                    <small>{{ __('Automatically hides if no API key is configured for the active AI provider.') }}</small>
+                                </span>
+                                <input wire:model="aiSupportEnabled" type="checkbox" class="settings-toggle">
+                            </label>
+
+                            <button wire:target="saveAiSupportSettings" type="submit" wire:loading.attr="disabled" class="settings-save">{{ __('Save AI support settings') }}</button><span wire:loading wire:target="saveAiSupportSettings" role="status" class="settings-progress">{{ __('Saving...') }}</span>
+                        </fieldset>
+                    </form>
                 </div>
             </section>
             @if(app()->environment(['local', 'testing']) && auth()->user()?->hasRole('SUPER_ADMIN'))
