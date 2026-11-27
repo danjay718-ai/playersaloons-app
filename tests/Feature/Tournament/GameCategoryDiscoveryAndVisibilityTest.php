@@ -177,6 +177,18 @@ class GameCategoryDiscoveryAndVisibilityTest extends TestCase
         $this->createTournament($this->valorant, ['name' => 'Valorant Clash']);
         $this->createTournament($this->chess, ['name' => 'Chess Grandmaster Open']);
 
+        // Regression: Livewire root wrapper must enclose <main id="guest-main"> and #games tabs,
+        // never attaching wire:id to the inner hero media container.
+        $html = $this->get('/')->assertOk()->getContent();
+        $rootPos = strpos((string) $html, 'wire:name="landing.landing-page"');
+        $mainPos = strpos((string) $html, '<main id="guest-main"');
+        $tabsPos = strpos((string) $html, 'wire:click="selectCategory(\'video-games\')"');
+        $this->assertNotFalse($rootPos);
+        $this->assertNotFalse($mainPos);
+        $this->assertNotFalse($tabsPos);
+        $this->assertLessThan($mainPos, $rootPos);
+        $this->assertLessThan($tabsPos, $rootPos);
+
         Livewire::test(LandingPage::class)
             ->assertSee('All Games')
             ->assertSee('Video Games')

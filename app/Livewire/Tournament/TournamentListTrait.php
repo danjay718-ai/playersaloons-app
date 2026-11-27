@@ -61,8 +61,12 @@ trait TournamentListTrait
         $this->category = trim($slug);
         $this->clearIncompatibleGameSelection();
         $this->featuredLimit = 4;
-        $this->resetPage();
-        $this->resetPage('featuredPage');
+        if ($this->getPage('page') !== 1) {
+            $this->resetPage();
+        }
+        if ($this->getPage('featuredPage') !== 1) {
+            $this->resetPage('featuredPage');
+        }
     }
 
     public function selectGame(string $gameId = ''): void

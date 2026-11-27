@@ -148,7 +148,7 @@
 .gr-cat-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 24px; }
 .gr-cat-tabs { display: flex; align-items: center; gap: 8px; overflow-x: auto; max-width: 100%; padding-bottom: 2px; scrollbar-width: none; }
 .gr-cat-tabs::-webkit-scrollbar { display: none; }
-.gr-cat-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--gr-line); background: var(--gr-card); color: var(--gr-muted); font-size: 13px; font-weight: 700; white-space: nowrap; transition: border-color .2s, background .2s, color .2s, box-shadow .2s, transform .2s; }
+.gr-cat-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--gr-line); background: var(--gr-card); color: var(--gr-muted); font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: border-color .2s, background .2s, color .2s, box-shadow .2s, transform .2s; }
 .gr-cat-tab:hover { border-color: #22e6ff66; color: var(--gr-ink); transform: translateY(-1px); }
 .gr-cat-tab:active { transform: translateY(0); }
 .gr-cat-tab.is-active { border-color: var(--gr-lime); background: var(--gr-lime); color: #081204; font-weight: 800; box-shadow: 0 0 22px #c6ff3d4d; }

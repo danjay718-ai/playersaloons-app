@@ -1,3 +1,4 @@
+<div class="contents">
 @if(config('features.landing.version') === 'v3')
     {{-- Previous guest design, retained. Re-enable with LANDING_VERSION=v3. --}}
     @include('livewire.landing.landing-page-v3')
@@ -35,6 +36,7 @@
                 <button
                     type="button"
                     role="tab"
+                    wire:key="home-cat-all"
                     aria-selected="{{ $category === '' ? 'true' : 'false' }}"
                     wire:click="selectCategory('')"
                     class="gr-cat-tab {{ $category === '' ? 'is-active' : '' }}"
@@ -43,7 +45,7 @@
                     <span class="gr-cat-count">{{ $allGamesCount ?? $games->count() }}</span>
                 </button>
                 @foreach($gameCategories ?? collect() as $gameCategory)
-                    @php($isSelectedCategory = $category === $gameCategory->slug)
+                    @php $isSelectedCategory = $category === $gameCategory->slug; @endphp
                     <button
                         type="button"
                         role="tab"
@@ -136,3 +138,4 @@
     @endif
 </main>
 @endif
+</div>

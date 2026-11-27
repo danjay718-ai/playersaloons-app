@@ -78,6 +78,7 @@
     <!-- 1. Interactive Top Preview Stage (Main Event Spotlight + Starting Next Queue) -->
     @if(!empty($spotlightPayload))
         <section
+            wire:key="spotlight-{{ $category ?: 'all' }}-{{ $gameId ?: 'all' }}-{{ md5((string) json_encode(array_column($spotlightPayload, 'uuid'))) }}"
             x-data="{
                 items: @js($spotlightPayload),
                 activeIndex: 0,
@@ -260,22 +261,23 @@
                     <button
                         type="button"
                         role="tab"
+                        wire:key="discovery-cat-all"
                         aria-selected="{{ $category === '' ? 'true' : 'false' }}"
                         wire:click="selectCategory('')"
-                        class="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-full px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 {{ $category === '' ? 'bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.32)]' : 'border border-white/10 bg-zinc-950/75 text-zinc-300 hover:border-cyan-400/45 hover:text-white' }}"
+                        class="inline-flex min-h-[40px] shrink-0 cursor-pointer items-center gap-2 rounded-full px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 {{ $category === '' ? 'bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.32)]' : 'border border-white/10 bg-zinc-950/75 text-zinc-300 hover:border-cyan-400/45 hover:text-white' }}"
                     >
                         <span>{{ __('All Games') }}</span>
                         <span class="rounded-full px-2 py-0.5 font-mono text-[10px] font-bold tabular-nums {{ $category === '' ? 'bg-zinc-950/15 text-zinc-950' : 'bg-white/5 text-cyan-300' }}">{{ $allCatalogGamesCount ?? $games->count() }}</span>
                     </button>
                     @foreach($gameCategories as $gameCategory)
-                        @php($isSelectedCategory = $category === $gameCategory->slug)
+                        @php $isSelectedCategory = $category === $gameCategory->slug; @endphp
                         <button
                             type="button"
                             role="tab"
                             aria-selected="{{ $isSelectedCategory ? 'true' : 'false' }}"
                             wire:key="discovery-cat-{{ $gameCategory->id }}"
                             wire:click="selectCategory('{{ $gameCategory->slug }}')"
-                            class="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-full px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 {{ $isSelectedCategory ? 'bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.32)]' : 'border border-white/10 bg-zinc-950/75 text-zinc-300 hover:border-cyan-400/45 hover:text-white' }}"
+                            class="inline-flex min-h-[40px] shrink-0 cursor-pointer items-center gap-2 rounded-full px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 {{ $isSelectedCategory ? 'bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.32)]' : 'border border-white/10 bg-zinc-950/75 text-zinc-300 hover:border-cyan-400/45 hover:text-white' }}"
                         >
                             <span>{{ $gameCategory->name }}</span>
                             <span class="rounded-full px-2 py-0.5 font-mono text-[10px] font-bold tabular-nums {{ $isSelectedCategory ? 'bg-zinc-950/15 text-zinc-950' : 'bg-white/5 text-cyan-300' }}">{{ (int) $gameCategory->active_games_count }}</span>
@@ -303,7 +305,7 @@
             </button>
             <div x-ref="gamesRail" class="mobile-games-grid flex snap-x snap-mandatory gap-3.5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @forelse($popularGames as $game)
-                    @php($isSelectedGame = (string) $gameId === (string) $game->id)
+                    @php $isSelectedGame = (string) $gameId === (string) $game->id; @endphp
                     <div wire:key="game-{{ $game->slug }}" class="player-game-card group/game relative min-w-[168px] snap-start overflow-hidden rounded-2xl border bg-zinc-900 transition sm:min-w-[196px] {{ $isSelectedGame ? 'border-lime-400 shadow-[0_0_24px_rgba(198,255,61,.25)]' : 'border-cyan-500/20 hover:border-lime-400/60' }}">
                         <button
                             type="button"

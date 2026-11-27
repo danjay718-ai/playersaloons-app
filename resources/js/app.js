@@ -337,6 +337,10 @@ window.categoryTablist = function () {
     };
 };
 
+document.addEventListener('alpine:init', () => {
+    window.Alpine?.data('categoryTablist', window.categoryTablist);
+});
+
 window.gameManagementUi = function (wire, defaultCategoryId = null) {
     const setDeferred = (property, value) => wire.$set(property, value, false);
 
