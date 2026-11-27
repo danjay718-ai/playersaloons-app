@@ -58,6 +58,7 @@ class StreamIntegrationTest extends TestCase
         $this->game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'stream-game',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
 

@@ -180,9 +180,31 @@
                                     ];
                                     $col = $statusColors[$match->status->value] ?? 'bg-slate-800 text-slate-400 border-slate-700';
                                 @endphp
+                                @php
+                                    $rowDispute = $match->relationLoaded('disputes')
+                                        ? ($match->disputes->first(fn ($d) => in_array($d->status->value, ['open', 'under_review'], true)) ?? $match->disputes->sortByDesc('id')->first())
+                                        : null;
+                                    $rowAi = $rowDispute?->latestAiAnalysis;
+                                @endphp
                                 <span class="inline-flex px-2 py-0.5 rounded border text-[9px] font-bold uppercase {{ $col }}">
                                     {{ str_replace('_', ' ', $match->status->value) }}
                                 </span>
+                                @if($rowAi)
+                                    @php
+                                        $rowAiClass = match ($rowAi->status) {
+                                            'completed' => $rowAi->auto_resolved_at
+                                                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25'
+                                                : 'bg-amber-500/10 text-amber-300 border-amber-500/25',
+                                            'pending' => 'bg-cyan-500/10 text-cyan-300 border-cyan-500/25',
+                                            default => 'bg-red-500/10 text-red-300 border-red-500/25',
+                                        };
+                                    @endphp
+                                    <span title="{{ $rowAi->escalationReasonSummary() ?? $rowAi->shortEscalationLabel() }}"
+                                          class="mt-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-bold {{ $rowAiClass }}">
+                                        <i data-lucide="sparkles" class="h-2.5 w-2.5 shrink-0"></i>
+                                        {{ $rowAi->shortEscalationLabel() }}
+                                    </span>
+                                @endif
                             </td>
                             <td class="p-4 text-slate-500 text-[10px]">
                                 {{ $match->updated_at->diffForHumans() }}
@@ -376,6 +398,51 @@
                         </div>
                     </div>
 
+                    {{-- AI Review & Escalation Summary on Match Details tab --}}
+                    @php
+                        $detailAiDispute = $activeDispute ?? $selectedMatch->disputes->sortByDesc('id')->first();
+                        $detailAi = $detailAiDispute?->latestAiAnalysis;
+                        $detailPlayerA = $selectedMatch->playerARegistration?->user?->username;
+                        $detailPlayerB = $selectedMatch->playerBRegistration?->user?->username;
+                    @endphp
+                    @if($detailAi)
+                        <div class="rounded-xl border border-indigo-500/25 bg-indigo-950/20 p-4 space-y-2.5">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="sparkles" class="h-4 w-4 text-indigo-400"></i>
+                                    <span class="font-bold uppercase tracking-wider text-indigo-300">{{ __('Reviewed by AI') }}</span>
+                                    <span class="rounded border px-2 py-0.5 text-[9px] font-bold uppercase {{ $detailAi->auto_resolved_at ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-300' : ($detailAi->status === 'failed' ? 'border-red-500/30 bg-red-500/15 text-red-300' : 'border-amber-500/30 bg-amber-500/15 text-amber-300') }}">
+                                        {{ $detailAi->shortEscalationLabel() }}
+                                    </span>
+                                </div>
+                                <span class="text-[10px] text-slate-400">{{ $detailAi->provider }} · {{ $detailAi->model }} · v{{ $detailAi->analysis_version }}</span>
+                            </div>
+
+                            @if($detailAi->escalationReasonSummary())
+                                <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200">
+                                    <span class="font-bold uppercase tracking-wider text-amber-300">{{ __('Why Escalated') }}:</span>
+                                    {{ $detailAi->escalationReasonSummary() }}
+                                </div>
+                            @endif
+
+                            @if($detailAi->status === 'completed')
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-lg border border-slate-700 bg-slate-900/70 px-2.5 py-1 text-[10px] font-bold text-slate-200">
+                                        {{ __('AI Result') }}: {{ $detailAi->suggestedOutcomeLabel($detailPlayerA, $detailPlayerB) }}
+                                    </span>
+                                    <span class="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 font-mono text-[10px] font-bold text-cyan-300">
+                                        {{ number_format((float) $detailAi->confidence * 100, 1) }}% {{ __('Confidence') }}
+                                    </span>
+                                </div>
+                                @if($detailAi->summary)
+                                    <p class="leading-relaxed text-slate-300">{{ $detailAi->summary }}</p>
+                                @endif
+                            @elseif($detailAi->status === 'pending')
+                                <p class="text-[11px] text-amber-200">{{ __('AI review is currently running in the background.') }}</p>
+                            @endif
+                        </div>
+                    @endif
+
                 </div>
                 <div x-show="detailTab === 'history'" x-cloak class="p-6 overflow-y-auto space-y-5 flex-grow text-xs">
                     {{-- Disputes section --}}
@@ -426,8 +493,8 @@
                                                     @foreach($disp->evidence as $ev)
                                                         <div class="rounded-lg border border-slate-800 bg-slate-950 p-2">
                                                             @if($ev->file_path)
-                                                                <a href="/storage/{{ $ev->file_path }}" target="_blank" class="group relative block overflow-hidden rounded-md">
-                                                                    <img src="/storage/{{ $ev->file_path }}" alt="Evidence from {{ $ev->uploadedBy?->username ?? 'player' }}" class="h-28 w-full object-cover opacity-80 transition-opacity group-hover:opacity-100">
+                                                                <a href="{{ route('match.evidence.show', $ev->uuid) }}" target="_blank" class="group relative block overflow-hidden rounded-md">
+                                                                    <img src="{{ route('match.evidence.show', $ev->uuid) }}" alt="Evidence from {{ $ev->uploadedBy?->username ?? 'player' }}" class="h-28 w-full object-cover opacity-80 transition-opacity group-hover:opacity-100">
                                                                 </a>
                                                             @else
                                                                 <p class="rounded-md border border-slate-800 bg-slate-900 px-3 py-5 text-center text-[10px] text-slate-500">No screenshot attached</p>
@@ -444,6 +511,38 @@
                                             <p class="text-[10px] text-slate-600 italic border-t border-slate-800/60 pt-2">No evidence screenshots uploaded yet.</p>
                                         @endif
 
+                                        {{-- AI review audit summary in Dispute History --}}
+                                        @if($disp->latestAiAnalysis)
+                                            @php
+                                                $histAi = $disp->latestAiAnalysis;
+                                                $histPlayerA = $selectedMatch->playerARegistration?->user?->username;
+                                                $histPlayerB = $selectedMatch->playerBRegistration?->user?->username;
+                                            @endphp
+                                            <div class="rounded-lg border border-indigo-500/25 bg-indigo-950/20 p-3 space-y-2">
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <span class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+                                                        <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+                                                        {{ __('Reviewed by AI') }} · {{ $histAi->shortEscalationLabel() }}
+                                                    </span>
+                                                    <span class="text-[10px] text-slate-400">{{ $histAi->provider }} · {{ $histAi->model }} · v{{ $histAi->analysis_version }}</span>
+                                                </div>
+                                                @if($histAi->escalationReasonSummary())
+                                                    <p class="rounded border border-amber-500/25 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-200">
+                                                        <span class="font-bold">{{ __('Why Escalated') }}:</span> {{ $histAi->escalationReasonSummary() }}
+                                                    </p>
+                                                @endif
+                                                @if($histAi->status === 'completed')
+                                                    <div class="flex flex-wrap items-center gap-2 text-[10px]">
+                                                        <span class="rounded border border-slate-700 bg-slate-900/70 px-2 py-0.5 font-bold text-slate-200">{{ __('AI Result') }}: {{ $histAi->suggestedOutcomeLabel($histPlayerA, $histPlayerB) }}</span>
+                                                        <span class="rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 font-mono font-bold text-cyan-300">{{ number_format((float) $histAi->confidence * 100, 1) }}% {{ __('Confidence') }}</span>
+                                                    </div>
+                                                    @if($histAi->summary)
+                                                        <p class="text-[11px] leading-relaxed text-slate-300">{{ $histAi->summary }}</p>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        @endif
+
                                         {{-- Resolved info --}}
                                         @if($disp->status->value === 'resolved')
                                             <div class="grid grid-cols-2 gap-2 border-t border-slate-800/60 pt-3 text-xs">
@@ -452,8 +551,8 @@
                                                     <span class="text-slate-300 font-bold block uppercase mt-0.5">{{ str_replace('_', ' ', $disp->resolution->value) }}</span>
                                                 </div>
                                                 <div>
-                                                    <span class="text-slate-500 block">Resolved By (Admin ID)</span>
-                                                    <span class="text-slate-300 block mt-0.5">{{ $disp->resolved_by }} · {{ $disp->resolved_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, H:i T') }}</span>
+                                                    <span class="text-slate-500 block">Resolved By</span>
+                                                    <span class="text-slate-300 block mt-0.5">{{ $disp->resolved_by !== null ? 'Admin #'.$disp->resolved_by : __('AI Auto-Resolved') }} · {{ $disp->resolved_at?->copy()->setTimezone(app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value())->format('M d, H:i T') }}</span>
                                                 </div>
                                             </div>
                                         @endif
@@ -602,6 +701,97 @@
                             </div>
                         @endif
 
+                        {{-- AI Dispute Assistant Panel (shown first so admin immediately sees AI triage + escalation reason) --}}
+                        @php
+                            $aiAnalysis = $resolveDispute->latestAiAnalysis;
+                            $resolvePlayerA = $resolveDispute->match->playerARegistration?->user?->username;
+                            $resolvePlayerB = $resolveDispute->match->playerBRegistration?->user?->username;
+                        @endphp
+                        <div class="rounded-xl border border-indigo-500/25 bg-indigo-950/20 p-4 space-y-3 text-xs">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <i data-lucide="sparkles" class="h-4 w-4 text-indigo-400"></i>
+                                    <span class="font-bold uppercase tracking-wider text-indigo-300">{{ __('AI Dispute Assistant') }}</span>
+                                    @if($aiAnalysis)
+                                        @php
+                                            $aiStatusClass = match ($aiAnalysis->status) {
+                                                'completed' => $aiAnalysis->auto_resolved_at ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+                                                'pending' => 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30 animate-pulse',
+                                                default => 'bg-red-500/15 text-red-300 border-red-500/30',
+                                            };
+                                            $aiStatusLabel = match ($aiAnalysis->status) {
+                                                'completed' => $aiAnalysis->auto_resolved_at ? __('AI Auto-Resolved') : __('Reviewed by AI · Escalated to Admin'),
+                                                'pending' => __('AI Reviewing…'),
+                                                default => __('AI Review Failed · Escalated'),
+                                            };
+                                        @endphp
+                                        <span class="inline-flex rounded border px-2 py-0.5 text-[9px] font-bold uppercase {{ $aiStatusClass }}">{{ $aiStatusLabel }}</span>
+                                    @endif
+                                </div>
+                                @if(Auth::user()?->hasAnyRole(['ADMIN', 'SUPER_ADMIN']))
+                                    <button
+                                        type="button"
+                                        wire:click="rerunAiAnalysis({{ $resolveDispute->id }})"
+                                        wire:loading.attr="disabled"
+                                        wire:target="rerunAiAnalysis({{ $resolveDispute->id }})"
+                                        class="rounded-lg border border-indigo-500/40 bg-indigo-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-200 transition hover:bg-indigo-500/25 disabled:opacity-50"
+                                    >
+                                        {{ __('Re-run AI Analysis') }}
+                                    </button>
+                                @endif
+                            </div>
+
+                            @if($aiAnalysis && $aiAnalysis->escalationReasonSummary())
+                                <div class="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2.5 text-[11px] text-amber-100">
+                                    <p class="font-bold uppercase tracking-wider text-amber-300">{{ __('Why Escalated to Admin') }}</p>
+                                    <p class="mt-0.5 leading-relaxed">{{ $aiAnalysis->escalationReasonSummary() }}</p>
+                                    @if($aiAnalysis->auto_resolve_blocked_reason)
+                                        <p class="mt-1 font-mono text-[10px] text-amber-300/75">{{ __('Guardrail code') }}: {{ $aiAnalysis->auto_resolve_blocked_reason }}</p>
+                                    @endif
+                                </div>
+                            @endif
+
+                            @if($aiAnalysis && $aiAnalysis->status === 'completed')
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-lg border border-slate-700 bg-slate-900/70 px-2.5 py-1 text-[10px] font-bold text-slate-200">
+                                        {{ __('AI Result') }}: {{ $aiAnalysis->suggestedOutcomeLabel($resolvePlayerA, $resolvePlayerB) }}
+                                    </span>
+                                    <span class="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 font-mono text-[10px] font-bold text-cyan-300">
+                                        {{ number_format((float) $aiAnalysis->confidence * 100, 1) }}% {{ __('Confidence') }}
+                                    </span>
+                                    <span class="text-[10px] text-slate-400">{{ $aiAnalysis->provider }} · {{ $aiAnalysis->model }} · v{{ $aiAnalysis->analysis_version }}</span>
+                                </div>
+
+                                @if($aiAnalysis->summary)
+                                    <p class="leading-relaxed text-slate-300">{{ $aiAnalysis->summary }}</p>
+                                @endif
+
+                                @if(! empty($aiAnalysis->evidence_findings_json))
+                                    <div>
+                                        <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ __('AI Evidence Findings') }}</span>
+                                        <ul class="list-disc space-y-1 pl-4 text-[11px] text-slate-300">
+                                            @foreach($aiAnalysis->evidence_findings_json as $finding)
+                                                <li>{{ $finding }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+
+                                @if(! empty($aiAnalysis->red_flags_json))
+                                    <div class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[11px] text-red-200">
+                                        <span class="font-bold uppercase tracking-wider text-red-300">{{ __('Red Flags') }}:</span>
+                                        {{ implode(', ', $aiAnalysis->red_flags_json) }}
+                                    </div>
+                                @endif
+                            @elseif($aiAnalysis && $aiAnalysis->status === 'failed')
+                                <p class="text-[11px] text-red-300">{{ __('Proceed with manual evidence review below.') }}</p>
+                            @elseif($aiAnalysis && $aiAnalysis->status === 'pending')
+                                <p class="text-[11px] text-amber-200">{{ __('AI analysis is running in the background. You may still resolve manually at any time.') }}</p>
+                            @else
+                                <p class="text-[11px] text-slate-400">{{ __('No AI analysis has been run for this dispute yet.') }}</p>
+                            @endif
+                        </div>
+
                         {{-- Evidence --}}
                         @if($resolveDispute->evidence->count() > 0)
                             <div>
@@ -613,9 +803,9 @@
                                     @foreach($resolveDispute->evidence as $ev)
                                         <div class="min-w-0">
                                         @if($ev->file_path)
-                                        <a href="/storage/{{ $ev->file_path }}" target="_blank"
+                                        <a href="{{ route('match.evidence.show', $ev->uuid) }}" target="_blank"
                                            class="group relative block rounded-xl overflow-hidden border border-slate-800 bg-slate-950 hover:border-indigo-500/60 transition-all">
-                                            <img src="/storage/{{ $ev->file_path }}"
+                                            <img src="{{ route('match.evidence.show', $ev->uuid) }}"
                                                  alt="Evidence screenshot"
                                                  class="w-full h-36 object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
                                                  onerror="this.closest('a').innerHTML='<div class=\'flex flex-col items-center justify-center h-36 text-slate-600 gap-2\'><svg xmlns=\'http://www.w3.org/2000/svg\' class=\'w-8 h-8\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\'/></svg><span class=\'text-[10px]\'>No preview</span></div>'">

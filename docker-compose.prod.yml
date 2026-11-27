@@ -20,6 +20,7 @@ services:
       - "80"
     volumes:
       - storage_data:/var/www/storage/app/public
+      - private_storage_data:/var/www/storage/app/private
     depends_on:
       mysql:
         condition: service_healthy
@@ -56,6 +57,9 @@ services:
       SERVICE_TYPE: worker
     env_file:
       - .env
+    volumes:
+      - storage_data:/var/www/storage/app/public
+      - private_storage_data:/var/www/storage/app/private
     depends_on:
       app:
         condition: service_healthy
@@ -123,3 +127,4 @@ volumes:
   mysql_data:
   redis_data:
   storage_data:
+  private_storage_data:

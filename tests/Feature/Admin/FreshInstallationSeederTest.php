@@ -56,11 +56,12 @@ final class FreshInstallationSeederTest extends TestCase
         $this->assertDatabaseHas('public_navigation_items', ['label' => 'Tournaments', 'url' => '/tournaments', 'is_active' => true]);
         $this->assertDatabaseHas('system_settings', ['key' => 'cms.public_navigation_seeded', 'value' => '1']);
         $this->assertDatabaseCount('policy_pages', 5);
+        $this->assertDatabaseCount('game_categories', 2);
 
         $seededTables = [
             'migrations', 'roles', 'permissions', 'role_has_permissions', 'model_has_roles',
             'users', 'user_profiles', 'wallets', 'landing_sections', 'landing_section_items',
-            'public_navigation_items', 'policy_pages', 'system_settings',
+            'public_navigation_items', 'policy_pages', 'system_settings', 'game_categories',
             'payment_gateways', 'gateway_configurations', 'gateway_credentials',
         ];
         foreach (Schema::getTables() as $table) {

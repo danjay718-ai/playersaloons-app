@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -105,5 +106,25 @@ class MatchDispute extends Model implements HasMedia
     public function evidence(): HasMany
     {
         return $this->hasMany(MatchEvidence::class, 'dispute_id');
+    }
+
+    /**
+     * Get AI analyses generated for this dispute.
+     *
+     * @return HasMany<DisputeAiAnalysis, $this>
+     */
+    public function aiAnalyses(): HasMany
+    {
+        return $this->hasMany(DisputeAiAnalysis::class, 'match_dispute_id');
+    }
+
+    /**
+     * Get the latest AI analysis generated for this dispute.
+     *
+     * @return HasOne<DisputeAiAnalysis, $this>
+     */
+    public function latestAiAnalysis(): HasOne
+    {
+        return $this->hasOne(DisputeAiAnalysis::class, 'match_dispute_id')->latestOfMany('analysis_version');
     }
 }

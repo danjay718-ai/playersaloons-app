@@ -2,7 +2,7 @@
     $settingsGroups = [
         'Workspace' => ['general' => ['General', 'sliders-horizontal'], 'localization' => ['Languages', 'languages'], 'security' => ['Sign-in security', 'shield-check']],
         'Finance' => ['payments' => ['Payment gateways', 'credit-card'], 'fees' => ['Fees & commission', 'percent'], 'referrals' => ['Referral rewards', 'gift']],
-        'Operations' => ['competition' => ['Tournament timing', 'timer'], 'notifications' => ['Dispute alerts', 'bell']],
+        'Operations' => ['competition' => ['Tournament timing', 'timer'], 'notifications' => ['Dispute alerts', 'bell'], 'ai_disputes' => ['AI & API management', 'sparkles']],
     ];
     if (app()->environment(['local', 'testing']) && auth()->user()?->hasRole('SUPER_ADMIN')) {
         $settingsGroups['Operations']['maintenance'] = ['Test data', 'database'];
@@ -308,6 +308,193 @@
                         <button wire:target="saveLanguageSwitcherSettings" type="submit" wire:loading.attr="disabled" class="settings-save">{{ __('Save localization settings') }}</button><span wire:loading wire:target="saveLanguageSwitcherSettings" role="status" class="settings-progress">{{ __('Saving...') }}</span>
                     </fieldset>
                 </form>
+            </section>
+            <section x-show="section === 'ai_disputes'" x-cloak data-settings-panel="ai_disputes" aria-labelledby="ai-settings-heading" class="settings-payment-panel">
+                @php
+                    $activeAiConfigured = $aiProviderConfigured[$aiProvider] ?? false;
+                    $activeAiName = $aiProviderCatalog[$aiProvider]['name'] ?? ucfirst($aiProvider);
+                @endphp
+                <div class="settings-card-header">
+                    <div>
+                        <h3 id="ai-settings-heading">{{ __('AI & API management') }}</h3>
+                        <p>{{ __('Configure platform-wide AI providers, encrypted API keys, models, and AI dispute guardrails.') }}</p>
+                    </div>
+                    <span class="settings-credential-status {{ $activeAiConfigured ? 'is-configured' : '' }}">
+                        {{ $activeAiConfigured ? __(':provider Ready', ['provider' => $activeAiName]) : __(':provider Key Not Set', ['provider' => $activeAiName]) }}
+                    </span>
+                </div>
+
+                <div class="settings-payment-body">
+                    {{-- 01 Platform-wide AI Provider & API Credentials --}}
+                    <form wire:submit="saveAiProviderSettings" x-data="{ provider: $wire.entangle('aiProvider') }" class="space-y-5">
+                        <fieldset @disabled(! $canManageSettings) class="space-y-5">
+                            <legend class="sr-only">{{ __('AI provider configuration') }}</legend>
+                            <div class="settings-subheading">
+                                <span class="settings-step">01</span>
+                                <div>
+                                    <h4>{{ __('AI provider & API credentials') }}</h4>
+                                    <p>{{ __('Select the active AI provider and configure API keys usable by Dispute Management and future AI tools.') }}</p>
+                                </div>
+                            </div>
+
+                            <div class="settings-provider-options" role="group" aria-label="{{ __('Active AI provider') }}">
+                                @foreach($aiProviderCatalog as $providerKey => $meta)
+                                    <label class="settings-provider" :class="{ 'is-selected': provider === @js($providerKey) }">
+                                        <input type="radio" name="ai-provider" value="{{ $providerKey }}" x-model="provider">
+                                        <span>
+                                            <strong>{{ $meta['name'] }}</strong>
+                                            <small>{{ __($meta['description']) }} · {{ ($aiProviderConfigured[$providerKey] ?? false) ? __('Configured') : __('Not configured') }}</small>
+                                        </span>
+                                        <span class="settings-choice" aria-hidden="true"></span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('aiProvider')<p role="alert" class="settings-error">{{ $message }}</p>@enderror
+
+                            <div class="space-y-4">
+                                @foreach($aiProviderCatalog as $providerKey => $meta)
+                                    <div wire:key="ai-provider-{{ $providerKey }}" x-show="provider === @js($providerKey)" x-cloak class="space-y-4 rounded-xl border border-slate-800/80 bg-slate-900/40 p-4">
+                                        <div x-data="{ reveal: false }">
+                                            <div class="settings-field-label">
+                                                <label for="ai-key-{{ $providerKey }}">{{ __(':provider API key', ['provider' => $meta['name']]) }}</label>
+                                                <span class="settings-credential-status {{ ($aiProviderConfigured[$providerKey] ?? false) ? 'is-configured' : '' }}">
+                                                    {{ ($aiProviderConfigured[$providerKey] ?? false) ? __('Configured') : __('Not configured') }}
+                                                </span>
+                                            </div>
+                                            <div class="settings-secret">
+                                                <input
+                                                    id="ai-key-{{ $providerKey }}"
+                                                    :type="reveal ? 'text' : 'password'"
+                                                    type="password"
+                                                    wire:model="aiApiKeys.{{ $providerKey }}"
+                                                    autocomplete="new-password"
+                                                    spellcheck="false"
+                                                    placeholder="{{ ($aiProviderConfigured[$providerKey] ?? false) ? __('Saved key hidden — enter new key to replace') : __('Paste your :env key', ['env' => $meta['env_key']]) }}"
+                                                >
+                                                <button type="button" @click="reveal = !reveal" :aria-pressed="reveal" aria-label="{{ __('Show or hide :credential', ['credential' => $meta['name'].' API key']) }}">
+                                                    <span x-text="reveal ? @js(__('Hide')) : @js(__('Show'))"></span>
+                                                </button>
+                                            </div>
+                                            <label class="settings-help">
+                                                <input type="checkbox" wire:model="resetAiCredentials" value="{{ $providerKey }}">
+                                                {{ __('Use environment value instead of saved override') }} · {{ ($aiProviderSources[$providerKey] ?? 'environment') === 'database' ? __('Saved override') : __('Environment') }} ({{ $meta['env_key'] }})
+                                            </label>
+                                            @error('aiApiKeys.'.$providerKey)<p role="alert" class="settings-error">{{ $message }}</p>@enderror
+                                        </div>
+
+                                        <div class="grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <label for="ai-model-{{ $providerKey }}" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Default model') }}</label>
+                                                <input
+                                                    id="ai-model-{{ $providerKey }}"
+                                                    type="text"
+                                                    wire:model="aiModels.{{ $providerKey }}"
+                                                    list="ai-models-list-{{ $providerKey }}"
+                                                    placeholder="{{ $meta['default_model'] }}"
+                                                    class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-white"
+                                                >
+                                                <datalist id="ai-models-list-{{ $providerKey }}">
+                                                    @foreach($meta['recommended_models'] as $recommendedModel)
+                                                        <option value="{{ $recommendedModel }}"></option>
+                                                    @endforeach
+                                                </datalist>
+                                                <p class="mt-1 text-[11px] text-slate-400">{{ __('Recommended') }}: {{ implode(', ', $meta['recommended_models']) }}</p>
+                                                @error('aiModels.'.$providerKey)<p role="alert" class="settings-error">{{ $message }}</p>@enderror
+                                            </div>
+
+                                            <div>
+                                                <label for="ai-baseurl-{{ $providerKey }}" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Custom API base URL (optional)') }}</label>
+                                                <input
+                                                    id="ai-baseurl-{{ $providerKey }}"
+                                                    type="url"
+                                                    wire:model="aiBaseUrls.{{ $providerKey }}"
+                                                    placeholder="{{ $meta['default_base_url'] }}"
+                                                    class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-white"
+                                                >
+                                                <p class="mt-1 text-[11px] text-slate-400">{{ __('Leave blank to use default endpoint (:url).', ['url' => $meta['default_base_url']]) }}</p>
+                                                @error('aiBaseUrls.'.$providerKey)<p role="alert" class="settings-error">{{ $message }}</p>@enderror
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <p class="settings-help"><i data-lucide="lock-keyhole" aria-hidden="true"></i>{{ __('API keys are encrypted in the database and never written to audit logs. Leave a key blank to keep its saved value.') }}</p>
+
+                            @if($aiConnectionTestResult)
+                                <div role="status" class="rounded-lg border px-4 py-3 text-xs font-semibold {{ $aiConnectionTestResult['ok'] ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-red-500/40 bg-red-500/10 text-red-300' }}">
+                                    {{ $aiConnectionTestResult['message'] }}
+                                </div>
+                            @endif
+
+                            <div class="flex flex-wrap items-center gap-3">
+                                <button wire:target="saveAiProviderSettings" type="submit" wire:loading.attr="disabled" class="settings-save">{{ __('Save AI API configuration') }}</button>
+                                <button wire:click="testAiProviderConnection" wire:target="testAiProviderConnection" type="button" wire:loading.attr="disabled" class="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-200 transition hover:border-indigo-400/60 hover:text-white disabled:opacity-50">
+                                    <span wire:loading.remove wire:target="testAiProviderConnection">{{ __('Test API connection') }}</span>
+                                    <span wire:loading wire:target="testAiProviderConnection">{{ __('Testing connection...') }}</span>
+                                </button>
+                                <span wire:loading wire:target="saveAiProviderSettings" role="status" class="settings-progress">{{ __('Saving...') }}</span>
+                            </div>
+                        </fieldset>
+                    </form>
+
+                    <div class="settings-divider"></div>
+
+                    {{-- 02 AI Dispute Management Guardrails --}}
+                    <form wire:submit="saveAiDisputeSettings" class="space-y-5">
+                        <fieldset @disabled(! $canManageSettings) class="settings-form-fields">
+                            <legend class="sr-only">{{ __('AI dispute management') }}</legend>
+                            <div class="settings-subheading">
+                                <span class="settings-step">02</span>
+                                <div>
+                                    <h4>{{ __('AI dispute management') }}</h4>
+                                    <p>{{ __('Analyzes uploaded dispute screenshots using the active AI provider above. Starts in Shadow/Advisory mode; live auto-resolve enforces strict confidence, prize cap, non-final, and zero-strike guardrails.') }}</p>
+                                </div>
+                            </div>
+
+                            <label class="settings-toggle-row">
+                                <span>
+                                    <strong>{{ __('Enable AI dispute analysis on screenshot uploads') }}</strong>
+                                    <small>{{ __('Requires a configured API key for the active provider above.') }}</small>
+                                </span>
+                                <input wire:model="aiDisputesEnabled" type="checkbox" class="settings-toggle">
+                            </label>
+
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="aiDisputesMode" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Operating Mode') }}</label>
+                                    <select id="aiDisputesMode" wire:model="aiDisputesMode" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-white">
+                                        <option value="shadow">{{ __('Shadow / Advisory Only (Recommended)') }}</option>
+                                        <option value="auto_resolve">{{ __('Live Auto-Resolve (With Guardrails)') }}</option>
+                                    </select>
+                                    @error('aiDisputesMode')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label for="aiDisputesMinConfidence" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Minimum Confidence (0.50–1.00)') }}</label>
+                                    <input id="aiDisputesMinConfidence" wire:model="aiDisputesMinConfidence" type="number" min="0.50" max="1.00" step="0.01" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                                    @error('aiDisputesMinConfidence')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label for="aiDisputesMaxPrizeCap" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Max Auto-Resolve Prize Cap (:currency)', ['currency' => \App\Shared\Support\Currency::code()]) }}</label>
+                                    <input id="aiDisputesMaxPrizeCap" wire:model="aiDisputesMaxPrizeCap" type="number" min="0" max="100000" step="0.01" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                                    @error('aiDisputesMaxPrizeCap')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label for="aiDisputesEvidenceWindowMinutes" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Opponent Evidence Window (minutes)') }}</label>
+                                    <input id="aiDisputesEvidenceWindowMinutes" wire:model="aiDisputesEvidenceWindowMinutes" type="number" min="1" max="1440" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                                    @error('aiDisputesEvidenceWindowMinutes')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label for="aiDisputesMaxRunsPerDispute" class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('Max AI Runs per Dispute') }}</label>
+                                    <input id="aiDisputesMaxRunsPerDispute" wire:model="aiDisputesMaxRunsPerDispute" type="number" min="1" max="10" class="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-white">
+                                    @error('aiDisputesMaxRunsPerDispute')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+
+                            <button wire:target="saveAiDisputeSettings" type="submit" wire:loading.attr="disabled" class="settings-save">{{ __('Save AI dispute settings') }}</button><span wire:loading wire:target="saveAiDisputeSettings" role="status" class="settings-progress">{{ __('Saving...') }}</span>
+                        </fieldset>
+                    </form>
+                </div>
             </section>
             @if(app()->environment(['local', 'testing']) && auth()->user()?->hasRole('SUPER_ADMIN'))
                 <section x-show="section === 'maintenance'" x-cloak data-settings-panel="maintenance" class="rounded-xl border border-red-500/30 bg-red-950/15 p-6">

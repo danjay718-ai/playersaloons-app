@@ -23,9 +23,9 @@
         </div>
     </section>
 
-    <nav class="flex gap-2 overflow-x-auto border-b border-cyan-500/15 pb-3 [scrollbar-width:none]">
+    <nav class="flex items-center gap-2 overflow-x-auto border-b border-cyan-500/15 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         @foreach(['overview' => 'Overview', 'browse' => 'Browse '.$frequencyLabel.$competitionLabel, 'streams' => 'Streams'] as $key => $label)
-            <button wire:click="$set('activeTab', '{{ $key }}')" class="rounded-full px-5 py-2.5 font-orbitron text-[10px] font-black uppercase tracking-widest transition {{ $activeTab === $key ? 'bg-lime-400 text-zinc-950 shadow-[0_0_20px_rgba(198,255,61,.35)]' : 'border border-white/10 bg-zinc-900/60 text-zinc-400 hover:border-cyan-400/40 hover:text-white' }}">{{ $label }}</button>
+            <button type="button" wire:click="$set('activeTab', '{{ $key }}')" class="inline-flex shrink-0 cursor-pointer items-center whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-semibold transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 lg:rounded-full lg:px-5 lg:py-2.5 lg:font-orbitron lg:text-[10px] lg:font-black lg:uppercase lg:tracking-widest {{ $activeTab === $key ? 'bg-lime-400 text-zinc-950 lg:shadow-[0_0_20px_rgba(198,255,61,.35)]' : 'border border-white/10 bg-zinc-900/60 text-zinc-400 hover:border-cyan-400/40 hover:text-white' }}">{{ $label }}</button>
         @endforeach
     </nav>
 
@@ -65,7 +65,7 @@
                     <div class="flex min-w-0 gap-2"><select wire:model.live="maxTeams" aria-label="Filter by maximum teams" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-zinc-950/90 px-3 py-3 text-sm text-zinc-200"><option value="">All max teams</option>@foreach([4, 8, 16, 32, 64, 128] as $maximum)<option value="{{ $maximum }}">{{ __(':value1 teams', ['value1' => ($maximum)]) }}</option>@endforeach<option value="custom">Custom</option></select>@if($maxTeams === 'custom')<input wire:model.live.debounce.300ms="customMaxTeams" type="number" min="2" max="128" step="2" aria-label="Custom maximum teams" placeholder="Max" class="w-24 rounded-xl border border-white/10 bg-zinc-950/90 px-3 py-3 text-sm text-white outline-none focus:border-lime-400">@endif</div>
                 @endif
             </div></div>
-            <div class="flex gap-2">@foreach(['upcoming' => 'Upcoming','ongoing' => 'Ongoing','past' => 'Past'] as $key => $label)<button wire:click="$set('tournamentStatus', '{{ $key }}')" class="rounded-full px-4 py-2 font-orbitron text-[10px] font-black uppercase tracking-wider transition {{ $tournamentStatus === $key ? 'bg-lime-400 text-zinc-950' : 'border border-white/10 bg-zinc-900/60 text-zinc-400 hover:text-white' }}">{{ $label }}</button>@endforeach</div>
+            <div class="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">@foreach(['upcoming' => 'Upcoming','ongoing' => 'Ongoing','past' => 'Past'] as $key => $label)<button type="button" wire:click="$set('tournamentStatus', '{{ $key }}')" class="inline-flex shrink-0 cursor-pointer items-center whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-semibold transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 lg:rounded-full lg:px-4 lg:py-2 lg:font-orbitron lg:text-[10px] lg:font-black lg:uppercase lg:tracking-wider {{ $tournamentStatus === $key ? 'bg-lime-400 text-zinc-950' : 'border border-white/10 bg-zinc-900/60 text-zinc-400 hover:text-white' }}">{{ $label }}</button>@endforeach</div>
             @if($tournaments->count())
                 <div class="hidden rounded-xl border border-white/5 bg-zinc-950/50 px-5 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5" aria-hidden="true">
                     <span></span>

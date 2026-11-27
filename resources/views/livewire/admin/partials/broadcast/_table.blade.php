@@ -27,11 +27,38 @@
                         $isScheduled = $broadcast->starts_at && $broadcast->starts_at > $now;
                     @endphp
                     <tr class="hover:bg-slate-900/40" wire:key="broadcast-{{ $broadcast->id }}">
-                        <td class="p-4 font-semibold text-slate-200 max-w-[180px] truncate">
-                            {{ $broadcast->title }}
+                        <td class="p-4 max-w-[220px]">
+                            <span class="block font-semibold text-slate-200 truncate">{{ $broadcast->title }}</span>
+                            <div class="mt-1 flex flex-wrap items-center gap-1">
+                                @if($broadcast->display_type === 'popup_modal' || $broadcast->display_type === 'both')
+                                    <span class="inline-flex rounded border border-indigo-500/30 bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-indigo-300">
+                                        {{ $broadcast->display_type === 'both' ? __('Feed + Popup') : __('Popup Modal') }}
+                                    </span>
+                                    <span class="inline-flex rounded border border-slate-700 bg-slate-800/80 px-1.5 py-0.5 text-[9px] font-semibold text-slate-300">
+                                        {{ match($broadcast->target_surface) {
+                                            'homepage' => __('Homepage'),
+                                            'player_dashboard' => __('Dashboard'),
+                                            default => __('Home & Dashboard'),
+                                        } }}
+                                    </span>
+                                    @if($broadcast->media_type === 'video')
+                                        <span class="inline-flex rounded border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-cyan-300">
+                                            {{ $broadcast->is_video_only ? __('Video Only') : __('Video') }}
+                                        </span>
+                                    @elseif($broadcast->media_type === 'image')
+                                        <span class="inline-flex rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-300">
+                                            {{ __('Image') }}
+                                        </span>
+                                    @endif
+                                @else
+                                    <span class="inline-flex rounded border border-slate-700/80 bg-slate-800/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-400">
+                                        {{ __('Feed') }}
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td class="p-4 text-slate-400 max-w-[260px] truncate">
-                            {{ $broadcast->message }}
+                            {{ $broadcast->message ?: '—' }}
                         </td>
                         <td class="p-4 text-slate-400 whitespace-nowrap">
                             {{ $broadcast->starts_at?->format('M d, Y H:i') ?? '—' }}

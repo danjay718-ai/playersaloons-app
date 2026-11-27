@@ -156,5 +156,6 @@
         @empty<div class="guest-empty"><p>{{ __('No reviews yet.') }}</p><p>{{ __('Player feedback will appear here once available.') }}</p></div>@endforelse</div>
     </section>
     @endif
+    <x-announcement-popup-modal surface="homepage" />
 </main>
 @endauth

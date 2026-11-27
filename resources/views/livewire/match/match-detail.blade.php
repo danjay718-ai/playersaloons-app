@@ -1,4 +1,4 @@
-<div class="player-match-room space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))" @if($isParticipant && $match->status->value === 'ready') wire:poll.30s.visible="refreshMatchStatus" @elseif($isParticipant && in_array($match->status->value, ['in_progress', 'waiting_for_confirmation', 'disputed'])) wire:poll.30s.visible @endif>
+<div class="player-match-room space-y-3 lg:space-y-8" x-data="matchRoomRealtime($wire, @js($match->uuid))" @if($isParticipant && $match->status->value === 'ready') wire:poll.30s.visible="refreshMatchStatus" @elseif($isParticipant && in_array($match->status->value, ['in_progress', 'waiting_for_confirmation', 'disputed'])) wire:poll.30s.visible @endif>
     <x-ui.toasts />
 
     @if($isDefeated)
@@ -13,9 +13,115 @@
         </div>
     @endif
 
+    @if(! $isAdmin)
+        @php
+            $compactPlayerAName = $match->playerARegistration?->team?->name
+                ?: ($match->playerARegistration?->user?->profile?->display_name
+                    ?: ($match->playerARegistration?->user?->username ?: __('TBD')));
+            $compactPlayerBName = $match->playerBRegistration?->team?->name
+                ?: ($match->playerBRegistration?->user?->profile?->display_name
+                    ?: ($match->playerBRegistration?->user?->username ?: __('TBD')));
+            $compactPlayerAWon = $match->winner_registration_id && $match->winner_registration_id === $match->player_a_registration_id;
+            $compactPlayerBWon = $match->winner_registration_id && $match->winner_registration_id === $match->player_b_registration_id;
+        @endphp
+
+        {{-- Mobile & Tablet (< 1024px) Compact 1-Row Match Fixture (Round + Player A vs Player B) --}}
+        <div data-match-content="matchup" class="rounded-xl border border-zinc-850 bg-gradient-to-b from-zinc-900 to-zinc-950 px-3 py-2.5 shadow-md lg:hidden">
+            <div class="flex items-center justify-between gap-2 border-b border-zinc-800/80 pb-2">
+                <div class="flex min-w-0 items-center gap-2">
+                    @unless($embedded)
+                        <a href="/tournaments/{{ $match->tournament->uuid }}/view" wire:navigate aria-label="{{ __('Return to Tournament') }}" class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-violet-500/30 bg-violet-500/10 text-violet-300 transition-colors hover:bg-violet-500/20">
+                            <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i>
+                        </a>
+                    @endunless
+                    <span class="truncate font-orbitron text-[11px] font-black uppercase tracking-wide text-zinc-200">
+                        {{ __('Round :value1 • Match :value2', ['value1' => ($match->round?->round_number ?? '—'), 'value2' => ($roundMatchNumber)]) }}
+                    </span>
+                </div>
+                <div class="shrink-0">
+                    @include('livewire.match.partials._match-status-badge')
+                </div>
+            </div>
+
+            <div class="mt-2.5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+                <div class="flex min-w-0 items-center gap-2">
+                    <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full border {{ $compactPlayerAWon ? 'border-emerald-400' : 'border-zinc-700' }} bg-zinc-950">
+                        @if($match->playerARegistration?->user?->profile?->avatar_url)
+                            <img src="{{ $match->playerARegistration->user->profile->avatar_url }}" alt="{{ $compactPlayerAName }}" class="h-full w-full object-cover">
+                        @elseif($match->playerARegistration?->user)
+                            <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-600 to-fuchsia-600 font-orbitron text-[10px] font-black text-white">{{ strtoupper(substr($match->playerARegistration->user->username, 0, 2)) }}</span>
+                        @else
+                            <div class="flex h-full w-full items-center justify-center text-zinc-500"><i data-lucide="user" class="h-4 w-4"></i></div>
+                        @endif
+                    </div>
+                    <div class="min-w-0">
+                        <p class="truncate text-xs font-bold {{ $compactPlayerAWon ? 'text-emerald-300' : 'text-white' }}" translate="no">{{ $compactPlayerAName }}</p>
+                        @if($compactPlayerAWon)
+                            <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400">{{ __('Winner') }}</span>
+                        @elseif($compactPlayerBWon)
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-rose-400">{{ __('Loser') }}</span>
+                        @endif
+                    </div>
+                </div>
+
+                <span class="px-1 font-orbitron text-xs font-black tracking-widest text-violet-400">VS</span>
+
+                <div class="flex min-w-0 items-center justify-end gap-2 text-right">
+                    <div class="min-w-0">
+                        <p class="truncate text-xs font-bold {{ $compactPlayerBWon ? 'text-emerald-300' : 'text-white' }}" translate="no">{{ $compactPlayerBName }}</p>
+                        @if($compactPlayerBWon)
+                            <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400">{{ __('Winner') }}</span>
+                        @elseif($compactPlayerAWon)
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-rose-400">{{ __('Loser') }}</span>
+                        @endif
+                    </div>
+                    <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full border {{ $compactPlayerBWon ? 'border-emerald-400' : 'border-zinc-700' }} bg-zinc-950">
+                        @if($match->playerBRegistration?->user?->profile?->avatar_url)
+                            <img src="{{ $match->playerBRegistration->user->profile->avatar_url }}" alt="{{ $compactPlayerBName }}" class="h-full w-full object-cover">
+                        @elseif($match->playerBRegistration?->user)
+                            <span class="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-600 font-orbitron text-[10px] font-black text-white">{{ strtoupper(substr($match->playerBRegistration->user->username, 0, 2)) }}</span>
+                        @else
+                            <div class="flex h-full w-full items-center justify-center text-zinc-500"><i data-lucide="user" class="h-4 w-4"></i></div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Mobile & Tablet (< 1024px) Compact 1-Row Side A / Side B Game IDs right above Submit Results --}}
+        @if($isParticipant)
+            @php
+                $compactSideA = $match->playerARegistration?->tournamentTeam?->members?->isNotEmpty()
+                    ? $match->playerARegistration->tournamentTeam->members->map(fn ($m) => $m->game_id_value ?: $m->user?->username)->filter()->implode(', ')
+                    : ($match->playerARegistration?->game_id_value ?: ($match->playerARegistration?->user?->username ? '@'.$match->playerARegistration->user->username : __('TBD')));
+                $compactSideB = $match->playerBRegistration?->tournamentTeam?->members?->isNotEmpty()
+                    ? $match->playerBRegistration->tournamentTeam->members->map(fn ($m) => $m->game_id_value ?: $m->user?->username)->filter()->implode(', ')
+                    : ($match->playerBRegistration?->game_id_value ?: ($match->playerBRegistration?->user?->username ? '@'.$match->playerBRegistration->user->username : __('TBD')));
+            @endphp
+            <div class="rounded-xl border border-cyan-900/40 bg-cyan-950/15 px-3 py-2 lg:hidden">
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="min-w-0 rounded-lg border border-zinc-800/80 bg-zinc-950/75 px-2.5 py-1.5">
+                        <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-500">{{ __('Side A ID') }}</span>
+                        <strong class="block truncate text-xs font-bold text-cyan-300" translate="no">{{ $compactSideA }}</strong>
+                    </div>
+                    <div class="min-w-0 rounded-lg border border-zinc-800/80 bg-zinc-950/75 px-2.5 py-1.5">
+                        <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-500">{{ __('Side B ID') }}</span>
+                        <strong class="block truncate text-xs font-bold text-fuchsia-300" translate="no">{{ $compactSideB }}</strong>
+                    </div>
+                </div>
+                @if($match->lobby_code || $match->lobby_password)
+                    <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-zinc-800/70 pt-1.5 text-[11px] text-violet-200">
+                        @if($match->lobby_code)<span><span class="font-bold text-violet-400">{{ __('Lobby') }}:</span> {{ $match->lobby_code }}</span>@endif
+                        @if($match->lobby_password)<span><span class="font-bold text-violet-400">{{ __('Pass') }}:</span> {{ $match->lobby_password }}</span>@endif
+                    </div>
+                @endif
+            </div>
+        @endif
+    @endif
+
     @if(! $embedded || $isAdmin)
-    <!-- Match Header Card -->
-    <div class="decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+    <!-- Match Header Card (Desktop view untouched; shown on all widths for Admin) -->
+    <div class="{{ $isAdmin ? '' : 'hidden lg:block' }} decorated-card match-room-card bg-zinc-900 border border-zinc-850 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
         <i data-lucide="gamepad-2" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -40,8 +146,8 @@
 
     @endif
 
-    <!-- H2H Matchups Display -->
-    <div class="decorated-card match-room-card bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-850 rounded-2xl p-6 md:p-10 shadow-xl relative overflow-hidden">
+    <!-- H2H Matchups Display (Desktop view untouched; replaced by compact fixture card above on Mobile & Tablet) -->
+    <div class="{{ $isAdmin ? '' : 'hidden lg:block' }} decorated-card match-room-card bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-850 rounded-2xl p-6 md:p-10 shadow-xl relative overflow-hidden">
         <i data-lucide="swords" aria-hidden="true" class="ui-card-watermark"></i>
         <div class="absolute inset-0 bg-gradient-to-r from-violet-600/5 to-fuchsia-600/5 pointer-events-none"></div>
 
@@ -204,14 +310,131 @@
                     @endif
                 </div>
 
-                @if($isResultConflict && $activeDispute)
+                @if($isProviderManaged ?? false)
+                    @php
+                        $isTerminalMatch = in_array($statusVal, ['completed', 'forfeited'], true);
+                        $extStatus = $externalMatchGame?->status;
+                        $attemptNum = $externalMatchGame?->attempt_number ?? max(1, (int) ($match->active_attempt_number ?? 1));
+
+                        if ($isTerminalMatch) {
+                            $badgeLabel = __('Attempt #:num · Completed', ['num' => $attemptNum]);
+                            $badgeClasses = 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200';
+                        } elseif ($extStatus === \App\Modules\Match\Models\ExternalMatchGame::STATUS_NEEDS_ADMIN_REVIEW) {
+                            $badgeLabel = __('Attempt #:num · Admin Review', ['num' => $attemptNum]);
+                            $badgeClasses = 'border-amber-400/45 bg-amber-500/15 text-amber-200';
+                        } elseif ($extStatus === \App\Modules\Match\Models\ExternalMatchGame::STATUS_CREATED && $externalMatchGame?->play_url) {
+                            $badgeLabel = __('Attempt #:num · Live Board', ['num' => $attemptNum]);
+                            $badgeClasses = 'border-cyan-400/40 bg-cyan-500/15 text-cyan-200';
+                        } else {
+                            $badgeLabel = __('Attempt #:num · Preparing', ['num' => $attemptNum]);
+                            $badgeClasses = 'border-zinc-700 bg-zinc-900 text-zinc-300';
+                        }
+                    @endphp
+
+                    <div
+                        class="playstrategy-match-card rounded-2xl border border-cyan-500/30 bg-zinc-950/85 p-5 space-y-4"
+                        @if(! $isTerminalMatch && $extStatus === \App\Modules\Match\Models\ExternalMatchGame::STATUS_CREATED && $externalMatchGame?->play_url)
+                            wire:poll.12s.visible="pollPlayStrategyResult"
+                        @endif
+                    >
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-widest text-cyan-300 font-orbitron">{{ __('PlayStrategy Automated Match') }}</p>
+                                <p class="mt-1 text-xs text-zinc-300">{{ __('Actual gameplay takes place on PlayStrategy. Verified results sync automatically once the game finishes.') }}</p>
+                            </div>
+                            <span class="rounded-full border px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider {{ $badgeClasses }}">
+                                {{ $badgeLabel }}
+                            </span>
+                        </div>
+
+                        @if($isTerminalMatch)
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-100">
+                                <span class="font-semibold">{{ __('This PlayStrategy match has been finalized.') }}</span>
+                                @if($externalMatchGame && $externalMatchGame->play_url)
+                                    <a href="{{ $externalMatchGame->play_url }}" target="_blank" rel="noopener noreferrer" class="playstrategy-btn-secondary inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl border border-cyan-400/45 bg-cyan-500/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-cyan-100 transition hover:bg-cyan-500/25">
+                                        <span>{{ __('View Game on PlayStrategy') }}</span>
+                                        <span aria-hidden="true">↗</span>
+                                    </a>
+                                @endif
+                            </div>
+                        @elseif($extStatus === \App\Modules\Match\Models\ExternalMatchGame::STATUS_NEEDS_ADMIN_REVIEW)
+                            @php
+                                $isAbortedGame = in_array(strtolower((string) $externalMatchGame->provider_status), ['aborted', 'nostart'], true);
+                            @endphp
+                            <div role="alert" class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-100 space-y-3">
+                                <div>
+                                    <p class="font-bold text-amber-200">
+                                        {{ $isAbortedGame ? __('Match Disputed — Game Aborted on PlayStrategy') : __('Admin review required') }}
+                                    </p>
+                                    <p class="mt-1 leading-relaxed text-amber-100/90">
+                                        @if($isAbortedGame)
+                                            {{ __('This game ended as aborted on PlayStrategy without an official winner (for example, no moves were played or the game was aborted early). Please upload a screenshot below in the Dispute Manager so an admin can review and resolve this match.') }}
+                                        @else
+                                            {{ $externalMatchGame->last_error }} {{ __('Please upload a screenshot below in the Dispute Manager for admin review.') }}
+                                        @endif
+                                    </p>
+                                </div>
+                                @if($externalMatchGame->play_url)
+                                    <a href="{{ $externalMatchGame->play_url }}" target="_blank" rel="noopener noreferrer" class="playstrategy-btn-secondary inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl border border-amber-400/45 bg-amber-500/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-100 transition hover:bg-amber-500/25">
+                                        <span>{{ __('View Game on PlayStrategy') }}</span>
+                                        <span aria-hidden="true">↗</span>
+                                    </a>
+                                @endif
+                            </div>
+                        @elseif($externalMatchGame && $externalMatchGame->play_url)
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <a href="{{ $externalMatchGame->play_url }}" target="_blank" rel="noopener noreferrer" class="playstrategy-btn-primary inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">
+                                    <span>{{ __('Play Match on PlayStrategy') }}</span>
+                                    <span aria-hidden="true">↗</span>
+                                </a>
+                                <span class="inline-flex items-center gap-2 text-xs font-semibold text-cyan-200">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true"></span>
+                                    <span>{{ __('Auto-syncing result from PlayStrategy…') }}</span>
+                                </span>
+                            </div>
+                        @else
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 text-xs text-zinc-300">
+                                <span>{{ __('Preparing your PlayStrategy match board. This page refreshes automatically.') }}</span>
+                                @if($isAdmin)
+                                    <button type="button" wire:click="adminCreatePlayStrategyGame" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-indigo-500">{{ __('Create Board Now') }}</button>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                @elseif($isResultConflict && $activeDispute)
                     <div data-match-content="dispute" role="alert" class="rounded-xl border border-red-500/40 bg-red-950/25 p-5 text-red-100">
                         <div class="flex items-center gap-2 text-sm font-bold"><i data-lucide="shield-alert" class="h-5 w-5"></i>{{ $match->resolution_reason === 'unconfirmed_result_timeout' ? __('Result requires review') : __('Result conflict detected') }}</div>
                         <p class="mt-2 text-xs leading-relaxed text-red-100/80">{{ $match->resolution_reason === 'unconfirmed_result_timeout' ? __('A loss or draw was reported without an opponent response before the deadline. Upload a screenshot for admin review. You may also provide a written reason.') : __('The results conflict. Upload a screenshot for admin review. You may also provide a written reason.') }}</p>
                         @if($isParticipant && ! $hasSubmittedDisputeEvidence)
                             <button type="button" @click="$dispatch('open-dispute-statement')" class="mt-4 rounded-lg bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-500">Submit dispute details</button>
                         @elseif($isParticipant)
-                            <p class="mt-3 text-xs font-semibold text-emerald-300">Your dispute response has been submitted.</p>
+                            <p class="mt-3 text-xs font-semibold text-emerald-300">{{ __('Your dispute response has been submitted.') }}</p>
+                        @endif
+                        @if(! empty($disputeReviewStatus))
+                            @php
+                                $reviewToneClasses = match ($disputeReviewStatus['tone']) {
+                                    'pending' => 'border-cyan-400/40 bg-cyan-950/35 text-cyan-100',
+                                    'waiting' => 'border-indigo-400/40 bg-indigo-950/35 text-indigo-100',
+                                    default => 'border-amber-400/45 bg-amber-950/35 text-amber-100',
+                                };
+                                $reviewBadgeClasses = match ($disputeReviewStatus['tone']) {
+                                    'pending' => 'border-cyan-400/40 bg-cyan-500/20 text-cyan-200 animate-pulse',
+                                    'waiting' => 'border-indigo-400/40 bg-indigo-500/20 text-indigo-200',
+                                    default => 'border-amber-400/45 bg-amber-500/20 text-amber-200',
+                                };
+                            @endphp
+                            <div role="status" @if($disputeReviewStatus['tone'] === 'pending') wire:poll.3s.visible @endif class="mt-4 rounded-xl border p-3.5 {{ $reviewToneClasses }}">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="inline-flex items-center gap-2 text-xs font-bold">
+                                        @if($disputeReviewStatus['tone'] === 'pending')
+                                            <span class="h-3.5 w-3.5 rounded-full border-2 border-cyan-300/30 border-t-cyan-300 animate-spin" aria-hidden="true"></span>
+                                        @endif
+                                        {{ $disputeReviewStatus['title'] }}
+                                    </span>
+                                    <span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $reviewBadgeClasses }}">{{ $disputeReviewStatus['badge'] }}</span>
+                                </div>
+                                <p class="mt-1.5 text-xs leading-relaxed opacity-90">{{ $disputeReviewStatus['body'] }}</p>
+                            </div>
                         @endif
                     </div>
                 @elseif(((int) $match->tournament->workflow_version === 2 && in_array($statusVal, ['in_progress', 'waiting_for_confirmation']) && !$isSubmitter) || ((int) $match->tournament->workflow_version !== 2 && $statusVal === 'in_progress'))
@@ -373,6 +596,24 @@
                         @endif
                     </div>
                 @endif
+
+                @if($isParticipant && in_array($statusVal, ['completed', 'forfeited'], true))
+                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-xs">
+                        @if($hasSubmittedMatchReport ?? false)
+                            <span class="font-semibold text-emerald-300">{{ __('Your match report / feedback has been submitted for admin review.') }}</span>
+                        @else
+                            <p class="text-zinc-400">{{ __('Believe there was an incorrect ruling or issue with this match?') }}</p>
+                            <button
+                                type="button"
+                                wire:click="openMatchReportModal"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-200 transition hover:bg-amber-500/20"
+                            >
+                                <i data-lucide="flag" class="h-3.5 w-3.5"></i>
+                                <span>{{ __('Report Match / Provide Feedback') }}</span>
+                            </button>
+                        @endif
+                    </div>
+                @endif
             </div>
 
             <!-- Dispute & Evidence Upload Panel -->
@@ -387,10 +628,16 @@
                         <div class="bg-red-950/25 border border-red-900/40 rounded-xl p-4 space-y-2 text-red-400">
                             <div class="flex items-center space-x-2 font-bold text-sm">
                                 <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                                <span>Active Dispute Logged</span>
+                                <span>{{ ($isProviderManaged ?? false) && in_array(strtolower((string) ($externalMatchGame?->provider_status ?? '')), ['aborted', 'nostart'], true) ? __('Dispute Opened — PlayStrategy Game Aborted') : __('Active Dispute Logged') }}</span>
                             </div>
-                            <p class="text-xs text-red-400/80 leading-relaxed">
-                                A dispute has been opened for this match. Each participant may submit one screenshot evidence file (PNG, JPG, or WEBP, max 2MB) for admins to review and declare the correct bracket winner.
+                            <p class="text-xs text-red-400/85 leading-relaxed">
+                                @if(($isProviderManaged ?? false) && in_array(strtolower((string) ($externalMatchGame?->provider_status ?? '')), ['aborted', 'nostart'], true))
+                                    {{ __('This match is disputed because the PlayStrategy game was aborted without an official winner. Please upload a screenshot (PNG, JPG, or WEBP, max 2MB) showing what happened so an admin can review and resolve this match.') }}
+                                @elseif(($isProviderManaged ?? false) && !empty($activeDispute->reason))
+                                    {{ $activeDispute->reason }} {{ __('Each participant may upload one screenshot (PNG, JPG, or WEBP, max 2MB) for admin review.') }}
+                                @else
+                                    {{ __('A dispute has been opened for this match. Each participant may submit one screenshot evidence file (PNG, JPG, or WEBP, max 2MB) for admins to review and declare the correct bracket winner.') }}
+                                @endif
                             </p>
                         </div>
 
@@ -421,11 +668,38 @@
                         </form>
                         @elseif($isParticipant)
                             <div class="rounded-xl border border-emerald-800/50 bg-emerald-950/20 p-4 text-center text-xs font-semibold text-emerald-300">
-                                Your evidence has been submitted and is now locked for admin review.
+                                {{ __('Your evidence has been submitted and is now locked for admin review.') }}
                             </div>
                         @else
                             <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 text-center text-xs text-zinc-400">
                                 Evidence submissions are available only to the two match participants.
+                            </div>
+                        @endif
+
+                        @if(! empty($disputeReviewStatus))
+                            @php
+                                $reviewToneClasses = match ($disputeReviewStatus['tone']) {
+                                    'pending' => 'border-cyan-400/40 bg-cyan-950/35 text-cyan-100',
+                                    'waiting' => 'border-indigo-400/40 bg-indigo-950/35 text-indigo-100',
+                                    default => 'border-amber-400/45 bg-amber-950/35 text-amber-100',
+                                };
+                                $reviewBadgeClasses = match ($disputeReviewStatus['tone']) {
+                                    'pending' => 'border-cyan-400/40 bg-cyan-500/20 text-cyan-200 animate-pulse',
+                                    'waiting' => 'border-indigo-400/40 bg-indigo-500/20 text-indigo-200',
+                                    default => 'border-amber-400/45 bg-amber-500/20 text-amber-200',
+                                };
+                            @endphp
+                            <div role="status" @if($disputeReviewStatus['tone'] === 'pending') wire:poll.3s.visible @endif class="rounded-xl border p-4 {{ $reviewToneClasses }}">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="inline-flex items-center gap-2 text-xs font-bold">
+                                        @if($disputeReviewStatus['tone'] === 'pending')
+                                            <span class="h-3.5 w-3.5 rounded-full border-2 border-cyan-300/30 border-t-cyan-300 animate-spin" aria-hidden="true"></span>
+                                        @endif
+                                        {{ $disputeReviewStatus['title'] }}
+                                    </span>
+                                    <span class="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $reviewBadgeClasses }}">{{ $disputeReviewStatus['badge'] }}</span>
+                                </div>
+                                <p class="mt-1.5 text-xs leading-relaxed opacity-90">{{ $disputeReviewStatus['body'] }}</p>
                             </div>
                         @endif
                     </div>
@@ -500,7 +774,7 @@
                                         <i data-lucide="{{ $ev->file_path ? 'image' : 'message-square-text' }}" class="w-4 h-4 text-violet-400"></i>
                                         <div class="truncate">
                                             @if($ev->file_path)
-                                                <a href="/storage/{{ $ev->file_path }}" target="_blank" class="block text-xs font-semibold text-zinc-300 hover:text-violet-400 transition-colors truncate">{{ __('Evidence File #:value1', ['value1' => ($ev->id)]) }}</a>
+                                                <a href="{{ route('match.evidence.show', $ev->uuid) }}" target="_blank" class="block text-xs font-semibold text-zinc-300 hover:text-violet-400 transition-colors truncate">{{ __('Evidence File #:value1', ['value1' => ($ev->id)]) }}</a>
                                             @else
                                                 <span class="block text-xs font-semibold text-zinc-300">{{ __('Dispute response #:value1 (no screenshot attached)', ['value1' => ($ev->id)]) }}</span>
                                             @endif
@@ -523,7 +797,53 @@
     </div>
 
     @if(! $isAdmin)
-        @include('livewire.match.partials._game-connection-details')
+        <div class="hidden lg:block">
+            @include('livewire.match.partials._game-connection-details')
+        </div>
+    @endif
+
+    @if($showMatchReportModal && $isParticipant && in_array($match->status->value ?? $match->status, ['completed', 'forfeited'], true))
+        <div class="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm" role="presentation" @keydown.escape.window="$wire.set('showMatchReportModal', false)">
+            <div role="dialog" aria-modal="true" aria-labelledby="match-report-title" class="w-full max-w-lg rounded-2xl border border-amber-500/35 bg-zinc-900 p-5 shadow-2xl sm:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 id="match-report-title" class="font-orbitron text-base font-bold uppercase tracking-wide text-white">{{ __('Report Match / Provide Feedback') }}</h2>
+                        <p class="mt-1 text-xs leading-relaxed text-zinc-400">{{ __('Submit a ruling petition, report an issue with this finalized match, or share feedback with tournament admins.') }}</p>
+                    </div>
+                    <button type="button" wire:click="$set('showMatchReportModal', false)" aria-label="{{ __('Close') }}" class="rounded-lg p-1 text-zinc-400 hover:bg-zinc-800 hover:text-white">
+                        <i data-lucide="x" class="h-4 w-4"></i>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="submitMatchReport" class="mt-5 space-y-4">
+                    <div>
+                        <label for="match-report-type" class="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-300">{{ __('Category') }}</label>
+                        <select id="match-report-type" wire:model="matchReportType" class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none">
+                            <option value="ruling_appeal">{{ __('Ruling Petition / Incorrect Result') }}</option>
+                            <option value="report_match">{{ __('Report Match / Unsportsmanlike Conduct') }}</option>
+                            <option value="feedback">{{ __('Provide Match Feedback') }}</option>
+                        </select>
+                        @error('matchReportType') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="match-report-message" class="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-300">{{ __('Details') }}</label>
+                        <textarea id="match-report-message" wire:model="matchReportMessage" rows="4" maxlength="2000" placeholder="{{ __('Explain what happened, why the ruling should be reviewed, or share your feedback…') }}" class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-white focus:border-amber-400 focus:outline-none"></textarea>
+                        @error('matchReportMessage') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button type="button" wire:click="$set('showMatchReportModal', false)" class="rounded-xl border border-zinc-700 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800">
+                            {{ __('Cancel') }}
+                        </button>
+                        <button type="submit" wire:loading.attr="disabled" wire:target="submitMatchReport" class="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-zinc-950 hover:bg-amber-400 disabled:opacity-60">
+                            <span wire:loading.remove wire:target="submitMatchReport">{{ __('Submit Report') }}</span>
+                            <span wire:loading wire:target="submitMatchReport">{{ __('Submitting…') }}</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     @endif
 
     @if($isResultConflict && $activeDispute && $isParticipant && ! $hasSubmittedDisputeEvidence)

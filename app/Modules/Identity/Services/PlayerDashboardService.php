@@ -155,8 +155,8 @@ final class PlayerDashboardService
     private function announcements()
     {
         return Cache::remember('player-dashboard:announcements:v3', now()->addMinute(), fn () => BroadcastMessage::query()
-            ->where(fn (Builder $query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
-            ->where(fn (Builder $query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+            ->activeNow()
+            ->whereIn('display_type', [BroadcastMessage::DISPLAY_FEED, BroadcastMessage::DISPLAY_BOTH])
             ->latest()
             ->limit(4)
             ->get()

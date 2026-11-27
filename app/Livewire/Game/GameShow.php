@@ -57,7 +57,8 @@ class GameShow extends Component
 
     public function mount(Game $game): void
     {
-        abort_unless($game->is_active, 404);
+        $game->loadMissing('category');
+        abort_unless($game->isAvailableInCatalog(), 404);
         $this->game = $game->load('translations');
     }
 

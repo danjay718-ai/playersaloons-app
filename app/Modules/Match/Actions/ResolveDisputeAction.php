@@ -8,6 +8,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Match\Events\MatchCompleted;
 use App\Modules\Match\Events\MatchDisputeResolved;
 use App\Modules\Match\Events\MatchRematchCreated;
+use App\Modules\Match\Models\ExternalMatchGame;
 use App\Modules\Match\Models\GameMatch;
 use App\Modules\Match\Models\MatchAttempt;
 use App\Modules\Match\Models\MatchDispute;
@@ -73,6 +74,15 @@ class ResolveDisputeAction
 
                 // Transition match to COMPLETED
                 $this->stateMachine->transition($match, MatchStatus::COMPLETED);
+
+                ExternalMatchGame::query()
+                    ->where('match_id', $match->id)
+                    ->whereNotIn('status', [ExternalMatchGame::STATUS_COMPLETED, ExternalMatchGame::STATUS_DRAW])
+                    ->update([
+                        'status' => ExternalMatchGame::STATUS_COMPLETED,
+                        'next_poll_at' => null,
+                        'updated_at' => now(),
+                    ]);
 
                 MatchCompleted::dispatch($match->id, $match->tournament_id, $winnerRegistrationId, true);
             } elseif ($resolution === DisputeResolution::NO_CHAMPION) {

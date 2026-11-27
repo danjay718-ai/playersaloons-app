@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\CMS\Services;
 
 use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\GameCategory;
 use App\Modules\CMS\Models\LandingSection;
 use App\Modules\CMS\Models\LandingSectionItem;
 use App\Modules\Identity\Models\User;
@@ -16,6 +17,7 @@ use App\Shared\Enums\LedgerType;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Enums\UserStatus;
 use App\Shared\Support\Currency;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +26,7 @@ class LandingPageContentService
     /**
      * @return array<string, mixed>
      */
-    public function data(): array
+    public function data(?string $categorySlug = null, string $gameSearch = ''): array
     {
         $sections = LandingSection::query()
             ->where('is_active', true)
@@ -33,9 +35,19 @@ class LandingPageContentService
             ->get()
             ->keyBy('key');
 
+        $categories = GameCategory::query()
+            ->active()
+            ->ordered()
+            ->withCount(['games as active_games_count' => fn (Builder $games) => $games->where('games.is_active', true)->whereNull('games.deleted_at')])
+            ->get();
+
+        $allGamesCount = Game::query()->availableInCatalog()->count();
+
         return [
             'sections' => $sections,
-            'games' => $this->activeGames(),
+            'gameCategories' => $categories,
+            'allGamesCount' => $allGamesCount,
+            'games' => $this->activeGames($categorySlug, $gameSearch),
             'stats' => $this->stats($sections->get('stats')?->activeItems ?? collect()),
             'topPlayers' => $this->topPlayers(),
         ];
@@ -44,13 +56,23 @@ class LandingPageContentService
     /**
      * @return Collection<int, Game>
      */
-    private function activeGames(): Collection
+    private function activeGames(?string $categorySlug = null, string $gameSearch = ''): Collection
     {
+        $search = trim($gameSearch);
+
         return Game::query()
-            ->where('is_active', true)
-            ->with('translations')
+            ->availableInCatalog()
+            ->inCategorySlug($categorySlug)
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $term = '%'.$search.'%';
+                $query->where(function (Builder $games) use ($term): void {
+                    $games->where('slug', 'like', $term)
+                        ->orWhereHas('translations', fn (Builder $translations) => $translations->where('name', 'like', $term));
+                });
+            })
+            ->with(['translations', 'category'])
             ->orderBy('slug')
-            ->limit(8)
+            ->limit(12)
             ->get();
     }
 
@@ -80,7 +102,7 @@ class LandingPageContentService
                 })
                 ->count(),
             'active_games' => (string) Game::query()
-                ->where('is_active', true)
+                ->availableInCatalog()
                 ->count(),
         ];
 

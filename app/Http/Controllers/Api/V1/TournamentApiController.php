@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TournamentCollection;
 use App\Http\Resources\TournamentResource;
+use App\Modules\CMS\Models\Game;
 use App\Modules\Tournament\Actions\CheckinParticipantAction;
 use App\Modules\Tournament\Actions\RegisterForTournamentAction;
 use App\Modules\Tournament\Actions\RegisterForV2TournamentAction;
@@ -28,13 +29,22 @@ class TournamentApiController extends Controller
      */
     public function index(Request $request): TournamentCollection
     {
-        $query = Tournament::query()->with('game');
+        $query = Tournament::query()
+            ->whereIn('game_id', Game::query()->availableInCatalog()->select('id'))
+            ->with(['game.translations', 'game.category']);
         if (! config('features.tournament_v2.enabled')) {
             $query->where('workflow_version', 1);
         }
 
         if ($request->filled('status')) {
             $query->where('status', strtoupper($request->input('status')));
+        }
+
+        if ($request->filled('category')) {
+            $categorySlug = trim((string) $request->input('category'));
+            $query->whereHas('game.category', function ($q) use ($categorySlug) {
+                $q->where('slug', $categorySlug)->where('is_active', true);
+            });
         }
 
         if ($request->filled('game_uuid')) {

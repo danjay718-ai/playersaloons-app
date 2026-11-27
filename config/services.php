@@ -43,6 +43,49 @@ return [
     'twitch' => ['client_id' => env('TWITCH_CLIENT_ID'), 'access_token' => env('TWITCH_ACCESS_TOKEN')],
     'facebook' => ['access_token' => env('FACEBOOK_ACCESS_TOKEN')],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
+    'playstrategy' => [
+        'base_url' => rtrim((string) env('PLAYSTRATEGY_BASE_URL', 'https://playstrategy.org'), '/'),
+        'client_id' => (string) env('PLAYSTRATEGY_CLIENT_ID', 'gamersrival.com'),
+        'redirect_uri' => env('PLAYSTRATEGY_REDIRECT_URI'),
+        'scopes' => (string) env('PLAYSTRATEGY_OAUTH_SCOPES', 'challenge:write'),
+        'timeout_seconds' => (int) env('PLAYSTRATEGY_TIMEOUT_SECONDS', 10),
+    ],
+
+    'gemini' => [
+        'api_key' => (string) env('GEMINI_API_KEY', ''),
+        'model' => (string) env('GEMINI_MODEL', env('GEMINI_DISPUTE_MODEL', 'gemini-3.5-flash-lite')),
+        'dispute_model' => (string) env('GEMINI_DISPUTE_MODEL', 'gemini-3.5-flash-lite'),
+        'base_url' => rtrim((string) env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'), '/'),
+        'timeout_seconds' => (int) env('GEMINI_TIMEOUT_SECONDS', 60),
+    ],
+
+    'openai' => [
+        'api_key' => (string) env('OPENAI_API_KEY', ''),
+        'model' => (string) env('OPENAI_MODEL', 'gpt-4.1-mini'),
+        'base_url' => rtrim((string) env('OPENAI_BASE_URL', 'https://api.openai.com/v1'), '/'),
+        'timeout_seconds' => (int) env('OPENAI_TIMEOUT_SECONDS', 30),
+    ],
+
+    'anthropic' => [
+        'api_key' => (string) env('ANTHROPIC_API_KEY', ''),
+        'model' => (string) env('ANTHROPIC_MODEL', 'claude-sonnet-4-5'),
+        'base_url' => rtrim((string) env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1'), '/'),
+        'timeout_seconds' => (int) env('ANTHROPIC_TIMEOUT_SECONDS', 30),
+    ],
+
+    'openrouter' => [
+        'api_key' => (string) env('OPENROUTER_API_KEY', ''),
+        'model' => (string) env('OPENROUTER_MODEL', 'google/gemini-2.5-flash'),
+        'base_url' => rtrim((string) env('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1'), '/'),
+        'timeout_seconds' => (int) env('OPENROUTER_TIMEOUT_SECONDS', 30),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

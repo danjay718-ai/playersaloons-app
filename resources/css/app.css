@@ -261,6 +261,66 @@ html[data-theme='light'] {
     --color-red-300: #b91c1c;
     --color-red-200: #991b1b;
     --color-red-100: #7f1d1d;
+    --color-rose-950: #fff1f2;
+    --color-rose-900: #ffe4e6;
+    --color-rose-800: #fecdd3;
+    --color-rose-700: #be123c;
+    --color-rose-600: #e11d48;
+    --color-rose-500: #e11d48;
+    --color-rose-400: #be123c;
+    --color-rose-300: #be123c;
+    --color-rose-200: #9f1239;
+    --color-rose-100: #881337;
+    --color-yellow-950: #fefce8;
+    --color-yellow-900: #fef9c3;
+    --color-yellow-800: #fef08a;
+    --color-yellow-700: #a16207;
+    --color-yellow-600: #ca8a04;
+    --color-yellow-500: #a16207;
+    --color-yellow-400: #a16207;
+    --color-yellow-300: #854d0e;
+    --color-yellow-200: #713f12;
+    --color-yellow-100: #713f12;
+    --color-green-950: #f0fdf4;
+    --color-green-900: #dcfce7;
+    --color-green-800: #bbf7d0;
+    --color-green-700: #15803d;
+    --color-green-600: #16a34a;
+    --color-green-500: #15803d;
+    --color-green-400: #15803d;
+    --color-green-300: #166534;
+    --color-green-200: #14532d;
+    --color-green-100: #14532d;
+    --color-blue-950: #eff6ff;
+    --color-blue-900: #dbeafe;
+    --color-blue-800: #bfdbfe;
+    --color-blue-700: #1d4ed8;
+    --color-blue-600: #2563eb;
+    --color-blue-500: #2563eb;
+    --color-blue-400: #1d4ed8;
+    --color-blue-300: #1e40af;
+    --color-blue-200: #1e3a8a;
+    --color-blue-100: #1e3a8a;
+    --color-teal-950: #f0fdfa;
+    --color-teal-900: #ccfbf1;
+    --color-teal-800: #99f6e4;
+    --color-teal-700: #0f766e;
+    --color-teal-600: #0d9488;
+    --color-teal-500: #0f766e;
+    --color-teal-400: #0f766e;
+    --color-teal-300: #115e59;
+    --color-teal-200: #134e4a;
+    --color-teal-100: #134e4a;
+    --color-gray-950: #ffffff;
+    --color-gray-900: #f8fafc;
+    --color-gray-800: #e2e8f0;
+    --color-gray-700: #cbd5e1;
+    --color-gray-600: #64748b;
+    --color-gray-500: #64748b;
+    --color-gray-400: #475569;
+    --color-gray-300: #334155;
+    --color-gray-200: #1e293b;
+    --color-gray-100: #0f172a;
 }
 
 .theme-auth {
@@ -457,8 +517,22 @@ html[data-theme='light'] .theme-player .theme-sidebar-logo-inner img {
     filter: saturate(1.15) contrast(1.08);
     transform: scale(1.08);
 }
-html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active) {
-    color: #dbeafe !important;
+html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active),
+html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active) :is(i, svg, span) {
+    color: #eff6ff !important;
+}
+html[data-theme='light'] .theme-player .theme-sidebar nav > p.sidebar-label {
+    color: #93c5fd !important;
+}
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child a[href='/admin'],
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child a[href='/admin'] :is(i, svg, span) {
+    color: #fde68a !important;
+    border-color: rgba(253, 230, 138, 0.35) !important;
+    background-color: rgba(251, 191, 36, 0.14) !important;
+}
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child a[href='/admin'] :is(i, svg, span) {
+    background-color: transparent !important;
+    border-color: transparent !important;
 }
 html[data-theme='light'] .theme-auth .theme-nav-active {
     background: #2563eb !important;
@@ -476,22 +550,28 @@ html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-active {
 html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-active :is(i, svg, span) {
     color: #1d4ed8 !important;
 }
-html[data-theme='light'] .theme-player .theme-nav-item:not(.theme-nav-active):hover {
+html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active):hover {
     background: #eef2f7 !important;
     border-color: #d7e0ea !important;
     color: #1d4ed8 !important;
     box-shadow: 0 5px 14px rgba(15, 23, 42, 0.14);
 }
-html[data-theme='light'] .theme-player .theme-nav-item:not(.theme-nav-active):hover :is(i, svg, span) {
+html[data-theme='light'] .theme-player .theme-sidebar .theme-nav-item:not(.theme-nav-active):hover :is(i, svg, span) {
     color: #1d4ed8 !important;
 }
-html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button {
-    color: #dbeafe !important;
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button,
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button :is(i, svg, span) {
+    color: #eff6ff !important;
 }
-html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button:hover {
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button:hover,
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button:hover :is(i, svg, span) {
     background: #fff1f2 !important;
     border-color: #fecdd3 !important;
     color: #be123c !important;
+}
+html[data-theme='light'] .theme-player .theme-sidebar > div:last-child form button:hover :is(i, svg, span) {
+    background: transparent !important;
+    border-color: transparent !important;
 }
 html[data-theme='light'] .theme-player .theme-primary-action {
     background: #2563eb !important;
@@ -513,20 +593,57 @@ html[data-theme='light'] .theme-auth :is(
     [class*='bg-fuchsia-5'],
     [class*='bg-fuchsia-6'],
     [class*='bg-cyan-6'],
+    [class*='bg-sky-6'],
     [class*='bg-emerald-6'],
+    [class*='bg-green-6'],
     [class*='bg-amber-6'],
     [class*='bg-orange-6'],
     [class*='bg-red-6'],
+    [class*='bg-rose-6'],
+    [class*='bg-lime-4'],
     [class*='from-blue-6'],
     [class*='from-indigo-6'],
     [class*='from-violet-6'],
     [class*='from-purple-6'],
     [class*='from-fuchsia-5'],
     [class*='from-emerald-6']
-).text-white { color: #fff; }
+):is(.text-white, [class*='text-zinc-950'], [class*='text-[#05080f]']),
+html[data-theme='light'] .theme-auth :is(
+    [class*='bg-blue-6'],
+    [class*='bg-indigo-6'],
+    [class*='bg-violet-6'],
+    [class*='bg-purple-6'],
+    [class*='bg-fuchsia-5'],
+    [class*='bg-fuchsia-6'],
+    [class*='bg-cyan-6'],
+    [class*='bg-sky-6'],
+    [class*='bg-emerald-6'],
+    [class*='bg-green-6'],
+    [class*='bg-amber-6'],
+    [class*='bg-orange-6'],
+    [class*='bg-red-6'],
+    [class*='bg-rose-6'],
+    [class*='bg-lime-4']
+) :is(.text-white, svg, i) { color: #ffffff !important; }
+html[data-theme='light'] .theme-auth [class*='text-[#c6ff3d]'] { color: #1d4ed8 !important; }
+html[data-theme='light'] .theme-auth [class*='text-[#22e6ff]'] { color: #0e7490 !important; }
+html[data-theme='light'] .theme-auth [class*='hover:text-[#c6ff3d]']:hover { color: #1e40af !important; }
+html[data-theme='light'] .theme-auth [class*='bg-[#c6ff3d]/'] { background-color: rgba(37, 99, 235, 0.12) !important; }
+html[data-theme='light'] .theme-auth [class*='border-[#c6ff3d]/'] { border-color: rgba(37, 99, 235, 0.35) !important; }
+html[data-theme='light'] .theme-auth :is([class*='bg-white/5'], [class*='bg-white/[0.03]'], [class*='bg-white/10']):not(.competition-spotlight-hero *):not(.player-game-card *) {
+    background-color: #eaf2fc !important;
+    border-color: #bfd0e4 !important;
+}
+html[data-theme='light'] .theme-auth [class*='border-white/'] { border-color: #cbd5e1 !important; }
 html[data-theme='light'] .theme-auth :is(input, select, textarea) { color-scheme: light; }
 html[data-theme='light'] .theme-auth .scanlines { opacity: 0.03 !important; }
 html[data-theme='light'] .theme-auth [class*='hover:text-white']:hover { color: var(--theme-accent) !important; }
+html:not([data-theme='light']) .theme-auth :is(.text-zinc-600, .text-zinc-700, .text-slate-600):not([class*='bg-lime-4']):not([class*='bg-[#c6ff3d]']):not([class*='bg-white']) {
+    color: #94a3b8;
+}
+html:not([data-theme='light']) .theme-auth :is(.text-zinc-500, .text-slate-500):not([class*='bg-lime-4']):not([class*='bg-[#c6ff3d]']):not([class*='bg-white']) {
+    color: #a1a1aa;
+}
 html[data-theme='neon_arena'] .theme-auth [class*='bg-[#05030c]'],
 html[data-theme='neon_arena'] .theme-auth [class*='bg-[#050311]'],
 html[data-theme='neon_arena'] .theme-auth [class*='bg-[#080516]'],
@@ -536,17 +653,47 @@ html[data-theme='neon_arena'] .theme-auth [class*='bg-[#120a26]'],
 html[data-theme='neon_arena'] .theme-auth [class*='bg-[#0f172a]'] { background-color: var(--theme-panel) !important; }
 html[data-theme='light'] .theme-auth [class*='bg-[#05030c]'],
 html[data-theme='light'] .theme-auth [class*='bg-[#050311]'],
+html[data-theme='light'] .theme-auth [class*='bg-[#05080f]']:not(.competition-spotlight-hero *),
 html[data-theme='light'] .theme-auth [class*='bg-[#060810]'],
 html[data-theme='light'] .theme-auth [class*='bg-[#070412]'],
 html[data-theme='light'] .theme-auth [class*='bg-[#080516]'],
 html[data-theme='light'] .theme-auth [class*='bg-[#090d16]'],
 html[data-theme='light'] .theme-auth [class*='bg-[#0a0718]'],
+html[data-theme='light'] .theme-auth [class*='bg-[#0a111d]'],
+html[data-theme='light'] .theme-auth [class*='bg-[#0a1220]'],
 html[data-theme='light'] .theme-auth [class*='bg-[#0b0f19]'],
 html[data-theme='light'] .theme-auth [class*='bg-[#0c081d]'],
-html[data-theme='light'] .theme-auth [class*='bg-[#0e0a24]'] {
+html[data-theme='light'] .theme-auth [class*='bg-[#0e0a24]'],
+html[data-theme='light'] .theme-auth [class*='bg-[#0e1726]'],
+html[data-theme='light'] .theme-auth [class*='bg-[#0e182a]'] {
     background-color: var(--theme-panel-soft) !important;
     border-color: var(--theme-border);
 }
+/* Preserve crisp light typography on dark photo/gradient cards in Light Mode */
+html[data-theme='light'] .theme-player .competition-spotlight-hero :is(h2, h3, dd, .text-white) { color: #ffffff !important; }
+html[data-theme='light'] .theme-player .competition-spotlight-hero :is(dt, p, .text-zinc-400, .text-zinc-300, .text-zinc-500) { color: #cbd5e1 !important; }
+html[data-theme='light'] .theme-player .competition-spotlight-hero [class*='text-cyan-'] { color: #67e8f9 !important; }
+html[data-theme='light'] .theme-player .competition-spotlight-hero [class*='text-lime-'] { color: #d9f99d !important; }
+html[data-theme='light'] .theme-player .competition-spotlight-hero [class*='text-amber-'] { color: #fcd34d !important; }
+html[data-theme='light'] .theme-player .competition-spotlight-hero [class*='bg-zinc-950'] { background-color: rgba(5, 8, 15, 0.78) !important; border-color: rgba(255, 255, 255, 0.14) !important; }
+html[data-theme='light'] .theme-player .player-game-card :is(h2, .text-white) { color: #ffffff !important; }
+html[data-theme='light'] .theme-player .player-game-card [class*='text-cyan-'] { color: #67e8f9 !important; }
+html[data-theme='light'] .theme-player .player-game-card a[class*='bg-zinc-950'] { background-color: rgba(15, 23, 42, 0.85) !important; color: #f8fafc !important; border-color: rgba(255, 255, 255, 0.25) !important; }
+html[data-theme='light'] .theme-player .competition-preview-toggle { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+html[data-theme='light'] .theme-player .competition-preview-toggle:hover,
+html[data-theme='light'] .theme-player .competition-preview-toggle-open { background: #dbeafe; border-color: #3b82f6; color: #1e40af; }
+html[data-theme='light'] .theme-player .competition-section-button { background: #f8fafc; border-color: #cbd5e1; color: #334155; }
+html[data-theme='light'] .theme-player .competition-section-button:hover { background: #eff6ff; color: #1d4ed8; }
+html[data-theme='light'] .theme-player .competition-section-selected { background: #2563eb; border-color: #1d4ed8; color: #ffffff; }
+html[data-theme='light'] .theme-player .competition-guest-invite { background: #eff6ff; border-color: #93c5fd; color: #0f172a; }
+html[data-theme='light'] .theme-player .competition-register-link { background: #2563eb; color: #ffffff; }
+html[data-theme='light'] .theme-player .find-tournament-modal-panel { background: #ffffff !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
+html[data-theme='light'] .theme-player .find-tournament-modal-panel > div:nth-child(2),
+html[data-theme='light'] .theme-player .find-tournament-modal-panel > div:last-child { background: #f1f5f9 !important; border-color: #dbe3ee !important; }
+html[data-theme='light'] .theme-player .find-tournament-result { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+html[data-theme='light'] .theme-player .find-tournament-cta { background: #2563eb !important; color: #ffffff !important; }
+html[data-theme='light'] .theme-player .find-tournament-trigger { background: #eff6ff !important; border-color: #93c5fd !important; color: #1d4ed8 !important; }
+html[data-theme='light'] .theme-player .find-tournament-trigger:hover { background: #dbeafe !important; border-color: #2563eb !important; color: #1e40af !important; }
 html[data-theme='light'] .theme-auth [class*='bg-[#0f172a]'] {
     background-color: var(--theme-panel) !important;
     border-color: var(--theme-border);
@@ -869,6 +1016,25 @@ html[data-theme='light'] .theme-player .player-match-room :is(label, [class*='up
 }
 html[data-theme='light'] .theme-player .player-match-room .text-zinc-650 { color: #64748b !important; }
 html[data-theme='light'] .theme-player .player-match-room .border-zinc-850 { border-color: #b6cae1 !important; }
+html[data-theme='light'] .theme-player .player-match-room .playstrategy-match-card {
+    background: #edf4fc !important;
+    border-color: #93c5fd !important;
+}
+html[data-theme='light'] .theme-player .player-match-room .playstrategy-btn-primary {
+    background: #059669 !important;
+    color: #ffffff !important;
+}
+html[data-theme='light'] .theme-player .player-match-room .playstrategy-btn-primary:hover {
+    background: #047857 !important;
+}
+html[data-theme='light'] .theme-player .player-match-room .playstrategy-btn-secondary {
+    background: #ffffff !important;
+    border-color: #2563eb !important;
+    color: #1d4ed8 !important;
+}
+html[data-theme='light'] .theme-player .player-match-room .playstrategy-btn-secondary:hover {
+    background: #eff6ff !important;
+}
 html[data-theme='light'] .theme-player .player-profile-shell {
     background: #f3f8fe !important;
     border-color: #a9c1dd !important;
@@ -1741,7 +1907,7 @@ html[data-theme='light'] nav[role='navigation'] div.flex.justify-between.flex-1.
     }
 
     .player-tournament-card {
-        @apply relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-2xl border border-cyan-500/15 bg-zinc-900/70 px-4 py-3.5 shadow-[0_10px_28px_-12px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-lime-400/60 hover:bg-zinc-900/95 hover:shadow-[0_14px_34px_-12px_rgba(198,255,61,0.2)] sm:px-5 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_120px_130px_170px_44px] xl:items-center xl:gap-5;
+        @apply relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-2xl border border-cyan-500/15 bg-zinc-900/70 px-4 py-3.5 shadow-[0_10px_28px_-12px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-lime-400/60 hover:bg-zinc-900/95 hover:shadow-[0_14px_34px_-12px_rgba(198,255,61,0.2)] sm:px-5 xl:grid xl:grid-cols-[52px_minmax(0,1.8fr)_minmax(0,110px)_minmax(0,120px)_minmax(0,160px)_44px] xl:items-center xl:gap-5;
     }
 
     .player-badge {
@@ -2607,6 +2773,7 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     .theme-player .mobile-nav-item.active :is(.mobile-nav-icon, .mobile-nav-label) { color: var(--app-accent); }
     .theme-player .mobile-nav-item::before { display: none; }
     .theme-player .mobile-nav-deposit .mobile-nav-icon { box-sizing: content-box; padding: 10px; margin-top: -21px; border: 5px solid var(--app-surface); border-radius: 50%; background: #c6ff3d; color: #152019; }
+    .theme-player .mobile-nav-item.mobile-nav-deposit.active .mobile-nav-icon { color: #152019; transform: none; filter: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--app-accent) 45%, transparent); }
     .mobile-player-home { display: block; color: var(--app-ink); }
     .player-dashboard > .player-tabs,
     .player-dashboard > .player-dashboard-welcome,
@@ -2639,6 +2806,7 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     html[data-theme='light'] .mobile-competition-switch a[aria-current] { color: white; }
     .mobile-games-section .gr-eyebrow,
     .mobile-games-section .player-rail-button,
+    .mobile-games-section .player-game-hub-link,
     .theme-player .player-tournament-discovery > section[aria-label],
     .desktop-games-title { display: none; }
     .mobile-games-section .mobile-games-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; gap: 10px; }
@@ -2773,6 +2941,8 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     .mobile-settings-icon { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 12px; background: #7b8e9b14; color: var(--app-accent); }
     .mobile-settings-icon svg { width: 19px; height: 19px; }
     .mobile-settings-chevron { width: 16px; height: 16px; margin-left: auto; color: var(--app-muted); }
+    .mobile-settings-badge { margin-left: auto; padding: 2px 8px; border: 1px solid var(--app-line); border-radius: 999px; background: #7b8e9b14; color: var(--app-muted); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .mobile-settings-badge + .mobile-settings-chevron { margin-left: 4px; }
     .mobile-settings-logout { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; margin-top: 20px; border: 1px solid #ed656547; border-radius: 16px; color: #ef7777; font-size: 14px; font-weight: 600; }
     .mobile-settings-logout svg { width: 18px; height: 18px; }
     .mobile-settings-backdrop { display: block; position: fixed; inset: 0; z-index: 80; margin: 0; background: #0009; backdrop-filter: blur(6px); }
@@ -2781,6 +2951,7 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     .mobile-settings-open > .absolute,
     .mobile-settings-open .player-profile-identity,
     .mobile-settings-open .player-profile-summary,
+    .mobile-settings-open .player-profile-connections,
     .mobile-settings-open .player-profile-tabs { display: none; }
     .mobile-settings-modal-header { display: flex; position: sticky; top: 0; z-index: 2; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--app-line); background: var(--app-surface); }
     .mobile-settings-modal-header h2 { font-size: 18px; font-weight: 600; }
@@ -2874,4 +3045,449 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     .player-profile-kyc .desktop-dialog-close { display: none; }
     .mobile-dialog-return { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; }
     .player-profile-kyc button[title='Close KYC drawer'] { width: auto; padding-inline: 10px; }
+}
+
+/* Connected Accounts (PlayStrategy + Google Sign-In) — Desktop, Light Theme, and Mobile */
+.profile-connections-section {
+    border: 1px solid rgb(39 39 42);
+    border-radius: 0.75rem;
+    background: rgb(24 24 27 / 0.55);
+    padding: 1rem;
+}
+.profile-connections-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.875rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgb(39 39 42 / 0.85);
+}
+.profile-connections-title {
+    font-family: var(--font-orbitron);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #ffffff;
+}
+.profile-connections-subtitle {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: rgb(161 161 170);
+}
+.profile-connections-count {
+    flex-shrink: 0;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid rgb(63 63 70);
+    border-radius: 0.5rem;
+    background: rgb(9 9 11 / 0.8);
+    font-family: var(--font-orbitron);
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgb(212 212 216);
+    font-variant-numeric: tabular-nums;
+}
+.profile-connections-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+.profile-connections-grid.is-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+.profile-connect-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.875rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid rgb(39 39 42);
+    border-radius: 0.625rem;
+    background: rgb(9 9 11 / 0.72);
+    transition: border-color 160ms ease, transform 160ms ease, background-color 160ms ease;
+}
+.profile-connect-card:hover {
+    border-color: rgb(63 63 70);
+    transform: translateY(-1px);
+}
+.profile-connect-card.is-connected {
+    border-color: rgb(16 185 129 / 0.35);
+}
+.profile-connect-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+.profile-connect-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+.profile-connect-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.375rem;
+    height: 2.375rem;
+    border-radius: 0.625rem;
+    border: 1px solid rgb(63 63 70 / 0.8);
+}
+.profile-connect-icon-playstrategy {
+    background: rgb(6 182 212 / 0.12);
+    border-color: rgb(34 211 238 / 0.3);
+    color: rgb(103 232 249);
+}
+.profile-connect-icon-google {
+    background: #ffffff;
+    border-color: rgb(228 228 231);
+}
+.profile-connect-name {
+    font-family: var(--font-orbitron);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ffffff;
+    line-height: 1.3;
+}
+.profile-connect-meta {
+    margin-top: 0.125rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: rgb(113 113 122);
+}
+.profile-connect-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid transparent;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.profile-connect-status.is-linked {
+    border-color: rgb(52 211 153 / 0.38);
+    background: rgb(16 185 129 / 0.12);
+    color: rgb(110 231 183);
+}
+.profile-connect-status.is-unlinked {
+    border-color: rgb(63 63 70);
+    background: rgb(24 24 27);
+    color: rgb(161 161 170);
+}
+.profile-connect-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: currentColor;
+}
+.profile-connect-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.profile-connect-identity {
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #ffffff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.profile-connect-desc {
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: rgb(161 161 170);
+}
+.profile-connect-actions {
+    margin-top: auto;
+    padding-top: 0.25rem;
+}
+.profile-connect-form {
+    margin: 0;
+    width: 100%;
+}
+.profile-connect-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    font-family: var(--font-orbitron);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+.profile-connect-btn:active {
+    transform: translateY(1px);
+}
+.profile-connect-btn:focus-visible {
+    outline: 2px solid rgb(34 211 238);
+    outline-offset: 2px;
+}
+.profile-connect-btn-primary {
+    border-color: rgb(34 211 238 / 0.45);
+    background: rgb(6 182 212 / 0.16);
+    color: rgb(207 250 254);
+}
+.profile-connect-btn-primary:hover {
+    border-color: rgb(34 211 238 / 0.72);
+    background: rgb(6 182 212 / 0.26);
+    color: #ffffff;
+}
+.profile-connect-btn-secondary {
+    border-color: rgb(82 82 91);
+    background: rgb(24 24 27);
+    color: rgb(244 244 245);
+}
+.profile-connect-btn-secondary:hover {
+    border-color: rgb(34 211 238 / 0.55);
+    background: rgb(39 39 42);
+    color: #ffffff;
+}
+.profile-connect-btn-danger {
+    border-color: rgb(239 68 68 / 0.35);
+    background: rgb(239 68 68 / 0.1);
+    color: rgb(252 165 165);
+}
+.profile-connect-btn-danger:hover {
+    border-color: rgb(239 68 68 / 0.6);
+    background: rgb(239 68 68 / 0.2);
+    color: rgb(254 226 226);
+}
+.profile-connect-btn-ghost {
+    border-color: rgb(63 63 70);
+    background: transparent;
+    color: rgb(161 161 170);
+}
+.profile-connect-btn-ghost:hover {
+    border-color: rgb(113 113 122);
+    color: #ffffff;
+}
+.profile-connect-token-box {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.875rem;
+    border: 1px solid rgb(39 39 42);
+    border-radius: 0.5rem;
+    background: rgb(24 24 27 / 0.8);
+}
+.profile-connect-token-steps {
+    display: grid;
+    gap: 0.5rem;
+}
+.profile-connect-token-steps p,
+.profile-connect-token-label {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: rgb(212 212 216);
+    font-weight: 600;
+}
+.profile-connect-token-form {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+}
+.profile-connect-token-input {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgb(63 63 70);
+    border-radius: 0.5rem;
+    background: rgb(9 9 11);
+    color: #ffffff;
+    font-size: 0.8125rem;
+}
+.profile-connect-token-input:focus {
+    outline: 2px solid rgb(34 211 238 / 0.4);
+    border-color: rgb(34 211 238);
+}
+.profile-connect-token-error {
+    font-size: 0.75rem;
+    color: rgb(252 165 165);
+}
+.profile-connect-token-actions {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+}
+
+/* Light theme support for Connected Accounts */
+html[data-theme='light'] .theme-player .profile-connections-section {
+    background: #edf4fc;
+    border-color: #b9cce2;
+    box-shadow: 0 6px 16px rgba(30, 64, 175, 0.07);
+}
+html[data-theme='light'] .theme-player .profile-connections-head {
+    border-bottom-color: #c5d6ea;
+}
+html[data-theme='light'] .theme-player .profile-connections-title,
+html[data-theme='light'] .theme-player .profile-connect-name,
+html[data-theme='light'] .theme-player .profile-connect-identity {
+    color: #0f172a;
+}
+html[data-theme='light'] .theme-player .profile-connections-subtitle,
+html[data-theme='light'] .theme-player .profile-connect-meta,
+html[data-theme='light'] .theme-player .profile-connect-desc {
+    color: #475569;
+}
+html[data-theme='light'] .theme-player .profile-connections-count {
+    background: #dce8f5;
+    border-color: #b2c7df;
+    color: #1e3a8a;
+}
+html[data-theme='light'] .theme-player .profile-connect-card {
+    background: #f8fbff;
+    border-color: #bfd1e6;
+}
+html[data-theme='light'] .theme-player .profile-connect-card:hover {
+    border-color: #8eb2dc;
+}
+html[data-theme='light'] .theme-player .profile-connect-card.is-connected {
+    border-color: #34d399;
+}
+html[data-theme='light'] .theme-player .profile-connect-icon-playstrategy {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+html[data-theme='light'] .theme-player .profile-connect-status.is-linked {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+}
+html[data-theme='light'] .theme-player .profile-connect-status.is-unlinked {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+    color: #475569;
+}
+html[data-theme='light'] .theme-player .profile-connect-btn-primary {
+    background: #2563eb;
+    border-color: #1d4ed8;
+    color: #ffffff;
+}
+html[data-theme='light'] .theme-player .profile-connect-btn-primary:hover {
+    background: #1d4ed8;
+}
+html[data-theme='light'] .theme-player .profile-connect-btn-secondary {
+    background: #ffffff;
+    border-color: #b2c7df;
+    color: #0f172a;
+}
+html[data-theme='light'] .theme-player .profile-connect-btn-secondary:hover {
+    background: #eff6ff;
+    border-color: #2563eb;
+    color: #1d4ed8;
+}
+html[data-theme='light'] .theme-player .profile-connect-btn-danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+}
+html[data-theme='light'] .theme-player .profile-connect-btn-danger:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+}
+html[data-theme='light'] .theme-player .profile-connect-token-box {
+    background: #eff6ff;
+    border-color: #bfd1e6;
+}
+html[data-theme='light'] .theme-player .profile-connect-token-steps p,
+html[data-theme='light'] .theme-player .profile-connect-token-label {
+    color: #1e293b;
+}
+html[data-theme='light'] .theme-player .profile-connect-token-input {
+    background: #ffffff;
+    border-color: #b2c7df;
+    color: #0f172a;
+}
+html[data-theme='light'] .theme-player .profile-connect-btn-ghost {
+    border-color: #cbd5e1;
+    color: #475569;
+}
+html[data-theme='light'] .theme-player .profile-connect-btn-ghost:hover {
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+
+@media (max-width: 1180px) {
+    .profile-connections-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 1023px) {
+    .mobile-settings-open .profile-connections-section {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        padding: 0;
+        box-shadow: none;
+    }
+    .mobile-settings-open .profile-connections-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.875rem;
+    }
+    .mobile-settings-open .profile-connect-card {
+        padding: 1rem;
+        border: 1px solid var(--app-line);
+        border-radius: 16px;
+        background: var(--app-surface);
+        transform: none;
+    }
+    .mobile-settings-open .profile-connect-name {
+        font-family: var(--font-sans);
+        font-size: 0.9375rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--app-ink);
+    }
+    .mobile-settings-open .profile-connect-meta,
+    .mobile-settings-open .profile-connect-desc {
+        color: var(--app-muted);
+        font-size: 0.8125rem;
+    }
+    .mobile-settings-open .profile-connect-identity {
+        color: var(--app-ink);
+        font-size: 0.9375rem;
+    }
+    .mobile-settings-open .profile-connect-btn {
+        min-height: 48px;
+        border-radius: 12px;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .profile-connect-card,
+    .profile-connect-btn {
+        transition: none;
+        transform: none;
+    }
 }

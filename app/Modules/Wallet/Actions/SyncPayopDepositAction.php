@@ -34,6 +34,10 @@ class SyncPayopDepositAction
                 throw new RuntimeException('Payment verification unavailable.', 503);
             }
             if ($status->json('data.isSuccess') !== true || $status->json('data.status') !== 'success') {
+                if (in_array($status->json('data.status'), ['failed', 'expired'], true)) {
+                    $checkout->update(['status' => (string) $status->json('data.status'), 'failed_at' => now()]);
+                }
+
                 return false;
             }
         } else {
@@ -50,6 +54,10 @@ class SyncPayopDepositAction
                 throw new LogicException('Payment verification mismatch.', 422);
             }
             if ((int) ($invoice['status'] ?? -1) !== 1) {
+                if ((int) ($invoice['status'] ?? -1) === 5) {
+                    $checkout->update(['status' => 'failed', 'failed_at' => now()]);
+                }
+
                 return false;
             }
         }
@@ -65,7 +73,7 @@ class SyncPayopDepositAction
                 throw new LogicException('Payment verification mismatch.', 422);
             }
             app(ProcessDepositAction::class)->execute(Wallet::query()->findOrFail($locked->wallet_id), $locked->amount, 'payop', $invoiceId, $locked->fee_amount);
-            $locked->update(['provider_reference' => $invoiceId, 'completed_at' => now()]);
+            $locked->update(['provider_reference' => $invoiceId, 'status' => 'completed', 'completed_at' => now()]);
         });
 
         return true;

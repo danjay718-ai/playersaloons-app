@@ -24,7 +24,7 @@ class GuestCompetitionService
     private function publicTournaments(): Builder
     {
         return Tournament::query()
-            ->whereHas('game', fn (Builder $games) => $games->where('games.is_active', true)->whereNull('games.deleted_at'))
+            ->whereIn('game_id', Game::query()->availableInCatalog()->select('id'))
             ->when(config('features.tournament_v2.enabled'),
                 fn (Builder $query) => $query->where('workflow_version', 2)->whereNotNull('template_id'),
                 fn (Builder $query) => $query->where('workflow_version', 1));
@@ -70,13 +70,16 @@ class GuestCompetitionService
     }
 
     /** @return Collection<int, Tournament> */
-    public function registrationTournaments(): Collection
+    public function registrationTournaments(?string $categorySlug = null): Collection
     {
+        $categorySlug = trim((string) $categorySlug);
+
         return $this->publicTournaments()
+            ->when($categorySlug !== '', fn (Builder $query) => $query->whereHas('game.category', fn (Builder $categories) => $categories->where('slug', $categorySlug)->where('is_active', true)))
             ->where('competition_type', 'tournament')
             ->where('status', TournamentStatus::REGISTRATION_OPEN)
             ->where('start_at', '>', now())
-            ->with('game.translations')
+            ->with(['game.translations', 'game.category'])
             ->withCount(['registrations' => fn (Builder $query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED, RegistrationStatus::REFUNDED])])
             ->orderBy('start_at')->orderBy('id')->limit(8)->get();
     }

@@ -110,7 +110,7 @@ final class TournamentV2WorkflowTest extends TestCase
         config()->set('features.tournament_v2.enabled', true);
         $this->seed([RolesAndPermissionsSeeder::class, PlatformSystemUserSeeder::class, SystemSettingsSeeder::class]);
         $this->admin = $this->user('v2-admin@example.com', 'v2admin', 'SUPER_ADMIN');
-        $this->game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'v2-game', 'is_active' => true]);
+        $this->game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'v2-game', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $this->platform = Platform::query()->create(['name' => 'PC', 'slug' => 'pc-v2', 'is_active' => true]);
         $this->game->platforms()->attach($this->platform);
         GameTournamentDefault::query()->create([
@@ -1956,7 +1956,7 @@ final class TournamentV2WorkflowTest extends TestCase
 
     public function test_first_submitter_receives_conflict_modal_on_refresh_and_can_upload_evidence(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
         [$match, $first, $second] = $this->activeTwoPlayerMatch();
         $submit = app(SubmitV2MatchResultAction::class);
         $submit->execute($match, $first->id, MatchOutcome::WIN);
@@ -1974,14 +1974,14 @@ final class TournamentV2WorkflowTest extends TestCase
             ->assertDontSee('id="conflict-dispute-title"', escape: false);
 
         $evidence = $match->disputes()->firstOrFail()->evidence()->where('uploaded_by', $first->id)->firstOrFail();
-        Storage::disk('public')->assertExists($evidence->file_path);
+        Storage::disk('local')->assertExists($evidence->file_path);
         $page->call('submitDisputeStatement')->assertHasErrors('evidenceFile');
         self::assertDatabaseCount('match_evidence', 1);
     }
 
     public function test_conflicting_v2_results_create_a_dispute_for_admin_review(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
         [$match, $p1, $p2] = $this->activeTwoPlayerMatch();
         $submit = app(SubmitV2MatchResultAction::class);
         $submit->execute($match, $p1->id, MatchOutcome::WIN);
@@ -2039,7 +2039,7 @@ final class TournamentV2WorkflowTest extends TestCase
         ]);
         foreach ($match->disputes()->firstOrFail()->evidence as $evidence) {
             self::assertNotNull($evidence->file_path);
-            Storage::disk('public')->assertExists($evidence->file_path);
+            Storage::disk('local')->assertExists($evidence->file_path);
         }
     }
 

@@ -60,7 +60,7 @@
                     <p class="text-[9px] font-black uppercase tracking-[0.3em] text-cyan-300">Player command center</p>
                     <h1 class="mt-2 break-words font-orbitron text-2xl font-black uppercase leading-tight text-white [overflow-wrap:anywhere] sm:text-3xl">{{ __('Welcome, :name', ['name' => $displayName]) }}</h1>
                     <div class="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                        <a href="{{ route('tournaments.browse', ['frequency' => 'daily']) }}" wire:navigate class="theme-primary-action inline-flex min-w-0 items-center justify-center gap-2 rounded-xl bg-[#c6ff3d] px-4 py-3 text-center text-[10px] font-black uppercase leading-tight tracking-widest text-[#05080f] transition hover:bg-[#d5ff66]"><i data-lucide="search" class="h-3.5 w-3.5 shrink-0"></i><span>Find Tournaments</span></a>
+                        <button type="button" x-data @click="$dispatch('open-find-tournament')" class="theme-primary-action inline-flex min-w-0 items-center justify-center gap-2 rounded-xl bg-[#c6ff3d] px-4 py-3 text-center text-[10px] font-black uppercase leading-tight tracking-widest text-[#05080f] transition hover:bg-[#d5ff66]"><i data-lucide="search" class="h-3.5 w-3.5 shrink-0"></i><span>{{ __('Find Tournaments') }}</span></button>
                         <a href="{{ route('my-tournaments') }}" wire:navigate class="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center text-[10px] font-black uppercase leading-tight tracking-widest text-zinc-200 transition hover:border-cyan-400/50 hover:text-white"><i data-lucide="trophy" class="h-3.5 w-3.5 shrink-0"></i><span>My Tournaments</span></a>
                         <a href="{{ route('platform-h2h') }}" wire:navigate class="col-span-2 inline-flex min-w-0 items-center justify-center gap-2 rounded-xl border border-cyan-400/35 bg-cyan-400/10 px-4 py-3 text-center text-[10px] font-black uppercase leading-tight tracking-widest text-cyan-200 transition hover:bg-cyan-400/20 sm:col-span-1"><i data-lucide="swords" class="h-3.5 w-3.5 shrink-0"></i><span>Find Head-to-Head Matches</span></a>
                     </div>
@@ -83,9 +83,9 @@
             ['label' => 'Win Rate', 'value' => $winRate.'%', 'icon' => 'target', 'color' => 'text-[#c6ff3d]'],
             ['label' => 'Prize Earnings', 'value' => \App\Shared\Support\Currency::symbol().number_format($stats['earnings'], 2), 'icon' => 'coins', 'color' => 'text-amber-300'],
         ] as $metric)
-            <article class="player-stat-card rounded-2xl border border-cyan-500/15 bg-[#0a1220]/80 p-4 sm:p-5">
-                <div class="flex items-center justify-between gap-3"><p class="text-[9px] font-black uppercase tracking-widest text-zinc-500">{{ __($metric['label']) }}</p><span class="player-stat-icon"><i data-lucide="{{ $metric['icon'] }}" class="h-4 w-4 {{ $metric['color'] }}"></i></span></div>
-                <p class="mt-3 break-words font-orbitron text-lg font-black {{ $metric['color'] }} sm:text-2xl">{{ $metric['value'] }}</p>
+            <article class="player-stat-card min-w-0 overflow-hidden rounded-2xl border border-cyan-500/15 bg-[#0a1220]/80 p-4 sm:p-5">
+                <div class="flex min-w-0 items-center justify-between gap-3"><p class="min-w-0 truncate text-[9px] font-black uppercase tracking-widest text-zinc-500">{{ __($metric['label']) }}</p><span class="player-stat-icon shrink-0"><i data-lucide="{{ $metric['icon'] }}" class="h-4 w-4 {{ $metric['color'] }}"></i></span></div>
+                <p class="mt-3 break-words font-orbitron text-lg font-black {{ $metric['color'] }} [overflow-wrap:anywhere] sm:text-2xl">{{ $metric['value'] }}</p>
             </article>
         @endforeach
     </section>
@@ -152,8 +152,8 @@
 
         <aside class="min-w-0 max-w-full space-y-6 xl:col-span-4">
             <div class="player-dashboard-quick-links grid grid-cols-2 gap-3">
-                <a href="/wallet" wire:navigate class="player-dashboard-quick-card player-dashboard-balance rounded-2xl border border-[#c6ff3d]/20 bg-[#c6ff3d]/5 p-4 transition hover:bg-[#c6ff3d]/10"><i data-lucide="wallet" class="h-5 w-5 text-[#c6ff3d]"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-500">Balance</p><p class="mt-1 break-words font-orbitron text-lg font-black text-[#c6ff3d]">@currencySymbol{{ number_format($stats['balance'], 2) }}</p></a>
-                <a href="/profile" wire:navigate class="player-dashboard-quick-card player-dashboard-completed rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-4 transition hover:bg-cyan-400/10"><i data-lucide="shield-check" class="h-5 w-5 text-cyan-300"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-500">Completed</p><p class="mt-1 break-words font-orbitron text-lg font-black text-cyan-300">{{ __(':value1 events', ['value1' => ($progression->tournaments_completed)]) }}</p></a>
+                <a href="/wallet" wire:navigate class="player-dashboard-quick-card player-dashboard-balance min-w-0 overflow-hidden rounded-2xl border border-[#c6ff3d]/20 bg-[#c6ff3d]/5 p-4 transition hover:bg-[#c6ff3d]/10"><i data-lucide="wallet" class="h-5 w-5 text-[#c6ff3d]"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-500">Balance</p><p class="mt-1 break-words font-orbitron text-lg font-black text-[#c6ff3d] [overflow-wrap:anywhere]">@currencySymbol{{ number_format($stats['balance'], 2) }}</p></a>
+                <a href="/profile" wire:navigate class="player-dashboard-quick-card player-dashboard-completed min-w-0 overflow-hidden rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-4 transition hover:bg-cyan-400/10"><i data-lucide="shield-check" class="h-5 w-5 text-cyan-300"></i><p class="mt-3 text-[9px] font-black uppercase tracking-wider text-zinc-500">Completed</p><p class="mt-1 break-words font-orbitron text-lg font-black text-cyan-300 [overflow-wrap:anywhere]">{{ __(':value1 events', ['value1' => ($progression->tournaments_completed)]) }}</p></a>
             </div>
 
             <section class="player-dashboard-announcements w-full max-w-full overflow-hidden rounded-2xl border border-amber-400/20 bg-[#0a1220]/70">
@@ -190,4 +190,5 @@
             </section>
         </aside>
     </div>
+    <x-announcement-popup-modal surface="player_dashboard" />
 </div>

@@ -71,6 +71,7 @@ class LandingPageTest extends TestCase
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant',
             'banner_path' => '/images/games/valorant.webp',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         $game->translations()->create([
@@ -199,6 +200,7 @@ class LandingPageTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'old-tekken-8',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
             'game_id_settings' => ['default' => ['connection_method' => 'player_invite']],
         ]);
@@ -234,6 +236,7 @@ class LandingPageTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'nullable-description',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
             'game_id_settings' => ['default' => [
                 'label' => 'Player tag',
@@ -310,7 +313,7 @@ class LandingPageTest extends TestCase
         $admin = $this->adminUser();
         $admin->givePermissionTo('games.delete');
         $player = User::factory()->create(['status' => UserStatus::ACTIVE]);
-        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'legacy-arena', 'is_active' => true]);
+        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'legacy-arena', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $game->translations()->create(['locale' => 'en', 'name' => 'Legacy Arena']);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),

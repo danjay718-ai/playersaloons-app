@@ -92,6 +92,7 @@ class MatchModuleTest extends TestCase
         $this->game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'csgo',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         GameTranslation::query()->create([
@@ -317,7 +318,7 @@ class MatchModuleTest extends TestCase
      */
     public function test_dispute_resolution_winner_flow(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         Event::fake([
             TournamentBracketUpdated::class,
@@ -357,7 +358,7 @@ class MatchModuleTest extends TestCase
         $file = UploadedFile::fake()->create('screenshot.jpg', 100, 'image/jpeg');
         $evidence = app(SubmitEvidenceAction::class)->execute($dispute, $this->playerB->id, $file);
 
-        Storage::disk('public')->assertExists($evidence->file_path);
+        Storage::disk('local')->assertExists($evidence->file_path);
         $dispute->refresh();
         $this->assertEquals(DisputeStatus::UNDER_REVIEW, $dispute->status);
 
@@ -398,7 +399,7 @@ class MatchModuleTest extends TestCase
 
     public function test_player_can_open_dispute_with_proof_from_match_room(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
         $match = GameMatch::query()->where('status', MatchStatus::IN_PROGRESS)->firstOrFail();
         $proof = UploadedFile::fake()->create('match-proof.jpg', 100, 'image/jpeg');
 
@@ -414,7 +415,7 @@ class MatchModuleTest extends TestCase
         $dispute = $match->disputes()->firstOrFail();
         $this->assertEquals(DisputeStatus::UNDER_REVIEW, $dispute->status);
         $this->assertCount(1, $dispute->evidence);
-        Storage::disk('public')->assertExists($dispute->evidence->first()->file_path);
+        Storage::disk('local')->assertExists($dispute->evidence->first()->file_path);
     }
 
     public function test_player_can_open_dispute_without_reason_or_proof(): void

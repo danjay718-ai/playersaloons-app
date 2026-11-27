@@ -30,8 +30,8 @@ class AboutPage extends Component
         $body = $settings['about.body'] ?? '<p>Welcome to GamersRival.</p>';
 
         $games = Game::query()
-            ->where('is_active', true)
-            ->with('translations')
+            ->availableInCatalog()
+            ->with(['translations', 'category'])
             ->orderBy('slug')
             ->limit(12)
             ->get();

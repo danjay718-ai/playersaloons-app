@@ -49,6 +49,7 @@ class ApiEndpointsTest extends TestCase
         $this->game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
 

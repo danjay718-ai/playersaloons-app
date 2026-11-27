@@ -34,7 +34,7 @@ final class AdminV2ScheduleQuery
         };
 
         $query = TournamentTemplate::query()
-            ->whereIn('game_id', Game::availableInCatalog()->select('id'))
+            ->whereIn('game_id', Game::query()->withoutTrashed()->where('is_active', true)->select('id'))
             ->where('workflow_version', 2)
             ->where('competition_type', $type)
             ->when(($filters['search'] ?? '') !== '', fn (Builder $query) => $query->where('name', 'like', '%'.$filters['search'].'%'))

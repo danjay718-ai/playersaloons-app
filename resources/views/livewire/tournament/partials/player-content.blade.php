@@ -1254,15 +1254,34 @@
                             <p class="rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2.5 text-xs text-zinc-300">Platform: <strong class="text-white">{{ $competitionPlatforms->first()->name }}</strong></p>
                         @endif
                         <div>
-                            <label for="join-game-id" class="mb-2 block text-xs font-bold text-zinc-300">{{ $gameIdSettings['label'] ?? 'Game ID / In-Game Name' }}</label>
-                            <input id="join-game-id" x-ref="joinGameId" wire:model="gameIdValue" type="text" maxlength="191" autocomplete="off" placeholder="{{ $gameIdSettings['example'] ?? 'Enter the ID opponents can find' }}" class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none" required>
-                            @error('gameIdValue')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
-                            @if(!empty($gameIdSettings['instructions']))<p class="mt-2 text-xs leading-relaxed text-zinc-500">{{ $gameIdSettings['instructions'] }}</p>@endif
+                            <div class="mb-2 flex items-center justify-between gap-2">
+                                <label for="join-game-id" class="block text-xs font-bold text-zinc-300">{{ $gameIdSettings['label'] ?? 'Game ID / In-Game Name' }}</label>
+                                @if(($isPlayStrategyGame ?? false) && !empty($linkedPlayStrategyUsername))
+                                    <span class="rounded-md border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">{{ __('Synced via PlayStrategy') }}</span>
+                                @endif
+                            </div>
+
+                            @if(($isPlayStrategyGame ?? false) && !empty($linkedPlayStrategyUsername))
+                                <input id="join-game-id" x-ref="joinGameId" wire:model="gameIdValue" type="text" readonly class="w-full cursor-not-allowed rounded-xl border border-emerald-500/35 bg-zinc-950/90 px-3 py-3 text-sm font-semibold text-emerald-100 focus:outline-none">
+                                <p class="mt-2 text-xs leading-relaxed text-zinc-400">{{ __('Automatically filled from your connected PlayStrategy account. Match boards and results sync automatically.') }}</p>
+                            @elseif($isPlayStrategyGame ?? false)
+                                <div class="rounded-xl border border-amber-500/35 bg-amber-950/25 p-3.5 text-xs text-amber-100">
+                                    <p class="font-semibold">{{ __('Connect your PlayStrategy account before joining this tournament.') }}</p>
+                                    <a href="/profile" class="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-cyan-100 hover:bg-cyan-500/25">
+                                        <span>{{ __('Connect PlayStrategy in Profile') }}</span>
+                                        <span aria-hidden="true">↗</span>
+                                    </a>
+                                </div>
+                            @else
+                                <input id="join-game-id" x-ref="joinGameId" wire:model="gameIdValue" type="text" maxlength="191" autocomplete="off" placeholder="{{ $gameIdSettings['example'] ?? 'Enter the ID opponents can find' }}" class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm text-white focus:border-cyan-500 focus:outline-none" required>
+                                @error('gameIdValue')<p class="mt-1 text-xs text-red-400">{{ $message }}</p>@enderror
+                                @if(!empty($gameIdSettings['instructions']))<p class="mt-2 text-xs leading-relaxed text-zinc-500">{{ $gameIdSettings['instructions'] }}</p>@endif
+                            @endif
                         </div>
-                        <p class="text-xs leading-relaxed text-zinc-500">{{ $isHeadToHead ? __('Once both players are registered, open Submit Result in this competition view to play and report your result.') : __('Your match starts automatically when the tournament begins. :value1', ['value1' => ((int) $tournament->workflow_version === 2 ? 'Open Submit Result to play and report your result.' : 'Open the Match Room to play and submit your result.')]) }}</p>
+                        <p class="text-xs leading-relaxed text-zinc-500">{{ ($isPlayStrategyGame ?? false) ? __('Once the match starts, open your Match Room to launch your automated PlayStrategy board. Results sync automatically.') : ($isHeadToHead ? __('Once both players are registered, open Submit Result in this competition view to play and report your result.') : __('Your match starts automatically when the tournament begins. :value1', ['value1' => ((int) $tournament->workflow_version === 2 ? 'Open Submit Result to play and report your result.' : 'Open the Match Room to play and submit your result.')])) }}</p>
                         <div class="flex gap-3 pt-2">
                             <button type="button" @click="showJoinModal = false" class="flex-1 rounded-xl border border-zinc-700 px-4 py-3 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:bg-zinc-800">Cancel</button>
-                            <button type="submit" wire:loading.attr="disabled" wire:target="register" class="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 disabled:opacity-60">{{ ($tournament->team_size ?? 1) > 1 ? ($userTournamentTeam || $userSquad ? 'Register Team' : 'Find a Team') : $joinLabel }}</button>
+                            <button type="submit" wire:loading.attr="disabled" wire:target="register" @disabled(($isPlayStrategyGame ?? false) && empty($linkedPlayStrategyUsername)) class="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50">{{ ($tournament->team_size ?? 1) > 1 ? ($userTournamentTeam || $userSquad ? 'Register Team' : 'Find a Team') : $joinLabel }}</button>
                         </div>
                     </form>
                 </div>

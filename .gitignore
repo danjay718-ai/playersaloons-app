@@ -18,6 +18,8 @@ phpstan_results.json
 /public/build
 /public/fonts-manifest.dev.json
 /public/hot
+/public/pwa-version.json
+/public/sw.js
 /public/storage
 /storage/*.key
 /storage/pail

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="International Draughts 3D Arena Card">
+  <defs>
+    <radialGradient id="bg-dr" cx="50%" cy="38%" r="72%">
+      <stop offset="0%" stop-color="#172554"/>
+      <stop offset="48%" stop-color="#091326"/>
+      <stop offset="100%" stop-color="#040712"/>
+    </radialGradient>
+    <radialGradient id="aura-indigo" cx="50%" cy="42%" r="44%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.30"/>
+      <stop offset="52%" stop-color="#818cf8" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#818cf8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="dr-board" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="50%" stop-color="#0c182c"/>
+      <stop offset="100%" stop-color="#050b16"/>
+    </linearGradient>
+    <linearGradient id="cyan-king" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ecfeff"/>
+      <stop offset="28%" stop-color="#22d3ee"/>
+      <stop offset="72%" stop-color="#0e7490"/>
+      <stop offset="100%" stop-color="#083344"/>
+    </linearGradient>
+    <linearGradient id="violet-king" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0e7ff"/>
+      <stop offset="28%" stop-color="#818cf8"/>
+      <stop offset="74%" stop-color="#312e81"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="bottom-fade-dr" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#040712" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#040712" stop-opacity="0.94"/>
+    </linearGradient>
+    <filter id="dr-shadow" x="-30%" y="-25%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="22" stdDeviation="16" flood-color="#01030a" flood-opacity="0.82"/>
+    </filter>
+    <filter id="dr-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#bg-dr)"/>
+  <ellipse cx="400" cy="420" rx="340" ry="270" fill="url(#aura-indigo)"/>
+
+  <!-- 3D Isometric 10x10-inspired Glass Draughts Board -->
+  <g transform="translate(400, 545)" filter="url(#dr-shadow)">
+    <polygon points="-280,25 0,165 280,25 280,58 0,198 -280,58" fill="#071121" stroke="#22d3ee" stroke-opacity="0.35"/>
+    <polygon points="0,-115 280,25 0,165 -280,25" fill="url(#dr-board)" stroke="#67e8f9" stroke-opacity="0.52" stroke-width="2"/>
+
+    <!-- Isometric Diagonal Checkered Tiles -->
+    <g>
+      <polygon points="0,-95 56,-67 0,-39 -56,-67" fill="#22d3ee" fill-opacity="0.22" stroke="#67e8f9" stroke-opacity="0.3"/>
+      <polygon points="112,-39 168,-11 112,17 56,-11" fill="#818cf8" fill-opacity="0.24" stroke="#a5b4fc" stroke-opacity="0.32"/>
+      <polygon points="-112,-39 -56,-11 -112,17 -168,-11" fill="#22d3ee" fill-opacity="0.22" stroke="#67e8f9" stroke-opacity="0.3"/>
+      <polygon points="0,-39 56,-11 0,17 -56,-11" fill="#0a1628" stroke="#22d3ee" stroke-opacity="0.18"/>
+      <polygon points="56,-11 112,17 56,45 0,17" fill="#22d3ee" fill-opacity="0.28" stroke="#67e8f9" stroke-opacity="0.4"/>
+      <polygon points="-56,-11 0,17 -56,45 -112,17" fill="#818cf8" fill-opacity="0.26" stroke="#a5b4fc" stroke-opacity="0.35"/>
+      <polygon points="0,17 56,45 0,73 -56,45" fill="#0a1628" stroke="#22d3ee" stroke-opacity="0.2"/>
+      <polygon points="112,17 168,45 112,73 56,45" fill="#22d3ee" fill-opacity="0.18" stroke="#67e8f9" stroke-opacity="0.25"/>
+      <polygon points="-112,17 -56,45 -112,73 -168,45" fill="#22d3ee" fill-opacity="0.18" stroke="#67e8f9" stroke-opacity="0.25"/>
+      <polygon points="0,73 56,101 0,129 -56,101" fill="#818cf8" fill-opacity="0.24" stroke="#a5b4fc" stroke-opacity="0.3"/>
+    </g>
+  </g>
+
+  <!-- Opponent Single Violet 3D Piece (Back Left) -->
+  <g transform="translate(275, 435)" filter="url(#dr-shadow)">
+    <path d="M-74,0 L-74,28 C-74,52 74,52 74,28 L74,0 Z" fill="url(#violet-king)" stroke="#c7d2fe" stroke-opacity="0.5"/>
+    <ellipse cx="0" cy="0" rx="74" ry="29" fill="url(#violet-king)" stroke="#e0e7ff" stroke-opacity="0.8" stroke-width="2"/>
+    <ellipse cx="0" cy="0" rx="52" ry="19" fill="none" stroke="#c7d2fe" stroke-opacity="0.55" stroke-width="2.2"/>
+    <ellipse cx="0" cy="0" rx="30" ry="11" fill="none" stroke="#818cf8" stroke-opacity="0.6" stroke-width="1.8"/>
+  </g>
+
+  <!-- Hero Stacked 3D Crowned King Piece (Center Right Foreground) -->
+  <g transform="translate(455, 415)" filter="url(#dr-shadow)">
+    <ellipse cx="0" cy="118" rx="110" ry="40" fill="#22d3ee" fill-opacity="0.18" filter="url(#dr-glow)"/>
+    <!-- Bottom King Disc -->
+    <path d="M-92,58 L-92,90 C-92,118 92,118 92,90 L92,58 Z" fill="url(#cyan-king)" stroke="#a5f3fc" stroke-opacity="0.65" stroke-width="1.8"/>
+    <ellipse cx="0" cy="58" rx="92" ry="35" fill="#0e7490" stroke="#cffafe" stroke-opacity="0.8" stroke-width="2"/>
+    <!-- Middle Ridged Edge -->
+    <path d="M-92,16 L-92,48 C-92,76 92,76 92,48 L92,16 Z" fill="url(#cyan-king)" stroke="#ecfeff" stroke-opacity="0.7" stroke-width="2"/>
+    <!-- Top Crowned Face -->
+    <ellipse cx="0" cy="16" rx="92" ry="35" fill="url(#cyan-king)" stroke="#ffffff" stroke-opacity="0.9" stroke-width="2.2"/>
+    <ellipse cx="0" cy="16" rx="68" ry="24" fill="#083344" fill-opacity="0.45" stroke="#a5f3fc" stroke-opacity="0.75" stroke-width="2"/>
+    <!-- Sculpted Glowing Crown Emblem on Top -->
+    <path d="M-34,20 L-40,-4 L-18,8 L0,-14 L18,8 L40,-4 L34,20 Z" fill="#ecfeff" stroke="#22d3ee" stroke-width="2" stroke-linejoin="round" filter="url(#dr-glow)"/>
+  </g>
+
+  <circle cx="195" cy="260" r="3.5" fill="#818cf8" opacity="0.75"/>
+  <circle cx="625" cy="235" r="4" fill="#22d3ee" opacity="0.8"/>
+  <rect x="0" y="650" width="800" height="350" fill="url(#bottom-fade-dr)"/>
+</svg>

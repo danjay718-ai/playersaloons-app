@@ -42,10 +42,14 @@ final class SubmitV2MatchResultAction
             $tournamentId = GameMatch::query()->whereKey($match->id)->value('tournament_id');
             Tournament::query()->lockForUpdate()->findOrFail($tournamentId);
             $locked = GameMatch::query()
-                ->with(['tournament', 'playerARegistration', 'playerBRegistration'])
+                ->with(['tournament.game', 'playerARegistration', 'playerBRegistration'])
                 ->lockForUpdate()
                 ->findOrFail($match->id);
             $matchUuid = (string) $locked->uuid;
+
+            if ($locked->isProviderManaged()) {
+                throw new LogicException(__('Results for PlayStrategy matches are retrieved automatically from PlayStrategy.'));
+            }
 
             if ((int) $locked->tournament->workflow_version !== 2) {
                 throw new LogicException('This result workflow is only available for V2 tournaments.');

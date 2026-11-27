@@ -21,7 +21,7 @@
     :class="{ 'mobile-settings-modal-active': mobileSettingsOpen || showKycDrawer }"
     x-data="{ activeTab: 'profile', mobileSettingsOpen: false, settingsTitle: '', showKycDrawer: false, isEditingProfile: false, isEditingAccount: false }"
     @keydown.escape.window="mobileSettingsOpen = false; showKycDrawer = false"
-    @resize.window="if (window.innerWidth >= 1024) { mobileSettingsOpen = false; if (['language', 'install'].includes(activeTab)) activeTab = 'profile' }"
+    @resize.window="if (window.innerWidth >= 1024) { mobileSettingsOpen = false; if (['language', 'install', 'connections'].includes(activeTab)) activeTab = 'profile' }"
     @profile-kyc-submitted.window="showKycDrawer = false"
     @profile-updated.window="isEditingProfile = false"
     @account-updated.window="isEditingAccount = false"
@@ -37,11 +37,24 @@
         <div class="mobile-settings-list">
             @foreach([
                 ['profile', 'Profile', 'user-round'], ['kyc', 'KYC', 'shield-check'], ['account', 'Account', 'id-card'],
+                ['connections', 'Connected accounts', 'link-2'],
                 ['security', 'Change password', 'key-round'], ['comms', 'Communication', 'bell'], ['appearance', 'Theme', 'palette'],
                 ['install', 'Install app', 'download'], ['language', 'Change language', 'languages'],
             ] as [$key, $label, $icon])
+                @continue($key === 'connections' && ! config('features.playstrategy.enabled') && ! config('features.google_auth.enabled'))
                 <button type="button" @click="if (@js($key === 'kyc')) { showKycDrawer = true } else { activeTab = @js($key); settingsTitle = @js(__($label)); mobileSettingsOpen = true }" aria-haspopup="dialog">
-                    <span class="mobile-settings-icon"><i data-lucide="{{ $icon }}" aria-hidden="true"></i></span><span>{{ __($label) }}</span><i data-lucide="chevron-right" aria-hidden="true" class="mobile-settings-chevron"></i>
+                    <span class="mobile-settings-icon"><i data-lucide="{{ $icon }}" aria-hidden="true"></i></span>
+                    <span>{{ __($label) }}</span>
+                    @if($key === 'connections')
+                        @php
+                            $mobileLinked = (config('features.playstrategy.enabled') && ($playStrategyAccount ?? null) ? 1 : 0)
+                                + (config('features.google_auth.enabled') && ($googleAccount ?? null) ? 1 : 0);
+                            $mobileTotal = (config('features.playstrategy.enabled') ? 1 : 0)
+                                + (config('features.google_auth.enabled') ? 1 : 0);
+                        @endphp
+                        <span class="mobile-settings-badge">{{ $mobileLinked }}/{{ $mobileTotal }}</span>
+                    @endif
+                    <i data-lucide="chevron-right" aria-hidden="true" class="mobile-settings-chevron"></i>
                 </button>
             @endforeach
         </div>
@@ -155,6 +168,15 @@
                         </div>
                     </div>
                 </div>
+
+                @if(config('features.playstrategy.enabled') || config('features.google_auth.enabled'))
+                    <div class="player-profile-connections mt-4">
+                        <x-profile.connected-accounts-cards
+                            :play-strategy-account="$playStrategyAccount ?? null"
+                            :google-account="$googleAccount ?? null"
+                        />
+                    </div>
+                @endif
 
                 <div class="player-profile-tabs mt-6 rounded-lg border border-zinc-800 bg-zinc-900/50 p-2">
                     <div class="grid grid-cols-2 gap-2 md:grid-cols-5">
@@ -426,6 +448,14 @@
                         </form>
                     </div>
 
+                    <div class="mobile-settings-extra" x-show="activeTab === 'connections'" x-cloak>
+                        <p>{{ __('Link external accounts for automated board matches and one-click sign-in.') }}</p>
+                        <x-profile.connected-accounts-cards
+                            :play-strategy-account="$playStrategyAccount ?? null"
+                            :google-account="$googleAccount ?? null"
+                            :show-heading="false"
+                        />
+                    </div>
                     <div class="mobile-settings-extra" x-show="activeTab === 'language'" x-cloak><x-localization.language-switcher variant="settings" /></div>
                     <div class="mobile-settings-extra" x-show="activeTab === 'install'" x-cloak>
                         <p>{{ __('Add the app to your home screen for quick access.') }}</p>

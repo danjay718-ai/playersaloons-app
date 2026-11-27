@@ -23,10 +23,7 @@ class PlayerTournamentList extends Component
         $usesV2Discovery = (bool) config('features.tournament_v2.enabled');
         $frequencyLabel = ucfirst($this->frequency).' Tournaments';
         $featuredTournaments = $usesV2Discovery
-            ? $discovery->paginateOccurrences('upcoming', [
-                'competition_type' => 'tournament',
-                'frequency' => $this->frequency,
-            ], $this->featuredLimit, true, 'featuredPage')
+            ? $discovery->paginateOccurrences('upcoming', $this->featuredDiscoveryFilters(), $this->featuredLimit, true, 'featuredPage')
             : $this->getFeaturedTournaments();
 
         return view('livewire.tournament.player-tournament-list', [
@@ -35,6 +32,9 @@ class PlayerTournamentList extends Component
                 : $this->getTournamentQuery()->paginate(9),
             'tournamentGroups' => null,
             'featuredGroups' => null,
+            'gameCategories' => $this->getGameCategories(),
+            'allCatalogGamesCount' => $this->allCatalogGamesCount(),
+            'selectedGame' => $this->selectedGameModel(),
             'games' => $this->getGames(),
             'popularGames' => $this->getPopularGames(),
             'featuredTournaments' => $featuredTournaments,
@@ -56,11 +56,24 @@ class PlayerTournamentList extends Component
     {
         return [
             'search' => $this->search,
+            'category' => $this->category,
             'game_id' => $this->gameId,
             'frequency' => $this->frequency,
             'competition_type' => 'tournament',
             'platform_id' => $this->platformId,
             'max_teams' => (string) ($this->selectedMaxTeams() ?? ''),
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function featuredDiscoveryFilters(): array
+    {
+        return [
+            'category' => $this->category,
+            'game_id' => $this->gameId,
+            'frequency' => $this->frequency,
+            'competition_type' => 'tournament',
+            'platform_id' => $this->platformId,
         ];
     }
 }

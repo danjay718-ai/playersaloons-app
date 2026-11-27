@@ -3,6 +3,7 @@
 namespace App\Modules\Tournament\Models;
 
 use App\Modules\CMS\Models\Game;
+use App\Modules\CMS\Models\GameCategory;
 use App\Modules\CMS\Models\Platform;
 use App\Modules\Identity\Models\User;
 use App\Modules\Stream\Models\StreamChannel;
@@ -258,6 +259,11 @@ class Tournament extends Model implements HasMedia
     public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class)->withTrashed();
+    }
+
+    public function gameCategory(): ?GameCategory
+    {
+        return $this->game?->category;
     }
 
     /**

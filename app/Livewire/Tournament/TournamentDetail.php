@@ -125,12 +125,16 @@ class TournamentDetail extends Component
 
         if ($user) {
             $this->selectedPlatformId = $tournament->platform_id ?? $tournament->supportedPlatformIds()[0] ?? null;
+            $this->gameIdValue = $this->linkedPlayStrategyUsername($tournament, $user) ?? '';
         }
     }
 
     public function updatedSelectedPlatformId(): void
     {
-        $this->gameIdValue = '';
+        $tournament = $this->getTournamentQuery()->with('game')->where('uuid', $this->uuid)->first();
+        $this->gameIdValue = $tournament !== null
+            ? ($this->linkedPlayStrategyUsername($tournament, Auth::user()) ?? '')
+            : '';
     }
 
     public function updatedBracketView(): void
@@ -142,10 +146,21 @@ class TournamentDetail extends Component
 
     public function prepareRegistrationPrompt(): void
     {
-        $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
+        $tournament = $this->getTournamentQuery()->with('game')->where('uuid', $this->uuid)->firstOrFail();
         $this->resetValidation();
-        $this->gameIdValue = '';
+        $this->gameIdValue = $this->linkedPlayStrategyUsername($tournament, Auth::user()) ?? '';
         $this->selectedPlatformId = $tournament->platform_id ?? $tournament->supportedPlatformIds()[0] ?? null;
+    }
+
+    private function linkedPlayStrategyUsername(Tournament $tournament, ?User $user): ?string
+    {
+        if ($user === null || ! $tournament->game?->isPlayStrategyManaged()) {
+            return null;
+        }
+
+        $username = $user->playStrategyAccount()->value('external_username');
+
+        return is_string($username) && trim($username) !== '' ? trim($username) : null;
     }
 
     private function getTournamentQuery()
@@ -217,9 +232,13 @@ class TournamentDetail extends Component
             return;
         }
 
-        $tournament = $this->getTournamentQuery()->where('uuid', $this->uuid)->firstOrFail();
+        $tournament = $this->getTournamentQuery()->with('game')->where('uuid', $this->uuid)->firstOrFail();
         abort_if((int) $tournament->workflow_version === 2 && ! config('features.tournament_v2.enabled'), 404);
         $user = Auth::user();
+
+        if ($linkedPlayStrategy = $this->linkedPlayStrategyUsername($tournament, $user)) {
+            $this->gameIdValue = $linkedPlayStrategy;
+        }
 
         $this->validate([
             'selectedPlatformId' => ['nullable', 'integer', Rule::in($tournament->supportedPlatformIds())],
@@ -609,6 +628,11 @@ class TournamentDetail extends Component
 
         $gameIdSettings = (array) (($tournament->game->game_id_settings ?? [])[(string) ($this->selectedPlatformId ?? $tournament->platform_id)]
             ?? ($tournament->game->game_id_settings['default'] ?? []));
+        $isPlayStrategyGame = (bool) $tournament->game?->isPlayStrategyManaged();
+        $linkedPlayStrategyUsername = $this->linkedPlayStrategyUsername($tournament, $user);
+        if ($linkedPlayStrategyUsername !== null && $this->gameIdValue === '') {
+            $this->gameIdValue = $linkedPlayStrategyUsername;
+        }
         $userTournamentTeam = $user ? TournamentTeam::query()
             ->where('tournament_id', $tournament->id)
             ->whereHas('members', fn ($members) => $members->where('user_id', $user->id))
@@ -649,6 +673,8 @@ class TournamentDetail extends Component
             'bracketLoaded' => $bracketLoaded,
             'activityLoaded' => $activityLoaded,
             'gameIdSettings' => $gameIdSettings,
+            'isPlayStrategyGame' => $isPlayStrategyGame,
+            'linkedPlayStrategyUsername' => $linkedPlayStrategyUsername,
             'userTournamentTeam' => $userTournamentTeam,
             'isSearchingForTeam' => $isSearchingForTeam,
             'userSquad' => $userSquad,

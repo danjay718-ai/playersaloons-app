@@ -6,6 +6,7 @@ use App\Modules\Match\Jobs\ExpireHeadToHeadMatchesJob;
 use App\Modules\Match\Jobs\ReconcileMatchReadinessJob;
 use App\Modules\Match\Jobs\ResolveV2ResultTimeoutsJob;
 use App\Modules\Match\Jobs\ResolveV2StalledMatchesJob;
+use App\Modules\Match\Jobs\SyncPlayStrategyMatchesJob;
 use App\Modules\Stream\Jobs\RefreshProviderLiveStatusesJob;
 use App\Modules\Tournament\Jobs\ExpireReservationsJob;
 use Illuminate\Support\Facades\Schedule;
@@ -14,6 +15,7 @@ Schedule::job(new AutoForfeitJob)->everyMinute()->withoutOverlapping()->onOneSer
 Schedule::job(new ReconcileMatchReadinessJob)->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::job(new ResolveV2ResultTimeoutsJob)->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::job(new ResolveV2StalledMatchesJob)->everyMinute()->withoutOverlapping()->onOneServer();
+Schedule::job(new SyncPlayStrategyMatchesJob)->everyMinute()->withoutOverlapping()->onOneServer();
 if (config('features.player_wager.enabled')) {
     Schedule::job(new ExpireHeadToHeadMatchesJob)->everyMinute()->withoutOverlapping();
 }

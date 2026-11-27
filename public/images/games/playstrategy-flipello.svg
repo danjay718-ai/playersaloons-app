@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Othello Flipello 3D Arena Card">
+  <defs>
+    <radialGradient id="bg-ot" cx="50%" cy="38%" r="72%">
+      <stop offset="0%" stop-color="#0b3a2e"/>
+      <stop offset="48%" stop-color="#06191a"/>
+      <stop offset="100%" stop-color="#030a0e"/>
+    </radialGradient>
+    <radialGradient id="aura-emerald" cx="50%" cy="42%" r="45%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.32"/>
+      <stop offset="52%" stop-color="#a3e635" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ot-board" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f513e"/>
+      <stop offset="55%" stop-color="#082c25"/>
+      <stop offset="100%" stop-color="#041514"/>
+    </linearGradient>
+    <linearGradient id="pearl-top" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </linearGradient>
+    <linearGradient id="obsidian-top" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="35%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="flip-rim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bef264"/>
+      <stop offset="50%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="bottom-fade-ot" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#030a0e" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#030a0e" stop-opacity="0.94"/>
+    </linearGradient>
+    <filter id="ot-shadow" x="-30%" y="-25%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="22" stdDeviation="16" flood-color="#010506" flood-opacity="0.82"/>
+    </filter>
+    <filter id="ot-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="800" height="1000" fill="url(#bg-ot)"/>
+  <ellipse cx="400" cy="420" rx="340" ry="270" fill="url(#aura-emerald)"/>
+
+  <!-- 3D Emerald Glass Othello Board -->
+  <g transform="translate(400, 540)" filter="url(#ot-shadow)">
+    <polygon points="-275,25 0,165 275,25 275,58 0,198 -275,58" fill="#041915" stroke="#34d399" stroke-opacity="0.4"/>
+    <polygon points="0,-115 275,25 0,165 -275,25" fill="url(#ot-board)" stroke="#6ee7b7" stroke-opacity="0.6" stroke-width="2.2"/>
+    <!-- Clean Isometric Grid Lines -->
+    <g stroke="#6ee7b7" stroke-opacity="0.28" stroke-width="1.5">
+      <line x1="-183" y1="-22" x2="92" y2="118"/>
+      <line x1="-92" y1="-68" x2="183" y2="72"/>
+      <line x1="183" y1="-22" x2="-92" y2="118"/>
+      <line x1="92" y1="-68" x2="-183" y2="72"/>
+    </g>
+
+    <!-- Placed 3D Othello Discs on the Board -->
+    <!-- Top Obsidian Disc -->
+    <g transform="translate(-85, -18)">
+      <path d="M-54,0 L-54,18 C-54,32 54,32 54,18 L54,0 Z" fill="#020617" stroke="#34d399" stroke-opacity="0.45"/>
+      <ellipse cx="0" cy="0" rx="54" ry="22" fill="url(#obsidian-top)" stroke="#6ee7b7" stroke-opacity="0.5" stroke-width="1.5"/>
+    </g>
+    <!-- Right Pearl Disc -->
+    <g transform="translate(95, -15)">
+      <path d="M-54,0 L-54,18 C-54,32 54,32 54,18 L54,0 Z" fill="#64748b"/>
+      <ellipse cx="0" cy="0" rx="54" ry="22" fill="url(#pearl-top)" stroke="#ffffff" stroke-width="1.5"/>
+    </g>
+    <!-- Bottom Left Pearl Disc -->
+    <g transform="translate(-85, 68)">
+      <path d="M-54,0 L-54,18 C-54,32 54,32 54,18 L54,0 Z" fill="#64748b"/>
+      <ellipse cx="0" cy="0" rx="54" ry="22" fill="url(#pearl-top)" stroke="#ffffff" stroke-width="1.5"/>
+    </g>
+    <!-- Bottom Right Obsidian Disc -->
+    <g transform="translate(95, 70)">
+      <path d="M-54,0 L-54,18 C-54,32 54,32 54,18 L54,0 Z" fill="#020617" stroke="#34d399" stroke-opacity="0.45"/>
+      <ellipse cx="0" cy="0" rx="54" ry="22" fill="url(#obsidian-top)" stroke="#6ee7b7" stroke-opacity="0.5" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- Hero Mid-Air Flipping 3D Dual-Tone Disc (Center) -->
+  <g transform="translate(400, 355)" filter="url(#ot-shadow)">
+    <!-- Motion flip arc -->
+    <path d="M-128,-22 A135,135 0 0,1 124,-34" fill="none" stroke="url(#flip-rim)" stroke-width="3.5" stroke-dasharray="10 10" stroke-linecap="round" opacity="0.72" filter="url(#ot-glow)"/>
+    <!-- Shadow ellipse below floating disc -->
+    <ellipse cx="0" cy="182" rx="84" ry="28" fill="#010506" opacity="0.65" filter="url(#ot-glow)"/>
+
+    <!-- Tilted 3D Disc showing BOTH Pearl side & Obsidian side -->
+    <g transform="rotate(-24)">
+      <!-- Glowing neon rim ring between the two halves -->
+      <ellipse cx="14" cy="0" rx="94" ry="118" fill="url(#flip-rim)" filter="url(#ot-glow)" opacity="0.65"/>
+      <!-- Back Pearl Half -->
+      <ellipse cx="18" cy="0" rx="92" ry="116" fill="url(#pearl-top)" stroke="#ffffff" stroke-width="2.5"/>
+      <!-- Mid Seam -->
+      <ellipse cx="4" cy="0" rx="92" ry="116" fill="url(#flip-rim)"/>
+      <!-- Front Obsidian Half -->
+      <ellipse cx="-10" cy="0" rx="92" ry="116" fill="url(#obsidian-top)" stroke="#a3e635" stroke-opacity="0.85" stroke-width="2.5"/>
+      <!-- Inner recessed specular ring -->
+      <ellipse cx="-10" cy="0" rx="64" ry="82" fill="none" stroke="#34d399" stroke-opacity="0.45" stroke-width="2.2"/>
+      <!-- Specular curved highlight -->
+      <path d="M-54,-76 C-22,-98 20,-90 36,-54 C14,-66 -20,-62 -54,-76 Z" fill="#ffffff" fill-opacity="0.22"/>
+    </g>
+  </g>
+
+  <circle cx="210" cy="245" r="3.5" fill="#a3e635" opacity="0.8"/>
+  <circle cx="615" cy="285" r="4" fill="#34d399" opacity="0.75"/>
+  <rect x="0" y="650" width="800" height="350" fill="url(#bottom-fade-ot)"/>
+</svg>

@@ -35,6 +35,9 @@
             @endforeach
         </nav>
         <div class="gr-nav-actions">
+            <button type="button" @click="$dispatch('open-find-tournament')" class="gr-link gr-signin">
+                <span>{{ __('Find Tournament') }}</span>
+            </button>
             <button type="button" class="pwa-install-btn gr-install" data-pwa-install-desktop><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
             <button type="button" class="pwa-install-btn gr-install gr-install-icon hidden" data-pwa-install-mobile><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
             @auth
@@ -50,6 +53,7 @@
         @foreach($navigation as $item)
             <a href="{{ $item->url }}" @click="menu = false" class="{{ in_array($item->id, $activeIds, true) ? 'is-active' : '' }}" @if(in_array($item->id, $activeIds, true)) aria-current="page" @endif @if($item->opens_new_tab) target="_blank" rel="noopener" @endif>{{ __($item->label) }}</a>
         @endforeach
+        <button type="button" @click="menu = false; $dispatch('open-find-tournament')" class="text-left py-3.5 font-bold text-[#c6ff3d] border-b border-white/10">{{ __('Find Tournament') }}</button>
         @auth<a href="{{ $dashboardUrl }}">{{ __('Dashboard') }}</a>@else<a href="/login">{{ __('Sign In') }}</a>@endauth
         <button type="button" class="pwa-install-btn gr-install" data-pwa-install-mobile><i data-lucide="download" aria-hidden="true"></i><span data-pwa-install-label>{{ __('Install App') }}</span></button>
         <x-localization.language-switcher variant="public" align="left" />

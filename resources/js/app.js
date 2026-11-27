@@ -302,7 +302,46 @@ window.imageCropUpload = function (config) {
 };
 
 
-window.gameManagementUi = function (wire) {
+window.categoryTablist = function () {
+    return {
+        onKeydown(event) {
+            const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+            if (!keys.includes(event.key)) {
+                return;
+            }
+            const tabs = Array.from(this.$el.querySelectorAll('[role="tab"]:not([disabled])'));
+            if (!tabs.length) {
+                return;
+            }
+            const currentIndex = tabs.indexOf(event.target.closest('[role="tab"]'));
+            if (currentIndex === -1) {
+                return;
+            }
+            event.preventDefault();
+            let nextIndex = currentIndex;
+            if (event.key === 'ArrowRight') {
+                nextIndex = (currentIndex + 1) % tabs.length;
+            } else if (event.key === 'ArrowLeft') {
+                nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+            } else if (event.key === 'Home') {
+                nextIndex = 0;
+            } else if (event.key === 'End') {
+                nextIndex = tabs.length - 1;
+            }
+            const nextTab = tabs[nextIndex];
+            if (nextTab) {
+                nextTab.focus();
+                nextTab.click();
+            }
+        },
+    };
+};
+
+document.addEventListener('alpine:init', () => {
+    window.Alpine?.data('categoryTablist', window.categoryTablist);
+});
+
+window.gameManagementUi = function (wire, defaultCategoryId = null) {
     const setDeferred = (property, value) => wire.$set(property, value, false);
 
     return {
@@ -310,6 +349,7 @@ window.gameManagementUi = function (wire) {
         deleteModalOpen: wire.entangle('showDeleteModal'),
         activeGameLocale: 'en',
         gameTranslations: {},
+        defaultCategoryId,
 
         assignGame(game) {
             const locale = game.locale || 'en';
@@ -322,6 +362,12 @@ window.gameManagementUi = function (wire) {
             setDeferred('gameLocale', locale);
             setDeferred('gameName', translation.name || '');
             setDeferred('gameSlug', game.slug || '');
+            setDeferred('gameCategoryId', game.categoryId ?? this.defaultCategoryId ?? null);
+            setDeferred('gameGameplayProvider', game.gameplayProvider || 'manual');
+            setDeferred('playStrategyPreset', '');
+            setDeferred('gamePlayStrategyVariant', game.playStrategyVariant || 'standard');
+            setDeferred('gamePlayStrategyClockLimit', game.playStrategyClockLimit ?? 300);
+            setDeferred('gamePlayStrategyClockIncrement', game.playStrategyClockIncrement ?? 3);
             setDeferred('gameDescription', translation.description || '');
             setDeferred('gameBannerPath', game.bannerPath || '');
             setDeferred('gameCardImagePath', game.cardImagePath || '');
@@ -336,6 +382,7 @@ window.gameManagementUi = function (wire) {
         openCreateGame() {
             this.assignGame({
                 locale: 'en',
+                categoryId: this.defaultCategoryId ?? null,
                 translations: { en: { name: '', description: '' } },
                 isActive: true,
             });

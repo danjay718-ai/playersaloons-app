@@ -111,6 +111,32 @@ class GameMatch extends Model
         return $this->hasMany(MatchAttempt::class, 'match_id');
     }
 
+    /**
+     * @return HasMany<ExternalMatchGame, $this>
+     */
+    public function externalGames(): HasMany
+    {
+        return $this->hasMany(ExternalMatchGame::class, 'match_id');
+    }
+
+    public function activeExternalGame(): ?ExternalMatchGame
+    {
+        $attemptNumber = max(1, (int) ($this->active_attempt_number ?? 1));
+
+        if ($this->relationLoaded('externalGames')) {
+            return $this->externalGames->firstWhere('attempt_number', $attemptNumber);
+        }
+
+        return $this->externalGames()->where('attempt_number', $attemptNumber)->first();
+    }
+
+    public function isProviderManaged(): bool
+    {
+        $tournament = $this->relationLoaded('tournament') ? $this->tournament : $this->tournament()->with('game')->first();
+
+        return $tournament?->game?->isPlayStrategyManaged() ?? false;
+    }
+
     public function isTimedOut(): bool
     {
         if ($this->status !== MatchStatus::WAITING_FOR_CONFIRMATION || ! $this->result_submitted_at) {

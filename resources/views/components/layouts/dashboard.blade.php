@@ -328,6 +328,12 @@
                         </div>
                     </a>
 
+                    <!-- Find Tournament Quick-Finder Button -->
+                    <button type="button" x-data @click="$dispatch('open-find-tournament')" class="find-tournament-trigger hidden lg:inline-flex items-center gap-1.5 rounded-xl border border-cyan-400/35 bg-cyan-500/10 px-3 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-cyan-200 transition hover:border-lime-400/60 hover:bg-cyan-500/20 hover:text-white">
+                        <i data-lucide="search" class="h-3.5 w-3.5"></i>
+                        <span>{{ __('Find Tournament') }}</span>
+                    </button>
+
                     <!-- Deposit CTA Button -->
                     <a href="/wallet" wire:navigate class="theme-primary-action hidden sm:inline-flex items-center justify-center rounded-xl bg-[#c6ff3d] hover:bg-[#d5ff66] border border-[#c6ff3d] px-3.5 py-2 font-orbitron text-[10px] font-black uppercase tracking-widest text-[#05080f] shadow-[0_0_18px_rgba(198,255,61,0.28)] hover:shadow-[0_0_24px_rgba(198,255,61,0.5)] transition-all duration-200">
                         <span>{{ __('+ Deposit') }}</span>
@@ -504,6 +510,7 @@
         </div>
     </nav>
 
+    <livewire:tournament.find-tournament-modal />
     <x-logout-confirmation />
     @livewireScripts
 

@@ -5,25 +5,35 @@ declare(strict_types=1);
 namespace App\Livewire\Match;
 
 use App\Livewire\Concerns\HandlesUserFacingErrors;
+use App\Modules\Community\Models\ContactInquiry;
 use App\Modules\Identity\Models\PlayerDisputeStrike;
 use App\Modules\Identity\Models\User;
 use App\Modules\Match\Actions\AutoForfeitAction;
 use App\Modules\Match\Actions\ConfirmMatchResultAction;
+use App\Modules\Match\Actions\CreatePlayStrategyMatchGameAction;
 use App\Modules\Match\Actions\OpenDisputeAction;
 use App\Modules\Match\Actions\OverrideMatchResultAction;
 use App\Modules\Match\Actions\ResolveV2ResultTimeoutAction;
 use App\Modules\Match\Actions\SubmitEvidenceAction;
 use App\Modules\Match\Actions\SubmitMatchResultAction;
 use App\Modules\Match\Actions\SubmitV2MatchResultAction;
+use App\Modules\Match\Actions\SyncPlayStrategyMatchResultAction;
 use App\Modules\Match\Actions\VoteForRematchAction;
+use App\Modules\Match\Models\DisputeAiAnalysis;
+use App\Modules\Match\Models\ExternalMatchGame;
 use App\Modules\Match\Models\GameMatch;
+use App\Modules\Match\Models\MatchDispute;
+use App\Modules\Match\Services\AiDisputeSettings;
 use App\Modules\Match\Services\MatchReadinessService;
 use App\Modules\Match\Support\DisputeRulingMessage;
 use App\Shared\Enums\DisputeStatus;
 use App\Shared\Enums\MatchOutcome;
 use App\Shared\Enums\MatchStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -58,6 +68,12 @@ class MatchDetail extends Component
     public string $serverRegion = '';
 
     public string $lobbyInstructions = '';
+
+    public bool $showMatchReportModal = false;
+
+    public string $matchReportType = 'ruling_appeal';
+
+    public string $matchReportMessage = '';
 
     public function confirmResult(ConfirmMatchResultAction $action)
     {
@@ -100,6 +116,93 @@ class MatchDetail extends Component
         } catch (\Exception $e) {
             session()->flash('error', $this->safeError($e, 'Unable to finalize the match result.'));
         }
+    }
+
+    public function pollPlayStrategyResult(SyncPlayStrategyMatchResultAction $sync): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        $match = GameMatch::query()
+            ->where('uuid', $this->uuid)
+            ->with(['tournament.game', 'externalGames', 'playerARegistration', 'playerBRegistration'])
+            ->first();
+
+        if ($match === null || ! $match->isProviderManaged()) {
+            return;
+        }
+
+        if (! in_array($match->status, [MatchStatus::READY, MatchStatus::IN_PROGRESS], true)) {
+            return;
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        $isAllowed = $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])
+            || $match->playerARegistration?->includesUser($user->id)
+            || $match->playerBRegistration?->includesUser($user->id);
+
+        if (! $isAllowed) {
+            return;
+        }
+
+        $externalGame = $match->activeExternalGame();
+        if ($externalGame === null || $externalGame->status !== ExternalMatchGame::STATUS_CREATED) {
+            return;
+        }
+
+        // Coordinate polling across both participants' browsers so PlayStrategy is queried at most once every 10s.
+        if (! Cache::add("playstrategy:live-poll:{$externalGame->id}", true, now()->addSeconds(10))) {
+            return;
+        }
+
+        $sync->execute($externalGame->id);
+    }
+
+    public function syncPlayStrategyResult(SyncPlayStrategyMatchResultAction $sync): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        $match = GameMatch::query()
+            ->where('uuid', $this->uuid)
+            ->with(['tournament.game', 'externalGames', 'playerARegistration', 'playerBRegistration'])
+            ->firstOrFail();
+
+        /** @var User $user */
+        $user = Auth::user();
+        $isAllowed = $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])
+            || $match->playerARegistration?->includesUser($user->id)
+            || $match->playerBRegistration?->includesUser($user->id);
+
+        if (! $isAllowed) {
+            return;
+        }
+
+        $externalGame = $match->activeExternalGame();
+        if ($externalGame === null) {
+            session()->flash('error', __('PlayStrategy board is still being prepared.'));
+
+            return;
+        }
+
+        $sync->execute($externalGame->id);
+        session()->flash('message', __('PlayStrategy match status refreshed.'));
+    }
+
+    public function adminCreatePlayStrategyGame(CreatePlayStrategyMatchGameAction $create): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (! $user?->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER'])) {
+            abort(403);
+        }
+
+        $match = GameMatch::query()->where('uuid', $this->uuid)->firstOrFail();
+        $create->execute((int) $match->id, max(1, (int) ($match->active_attempt_number ?? 1)));
+        session()->flash('message', __('PlayStrategy game creation check completed.'));
     }
 
     public function mount(string $uuid, bool $embedded = false): void
@@ -389,7 +492,7 @@ class MatchDetail extends Component
             ->with(['playerARegistration', 'playerBRegistration'])
             ->firstOrFail();
 
-        if ($match->status !== MatchStatus::DISPUTED || ! in_array($match->resolution_reason, ['conflicting_submissions', 'unconfirmed_result_timeout'], true)) {
+        if ($match->status !== MatchStatus::DISPUTED || ! in_array($match->resolution_reason, ['conflicting_submissions', 'unconfirmed_result_timeout', 'playstrategy_admin_review'], true)) {
             session()->flash('error', 'There is no result conflict to explain.');
 
             return;
@@ -427,6 +530,109 @@ class MatchDetail extends Component
         }
     }
 
+    public function openMatchReportModal(): void
+    {
+        if (! Auth::check()) {
+            return;
+        }
+
+        $this->resetValidation(['matchReportType', 'matchReportMessage']);
+        $this->matchReportType = 'ruling_appeal';
+        $this->matchReportMessage = '';
+        $this->showMatchReportModal = true;
+    }
+
+    public function submitMatchReport(): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (! $user) {
+            abort(403);
+        }
+
+        $match = GameMatch::query()
+            ->where('uuid', $this->uuid)
+            ->with(['tournament', 'round', 'playerARegistration.user', 'playerBRegistration.user', 'winnerRegistration.user'])
+            ->firstOrFail();
+
+        $isParticipant = $match->playerARegistration?->includesUser($user->id)
+            || $match->playerBRegistration?->includesUser($user->id);
+
+        if (! $isParticipant) {
+            abort(403, 'Only match participants can submit a match report or feedback.');
+        }
+
+        if (! in_array($match->status, [MatchStatus::COMPLETED, MatchStatus::FORFEITED], true)) {
+            session()->flash('error', __('Match reports and feedback are available once the match has a finalized result.'));
+
+            return;
+        }
+
+        $this->validate([
+            'matchReportType' => ['required', 'string', 'in:ruling_appeal,report_match,feedback'],
+            'matchReportMessage' => ['required', 'string', 'min:10', 'max:2000'],
+        ], [
+            'matchReportMessage.min' => __('Please provide at least 10 characters explaining your petition, report, or feedback.'),
+        ]);
+
+        $matchTag = "[Match #{$match->id}]";
+        $alreadyReported = ContactInquiry::query()
+            ->where('user_id', $user->id)
+            ->where('category', 'tournament')
+            ->where('subject', 'like', "%{$matchTag}%")
+            ->exists();
+
+        if ($alreadyReported) {
+            $this->showMatchReportModal = false;
+            session()->flash('error', __('You have already submitted a report or feedback for this match.'));
+
+            return;
+        }
+
+        $typeLabel = match ($this->matchReportType) {
+            'ruling_appeal' => 'Ruling Petition / Appeal',
+            'report_match' => 'Match Report',
+            default => 'Match Feedback',
+        };
+
+        $subject = mb_substr("{$matchTag} {$typeLabel} — {$match->tournament->display_name}", 0, 150);
+        $winnerName = $match->winnerRegistration?->user?->username ?? 'None';
+        $fullMessage = implode("\n", [
+            "Type: {$typeLabel}",
+            "Tournament: {$match->tournament->display_name} (UUID: {$match->tournament->uuid})",
+            "Match: #{$match->id} (UUID: {$match->uuid}) · Round ".($match->round?->round_number ?? '—'),
+            "Status: {$match->status->value} · Winner: {$winnerName} · Resolution: ".($match->resolution_reason ?: 'standard'),
+            '',
+            'Player Note:',
+            trim($this->matchReportMessage),
+        ]);
+
+        $inquiry = ContactInquiry::query()->create([
+            'uuid' => Str::uuid()->toString(),
+            'user_id' => $user->id,
+            'name' => $user->profile?->display_name ?: $user->username,
+            'email' => $user->email,
+            'category' => 'tournament',
+            'subject' => $subject,
+            'message' => $fullMessage,
+            'status' => 'new',
+        ]);
+
+        activity()
+            ->causedBy($user)
+            ->performedOn($match)
+            ->event('match_report_submitted')
+            ->withProperties([
+                'contact_inquiry_id' => $inquiry->id,
+                'report_type' => $this->matchReportType,
+            ])
+            ->log('Player submitted post-match report or ruling petition');
+
+        $this->showMatchReportModal = false;
+        $this->matchReportMessage = '';
+        session()->flash('message', __('Your match report / feedback has been submitted for admin review.'));
+    }
+
     public function render()
     {
         $match = GameMatch::query()
@@ -453,7 +659,7 @@ class MatchDetail extends Component
                     ->orderByDesc('submitted_at'),
                 'attempts.submissions',
                 'disputes' => function ($q) {
-                    $q->with('evidence.uploadedBy:id,username');
+                    $q->with(['evidence.uploadedBy:id,username', 'latestAiAnalysis']);
                 },
                 'rematchVotes',
             ])
@@ -502,6 +708,7 @@ class MatchDetail extends Component
                 $match->resolution_reason === 'opponent_submission_timeout' => "You lost because you did not report your result within {$responseMinutes} minutes after your opponent submitted.",
                 $match->resolution_reason === 'admin_resolution' && $hasDishonestyStrike => 'You lost after an admin confirmed dishonest result information or evidence during the dispute review.',
                 $match->resolution_reason === 'admin_resolution' => 'You lost after an admin resolved the dispute in your opponent\'s favor.',
+                $match->resolution_reason === 'ai_auto_resolution' => 'You lost after evidence review confirmed your opponent as the winner.',
                 default => 'You lost because your opponent was confirmed as the winner of this match.',
             };
         }
@@ -539,6 +746,7 @@ class MatchDetail extends Component
             $submissionUnavailableMessage = match (true) {
                 $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'opponent_submission_timeout' => "Result submission is closed because the {$responseMinutes}-minute response deadline expired.",
                 $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'admin_resolution' => 'Result submission is closed because an admin reviewed and resolved a dispute for this match.',
+                $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'ai_auto_resolution' => 'Result submission is closed because the dispute review has been finalized for this match.',
                 $match->status === MatchStatus::COMPLETED && $match->resolution_reason === 'confirmed_submissions' => 'Result submission is closed because both players submitted matching results.',
                 in_array($match->status, [MatchStatus::IN_PROGRESS, MatchStatus::WAITING_FOR_CONFIRMATION], true) && $isSubmitter => 'Your result has already been submitted. Waiting for your opponent to report their result.',
                 $activeAttempt?->result_deadline_at?->isPast() => 'Your response deadline has expired. Result submission is closed while the match is finalized.',
@@ -551,16 +759,32 @@ class MatchDetail extends Component
         $isAdmin = Auth::check() && $user->hasAnyRole(['SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'TOURNAMENT_ORGANIZER']);
         $layout = $isAdmin ? 'components.layouts.admin' : 'components.layouts.dashboard';
 
+        $isProviderManaged = $match->isProviderManaged();
+        $externalMatchGame = $isProviderManaged ? $match->activeExternalGame() : null;
+        $disputeReviewStatus = $this->buildPlayerDisputeReviewStatus($activeDispute);
+        $hasSubmittedMatchReport = $isParticipant
+            && $user !== null
+            && in_array($match->status, [MatchStatus::COMPLETED, MatchStatus::FORFEITED], true)
+            && ContactInquiry::query()
+                ->where('user_id', $user->id)
+                ->where('category', 'tournament')
+                ->where('subject', 'like', "%[Match #{$match->id}]%")
+                ->exists();
+
         $view = view('livewire.match.match-detail', [
             'match' => $match,
             'isParticipant' => $isParticipant,
+            'isProviderManaged' => $isProviderManaged,
+            'externalMatchGame' => $externalMatchGame,
             'isDefeated' => $isDefeated,
             'defeatMessage' => $defeatMessage,
             'isSubmitter' => $isSubmitter,
             'submissionUnavailableMessage' => $submissionUnavailableMessage,
             'isAdmin' => $isAdmin,
             'activeDispute' => $activeDispute,
+            'disputeReviewStatus' => $disputeReviewStatus,
             'hasSubmittedDisputeEvidence' => $hasSubmittedDisputeEvidence,
+            'hasSubmittedMatchReport' => $hasSubmittedMatchReport,
             'isResultConflict' => $isResultConflict,
             'activeAttempt' => $activeAttempt,
             'opponentSubmissionOutcome' => $opponentSubmissionOutcome,
@@ -571,5 +795,100 @@ class MatchDetail extends Component
         return $this->embedded
             ? $view
             : $view->layout($layout, ['title' => 'Match Room | GamersRival', 'dashboard_title' => 'MATCH ROOM']);
+    }
+
+    /**
+     * Player-safe dispute review status without mentioning AI/automation or leaking
+     * internal confidence scores, suggested winners, or raw red-flag codes.
+     *
+     * @return array{tone: 'pending'|'waiting'|'escalated', badge: string, title: string, body: string}|null
+     */
+    private function buildPlayerDisputeReviewStatus(?MatchDispute $activeDispute): ?array
+    {
+        if (! $activeDispute instanceof MatchDispute) {
+            return null;
+        }
+
+        $evidenceCount = $activeDispute->evidence->count();
+        $latestAi = $activeDispute->latestAiAnalysis;
+        $latestEvidenceAt = $activeDispute->evidence->max('created_at');
+
+        $isQueuedForReview = $evidenceCount > 0
+            && app(AiDisputeSettings::class)->isActive()
+            && ($latestAi === null || (int) $latestAi->evidence_count < $evidenceCount)
+            && $latestEvidenceAt !== null
+            && Carbon::parse($latestEvidenceAt)->greaterThan(now()->subMinutes(2));
+
+        if ($isQueuedForReview || ($latestAi instanceof DisputeAiAnalysis && $latestAi->status === DisputeAiAnalysis::STATUS_PENDING)) {
+            return [
+                'tone' => 'pending',
+                'badge' => __('Reviewing'),
+                'title' => __('Reviewing submitted evidence…'),
+                'body' => __('Your submitted proof is currently being reviewed. Please wait a moment — this page updates automatically.'),
+            ];
+        }
+
+        if ($latestAi instanceof DisputeAiAnalysis) {
+            if ($latestAi->status === DisputeAiAnalysis::STATUS_COMPLETED) {
+                $blockedReason = (string) ($latestAi->auto_resolve_blocked_reason ?? '');
+
+                if ($blockedReason === 'awaiting_opponent_response_window') {
+                    return [
+                        'tone' => 'waiting',
+                        'badge' => __('Awaiting Opponent'),
+                        'title' => __('Evidence received — waiting for opponent'),
+                        'body' => __('Your proof has been received. Waiting for your opponent to submit evidence before the review is finalized.'),
+                    ];
+                }
+
+                $isInconclusive = $latestAi->suggested_resolution === DisputeAiAnalysis::SUGGESTED_NEEDS_HUMAN
+                    || $latestAi->suggested_resolution === DisputeAiAnalysis::SUGGESTED_REMATCH
+                    || ! empty($latestAi->red_flags_json)
+                    || str_starts_with($blockedReason, 'red_flags_present')
+                    || $blockedReason === 'confidence_below_threshold';
+
+                if ($isInconclusive) {
+                    return [
+                        'tone' => 'escalated',
+                        'badge' => __('Admin Review'),
+                        'title' => __('No clear winner verified — escalated to Admin'),
+                        'body' => $evidenceCount >= 2
+                            ? __('Both players submitted evidence, but no clear winner could be verified from the screenshots. A tournament admin will now review the proof and decide the final result.')
+                            : __('No clear winner could be verified from the submitted evidence. A tournament admin will review the proof and decide the final result.'),
+                    ];
+                }
+
+                return [
+                    'tone' => 'escalated',
+                    'badge' => __('Admin Review'),
+                    'title' => __('Queued for Admin resolution'),
+                    'body' => $evidenceCount >= 2
+                        ? __('Both players have submitted their evidence. A tournament admin will review the screenshots and finalize the match result.')
+                        : __('Your evidence has been received. A tournament admin will review the dispute and finalize the match result.'),
+                ];
+            }
+
+            if ($latestAi->status === DisputeAiAnalysis::STATUS_FAILED) {
+                return [
+                    'tone' => 'escalated',
+                    'badge' => __('Admin Review'),
+                    'title' => __('Queued for Admin review'),
+                    'body' => $evidenceCount >= 2
+                        ? __('Both players have submitted their evidence. A tournament admin will review the screenshots and decide the final result.')
+                        : __('Your evidence has been received. A tournament admin will review your proof and resolve this dispute.'),
+                ];
+            }
+        }
+
+        if ($evidenceCount >= 2) {
+            return [
+                'tone' => 'escalated',
+                'badge' => __('Admin Review'),
+                'title' => __('Both responses submitted — pending Admin review'),
+                'body' => __('Both players have submitted their evidence. A tournament admin will review the proof and decide the final result.'),
+            ];
+        }
+
+        return null;
     }
 }

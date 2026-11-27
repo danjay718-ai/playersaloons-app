@@ -46,6 +46,9 @@ final class PlatformHeadToHeadList extends Component
                 : $this->getTournamentQuery()->paginate(9),
             'tournamentGroups' => null,
             'featuredGroups' => null,
+            'gameCategories' => $this->getGameCategories(),
+            'allCatalogGamesCount' => $this->allCatalogGamesCount(),
+            'selectedGame' => $this->selectedGameModel(),
             'games' => $this->getGames(),
             'popularGames' => $this->getPopularGames(),
             'featuredTournaments' => $featuredTournaments,
@@ -65,6 +68,7 @@ final class PlatformHeadToHeadList extends Component
     {
         return [
             'search' => $this->search,
+            'category' => $this->category,
             'game_id' => $this->gameId,
             'frequency' => $this->frequency,
             'competition_type' => 'head_to_head',

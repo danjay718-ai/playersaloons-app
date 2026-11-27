@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Builder;
 final class V2TournamentDiscoveryService
 {
     /**
-     * @param  array{search?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,max_teams?: string,start_date?: string}  $filters
+     * @param  array{search?: string,category?: string,game_id?: string,frequency?: string,competition_type?: string,platform_id?: string,max_teams?: string,start_date?: string}  $filters
      */
     public function paginateOccurrences(
         string $tab,
@@ -31,7 +31,7 @@ final class V2TournamentDiscoveryService
         string $pageName = 'page',
     ): LengthAwarePaginator {
         $query = $this->occurrenceQuery($tab, $filters, $featuredOnly)
-            ->with(['game.translations', 'platform'])
+            ->with(['game.translations', 'game.category', 'platform'])
             ->withCount(['registrations' => fn (Builder $query) => $query->whereNotIn('status', [RegistrationStatus::CANCELLED->value, RegistrationStatus::REFUNDED->value])]);
 
         if ($tab === 'past') {
@@ -108,6 +108,11 @@ final class V2TournamentDiscoveryService
 
         if (($filters['search'] ?? '') !== '') {
             $query->where('name', 'like', '%'.$filters['search'].'%');
+        }
+        if (($filters['category'] ?? '') !== '') {
+            $query->whereHas('game.category', fn (Builder $categories) => $categories
+                ->where('game_categories.slug', $filters['category'])
+                ->where('game_categories.is_active', true));
         }
         if (($filters['start_date'] ?? '') !== '') {
             app(TournamentScheduleFilters::class)->apply($query, ['start_date' => $filters['start_date']]);

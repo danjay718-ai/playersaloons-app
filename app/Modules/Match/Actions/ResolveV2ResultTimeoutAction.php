@@ -29,8 +29,12 @@ final readonly class ResolveV2ResultTimeoutAction
             }
 
             Tournament::query()->lockForUpdate()->findOrFail($tournamentId);
-            $match = GameMatch::query()->lockForUpdate()->findOrFail($matchId);
+            $match = GameMatch::query()->with('tournament.game')->lockForUpdate()->findOrFail($matchId);
             $attempt = MatchAttempt::query()->lockForUpdate()->find($attemptId);
+
+            if ($match->isProviderManaged()) {
+                return false;
+            }
 
             if ($attempt === null || $attempt->status !== 'open' || $attempt->result_deadline_at === null
                 || $attempt->result_deadline_at->isFuture() || $match->status !== MatchStatus::WAITING_FOR_CONFIRMATION) {

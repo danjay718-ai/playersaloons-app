@@ -168,6 +168,32 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasOne(Wallet::class);
     }
 
+    /**
+     * @return HasMany<ExternalProviderAccount, $this>
+     */
+    public function externalProviderAccounts(): HasMany
+    {
+        return $this->hasMany(ExternalProviderAccount::class);
+    }
+
+    /**
+     * @return HasOne<ExternalProviderAccount, $this>
+     */
+    public function playStrategyAccount(): HasOne
+    {
+        return $this->hasOne(ExternalProviderAccount::class)
+            ->where('provider', ExternalProviderAccount::PROVIDER_PLAYSTRATEGY);
+    }
+
+    /**
+     * @return HasOne<ExternalProviderAccount, $this>
+     */
+    public function googleAccount(): HasOne
+    {
+        return $this->hasOne(ExternalProviderAccount::class)
+            ->where('provider', ExternalProviderAccount::PROVIDER_GOOGLE);
+    }
+
     public function progression(): HasOne
     {
         return $this->hasOne(PlayerProgression::class);

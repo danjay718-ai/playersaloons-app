@@ -88,7 +88,7 @@ class PolicyTest extends TestCase
      */
     public function test_tournament_policy(): void
     {
-        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'val-t', 'is_active' => true]);
+        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'val-t', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
 
         // Tournament owned by organizer
         $tournament = Tournament::query()->create([
@@ -155,7 +155,7 @@ class PolicyTest extends TestCase
      */
     public function test_match_policy(): void
     {
-        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'val-m', 'is_active' => true]);
+        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'val-m', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
             'game_id' => $game->id,
@@ -366,7 +366,7 @@ class PolicyTest extends TestCase
      */
     public function test_dispute_policy(): void
     {
-        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'val-d', 'is_active' => true]);
+        $game = Game::query()->create(['uuid' => Str::uuid()->toString(), 'slug' => 'val-d', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $tournament = Tournament::query()->create([
             'uuid' => Str::uuid()->toString(),
             'game_id' => $game->id,

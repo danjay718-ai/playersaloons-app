@@ -70,7 +70,7 @@ class CurrencyAndIncomeTest extends TestCase
         $wallet = $this->wallet($player, '20.00');
         self::assertSame('20.00', $wallet->fresh()->cached_balance);
 
-        $game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'currency-game', 'is_active' => true]);
+        $game = Game::query()->create(['uuid' => Str::uuid(), 'slug' => 'currency-game', 'game_category_id' => $this->defaultGameCategoryId(), 'is_active' => true]);
         $platform = Platform::query()->create(['name' => 'PC', 'slug' => 'currency-pc', 'is_active' => true]);
         $game->platforms()->attach($platform);
         foreach (['tournament' => 'admin.tournaments.v2', 'head_to_head' => 'admin.h2h.v2'] as $type => $route) {

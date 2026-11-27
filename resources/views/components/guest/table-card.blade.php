@@ -3,8 +3,12 @@
     $symbol = \App\Shared\Support\Currency::symbol();
     $arenaTimezone = app(\App\Modules\Tournament\Services\TournamentTimezone::class)->value();
     $next = $tournaments->first();
+    $filteredTournamentsUrl = '/tournaments?'.http_build_query(array_filter([
+        'category' => $game->category?->slug,
+        'gameId' => $game->id,
+    ]));
 @endphp
-<article class="gr-table gr-a{{ $index % 5 }} gr-reveal" x-data="grTable" :class="{ 'is-open': open }" @pointermove="move($event)" @pointerleave="leave()">
+<article wire:key="home-game-card-{{ $game->id }}" class="gr-table gr-a{{ $index % 5 }} gr-reveal is-in" x-data="grTable" :class="{ 'is-open': open }" @pointermove="move($event)" @pointerleave="leave()">
     @if($game->bannerUrl())<img class="gr-table-art" src="{{ $game->bannerUrl() }}" alt="" width="600" height="700" loading="lazy" draggable="false">@else<img class="gr-table-art is-brand" src="/gamersrival-logo.webp" alt="" width="500" height="384" loading="lazy" draggable="false">@endif
     <button type="button" class="gr-table-head" @click="open = !open" :aria-expanded="open.toString()" aria-controls="gr-table-{{ $game->id }}">
         <span class="gr-table-count">{{ $tournaments->count() }} <small>{{ __('open') }}</small></span>
@@ -19,6 +23,9 @@
                 <b>{{ (float) $tournament->entry_fee > 0 ? $symbol.number_format((float) $tournament->entry_fee, 2) : __('Free') }}</b>
             </a>
         @endforeach
-        <a href="{{ route('games.show', ['game' => $game, 'view' => 'guest']) }}" class="gr-table-explore">{{ __('Explore :game', ['game' => $game->localizedName()]) }} <span aria-hidden="true">↗</span></a>
+        <div class="gr-table-actions">
+            <a href="{{ $filteredTournamentsUrl }}" class="gr-table-explore">{{ __('Browse :game tournaments', ['game' => $game->localizedName()]) }} <span aria-hidden="true">↗</span></a>
+            <a href="{{ route('games.show', ['game' => $game, 'view' => 'guest']) }}" class="gr-table-hub">{{ __('Game Hub') }}</a>
+        </div>
     </div>
 </article>

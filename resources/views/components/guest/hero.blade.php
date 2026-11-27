@@ -34,8 +34,11 @@
             </h1>
             <p class="gr-hero-body">{{ $hero->body }}</p>
             <div class="gr-hero-actions">
-                @auth<x-guest.button :href="route('dashboard')">{{ __('Dashboard') }}</x-guest.button>@else
-                @if($primaryAction)<x-guest.button :href="$primaryAction->url">{{ $primaryAction->title }}</x-guest.button>@endif
+                <button type="button" x-data @click="$dispatch('open-find-tournament')" class="gr-btn gr-btn-primary">
+                    <span>{{ __('Find Tournament') }}</span>
+                </button>
+                @auth<x-guest.button :href="route('dashboard')" variant="ghost">{{ __('Dashboard') }}</x-guest.button>@else
+                @if($primaryAction)<x-guest.button :href="$primaryAction->url" variant="ghost">{{ $primaryAction->title }}</x-guest.button>@endif
                 @endauth
                 @if($hero->cta_label && $hero->cta_url)<x-guest.button :href="$hero->cta_url" variant="ghost">{{ __($hero->cta_label) }}</x-guest.button>@endif
             </div>

@@ -10,12 +10,15 @@ use App\Http\Controllers\Admin\V2TournamentOccurrenceController;
 use App\Http\Controllers\Admin\V2TournamentTemplateController;
 use App\Http\Controllers\Admin\V2TournamentTemplateSlotsController;
 use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\GoogleOAuthController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Community\ChatController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\MatchEvidenceController;
 use App\Http\Controllers\NewsletterUnsubscribeController;
 use App\Http\Controllers\PayopPayoutWebhookController;
 use App\Http\Controllers\PayopWebhookController;
+use App\Http\Controllers\PlayStrategyOAuthController;
 use App\Http\Controllers\PromotionClickController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Livewire\AboutPage;
@@ -29,6 +32,7 @@ use App\Livewire\Admin\CmsAdmin;
 use App\Livewire\Admin\CmsContentAdmin;
 use App\Livewire\Admin\ComplianceAdmin;
 use App\Livewire\Admin\ContactInquiryAdmin;
+use App\Livewire\Admin\DepositAdmin;
 use App\Livewire\Admin\ErrorIncidentAdmin;
 use App\Livewire\Admin\EscrowCashflowAdmin;
 use App\Livewire\Admin\KycAdmin;
@@ -45,6 +49,7 @@ use App\Livewire\Admin\TournamentMatches;
 use App\Livewire\Admin\TranslationAdmin;
 use App\Livewire\Admin\UserAdmin;
 use App\Livewire\Admin\WithdrawalAdmin;
+use App\Livewire\Auth\CompleteGoogleRegistration;
 use App\Livewire\Auth\EmailVerification;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\PasswordReset;
@@ -108,6 +113,13 @@ Route::get('/newsletter/unsubscribe/{user:uuid}', NewsletterUnsubscribeControlle
     ->middleware('signed')
     ->name('newsletter.unsubscribe');
 
+Route::get('/auth/google/redirect', [GoogleOAuthController::class, 'redirect'])
+    ->middleware('throttle:20,1')
+    ->name('auth.google.redirect');
+Route::get('/auth/google/callback', [GoogleOAuthController::class, 'callback'])
+    ->middleware('throttle:30,1')
+    ->name('auth.google.callback');
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Guest-only routes (redirected away if already authenticated)
 // ──────────────────────────────────────────────────────────────────────────────
@@ -115,6 +127,7 @@ Route::get('/newsletter/unsubscribe/{user:uuid}', NewsletterUnsubscribeControlle
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
     Route::get('/register', Register::class)->name('register');
+    Route::get('/auth/google/complete', CompleteGoogleRegistration::class)->name('auth.google.complete');
     Route::get('/reset-password', PasswordReset::class)->name('password.request');
     Route::get('/reset-password/{token}', PasswordReset::class)->name('password.reset');
     Route::get('/two-factor-challenge', TwoFactorChallenge::class)->name('two-factor.challenge');
@@ -131,6 +144,7 @@ Route::middleware('auth')->group(function () {
         ->name('verification.verify');
 
     Route::post('/logout', LogoutController::class)->name('logout');
+    Route::get('/match-evidence/{evidence:uuid}', MatchEvidenceController::class)->name('match.evidence.show');
 
     Route::get('/account-restricted', function (Request $request) {
         $block = $request->user()?->complianceBlocks()->active()->latest('created_at')->firstOrFail();
@@ -166,6 +180,11 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/wallet', WalletDashboard::class)->name('wallet');
         Route::get('/profile', ProfileDashboard::class);
+        Route::get('/playstrategy/oauth/redirect', [PlayStrategyOAuthController::class, 'redirect'])->name('playstrategy.oauth.redirect');
+        Route::get('/playstrategy/oauth/callback', [PlayStrategyOAuthController::class, 'callback'])->name('playstrategy.oauth.callback');
+        Route::post('/playstrategy/oauth/token', [PlayStrategyOAuthController::class, 'connectWithToken'])->middleware('throttle:10,1')->name('playstrategy.oauth.token');
+        Route::delete('/playstrategy/oauth/disconnect', [PlayStrategyOAuthController::class, 'disconnect'])->name('playstrategy.oauth.disconnect');
+        Route::delete('/auth/google/disconnect', [GoogleOAuthController::class, 'disconnect'])->name('auth.google.disconnect');
         Route::get('/reviews', PlayerReviewPage::class)->name('reviews');
         Route::get('/teams', TeamDashboard::class);
     });
@@ -211,6 +230,7 @@ Route::middleware(['auth', 'role.admin'])->prefix('admin')->group(function () {
     Route::get('/streams/{id}', StreamWatch::class)->name('admin.streams.watch');
     Route::get('/kyc', KycAdmin::class);
     Route::get('/kyc/document/{path}', KycDocumentController::class)->where('path', '.*')->name('admin.kyc.document');
+    Route::get('/deposits', DepositAdmin::class)->name('admin.deposits');
     Route::get('/withdrawals', WithdrawalAdmin::class);
     Route::get('/escrow-cashflow', EscrowCashflowAdmin::class)->name('admin.escrow-cashflow');
     Route::get('/users', UserAdmin::class);

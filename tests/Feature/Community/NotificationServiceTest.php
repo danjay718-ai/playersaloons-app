@@ -174,6 +174,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         GameTranslation::query()->create([
@@ -215,6 +216,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-2',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
@@ -258,6 +260,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-3',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
@@ -305,6 +308,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-4',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
@@ -421,6 +425,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-5',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
@@ -504,6 +509,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-6',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([
@@ -565,6 +571,7 @@ class NotificationServiceTest extends TestCase
         $game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'valorant-7',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         $tournament = Tournament::query()->create([

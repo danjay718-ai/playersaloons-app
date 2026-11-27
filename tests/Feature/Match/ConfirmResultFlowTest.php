@@ -62,6 +62,7 @@ class ConfirmResultFlowTest extends TestCase
         $this->game = Game::query()->create([
             'uuid' => Str::uuid()->toString(),
             'slug' => 'csgo',
+            'game_category_id' => $this->defaultGameCategoryId(),
             'is_active' => true,
         ]);
         GameTranslation::query()->create([
