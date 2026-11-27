@@ -511,6 +511,7 @@
     </nav>
 
     <livewire:tournament.find-tournament-modal />
+    <x-ai-support-widget surface="player" />
     <x-logout-confirmation />
     @livewireScripts
 

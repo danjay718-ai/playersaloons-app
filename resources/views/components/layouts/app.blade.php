@@ -43,6 +43,7 @@
         <x-logout-confirmation />
     @endauth
     <livewire:tournament.find-tournament-modal />
+    <x-ai-support-widget surface="guest" />
     <x-cookie-consent />
 
     @livewireScripts

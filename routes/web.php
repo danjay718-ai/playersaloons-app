@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\V2HeadToHeadController;
 use App\Http\Controllers\Admin\V2TournamentOccurrenceController;
 use App\Http\Controllers\Admin\V2TournamentTemplateController;
 use App\Http\Controllers\Admin\V2TournamentTemplateSlotsController;
+use App\Http\Controllers\AiSupportController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\GoogleOAuthController;
 use App\Http\Controllers\Auth\LogoutController;
@@ -108,6 +109,9 @@ Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.web
 Route::post('/payop/webhook', PayopWebhookController::class)->middleware('throttle:120,1')->name('payop.webhook');
 Route::post('/payop/payout-webhook', PayopPayoutWebhookController::class)->middleware('throttle:120,1')->name('payop.payout-webhook');
 Route::post('/language', [LanguageController::class, 'update'])->name('language.update');
+Route::post('/ai-support/ask', [AiSupportController::class, 'ask'])
+    ->middleware('throttle:20,1')
+    ->name('ai-support.ask');
 Route::get('/promotions/{advertisement:uuid}/click', PromotionClickController::class)->name('promotions.click');
 Route::get('/newsletter/unsubscribe/{user:uuid}', NewsletterUnsubscribeController::class)
     ->middleware('signed')
