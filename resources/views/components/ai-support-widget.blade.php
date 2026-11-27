@@ -39,6 +39,7 @@
         loading: false,
         input: '',
         error: '',
+        zoomImage: null,
         scope: @js($resolvedScope),
         storageKey: 'gr_ai_support_chat_v1:' + @js($resolvedScope),
         endpoint: @js(route('ai-support.ask')),
@@ -80,6 +81,73 @@
         csrfToken() {
             return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || this.fallbackToken;
         },
+        escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\x22/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        },
+        formatInline(text) {
+            return this.escapeHtml(text)
+                .replace(/\*\*\*(.+?)\*\*\*/g, '<strong class=\'font-semibold text-white\'><em>$1</em></strong>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong class=\'font-semibold text-white\'>$1</strong>')
+                .replace(/(^|[\s(])\*([^*\n]+?)\*(?=[\s).,!?:;]|$)/g, '$1<em class=\'italic text-zinc-200\'>$2</em>')
+                .replace(/`([^`\n]+?)`/g, '<code class=\'rounded bg-white/10 px-1 py-0.5 font-mono text-[11px] text-cyan-200\'>$1</code>');
+        },
+        formatMessage(raw) {
+            const lines = String(raw || '').replace(/\r\n/g, '\n').split('\n');
+            const html = [];
+            let listType = null;
+            const closeList = () => {
+                if (listType) {
+                    html.push(listType === 'ol' ? '</ol>' : '</ul>');
+                    listType = null;
+                }
+            };
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    closeList();
+                    continue;
+                }
+
+                const ordered = trimmed.match(/^\d+[.)]\s+(.+)$/);
+                if (ordered) {
+                    if (listType !== 'ol') {
+                        closeList();
+                        html.push('<ol class=\'list-decimal space-y-2 pl-4 marker:font-semibold marker:text-zinc-400\'>');
+                        listType = 'ol';
+                    }
+                    html.push('<li class=\'leading-relaxed\'>' + this.formatInline(ordered[1]) + '</li>');
+                    continue;
+                }
+
+                const bullet = trimmed.match(/^[-*•]\s+(.+)$/);
+                if (bullet) {
+                    if (listType !== 'ul') {
+                        closeList();
+                        html.push('<ul class=\'list-disc space-y-1.5 pl-4 marker:text-zinc-400\'>');
+                        listType = 'ul';
+                    }
+                    html.push('<li class=\'leading-relaxed\'>' + this.formatInline(bullet[1]) + '</li>');
+                    continue;
+                }
+
+                closeList();
+                const heading = trimmed.match(/^#{1,3}\s+(.+)$/);
+                if (heading) {
+                    html.push('<p class=\'font-semibold text-white\'>' + this.formatInline(heading[1]) + '</p>');
+                } else {
+                    html.push('<p class=\'leading-relaxed\'>' + this.formatInline(trimmed) + '</p>');
+                }
+            }
+
+            closeList();
+            return html.join('');
+        },
         async send(preset = null) {
             const text = (preset !== null ? preset : this.input).trim();
             if (text.length < 2 || this.loading) return;
@@ -113,7 +181,12 @@
                 }
 
                 if (data.reply) {
-                    this.messages.push({ id: Date.now() + '-a', role: 'assistant', content: data.reply });
+                    this.messages.push({
+                        id: Date.now() + '-a',
+                        role: 'assistant',
+                        content: data.reply,
+                        guides: Array.isArray(data.guides) ? data.guides : [],
+                    });
                     this.persist();
                     this.scrollBottom();
                 }
@@ -125,8 +198,38 @@
             }
         }
     }"
-    @keydown.escape.window="if (open) open = false"
+    @keydown.escape.window="if (zoomImage) { zoomImage = null; } else if (open) { open = false; }"
 >
+    {{-- Fullscreen Screenshot Zoom Lightbox --}}
+    <div
+        x-show="zoomImage"
+        x-cloak
+        @click="zoomImage = null"
+        class="fixed inset-0 z-[1200] flex items-center justify-center bg-black/85 p-3 backdrop-blur-sm sm:p-6"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="zoomImage?.title || @js(__('Guide screenshot'))"
+    >
+        <div @click.stop class="relative max-h-[90dvh] w-full max-w-3xl overflow-hidden rounded-2xl border border-white/15 bg-[#080e1a] shadow-2xl">
+            <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                <p class="truncate text-xs font-bold text-white" x-text="zoomImage?.title"></p>
+                <button
+                    type="button"
+                    @click="zoomImage = null"
+                    aria-label="{{ __('Close preview') }}"
+                    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="max-h-[calc(90dvh-56px)] overflow-auto bg-black p-2">
+                <img :src="zoomImage?.url" :alt="zoomImage?.title" class="mx-auto max-h-[82dvh] w-auto rounded-lg object-contain">
+            </div>
+        </div>
+    </div>
     {{-- Mobile-only subtle backdrop when open --}}
     <div
         x-show="open"
@@ -227,13 +330,39 @@
             {{-- Conversation turns --}}
             <template x-for="msg in messages" :key="msg.id">
                 <div class="flex" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
-                    <div
-                        class="max-w-[85%] whitespace-pre-line break-words rounded-2xl px-3.5 py-2.5 leading-relaxed"
-                        :class="msg.role === 'user'
-                            ? '{{ $isAdminTheme ? 'rounded-br-sm bg-sky-500 text-slate-950 font-semibold' : 'rounded-br-sm bg-[#c6ff3d] text-[#080f16] font-semibold' }}'
-                            : 'rounded-bl-sm border border-white/10 bg-white/[0.06] text-zinc-100'"
-                        x-text="msg.content"
-                    ></div>
+                    <template x-if="msg.role === 'user'">
+                        <div
+                            class="max-w-[85%] whitespace-pre-line break-words rounded-2xl rounded-br-sm px-3.5 py-2.5 font-semibold leading-relaxed {{ $isAdminTheme ? 'bg-sky-500 text-slate-950' : 'bg-[#c6ff3d] text-[#080f16]' }}"
+                            x-text="msg.content"
+                        ></div>
+                    </template>
+                    <template x-if="msg.role !== 'user'">
+                        <div class="max-w-[90%] space-y-2.5 break-words rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.06] px-4 py-3 text-[12.5px] leading-relaxed text-zinc-100">
+                            <div class="space-y-2.5" x-html="formatMessage(msg.content)"></div>
+                            <template x-if="Array.isArray(msg.guides) && msg.guides.length > 0">
+                                <div class="space-y-2 pt-1">
+                                    <template x-for="guide in msg.guides" :key="guide.key || guide.url">
+                                        <button
+                                            type="button"
+                                            @click="zoomImage = guide"
+                                            class="group block w-full overflow-hidden rounded-xl border border-white/15 bg-black/50 text-left transition hover:border-[#c6ff3d]/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c6ff3d]"
+                                        >
+                                            <img
+                                                :src="guide.url"
+                                                :alt="guide.title"
+                                                loading="lazy"
+                                                class="max-h-40 w-full object-cover object-top transition duration-200 group-hover:scale-[1.02]"
+                                            >
+                                            <div class="flex items-center justify-between gap-2 border-t border-white/10 px-2.5 py-1.5 text-[10px] font-semibold text-zinc-300">
+                                                <span class="truncate" x-text="guide.title"></span>
+                                                <span class="shrink-0 text-[9px] uppercase tracking-wider text-cyan-300">{{ __('Tap to zoom') }}</span>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
                 </div>
             </template>
 

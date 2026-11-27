@@ -216,6 +216,36 @@ class AiSupportAssistantTest extends TestCase
         $this->assertTrue(app(AiSupportAssistantService::class)->isAvailable());
     }
 
+    public function test_visual_guide_screenshots_are_extracted_and_strictly_filtered_by_role(): void
+    {
+        $service = app(AiSupportAssistantService::class);
+
+        // Guest allowed guide passes, admin guide is strictly stripped & blocked
+        $guestResult = $service->extractGuides(
+            "1. Click **Find Tournament**.\n\n[GUIDE:find_tournament]\n[GUIDE:admin_ai_dispute]",
+            AiSupportAssistantService::SCOPE_GUEST
+        );
+        $this->assertStringNotContainsString('[GUIDE:', $guestResult['reply']);
+        $this->assertCount(1, $guestResult['guides']);
+        $this->assertSame('/images/help-guides/guest/find-tournament.png', $guestResult['guides'][0]['url']);
+
+        // Player cannot receive admin guide screenshot either
+        $playerResult = $service->extractGuides(
+            "Check your wallet.\n\n[GUIDE:wallet_deposit]\n[GUIDE:admin_ai_settings]",
+            AiSupportAssistantService::SCOPE_PLAYER
+        );
+        $this->assertCount(1, $playerResult['guides']);
+        $this->assertSame('/images/help-guides/player/wallet-deposit.png', $playerResult['guides'][0]['url']);
+
+        // Admin receives admin guide screenshot
+        $adminResult = $service->extractGuides(
+            "Open Match & Dispute Control.\n\n[GUIDE:admin_ai_dispute]",
+            AiSupportAssistantService::SCOPE_ADMIN
+        );
+        $this->assertCount(1, $adminResult['guides']);
+        $this->assertSame('/images/help-guides/admin/admin-ai-dispute.png', $adminResult['guides'][0]['url']);
+    }
+
     private function makeUser(string $role, string $email): User
     {
         /** @var User $user */
