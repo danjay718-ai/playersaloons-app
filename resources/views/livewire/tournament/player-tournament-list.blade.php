@@ -327,7 +327,7 @@
                             href="{{ route('games.show', ['game' => $game, ...$gameContext]) }}"
                             wire:navigate
                             aria-label="{{ __('Open :game hub', ['game' => $game->localizedName()]) }}"
-                            class="absolute right-2.5 top-2.5 z-10 inline-flex min-h-[28px] items-center rounded-full border border-white/15 bg-zinc-950/85 px-2.5 py-0.5 text-[10px] font-bold text-zinc-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400"
+                            class="player-game-hub-link absolute right-2.5 top-2.5 z-10 hidden min-h-[28px] items-center rounded-full border border-white/15 bg-zinc-950/85 px-2.5 py-0.5 text-[10px] font-bold text-zinc-200 backdrop-blur-sm transition hover:border-cyan-400 hover:text-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 lg:inline-flex"
                         >{{ __('View Game') }} ↗</a>
                     </div>
                 @empty

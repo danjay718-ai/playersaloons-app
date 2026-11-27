@@ -2773,6 +2773,7 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     .theme-player .mobile-nav-item.active :is(.mobile-nav-icon, .mobile-nav-label) { color: var(--app-accent); }
     .theme-player .mobile-nav-item::before { display: none; }
     .theme-player .mobile-nav-deposit .mobile-nav-icon { box-sizing: content-box; padding: 10px; margin-top: -21px; border: 5px solid var(--app-surface); border-radius: 50%; background: #c6ff3d; color: #152019; }
+    .theme-player .mobile-nav-item.mobile-nav-deposit.active .mobile-nav-icon { color: #152019; transform: none; filter: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--app-accent) 45%, transparent); }
     .mobile-player-home { display: block; color: var(--app-ink); }
     .player-dashboard > .player-tabs,
     .player-dashboard > .player-dashboard-welcome,
@@ -2805,6 +2806,7 @@ nav[role="navigation"] div.flex.justify-between.flex-1.sm\:hidden a:hover {
     html[data-theme='light'] .mobile-competition-switch a[aria-current] { color: white; }
     .mobile-games-section .gr-eyebrow,
     .mobile-games-section .player-rail-button,
+    .mobile-games-section .player-game-hub-link,
     .theme-player .player-tournament-discovery > section[aria-label],
     .desktop-games-title { display: none; }
     .mobile-games-section .mobile-games-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; gap: 10px; }
